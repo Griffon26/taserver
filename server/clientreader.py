@@ -1,0 +1,307 @@
+#!/usr/bin/env python3
+
+import gevent
+import io
+import struct
+
+from datatypes import constructenumblockarray, ParseError
+from utils import hexdump
+
+last_seen_seqnr = None
+
+def indentlevel2string(i):
+    return '  ' * i
+
+def peekshort(infile):
+    values = infile.peek(2)
+    if len(values) == 0:
+        raise EOFError
+    return struct.unpack('H', values)[0]
+
+def readbyte(infile):
+    return infile.read(1)[0]
+
+def readshort(infile):
+    values = infile.read(2)
+    if len(values) == 0:
+        raise EOFError
+    return struct.unpack('H', values)[0]
+
+def readlong(infile):
+    values = infile.read(4)
+    if len(values) == 0:
+        raise EOFError
+    return struct.unpack('<L', values)[0]
+
+def readbytearray(infile, length):
+    return infile.read(length)
+
+def readstring(infile, length):
+    return infile.read(length).decode('utf-8')
+
+def bytearray2ascii(ba):
+    return ''.join([chr(b) if 0x20 <= b <= 0x7F else '.' for b in ba])
+
+def bytearray2hex(ba):
+    return ' '.join(['%02X' % b for b in ba])
+
+def index2prefix(i):
+    return '%-3d: ' % i
+
+def offset2string(offset):
+    ''' Put a ` character after the offset to facilitate text searches '''
+    return '%08X`  ' % offset
+
+def desc2suffix(desc):
+    return ' (%s)' % desc if desc else ''
+
+def enum2desc(enumid):
+    knownenums = {
+        0x009e : "message type (2=public, 3=team, 6=private)",
+        0x011b : "player online/join notification",
+        0x018c : "kickvote?",
+        0x01a4 : "motd",
+        0x021a : "game mode",
+        0x0246 : "two bytes unknown + port + IP (9002 server)",
+        0x024f : "two bytes unknown + port + IP (game server)",
+        0x026f : "purchase name",
+        0x0296 : "player rank (unused)",
+        0x02b1 : "internal map name",
+        0x02b6 : "map name",
+        0x02c7 : "server id",
+        0x02e6 : "message text",
+        0x02fe : "sender name",
+        0x0300 : "map+gamemode, server or region name",
+        0x0348 : "player id",
+        0x034a : "player name",
+        0x0448 : "region id",
+        0x0494 : "login name",
+        0x049e : "version number",
+        0x04cb : "player xp",
+        0x053d : "ping time",
+        0x05d3 : "player gold",
+        0x05dc : "player rank progress",
+        0x06de : "clan tag",
+        0x0704 : "player id to kick",
+        0x0705 : "player name to kick"
+    }
+    return knownenums[enumid] if enumid in knownenums else None
+
+def dumperror(infile, outfile, offset):
+    outfile.write('\n\n************\n')
+    outfile.write('Parse error occurred at offset 0x%08X. Next bunch of bytes were:\n' % offset)
+    for l in range(20):
+        value = readbytearray(infile, 16)
+        outfile.write('%08X: %s  %s\n' % (offset, bytearray2hex(value), bytearray2ascii(value)))
+        offset += 16
+
+toplevelids_enumblockarray = (20, 51, 53, 58, 61, 65, 109, 111, 112, 176, 177, 178,
+                              179, 180, 213, 251, 284, 283, 325, 374, 375,
+                              386, 387, 395, 396, 407, 437, 444, 454, 456)
+
+enumids_salt = (995,)
+enumids_sizedcontent = (19, 130, 162, 163, 170, 171, 420, 422, 444, 452,
+                        524, 538, 609, 623, 687, 689, 694, 742, 766, 768,
+                        842, 859, 892, 1079, 1118, 1128, 1172, 1595, 1720,
+                        1758, 1769, 1797)
+enumids_arrayofenumblockarrays = (233, 254, 278, 290, 295, 306, 312, 324, 1483, 1586, 1587,
+                                  1598, 1634, 1662, 1665, 1675, 1723, 1775)
+enumids_onebyte = (111, 713, 806, 1090, 1131, 1426, 1494, 1510, 1537,
+                   1596, 1651, 1691, 1692, 1795)
+enumids_twobytes = (775, 1341, 1536)
+enumids_threebytes = (110,)
+enumids_fourbytes = (25, 53, 109,
+                     115, 139, 141, 149, 157, 158, 186, 191, 195, 198, 212, 407,
+                     419, 448, 449, 457, 483, 488, 523, 525, 537, 539, 543, 549,
+                     552, 578, 595, 601, 602, 604, 605, 606, 607, 611, 621, 626,
+                     627, 662, 664, 665, 675, 683, 684, 690, 691, 693, 695, 702,
+                     708, 711, 726, 727, 728, 732, 748, 749, 751, 756, 764, 767, 793,
+                     817, 819, 835, 836, 837, 838, 839, 840, 858, 867, 873, 875,
+                     876, 895, 896, 901, 920, 932, 948, 974, 992, 1009, 1013, 1021, 1050, 1066, 1067,
+                     1070, 1071, 1096, 1106, 1111, 1112, 1138, 1161, 1182, 1189, 1190,
+                     1191, 1192, 1193, 1194, 1211, 1227, 1233, 1237, 1241, 1274,
+                     1282, 1366, 1368, 1386, 1399, 1405, 1407, 1418, 1425, 1430, 1431,
+                     1464, 1484, 1491, 1500, 1513, 1518, 1538, 1544, 1546, 1548, 1557, 1565,
+                     1571, 1581, 1582, 1583, 1590, 1591, 1592, 1593, 1594, 1597,
+                     1631, 1632, 1633, 1635, 1636, 1642, 1649, 1650, 1652, 1653,
+                     1654, 1655, 1663, 1664, 1668, 1676, 1719, 1721, 1722, 1725,
+                     1727, 1737, 1770, 1774, 1777, 1781, 1786, 1793, 1796)
+enumids_eightbytes = (8, 183, 471, 501, 582, 591, 771, 1049, 1076, 1236, 1406, 1506, 1508)
+enumids_authentication = (86,)
+
+def parsesalt(infile, outfile, nestinglevel):
+    salt = bytearray2hex(readbytearray(infile, 16))
+    outfile.write(salt + ' (salt)\n')
+
+def parsesizedcontent(infile, outfile, nestinglevel, desc):
+    length = readshort(infile)
+    text = readstring(infile, length)
+    outfile.write('"%s"%s\n' % (text, desc2suffix(desc)))
+
+def parsearrayofenumblockarrays(infile, outfile, nestinglevel):
+    size = readshort(infile)
+    outfile.write('arrayofenumblockarrays size %d\n' % size)
+    for i in range(size):
+        parseenumblockarray(infile, outfile, nestinglevel + 1, True, prefix=index2prefix(i))
+
+def parseonebyte(infile, outfile, nestinglevel, desc):
+    value = readbyte(infile)
+    outfile.write('%02X%s\n' % (value, desc2suffix(desc)))
+    
+def parsetwobytes(infile, outfile, nestinglevel, desc):
+    value = readshort(infile)
+    outfile.write('%04X%s\n' % (value, desc2suffix(desc)))
+
+def parsethreebytes(infile, outfile, nestinglevel, desc):
+    value = bytearray2hex(readbytearray(infile, 3))
+    outfile.write('%s%s\n' % (value, desc2suffix(desc)))
+
+def parsefourbytes(infile, outfile, nestinglevel, desc):
+    value = readlong(infile)
+    outfile.write('%08X%s\n' % (value, desc2suffix(desc)))
+
+def parseeightbytes(infile, outfile, nestinglevel, desc):
+    value = bytearray2hex(readbytearray(infile, 8))
+    outfile.write('%s%s\n' % (value, desc2suffix(desc)))
+
+def parseauthenticationbytes(infile, outfile, nestinglevel):
+    size = readlong(infile)
+    outfile.write('%d bytes containing authentication data based on your password\n' % size)
+    readbytearray(infile, size)
+
+def parseenumfield(infile, outfile, nestinglevel, prefix = ''):
+    offset = infile.tell()
+    enumid = readshort(infile)
+    outfile.write(offset2string(offset) + indentlevel2string(nestinglevel) + prefix + 'enumfield %04X ' % enumid)
+
+    if enumid in toplevelids_enumblockarray and nestinglevel == 0:
+        parseenumblockarray(infile, outfile, nestinglevel + 1, False, desc=enum2desc(enumid))
+        
+    elif enumid in enumids_salt:
+        parsesalt(infile, outfile, nestinglevel + 1)
+    elif enumid in enumids_sizedcontent or (nestinglevel != 0 and enumid == 444):
+        try:
+            parsesizedcontent(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+        except UnicodeDecodeError:
+            offset = infile.tell()
+            dumperror(infile, outfile, offset)
+            raise ParseError('Unable to decode some bytes as unicode')
+    elif enumid in enumids_arrayofenumblockarrays:
+        parsearrayofenumblockarrays(infile, outfile, nestinglevel + 1)
+    elif enumid in enumids_onebyte:
+        parseonebyte(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+    elif enumid in enumids_twobytes:
+        parsetwobytes(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+    elif enumid in enumids_threebytes:
+        parsethreebytes(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+    elif enumid in enumids_fourbytes:
+        parsefourbytes(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+    elif enumid in enumids_eightbytes:
+        parseeightbytes(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+    elif enumid in enumids_authentication:
+        parseauthenticationbytes(infile, outfile, nestinglevel + 1)
+    else:
+        offset = infile.tell()
+        dumperror(infile, outfile, offset)
+        raise ParseError('Unknown enumtype %d (0x%04X) at offset 0x%08X' % (enumid, enumid, offset))
+
+def parseenumblockarray(infile, outfile, nestinglevel, newline, prefix='', desc=''):
+    offset = infile.tell()
+    length = readshort(infile)
+    if newline:
+        outfile.write(offset2string(offset) + indentlevel2string(nestinglevel))
+    outfile.write(prefix + 'enumblockarray length %d%s\n' % (length, desc2suffix(desc)))
+    for i in range(length):
+        parseenumfield(infile, outfile, nestinglevel + 1, index2prefix(i))
+
+def parseseqack(infile):
+    seq = readlong(infile)
+    ack = readlong(infile)
+    return seq, ack
+
+class PacketReader():
+    def __init__(self, socket):
+        self.socket = socket
+        self.buffer = bytes()
+
+    def prepare(self, length):
+        ''' Makes sure that at least length bytes are available in self.buffer '''
+        while len(self.buffer) < length:
+            packetsizebytes = self.socket.recv(2)
+            if len(packetsizebytes) == 0:
+                raise RuntimeError('client disconnected')
+            packetsize = struct.unpack('<H', packetsizebytes)[0]
+            if packetsize == 0:
+                packetsize = 1450
+            packetbodybytes = self.socket.recv(packetsize)
+            print('Received:')
+            hexdump(packetbodybytes)
+            self.buffer += packetbodybytes
+            if len(packetbodybytes) != packetsize:
+                raise ParseError('The number of bytes available in the file (%d) is not equal to the number of bytes expected (%d)' %
+                        (len(packetbodybytes), packetsize))
+
+    def read(self, length):
+        self.prepare(length)
+        requestedbytes = self.buffer[:length]
+        self.buffer = self.buffer[length:]
+        return requestedbytes
+
+    def peek(self, length):
+        self.prepare(length)
+        requestedbytes = self.buffer[:length]
+        return requestedbytes
+
+    def tell(self):
+        return 0
+ 
+class StreamParser():
+    def __init__(self, instream):
+        self.instream = instream
+
+    def parse(self):
+        outfile = io.StringIO()
+        nextvalue = peekshort(self.instream)
+
+        # FIXME: That we have to look at the first short to see how 
+        # many items are in this packet probably indicates that we 
+        # interpret the packet structure incorrectly.
+        itemcount = 1
+        hasseqack = True
+
+        if nextvalue == 0x01BC:
+            hasseqack = False
+
+        objs = []
+        for i in range(itemcount):
+            #parseenumfield(self.instream, outfile, 0, index2prefix(i))
+            objs.append(constructenumblockarray(self.instream))
+        if hasseqack:
+            seq, _ = parseseqack(self.instream)
+        else:
+            seq = None
+
+        return seq, objs
+
+
+class ClientReader():
+    def __init__(self, socket, clientid, serverqueue):
+        self.clientid = clientid
+        self.socket = socket
+        self.serverqueue = serverqueue
+
+    def run(self):
+        packetreader = PacketReader(self.socket)
+        streamparser = StreamParser(packetreader)
+        while True:
+            try:
+                seq, msg = streamparser.parse()
+                self.serverqueue.put((self.clientid, seq, msg))
+                print('client(%s): received incoming message' % self.clientid)
+            except RuntimeError as e:
+                print('client(%s): caught %s' % (self.clientid, str(e)))
+                break
+
+        self.serverqueue.put((self.clientid, None, None))
+        print('client(%s): reader exiting' % self.clientid)
+
