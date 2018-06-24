@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import gevent
 import io
 import struct
 
