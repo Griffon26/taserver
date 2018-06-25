@@ -18,7 +18,19 @@ If you do decide to try it out, here's how.
     ```
     TribesAscend.exe -hostx=127.0.0.1
     ```
-  
+3. Install python 3
+
+4. Install the gevent module for python. From an administrator command prompt you should be able to do it with:
+
+    ```
+    pip install gevent
+    ```
+   You may have to specify the full path. Something like:
+   
+    ```
+    C:\Program Files (x86)\Python36\Scripts\pip install gevent
+    ```
+
 3. Start the login server by running the main.py script in the server directory of this repository (preferably from a command window so you can read the errors if it exits for some reason).
 
 4. Start both the dedicated server and the client using the shortcuts you created
