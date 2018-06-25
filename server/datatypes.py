@@ -924,6 +924,14 @@ class a003d(enumblockarray):
             m068b(),
             m0681()]
 
+class a004c(enumblockarray):
+    def __init__(self):
+        super(a004c, self).__init__(0x004c)
+
+class a006d(enumblockarray):
+    def __init__(self):
+        super(a006d, self).__init__(0x006d)
+
 class a006f(enumblockarray):
     def __init__(self):
         super(a006f, self).__init__(0x006f)
