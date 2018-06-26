@@ -91,13 +91,13 @@ class stringenum():
         return self
 
     def write(self, stream):
-        stream.write(struct.pack('<HH', self.ident, len(self.text)) + self.text.encode('utf-8'))
+        stream.write(struct.pack('<HH', self.ident, len(self.text)) + self.text.encode('latin1'))
 
     def read(self, stream):
         ident, length = struct.unpack('<HH', stream.read(4))
         if ident != self.ident:
             raise ParseError('self.ident(%02X) did not match parsed ident value (%02X)' % (self.ident, ident))
-        self.text = stream.read(length).decode('utf-8')
+        self.text = stream.read(length).decode('latin1')
         return self
 
 class arrayofenumblockarrays():
@@ -545,10 +545,6 @@ class m0701(fourbytes):
 class m0008(nbytes):
     def __init__(self):
         super(m0008, self).__init__(0x0008, hexparse('00 00 00 00 00 00 00 00'))
-
-class m0056(nbytes):
-    def __init__(self):
-        super(m0056, self).__init__(0x0056, b'0' * 90)
 
 class m00b7(nbytes):
     def __init__(self):
@@ -1063,6 +1059,21 @@ class a01c6(enumblockarray):
 class a01c8(enumblockarray):
     def __init__(self):
         super(a01c8, self).__init__(0x01c8)
+
+class m0056():
+    def __init__(self):
+        self.ident = 0x0056
+        self.content = b'0' * 90
+
+    def write(self, stream):
+        stream.write(struct.pack('<HL', self.ident, len(self.content)) + self.content)
+
+    def read(self, stream):
+        ident, length = struct.unpack('<HL', stream.read(6))
+        if ident != self.ident:
+            raise ParseError('self.ident(%02X) did not match parsed ident value (%02X)' % (self.ident, ident))
+        self.content = stream.read(length)
+        return self
 
 class originalfragment():
     def __init__(self, fromoffset, tooffset):
