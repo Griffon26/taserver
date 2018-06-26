@@ -155,6 +155,10 @@ class enumblockarray():
 # onebyte
 #------------------------------------------------------------
 
+class m02c9(onebyte):
+    def __init__(self):
+        super(m02c9, self).__init__(0x02c9, 0x00)
+
 class m0326(onebyte):
     def __init__(self):
         super(m0326, self).__init__(0x0326, 0x00)
@@ -479,6 +483,10 @@ class m062f(fourbytes):
     def __init__(self):
         super(m062f, self).__init__(0x062f, 0x00000000)
 
+class m0661(fourbytes): 
+    def __init__(self):
+        super(m0661, self).__init__(0x0661, 0x00000000)
+
 class m0663(fourbytes): 
     def __init__(self):
         super(m0663, self).__init__(0x0663, 0x00050001)
@@ -741,6 +749,10 @@ class m0138(arrayofenumblockarrays):
     #def write(self, stream):
     #    stream.write(_originalbytes(0x103, 0x4f49))
 
+class m0144(arrayofenumblockarrays):
+    def __init__(self):
+        super(m0144, self).__init__(0x0144)
+        
 class m06ef(arrayofenumblockarrays):
     def __init__(self):
         super(m06ef, self).__init__(0x06ef)
@@ -919,6 +931,10 @@ class a003d(enumblockarray):
             m0663(),
             m068b(),
             m0681()]
+
+class a0041(enumblockarray):
+    def __init__(self):
+        super(a0041, self).__init__(0x0041)
 
 class a004c(enumblockarray):
     def __init__(self):
