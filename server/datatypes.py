@@ -977,6 +977,10 @@ class a00b2(enumblockarray):
     def __init__(self):
         super(a00b2, self).__init__(0x00b2)
 
+class a00b3(enumblockarray):
+    def __init__(self):
+        super(a00b3, self).__init__(0x00b3)
+
 class a00b4(enumblockarray):
     def __init__(self):
         super(a00b4, self).__init__(0x00b4)
