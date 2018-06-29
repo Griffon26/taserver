@@ -443,6 +443,10 @@ class m058a(fourbytes):
     def __init__(self):
         super(m058a, self).__init__(0x058a, 0x00000000)
 
+class m05cf(fourbytes): 
+    def __init__(self):
+        super(m05cf, self).__init__(0x05cf, 0x00000000)
+
 class m05d3(fourbytes): 
     def __init__(self):
         super(m05d3, self).__init__(0x05d3, 0x00001000) # gold
@@ -677,6 +681,10 @@ class m0468(stringenum):
 class m0494(stringenum):
     def __init__(self):
         super(m0494, self).__init__(0x0494, '')
+
+class m0669(stringenum):
+    def __init__(self):
+        super(m0669, self).__init__(0x0669, '')
 
 class m06de(stringenum):
     def __init__(self):
@@ -1030,6 +1038,10 @@ class a011c(enumblockarray):
     def __init__(self):
         super(a011c, self).__init__(0x011c)
 
+class a0175(enumblockarray):
+    def __init__(self):
+        super(a0175, self).__init__(0x0175)
+        
 class a0176(enumblockarray):
     def __init__(self):
         super(a0176, self).__init__(0x0176)
@@ -1079,6 +1091,10 @@ class a01c6(enumblockarray):
 class a01c8(enumblockarray):
     def __init__(self):
         super(a01c8, self).__init__(0x01c8)
+
+#------------------------------------------------------------
+# special fields
+#------------------------------------------------------------
 
 class m0056():
     def __init__(self):
