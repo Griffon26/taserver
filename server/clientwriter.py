@@ -14,10 +14,11 @@ def packetize(bytestream):
         bytestream = bytestream[chunksize:]
 
 class ClientWriter():
-    def __init__(self, socket, clientid, clientqueue):
+    def __init__(self, socket, clientid, clientqueue, dumpqueue):
         self.clientid = clientid
         self.socket = socket
         self.clientqueue = clientqueue
+        self.dumpqueue = dumpqueue
         self.seq = None
 
     def run(self):
@@ -49,5 +50,9 @@ class ClientWriter():
                 print('packet:')
                 hexdump(packet)
                 self.socket.send(packet)
+                
+                if self.dumpqueue:
+                    self.dumpqueue.put(('server', packet))
+                    
         print('client(%s): writer exiting' % self.clientid)
 
