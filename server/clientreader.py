@@ -24,9 +24,10 @@ def parseseqack(infile):
     return seq, ack
 
 class PacketReader():
-    def __init__(self, socket):
+    def __init__(self, socket, dumpqueue):
         self.socket = socket
         self.buffer = bytes()
+        self.dumpqueue = dumpqueue
 
     def prepare(self, length):
         ''' Makes sure that at least length bytes are available in self.buffer '''
@@ -44,6 +45,8 @@ class PacketReader():
             if len(packetbodybytes) != packetsize:
                 raise ParseError('The number of bytes available in the file (%d) is not equal to the number of bytes expected (%d)' %
                         (len(packetbodybytes), packetsize))
+            if self.dumpqueue:
+                self.dumpqueue.put(('client', packetsizebytes + packetbodybytes))
 
     def read(self, length):
         self.prepare(length)
@@ -88,13 +91,14 @@ class StreamParser():
 
 
 class ClientReader():
-    def __init__(self, socket, clientid, serverqueue):
+    def __init__(self, socket, clientid, serverqueue, dumpqueue):
         self.clientid = clientid
         self.socket = socket
         self.serverqueue = serverqueue
+        self.dumpqueue = dumpqueue
 
     def run(self):
-        packetreader = PacketReader(self.socket)
+        packetreader = PacketReader(self.socket, self.dumpqueue)
         streamparser = StreamParser(packetreader)
         while True:
             try:
