@@ -26,10 +26,11 @@ class ClientWriter():
             stream = io.BytesIO()
             message, ack = self.clientqueue.get()
             if message is None:
+                print('client(%s): writer closing socket' % self.clientid)
                 self.socket.close()
                 break
 
-            print('client(%s): processing outgoing messages (ack = %s)' % (self.clientid, ack))
+            #print('client(%s): processing outgoing messages (ack = %s)' % (self.clientid, ack))
 
             if isinstance(message, list):
                 for el in message:
@@ -47,12 +48,14 @@ class ClientWriter():
 
             stream.seek(0)
             for packet in packetize(stream.read()):
-                print('packet:')
-                hexdump(packet)
-                self.socket.send(packet)
+                #print('Sending:')
+                #hexdump(packet)
                 
                 if self.dumpqueue:
                     self.dumpqueue.put(('server', packet))
                     
-        print('client(%s): writer exiting' % self.clientid)
+                self.socket.send(packet)
+                
+                    
+        print('client(%s): writer exiting gracefully' % self.clientid)
 
