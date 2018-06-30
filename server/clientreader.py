@@ -39,14 +39,14 @@ class PacketReader():
             if packetsize == 0:
                 packetsize = 1450
             packetbodybytes = self.socket.recv(packetsize)
-            print('Received:')
-            hexdump(packetbodybytes)
+            #print('Received:')
+            #hexdump(packetbodybytes)
+            if self.dumpqueue:
+                self.dumpqueue.put(('client', packetsizebytes + packetbodybytes))
             self.buffer += packetbodybytes
             if len(packetbodybytes) != packetsize:
                 raise ParseError('The number of bytes available in the file (%d) is not equal to the number of bytes expected (%d)' %
                         (len(packetbodybytes), packetsize))
-            if self.dumpqueue:
-                self.dumpqueue.put(('client', packetsizebytes + packetbodybytes))
 
     def read(self, length):
         self.prepare(length)
@@ -104,11 +104,11 @@ class ClientReader():
             try:
                 seq, msg = streamparser.parse()
                 self.serverqueue.put((self.clientid, seq, msg))
-                print('client(%s): received incoming message' % self.clientid)
+                #print('client(%s): received incoming message' % self.clientid)
             except RuntimeError as e:
-                print('client(%s): caught %s' % (self.clientid, str(e)))
+                print('client(%s): caught exception: %s' % (self.clientid, str(e)))
                 break
 
         self.serverqueue.put((self.clientid, None, None))
-        print('client(%s): reader exiting' % self.clientid)
+        print('client(%s): signalled server; reader exiting' % self.clientid)
 

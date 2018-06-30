@@ -123,7 +123,6 @@ class arrayofenumblockarrays():
             for _ in range(length2):
                 enumid = struct.unpack('<H', stream.peek(2))[0]
                 classname = ('m%04X' % enumid).lower()
-                print('constructing %s' % classname)
                 element = globals()[classname]().read(stream)
                 innerarray.append(element)
             self.arrays.append(innerarray)
@@ -701,11 +700,14 @@ class m06e9(stringenum):
 class m00e9(arrayofenumblockarrays):
     def __init__(self):
         super(m00e9, self).__init__(0x00e9)
-        self.arrays = [
-            [
+
+    def setservers(self, serverdatalist):
+        self.arrays = []
+        for serverdata in serverdatalist:
+            self.arrays.append([
                 m0385(),
                 m06ee(),
-                m02c7().set(0x431c),
+                m02c7().set(serverdata['serverid1']),
                 m0008(),
                 m02ff(),
                 m02ed(),
@@ -731,17 +733,17 @@ class m00e9(arrayofenumblockarrays):
                 m06bf(),
                 m069c(),
                 m069b(),
-                m0300().set('DarkServe'),
-                m01a4().set('CTF fun, no *****ers :)'),
+                m0300().set(serverdata['description']),
+                m01a4().set(serverdata['motd']),
                 m02b2(),
                 m02b5(),
                 m0347().set(0x00000018),
                 m02f4(),
                 m0035(),
                 m0197(),
-                m0246().set(10,0,0,1,1234)
-            ]
-        ]
+                m0246().set(127,0,0,1,1234)
+            ])
+        return self
 
 class m00fe(arrayofenumblockarrays):
     def __init__(self):
@@ -857,37 +859,41 @@ class a0035(enumblockarray):
     def __init__(self):
         super(a0035, self).__init__(0x0035)
         self.content = [
-                m0348(),
-                m0095(),
-                m02c7().set(0x431c),
-                m06ee(),
-                m02c4(),
-                m02b2(),
-                m037c(),
-                m0452(),
-                m0225(),
-                m0363(),
-                m0615(),
-                m06ef(),
-                m024f().set(127,0,0,1,7777),
-                m0246().set(10,0,0,1,1234),
-                m0448().set(4),
-                m02b5(),
-                m03e0(),
-                m0347().set(7),
-                m060a(),
-                m02be().set(0x0000034f),
-                m02b1().set('TrCTF-ArxNovena'),
-                m00a3().set('TribesGame.TrGame_TRCTF'),
-                m0326(),
-                m0600(),
-                m02ff(),
+            m0348(),
+            m0095(),
+            m02c7().set(0x00000000),
+            m06ee(),
+            m02c4(),
+            m02b2(),
+            m037c(),
+            m0452(),
+            m0225(),
+            m0363(),
+            m0615(),
+            m06ef(),
+            m024f().set(127,0,0,1,7777),
+            m0246().set(127,0,0,1,1234),
+            m0448().set(4),
+            m02b5(),
+            m03e0(),
+            m0347().set(7),
+            m060a(),
+            m02be().set(0x0000034f),
+            m02b1().set('TrCTF-ArxNovena'),
+            m00a3().set('TribesGame.TrGame_TRCTF'),
+            m0326(),
+            m0600(),
+            m02ff(),
             m01a3(),
             m020b(),
             m0345(),
             m0346(),
             m02d8()
         ]
+
+    def setserverdata(self, serverdata):
+        self.content[12].set(*serverdata['ip'], serverdata['port'])
+        return self
 
 class a003a(enumblockarray):
     def __init__(self):
@@ -976,7 +982,7 @@ class a00b0(enumblockarray):
             m0348(),
             m042a(),
             m0558(),
-            m02c7().set(0x431c),
+            m02c7(),
             m0333()
         ]
         if length == 9:
@@ -992,6 +998,10 @@ class a00b0(enumblockarray):
                 m0452(),
                 m0225()
             ])
+
+    def setserverid1(self, serverid1):
+        self.content[4].set(serverid1)
+        return self
 
 class a00b1(enumblockarray):
     def __init__(self):
@@ -1016,7 +1026,7 @@ class a00b4(enumblockarray):
             m0348(),
             m042a(),
             m0558(),
-            m02c7().set(0),
+            m02c7(),
             m0333(),
             m06bd(),
             m02c4(),
@@ -1025,6 +1035,10 @@ class a00b4(enumblockarray):
             m0225()
         ]
 
+    def setserverid2(self, serverid2):
+        self.content[10].set(serverid2)
+        return self
+        
 class a00d5(enumblockarray):
     def __init__(self):
         super(a00d5, self).__init__(0x00d5)
@@ -1033,6 +1047,10 @@ class a00d5(enumblockarray):
             m00e9(),
             m0347().set(0x2f6b9f)
         ]
+
+    def setservers(self, serverdatalist):
+        self.content[1].setservers(serverdatalist)
+        return self
 
 class a011c(enumblockarray):
     def __init__(self):
@@ -1123,7 +1141,6 @@ class originalfragment():
 def constructenumblockarray(stream):
     ident = struct.unpack('<H', stream.peek(2))[0]
     classname = ('a%04X' % ident).lower()
-    print('constructing %s' % classname)
     obj = globals()[classname]().read(stream)
     return obj
 
