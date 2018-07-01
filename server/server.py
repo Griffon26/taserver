@@ -11,6 +11,7 @@ class PlayerInfo():
         self.name = name
         self.tag = ''
         self.server = None
+        self.authenticated = False
 
 class Server():
     def __init__(self, serverqueue, clientqueues):
@@ -51,12 +52,12 @@ class Server():
         raise ProtocolViolation('No server found with specified serverid2')
 
     def run(self):
-        authenticated = False
         while True:
             for clientid, clientseq, requests in self.serverqueue:
                 if not clientid in self.players:
                     self.players[clientid] = PlayerInfo('ConnectingPlayer')
-                
+                currentplayer = self.players[clientid]
+
                 if requests == None:
                     print('server: client(%s)\'s reader quit; stopping writer' % clientid)
                     self.clientqueues[clientid].put((None, None))
@@ -65,7 +66,7 @@ class Server():
                     
                 else:
 
-                    def sendmsg(msg):
+                    def sendmsg(msg, clientid=clientid):
                         self.clientqueues[clientid].put((msg, clientseq))
 
                     print('server: received from client(%s) (seq = %s):\n%s' %
@@ -76,12 +77,12 @@ class Server():
                             sendmsg(a0197())
                             
                         elif request.ident == 0x003a:
-                            if not authenticated:
-                                authenticated = True
+                            if request.findbytype(m0056) is None:
                                 sendmsg(a003a())
                             else:
                                 playername = request.findbytype(m0494).value
-                                self.players[clientid].name = playername
+                                currentplayer.name = playername
+                                currentplayer.authenticated = True # TODO: do some real checks
                                 sendmsg([
                                     a003d().setplayer(playername, ''),
                                     m0662(0x8898, 0xdaff),
@@ -132,9 +133,11 @@ class Server():
                             sendmsg(a0035().setserverdata(serverdata))
                             
                         elif request.ident == 0x0070: # chat
-                            request.content.append(m02fe().set(self.players[clientid].name))
-                            request.content.append(m06de().set(self.players[clientid].tag))
-                            sendmsg(request)
+                            request.content.append(m02fe().set(currentplayer.name))
+                            request.content.append(m06de().set(currentplayer.tag))
+                            
+                            for otherclientid in self.players.keys():
+                                sendmsg(request, otherclientid)
                             
                         else:
                             pass
