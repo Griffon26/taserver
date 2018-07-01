@@ -79,6 +79,7 @@ def enum2desc(enumid):
         0x0348 : "player id",
         0x034a : "player name",
         0x0448 : "region id",
+        0x0452 : "team id",
         0x0494 : "login name",
         0x049e : "version number",
         0x04cb : "player xp",
@@ -111,7 +112,7 @@ enumids_sizedcontent = (19, 130, 162, 163, 170, 171, 420, 422, 444, 452,
                         1720, 1758, 1769, 1797)
 enumids_arrayofenumblockarrays = (233, 254, 278, 290, 295, 306, 312, 324, 1483, 1586, 1587,
                                   1598, 1634, 1662, 1665, 1675, 1723, 1775)
-enumids_onebyte = (111, 713, 806, 1090, 1131, 1426, 1494, 1510, 1537,
+enumids_onebyte = (111, 713, 806, 1090, 1131, 1396, 1426, 1494, 1510, 1537,
                    1596, 1651, 1691, 1692, 1795)
 enumids_twobytes = (775, 1341, 1536)
 enumids_threebytes = (110,)
