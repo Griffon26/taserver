@@ -540,6 +540,10 @@ class m06bf(fourbytes):
     def __init__(self): 
         super(m06bf, self).__init__(0x06bf, 0x00000032) 
 
+class m06c0(fourbytes): 
+    def __init__(self): 
+        super(m06c0, self).__init__(0x06c0, 0x00000000) 
+
 class m06ea(fourbytes): 
     def __init__(self): 
         super(m06ea, self).__init__(0x06ea, 0x00000000) 
@@ -1066,6 +1070,10 @@ class a00d5(enumblockarray):
     def setservers(self, serverdatalist):
         self.findbytype(m00e9).setservers(serverdatalist)
         return self
+
+class a00ec(enumblockarray):
+    def __init__(self):
+        super(a00ec, self).__init__(0x00ec)
 
 class a011c(enumblockarray):
     def __init__(self):

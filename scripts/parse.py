@@ -61,9 +61,10 @@ def desc2suffix(desc):
 def enum2desc(enumid):
     knownenums = {
         0x009e : "message type (2=public, 3=team, 6=private)",
+        0x00ec : "\"/report\" command",
         0x011b : "player online/join notification",
         0x018c : "kickvote?",
-        0x01a4 : "motd",
+        0x01a4 : "motd/report text",
         0x021a : "game mode",
         0x0246 : "two bytes unknown + port + IP (9002 server)",
         0x024f : "two bytes unknown + port + IP (game server)",
@@ -101,9 +102,10 @@ def dumperror(infile, outfile, offset):
         outfile.write('%08X: %s  %s\n' % (offset, bytearray2hex(value), bytearray2ascii(value)))
         offset += 16
 
-toplevelids_enumblockarray = (20, 51, 53, 58, 61, 65, 109, 111, 112, 133, 176, 177, 178,
-                              179, 180, 213, 251, 284, 283, 325, 373, 374, 375,
-                              386, 387, 395, 396, 407, 437, 444, 454, 456)
+toplevelids_enumblockarray = (20, 51, 53, 58, 61, 65, 109, 111, 112,
+                              133, 176, 177, 178, 179, 180, 213, 236,
+                              251, 284, 283, 325, 373, 374, 375, 386,
+                              387, 395, 396, 407, 437, 444, 454, 456)
 
 enumids_salt = (995,)
 enumids_sizedcontent = (19, 130, 162, 163, 170, 171, 420, 422, 444, 452,
@@ -132,7 +134,7 @@ enumids_fourbytes = (25, 53, 109,
                      1571, 1581, 1582, 1583, 1590, 1591, 1592, 1593, 1594, 1597,
                      1631, 1632, 1633, 1635, 1636, 1642, 1649, 1650, 1652, 1653,
                      1654, 1655, 1663, 1664, 1668, 1676, 1689, 1719, 1721, 1722,
-                     1725, 1727, 1737, 1770, 1774, 1777, 1781, 1786, 1793, 1796)
+                     1725, 1727, 1728, 1737, 1770, 1774, 1777, 1781, 1786, 1793, 1796)
 enumids_eightbytes = (8, 183, 471, 501, 582, 591, 771, 1049, 1076, 1236, 1406, 1506, 1508)
 enumids_authentication = (86,)
 
