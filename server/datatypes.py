@@ -172,6 +172,10 @@ class m0442(onebyte):
     def __init__(self):
         super(m0442, self).__init__(0x0442, 0x01)
 
+class m0574(onebyte):
+    def __init__(self):
+        super(m0574, self).__init__(0x0574, 0x00)
+        
 class m05d6(onebyte):
     def __init__(self):
         super(m05d6, self).__init__(0x05d6, 0x00)
