@@ -1103,6 +1103,10 @@ class a018b(enumblockarray):
     def __init__(self):
         super(a018b, self).__init__(0x018b)
 
+class a018c(enumblockarray):
+    def __init__(self):
+        super(a018c, self).__init__(0x018c)
+
 class a0197(enumblockarray):
     def __init__(self):
         super(a0197, self).__init__(0x0197)
