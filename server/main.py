@@ -4,6 +4,8 @@ import argparse
 import gevent
 import gevent.queue
 from gevent.server import StreamServer
+
+from accounts import Accounts
 from authcodehandler import AuthCodeHandler
 from clientreader import ClientReader
 from clientwriter import ClientWriter
@@ -33,8 +35,8 @@ def handleauthcodes(serverqueue, authcodequeue):
     authcodehandler = AuthCodeHandler(serverqueue, authcodequeue)
     authcodehandler.run()
 
-def handleserver(serverqueue, clientqueues, authcodequeue):
-    server = Server(serverqueue, clientqueues, authcodequeue)
+def handleserver(serverqueue, clientqueues, authcodequeue, accounts):
+    server = Server(serverqueue, clientqueues, authcodequeue, accounts)
     server.run()
 
 def handleclient(serverqueue, clientqueue, socket, address, dumpqueue):
@@ -51,8 +53,10 @@ def main(dump):
     serverqueue = gevent.queue.Queue()
     authcodequeue = gevent.queue.Queue()
     dumpqueue = gevent.queue.Queue() if dump else None
+
+    accounts = Accounts('accountdatabase.json')
     
-    gevent.spawn(handleserver, serverqueue, clientqueues, authcodequeue)
+    gevent.spawn(handleserver, serverqueue, clientqueues, authcodequeue, accounts)
     gevent.spawn(handledump, dumpqueue)
     gevent.spawn(handleauthcodes, serverqueue, authcodequeue)
 
@@ -62,7 +66,11 @@ def main(dump):
         handleclient(serverqueue, clientqueue, socket, address, dumpqueue)
 
     server = StreamServer(('0.0.0.0', 9000), handleclientwrapper)
-    server.serve_forever()
+
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        accounts.save()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
