@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from accounts import AccountInfo
 from datatypes import *
 import random
 import socket
@@ -7,12 +8,6 @@ import string
 
 class ProtocolViolation(Exception):
     pass
-
-class AccountInfo():
-    def __init__(self, loginname, authcode):
-        self.loginname = loginname
-        self.authcode = authcode
-        self.passwdhash = None
 
 class PlayerInfo():
     def __init__(self):
@@ -24,7 +19,7 @@ class PlayerInfo():
         self.authenticated = False
 
 class Server():
-    def __init__(self, serverqueue, clientqueues, authcodequeue):
+    def __init__(self, serverqueue, clientqueues, authcodequeue, accounts):
         self.serverqueue = serverqueue
         self.clientqueues = clientqueues
         self.authcodequeue = authcodequeue
@@ -49,8 +44,7 @@ class Server():
         ]
         self.players = {
         }
-        self.accounts = {
-        }
+        self.accounts = accounts
 
     def findserverbyid1(self, id1):
         for serverdata in self.servers:
@@ -72,6 +66,7 @@ class Server():
                     authcode = ''.join([random.choice(availablechars) for i in range(8)])
                     print('server: authcode requested for %s, returned %s' % (msg.loginname, authcode))
                     self.accounts[msg.loginname] = AccountInfo(msg.loginname, authcode)
+                    self.accounts.save()
                     self.authcodequeue.put((msg.loginname, authcode))
                     
                 elif isinstance(msg, ClientDisconnectedMessage):
@@ -178,6 +173,7 @@ class Server():
                                 
                                 self.accounts[currentplayer.loginname].passwdhash = currentplayer.passwdhash
                                 self.accounts[currentplayer.loginname].authcode = None
+                                self.accounts.save()
                                 currentplayer.authenticated = True
                             else:
                                 invalidcodemsg = a0175()
