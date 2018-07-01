@@ -158,11 +158,18 @@ class Server():
                             sendmsg(a0035().setserverdata(serverdata))
                             
                         elif request.ident == 0x0070: # chat
-                            request.content.append(m02fe().set(currentplayer.displayname))
-                            request.content.append(m06de().set(currentplayer.tag))
-                            
-                            for otherclientid in self.players.keys():
-                                sendmsg(request, otherclientid)
+                            if request.findbytype(m009e).value == 3:
+                                reply = a0070()
+                                reply.findbytype(m009e).set(3)
+                                reply.findbytype(m02e6).set('Unfortunately team messages are not yet supported. Use VGS for now.')
+                                reply.findbytype(m02fe).set('taserver')
+                                sendmsg(reply)
+                            else:
+                                request.content.append(m02fe().set(currentplayer.displayname))
+                                request.content.append(m06de().set(currentplayer.tag))
+                                
+                                for otherclientid in self.players.keys():
+                                    sendmsg(request, otherclientid)
 
                         elif request.ident == 0x0175: # redeem promotion code
                             authcode = request.findbytype(m0669).value

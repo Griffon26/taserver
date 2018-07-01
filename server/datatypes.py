@@ -1014,10 +1014,12 @@ class a006f(enumblockarray):
 class a0070(enumblockarray):
     def __init__(self):
         super(a0070, self).__init__(0x0070)
-
-class a0070(enumblockarray):
-    def __init__(self):
-        super(a0070, self).__init__(0x0070)
+        self.content = [
+            m009e(),
+            m02e6(),
+            m02fe(),
+            m06de()
+        ]
 
 class a0085(enumblockarray):
     def __init__(self):
