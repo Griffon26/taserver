@@ -82,22 +82,22 @@ class nbytes():
         return self
 
 class stringenum():
-    def __init__(self, ident, text):
+    def __init__(self, ident, value):
         self.ident = ident
-        self.text = text
+        self.value = value
 
-    def set(self, text):
-        self.text = text
+    def set(self, value):
+        self.value = value
         return self
 
     def write(self, stream):
-        stream.write(struct.pack('<HH', self.ident, len(self.text)) + self.text.encode('latin1'))
+        stream.write(struct.pack('<HH', self.ident, len(self.value)) + self.value.encode('latin1'))
 
     def read(self, stream):
         ident, length = struct.unpack('<HH', stream.read(4))
         if ident != self.ident:
             raise ParseError('self.ident(%02X) did not match parsed ident value (%02X)' % (self.ident, ident))
-        self.text = stream.read(length).decode('latin1')
+        self.value = stream.read(length).decode('latin1')
         return self
 
 class arrayofenumblockarrays():
@@ -132,6 +132,12 @@ class enumblockarray():
     def __init__(self, ident):
         self.ident = ident
         self.content = []
+
+    def findbytype(self, requestedtype):
+        for item in self.content:
+            if type(item) == requestedtype:
+                return item
+        return None
 
     def write(self, stream):
         stream.write(struct.pack('<HH', self.ident, len(self.content)))
@@ -892,7 +898,7 @@ class a0035(enumblockarray):
         ]
 
     def setserverdata(self, serverdata):
-        self.content[12].set(*serverdata['ip'], serverdata['port'])
+        self.findbytype(m024f).set(*serverdata['ip'], serverdata['port'])
         return self
 
 class a003a(enumblockarray):
@@ -911,8 +917,8 @@ class a003d(enumblockarray):
             m03e3(),
             m0348(),
             m0095(),
-            m034a().set('Griffon28'),
-            m06de().set('tag'),
+            m034a().set('Player'),
+            m06de().set(''),
             m0303(),
             m0296(),
             m05dc(),
@@ -945,6 +951,11 @@ class a003d(enumblockarray):
             m0663(),
             m068b(),
             m0681()]
+
+    def setplayer(self, name, tag):
+        self.findbytype(m034a).set(name)
+        self.findbytype(m06de).set(tag)
+        return self
 
 class a0041(enumblockarray):
     def __init__(self):
@@ -1000,7 +1011,7 @@ class a00b0(enumblockarray):
             ])
 
     def setserverid1(self, serverid1):
-        self.content[4].set(serverid1)
+        self.findbytype(m02c7).set(serverid1)
         return self
 
 class a00b1(enumblockarray):
@@ -1036,7 +1047,7 @@ class a00b4(enumblockarray):
         ]
 
     def setserverid2(self, serverid2):
-        self.content[10].set(serverid2)
+        self.findbytype(m02c4).set(serverid2)
         return self
         
 class a00d5(enumblockarray):
@@ -1049,7 +1060,7 @@ class a00d5(enumblockarray):
         ]
 
     def setservers(self, serverdatalist):
-        self.content[1].setservers(serverdatalist)
+        self.findbytype(m00e9).setservers(serverdatalist)
         return self
 
 class a011c(enumblockarray):
