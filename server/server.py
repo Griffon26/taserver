@@ -8,9 +8,17 @@ import string
 class ProtocolViolation(Exception):
     pass
 
+class AccountInfo():
+    def __init__(self, loginname, authcode):
+        self.loginname = loginname
+        self.authcode = authcode
+        self.passwdhash = None
+
 class PlayerInfo():
-    def __init__(self, name):
-        self.name = name
+    def __init__(self):
+        self.loginname = None
+        self.displayname = None
+        self.passwdhash = None
         self.tag = ''
         self.server = None
         self.authenticated = False
@@ -41,6 +49,8 @@ class Server():
         ]
         self.players = {
         }
+        self.accounts = {
+        }
 
     def findserverbyid1(self, id1):
         for serverdata in self.servers:
@@ -58,9 +68,11 @@ class Server():
         while True:
             for msg in self.serverqueue:
                 if isinstance(msg, AuthCodeRequestMessage):
-                    authcode = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(8)])
-                    print('server: authcode requested for %s, returned %s' % (msg.username, authcode))
-                    self.authcodequeue.put((msg.username, authcode))
+                    availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'iI')
+                    authcode = ''.join([random.choice(availablechars) for i in range(8)])
+                    print('server: authcode requested for %s, returned %s' % (msg.loginname, authcode))
+                    self.accounts[msg.loginname] = AccountInfo(msg.loginname, authcode)
+                    self.authcodequeue.put((msg.loginname, authcode))
                     
                 elif isinstance(msg, ClientDisconnectedMessage):
                     print('server: client(%s)\'s reader quit; stopping writer' % msg.clientid)
@@ -70,7 +82,7 @@ class Server():
 
                 elif isinstance(msg, ClientMessage):
                     if not msg.clientid in self.players:
-                        self.players[msg.clientid] = PlayerInfo('ConnectingPlayer')
+                        self.players[msg.clientid] = PlayerInfo()
                     currentplayer = self.players[msg.clientid]
 
                     def sendmsg(data, clientid=msg.clientid):
@@ -84,14 +96,20 @@ class Server():
                             sendmsg(a0197())
                             
                         elif request.ident == 0x003a:
-                            if request.findbytype(m0056) is None:
+                            if request.findbytype(m0056) is None: # request for login
                                 sendmsg(a003a())
-                            else:
-                                playername = request.findbytype(m0494).value
-                                currentplayer.name = playername
-                                currentplayer.authenticated = True # TODO: do some real checks
+                                
+                            else: # actual login
+                                currentplayer.loginname = request.findbytype(m0494).value
+                                currentplayer.passwdhash = request.findbytype(m0056).content
+
+                                if (currentplayer.loginname in self.accounts and
+                                    currentplayer.passwdhash == self.accounts[currentplayer.loginname].passwdhash):
+                                    currentplayer.authenticated = True
+                                
+                                currentplayer.displayname = ('' if currentplayer.authenticated else 'unverif.') + currentplayer.loginname
                                 sendmsg([
-                                    a003d().setplayer(playername, ''),
+                                    a003d().setplayer(currentplayer.displayname, ''),
                                     m0662(0x8898, 0xdaff),
                                     m0633(),
                                     m063e(),
@@ -140,11 +158,25 @@ class Server():
                             sendmsg(a0035().setserverdata(serverdata))
                             
                         elif request.ident == 0x0070: # chat
-                            request.content.append(m02fe().set(currentplayer.name))
+                            request.content.append(m02fe().set(currentplayer.displayname))
                             request.content.append(m06de().set(currentplayer.tag))
                             
                             for otherclientid in self.players.keys():
                                 sendmsg(request, otherclientid)
+
+                        elif request.ident == 0x0175: # redeem promotion code
+                            authcode = request.findbytype(m0669).value
+                            if (currentplayer.loginname in self.accounts and
+                                self.accounts[currentplayer.loginname].authcode == authcode):
+                                
+                                self.accounts[currentplayer.loginname].passwdhash = currentplayer.passwdhash
+                                self.accounts[currentplayer.loginname].authcode = None
+                                currentplayer.authenticated = True
+                            else:
+                                invalidcodemsg = a0175()
+                                invalidcodemsg.findbytype(m02fc).set(0x00019646)
+                                invalidcodemsg.findbytype(m0669).set(authcode)
+                                sendmsg(invalidcodemsg)
                             
                         else:
                             pass

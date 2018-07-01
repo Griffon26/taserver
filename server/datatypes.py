@@ -16,8 +16,8 @@ class ClientDisconnectedMessage():
         self.clientid = clientid
 
 class AuthCodeRequestMessage():
-    def __init__(self, username):
-        self.username = username
+    def __init__(self, loginname):
+        self.loginname = loginname
 
 def hexparse(hexstring):
     return bytes([int('0x' + hexbyte, base = 16) for hexbyte in hexstring.split()])
@@ -394,6 +394,10 @@ class m0348(fourbytes):
     def __init__(self):
         super(m0348, self).__init__(0x0348, 0x0023a039)
 
+class m035a(fourbytes): 
+    def __init__(self):
+        super(m035a, self).__init__(0x035a, 0x00000000)
+
 class m0363(fourbytes): 
     def __init__(self):
         super(m0363, self).__init__(0x0363, 0x00000000)
@@ -450,6 +454,10 @@ class m04cb(fourbytes):
     def __init__(self):
         super(m04cb, self).__init__(0x04cb, 0x00100000) # xp
 
+class m04d9(fourbytes): 
+    def __init__(self):
+        super(m04d9, self).__init__(0x04d9, 0x00000000)
+
 class m0502(fourbytes): 
     def __init__(self):
         super(m0502, self).__init__(0x0502, 0x00000000)
@@ -465,6 +473,10 @@ class m0558(fourbytes):
 class m058a(fourbytes): 
     def __init__(self):
         super(m058a, self).__init__(0x058a, 0x00000000)
+
+class m05cc(fourbytes): 
+    def __init__(self):
+        super(m05cc, self).__init__(0x05cc, 0x00000000)
 
 class m05cf(fourbytes): 
     def __init__(self):
@@ -545,6 +557,10 @@ class m0676(fourbytes):
 class m0677(fourbytes):
     def __init__(self):
         super(m0677, self).__init__(0x0677, 0x00000000)
+
+class m0683(fourbytes):
+    def __init__(self):
+        super(m0683, self).__init__(0x0683, 0x00000000)
 
 class m06bd(fourbytes): 
     def __init__(self): 
@@ -1096,6 +1112,18 @@ class a011c(enumblockarray):
 class a0175(enumblockarray):
     def __init__(self):
         super(a0175, self).__init__(0x0175)
+        self.content = [
+            m0442(),
+            m02fc(),
+            m05cf(),
+            m02ab(),
+            m04d9(),
+            m05cc(),
+            m035a(),
+            m0683(),
+            m0669(),
+            m049e()
+        ]
         
 class a0176(enumblockarray):
     def __init__(self):
@@ -1168,6 +1196,8 @@ class m0056():
         if ident != self.ident:
             raise ParseError('self.ident(%02X) did not match parsed ident value (%02X)' % (self.ident, ident))
         self.content = stream.read(length)
+        if len(self.content) < 72:
+            raise ParseError('self.content is not allowed to be shorter than 72 bytes')
         return self
 
 class originalfragment():
