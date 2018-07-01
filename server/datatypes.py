@@ -5,6 +5,20 @@ import struct
 class ParseError(Exception):
     pass
 
+class ClientMessage():
+    def __init__(self, clientid, clientseq, requests):
+        self.clientid = clientid
+        self.clientseq = clientseq
+        self.requests = requests
+
+class ClientDisconnectedMessage():
+    def __init__(self, clientid):
+        self.clientid = clientid
+
+class AuthCodeRequestMessage():
+    def __init__(self, username):
+        self.username = username
+
 def hexparse(hexstring):
     return bytes([int('0x' + hexbyte, base = 16) for hexbyte in hexstring.split()])
 

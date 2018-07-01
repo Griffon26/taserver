@@ -3,7 +3,8 @@
 import io
 import struct
 
-from datatypes import constructenumblockarray, ParseError
+from datatypes import ClientMessage, ClientDisconnectedMessage, \
+                      constructenumblockarray, ParseError
 from utils import hexdump
 
 def peekshort(infile):
@@ -103,12 +104,12 @@ class ClientReader():
         while True:
             try:
                 seq, msg = streamparser.parse()
-                self.serverqueue.put((self.clientid, seq, msg))
+                self.serverqueue.put(ClientMessage(self.clientid, seq, msg))
                 #print('client(%s): received incoming message' % self.clientid)
             except RuntimeError as e:
                 print('client(%s): caught exception: %s' % (self.clientid, str(e)))
                 break
 
-        self.serverqueue.put((self.clientid, None, None))
+        self.serverqueue.put(ClientDisconnectedMessage(self.clientid))
         print('client(%s): signalled server; reader exiting' % self.clientid)
 
