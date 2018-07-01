@@ -4,6 +4,7 @@ import argparse
 import gevent
 import gevent.queue
 from gevent.server import StreamServer
+from authcodehandler import AuthCodeHandler
 from clientreader import ClientReader
 from clientwriter import ClientWriter
 from server import Server
@@ -28,8 +29,12 @@ def handledump(dumpqueue):
             dumpfile.write('%s%04X  %s   .\n' % (indent, offset, ' '.join(bytelist[offset:])))
             dumpfile.flush()
 
-def handleserver(serverqueue, clientqueues):
-    server = Server(serverqueue, clientqueues)
+def handleauthcodes(serverqueue, authcodequeue):
+    authcodehandler = AuthCodeHandler(serverqueue, authcodequeue)
+    authcodehandler.run()
+
+def handleserver(serverqueue, clientqueues, authcodequeue):
+    server = Server(serverqueue, clientqueues, authcodequeue)
     server.run()
 
 def handleclient(serverqueue, clientqueue, socket, address, dumpqueue):
@@ -44,10 +49,12 @@ def handleclient(serverqueue, clientqueue, socket, address, dumpqueue):
 def main(dump):
     clientqueues = {}
     serverqueue = gevent.queue.Queue()
+    authcodequeue = gevent.queue.Queue()
     dumpqueue = gevent.queue.Queue() if dump else None
     
-    gevent.spawn(handleserver, serverqueue, clientqueues)
+    gevent.spawn(handleserver, serverqueue, clientqueues, authcodequeue)
     gevent.spawn(handledump, dumpqueue)
+    gevent.spawn(handleauthcodes, serverqueue, authcodequeue)
 
     def handleclientwrapper(socket, address):
         clientqueue = gevent.queue.Queue()

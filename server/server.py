@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-import socket
 from datatypes import *
+import random
+import socket
+import string
 
 class ProtocolViolation(Exception):
     pass
@@ -14,9 +16,10 @@ class PlayerInfo():
         self.authenticated = False
 
 class Server():
-    def __init__(self, serverqueue, clientqueues):
+    def __init__(self, serverqueue, clientqueues, authcodequeue):
         self.serverqueue = serverqueue
         self.clientqueues = clientqueues
+        self.authcodequeue = authcodequeue
         taserveripstr = socket.gethostbyname('ta.kfk4ever.com')
         taserverip = [int(part) for part in taserveripstr.split('.')]
         
@@ -53,25 +56,29 @@ class Server():
 
     def run(self):
         while True:
-            for clientid, clientseq, requests in self.serverqueue:
-                if not clientid in self.players:
-                    self.players[clientid] = PlayerInfo('ConnectingPlayer')
-                currentplayer = self.players[clientid]
-
-                if requests == None:
-                    print('server: client(%s)\'s reader quit; stopping writer' % clientid)
-                    self.clientqueues[clientid].put((None, None))
-                    del(self.clientqueues[clientid])
-                    del(self.players[clientid])
+            for msg in self.serverqueue:
+                if isinstance(msg, AuthCodeRequestMessage):
+                    authcode = ''.join([random.choice(string.ascii_letters + string.digits) for i in range(8)])
+                    print('server: authcode requested for %s, returned %s' % (msg.username, authcode))
+                    self.authcodequeue.put((msg.username, authcode))
                     
-                else:
+                elif isinstance(msg, ClientDisconnectedMessage):
+                    print('server: client(%s)\'s reader quit; stopping writer' % msg.clientid)
+                    self.clientqueues[msg.clientid].put((None, None))
+                    del(self.clientqueues[msg.clientid])
+                    del(self.players[msg.clientid])
 
-                    def sendmsg(msg, clientid=clientid):
-                        self.clientqueues[clientid].put((msg, clientseq))
+                elif isinstance(msg, ClientMessage):
+                    if not msg.clientid in self.players:
+                        self.players[msg.clientid] = PlayerInfo('ConnectingPlayer')
+                    currentplayer = self.players[msg.clientid]
+
+                    def sendmsg(data, clientid=msg.clientid):
+                        self.clientqueues[clientid].put((data, msg.clientseq))
 
                     print('server: received from client(%s) (seq = %s):\n%s' %
-                            (clientid, clientseq, '\n'.join(['  %04X' % req.ident for req in requests])))
-                    for request in requests:
+                            (msg.clientid, msg.clientseq, '\n'.join(['  %04X' % req.ident for req in msg.requests])))
+                    for request in msg.requests:
                         if request.ident == 0x01bc:
                             sendmsg(a01bc())
                             sendmsg(a0197())
