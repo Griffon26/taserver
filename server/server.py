@@ -19,14 +19,16 @@ class Server():
               'description' : 'server on 127.0.0.1',
               'motd' : 'Join this server to connect to a dedicated server running on the same machine as your client',
               'ip' : (127, 0, 0, 1),
-              'port' : 7777
+              'port' : 7777,
+              'players' : {}
             },
             { 'serverid1' : 0x00000002,
               'serverid2' : 0x80000002,
               'description' : 'server on ta.kfk4ever.com',
               'motd' : 'Join this server to connect to a dedicated server hosted by Griffon26',
               'ip' : taserverip,
-              'port' : 7777
+              'port' : 7777,
+              'players' : {}
             }
         ]
 
@@ -66,8 +68,9 @@ class Server():
                                 authenticated = True
                                 sendmsg(a003a())
                             else:
+                                playername = request.findbytype(m0494).value
                                 sendmsg([
-                                    a003d(),
+                                    a003d().setplayer(playername, ''),
                                     m0662(0x8898, 0xdaff),
                                     m0633(),
                                     m063e(),
@@ -83,9 +86,7 @@ class Server():
                         elif request.ident == 0x0033:
                             sendmsg(a0033())
                         elif request.ident == 0x00d5:
-                            if request.content[0].ident != 0x0228:
-                                raise RuntimeError('oh shit')
-                            if request.content[0].value == 1:
+                            if request.findbytype(m0228).value == 1:
                                 sendmsg(originalfragment(0x1EEB3, 0x20A10)) # 00d5 (map list)
                             else:
                                 sendmsg(a00d5().setservers(self.servers))   # 00d5 (server list)
@@ -98,21 +99,18 @@ class Server():
                         elif request.ident == 0x0176:
                             sendmsg(originalfragment(0x218FF, 0x219D1)) # 0176
                             sendmsg(originalfragment(0x28AC9, 0x2F4D7)) # 0177 (store 0218)
-                        elif request.ident == 0x00b1:
-                            if request.content[0].ident != 0x02c7:
-                                raise ProtocolViolation('oh shit')
-                            serverid1 = request.content[0].value
+                        elif request.ident == 0x00b1: # server join step 1
+                            serverid1 = request.findbytype(m02c7).value
                             serverdata = self.findserverbyid1(serverid1)
                             serverid2 = serverdata['serverid2']
                             sendmsg(a00b0(9).setserverid1(serverid1))
                             sendmsg(a00b4().setserverid2(serverid2))
-                        elif request.ident == 0x00b2:
-                            if request.content[0].ident != 0x02c4:
-                                raise ProtocolViolation('oh shit')
-                            serverdata = self.findserverbyid2(request.content[0].value)
+                        elif request.ident == 0x00b2: # server join step 2
+                            serverid2 = request.findbytype(m02c4).value
+                            serverdata = self.findserverbyid2(serverid2)
                             sendmsg(a00b0(10))
                             sendmsg(a0035().setserverdata(serverdata))
-                        elif request.ident == 0x0070:
+                        elif request.ident == 0x0070: # chat
                             request.content.append(m02fe().set('Griffon28'))
                             request.content.append(m06de().set('tag'))
                             sendmsg(request)
