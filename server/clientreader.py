@@ -35,7 +35,7 @@ class PacketReader():
         while len(self.buffer) < length:
             packetsizebytes = self.socket.recv(2)
             if len(packetsizebytes) == 0:
-                raise RuntimeError('client disconnected')
+                raise RuntimeError('Client disconnected')
             packetsize = struct.unpack('<H', packetsizebytes)[0]
             if packetsize == 0:
                 packetsize = 1450
@@ -46,7 +46,7 @@ class PacketReader():
                 self.dumpqueue.put(('client', packetsizebytes + packetbodybytes))
             self.buffer += packetbodybytes
             if len(packetbodybytes) != packetsize:
-                raise ParseError('The number of bytes available in the file (%d) is not equal to the number of bytes expected (%d)' %
+                raise RuntimeError('Received %d bytes, but expected %d. Client probably disconnected' %
                         (len(packetbodybytes), packetsize))
 
     def read(self, length):
