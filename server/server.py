@@ -88,11 +88,11 @@ class Server():
                     print('server: received from client(%s) (seq = %s):\n%s' %
                             (msg.clientid, msg.clientseq, '\n'.join(['  %04X' % req.ident for req in msg.requests])))
                     for request in msg.requests:
-                        if request.ident == 0x01bc:
+                        if isinstance(request, a01bc):
                             sendmsg(a01bc())
                             sendmsg(a0197())
                             
-                        elif request.ident == 0x003a:
+                        elif isinstance(request, a003a):
                             if request.findbytype(m0056) is None: # request for login
                                 sendmsg(a003a())
                                 
@@ -119,42 +119,42 @@ class Server():
                                     m05d6(),
                                     m00ba()
                                 ])
-                        elif request.ident == 0x0033:
+                        elif isinstance(request, a0033):
                             sendmsg(a0033())
                             
-                        elif request.ident == 0x00d5:
+                        elif isinstance(request, a00d5):
                             if request.findbytype(m0228).value == 1:
                                 sendmsg(originalfragment(0x1EEB3, 0x20A10)) # 00d5 (map list)
                             else:
                                 sendmsg(a00d5().setservers(self.servers))   # 00d5 (server list)
                                 
-                        elif request.ident == 0x0014:
+                        elif isinstance(request, a0014):
                             sendmsg(originalfragment(0x20A18, 0x20B3F)) # 0014 (class list)
                             
-                        elif request.ident == 0x018b:
+                        elif isinstance(request, a018b):
                             sendmsg(originalfragment(0x20B47, 0x20B4B)) # 018b
                             
-                        elif request.ident == 0x01b5:
+                        elif isinstance(request, a01b5):
                             sendmsg(originalfragment(0x20B53, 0x218F7)) # 01b5 (watch now)
                             
-                        elif request.ident == 0x0176:
+                        elif isinstance(request, a0176):
                             sendmsg(originalfragment(0x218FF, 0x219D1)) # 0176
                             sendmsg(originalfragment(0x28AC9, 0x2F4D7)) # 0177 (store 0218)
                             
-                        elif request.ident == 0x00b1: # server join step 1
+                        elif isinstance(request, a00b1): # server join step 1
                             serverid1 = request.findbytype(m02c7).value
                             serverdata = self.findserverbyid1(serverid1)
                             serverid2 = serverdata['serverid2']
                             sendmsg(a00b0(9).setserverid1(serverid1))
                             sendmsg(a00b4().setserverid2(serverid2))
                             
-                        elif request.ident == 0x00b2: # server join step 2
+                        elif isinstance(request, a00b2): # server join step 2
                             serverid2 = request.findbytype(m02c4).value
                             serverdata = self.findserverbyid2(serverid2)
                             sendmsg(a00b0(10))
                             sendmsg(a0035().setserverdata(serverdata))
                             
-                        elif request.ident == 0x0070: # chat
+                        elif isinstance(request, a0070): # chat
                             if request.findbytype(m009e).value == 3:
                                 reply = a0070()
                                 reply.findbytype(m009e).set(3)
@@ -168,7 +168,7 @@ class Server():
                                 for otherclientid in self.players.keys():
                                     sendmsg(request, otherclientid)
 
-                        elif request.ident == 0x0175: # redeem promotion code
+                        elif isinstance(request, a0175): # redeem promotion code
                             authcode = request.findbytype(m0669).value
                             if (currentplayer.loginname in self.accounts and
                                 self.accounts[currentplayer.loginname].authcode == authcode):
