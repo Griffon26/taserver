@@ -73,7 +73,9 @@ class Server():
                     print('server: client(%s)\'s reader quit; stopping writer' % msg.clientid)
                     self.clientqueues[msg.clientid].put((None, None))
                     del(self.clientqueues[msg.clientid])
-                    del(self.players[msg.clientid])
+
+                    # Remove and don't complain if it wasn't there yet
+                    self.players.pop(msg.clientid, None)
 
                 elif isinstance(msg, ClientMessage):
                     if not msg.clientid in self.players:
