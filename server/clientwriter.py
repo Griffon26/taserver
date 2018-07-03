@@ -47,14 +47,18 @@ class ClientWriter():
                 self.seq = 0
 
             stream.seek(0)
+            packetstream = io.BytesIO()
             for packet in packetize(stream.read()):
                 #print('Sending:')
                 #hexdump(packet)
                 
                 if self.dumpqueue:
                     self.dumpqueue.put(('server', packet))
-                    
-                self.socket.send(packet)
+
+                packetstream.write(packet)
+
+            packetstream.seek(0)
+            self.socket.send(packetstream.read())
                 
                     
         print('client(%s): writer exiting gracefully' % self.clientid)
