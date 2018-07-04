@@ -36,6 +36,10 @@ class onebyte():
         self.ident = ident
         self.value = value
 
+    def set(self, value):
+        self.value = value
+        return self
+
     def write(self, stream):
         stream.write(struct.pack('<HB', self.ident, self.value))
 
@@ -189,6 +193,10 @@ class m0442(onebyte):
 class m0574(onebyte):
     def __init__(self):
         super(m0574, self).__init__(0x0574, 0x00)
+        
+class m0592(onebyte):
+    def __init__(self):
+        super(m0592, self).__init__(0x0592, 0x00)
         
 class m05d6(onebyte):
     def __init__(self):
@@ -594,6 +602,10 @@ class m0701(fourbytes):
     def __init__(self): 
         super(m0701, self).__init__(0x0701, 0x00000000)
 
+class m0704(fourbytes): 
+    def __init__(self): 
+        super(m0704, self).__init__(0x0704, 0x00000000)
+
 #------------------------------------------------------------
 # nbytes
 #------------------------------------------------------------
@@ -737,6 +749,10 @@ class m06e9(stringenum):
     def __init__(self):
         super(m06e9, self).__init__(0x06e9, 'n')
 
+class m0705(stringenum):
+    def __init__(self):
+        super(m0705, self).__init__(0x0705, '')
+
 #------------------------------------------------------------
 # arrayofenumblockarrays
 #------------------------------------------------------------
@@ -745,13 +761,13 @@ class m00e9(arrayofenumblockarrays):
     def __init__(self):
         super(m00e9, self).__init__(0x00e9)
 
-    def setservers(self, serverdatalist):
+    def setservers(self, servers):
         self.arrays = []
-        for serverdata in serverdatalist:
+        for server in servers:
             self.arrays.append([
                 m0385(),
                 m06ee(),
-                m02c7().set(serverdata['serverid1']),
+                m02c7().set(server.serverid1),
                 m0008(),
                 m02ff(),
                 m02ed(),
@@ -777,8 +793,8 @@ class m00e9(arrayofenumblockarrays):
                 m06bf(),
                 m069c(),
                 m069b(),
-                m0300().set(serverdata['description']),
-                m01a4().set(serverdata['motd']),
+                m0300().set(server.description),
+                m01a4().set(server.motd),
                 m02b2(),
                 m02b5(),
                 m0347().set(0x00000018),
@@ -935,8 +951,8 @@ class a0035(enumblockarray):
             m02d8()
         ]
 
-    def setserverdata(self, serverdata):
-        self.findbytype(m024f).set(*serverdata['ip'], serverdata['port'])
+    def setserverdata(self, server):
+        self.findbytype(m024f).set(*server.ip, server.port)
         return self
 
 class a003a(enumblockarray):
@@ -1099,8 +1115,8 @@ class a00d5(enumblockarray):
             m0347().set(0x2f6b9f)
         ]
 
-    def setservers(self, serverdatalist):
-        self.findbytype(m00e9).setservers(serverdatalist)
+    def setservers(self, servers):
+        self.findbytype(m00e9).setservers(servers)
         return self
 
 class a00ec(enumblockarray):
