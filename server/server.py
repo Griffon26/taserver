@@ -9,14 +9,27 @@ import string
 class ProtocolViolation(Exception):
     pass
 
+class ServerInfo():
+    def __init__(self, serverid1, serverid2, description, motd, ip, port):
+        self.serverid1 = serverid1
+        self.serverid2 = serverid2
+        self.description = description
+        self.motd = motd
+        self.ip = ip
+        self.port = port
+        self.playerbeingkicked = None
+
 class PlayerInfo():
-    def __init__(self):
+    def __init__(self, playerid):
+        self.id = playerid
         self.loginname = None
         self.displayname = None
         self.passwdhash = None
         self.tag = ''
         self.server = None
         self.authenticated = False
+        self.lastreceivedseq = 0
+        self.vote = None
 
 class Server():
     def __init__(self, serverqueue, clientqueues, authcodequeue, accounts):
@@ -27,42 +40,56 @@ class Server():
         taserverip = [int(part) for part in taserveripstr.split('.')]
         
         self.servers = [
-            { 'serverid1' : 0x00000001,
-              'serverid2' : 0x80000001,
-              'description' : 'server on 127.0.0.1',
-              'motd' : 'Join this server to connect to a dedicated server running on the same machine as your client',
-              'ip' : (127, 0, 0, 1),
-              'port' : 7777,
-            },
-            { 'serverid1' : 0x00000002,
-              'serverid2' : 0x80000002,
-              'description' : 'server on ta.kfk4ever.com',
-              'motd' : 'Join this server to connect to a dedicated server hosted by Griffon26',
-              'ip' : taserverip,
-              'port' : 7777,
-            }
+            ServerInfo(
+                0x00000001,
+                0x80000001,
+                'server on 127.0.0.1',
+                'Join this server to connect to a dedicated server running on the same machine as your client',
+                (127, 0, 0, 1),
+                7777
+            ),
+            ServerInfo(
+                0x00000002,
+                0x80000002,
+                'server on ta.kfk4ever.com',
+                'Join this server to connect to a dedicated server hosted by Griffon26',
+                taserverip,
+                7777
+            )
         ]
         self.players = {
         }
         self.accounts = accounts
 
     def findserverbyid1(self, id1):
-        for serverdata in self.servers:
-            if serverdata['serverid1'] == id1:
-                return serverdata
+        for server in self.servers:
+            if server.serverid1 == id1:
+                return server
         raise ProtocolViolation('No server found with specified serverid1')
 
     def findserverbyid2(self, id2):
-        for serverdata in self.servers:
-            if serverdata['serverid2'] == id2:
-                return serverdata
+        for server in self.servers:
+            if server.serverid2 == id2:
+                return server
         raise ProtocolViolation('No server found with specified serverid2')
+
+    def findplayerbyid(self, playerid):
+        return self.players[playerid] if playerid in self.players else None
+
+    def findplayerbydisplayname(self, displayname):
+        for player in self.players.values():
+            if player.displayname == displayname:
+                return player
+        return None
+
+    def allplayersonserver(self, server):
+        return (p for p in self.players.values() if p.server is server)
 
     def run(self):
         while True:
             for msg in self.serverqueue:
                 if isinstance(msg, AuthCodeRequestMessage):
-                    availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'iI')
+                    availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
                     authcode = ''.join([random.choice(availablechars) for i in range(8)])
                     print('server: authcode requested for %s, returned %s' % (msg.loginname, authcode))
                     self.accounts[msg.loginname] = AccountInfo(msg.loginname, authcode)
@@ -79,14 +106,23 @@ class Server():
 
                 elif isinstance(msg, ClientMessage):
                     if not msg.clientid in self.players:
-                        self.players[msg.clientid] = PlayerInfo()
+                        self.players[msg.clientid] = PlayerInfo(msg.clientid)
                     currentplayer = self.players[msg.clientid]
+                    currentplayer.lastreceivedseq = msg.clientseq
 
                     def sendmsg(data, clientid=msg.clientid):
-                        self.clientqueues[clientid].put((data, msg.clientseq))
+                        self.clientqueues[clientid].put((data, self.players[clientid].lastreceivedseq))
+
+                    def sendallonserver(data, server):
+                        for player in self.allplayersonserver(server):
+                            sendmsg(data, player.id)
 
                     print('server: received from client(%s) (seq = %s):\n%s' %
                             (msg.clientid, msg.clientseq, '\n'.join(['  %04X' % req.ident for req in msg.requests])))
+
+                    # TODO: implement a state machine in player such that we only
+                    # attempt to parse all kinds of messages after the player has
+                    # authenticated and his data is in the self.players dict
                     for request in msg.requests:
                         if isinstance(request, a01bc):
                             sendmsg(a01bc())
@@ -143,16 +179,19 @@ class Server():
                             
                         elif isinstance(request, a00b1): # server join step 1
                             serverid1 = request.findbytype(m02c7).value
-                            serverdata = self.findserverbyid1(serverid1)
-                            serverid2 = serverdata['serverid2']
+                            server = self.findserverbyid1(serverid1)
+                            serverid2 = server.serverid2
                             sendmsg(a00b0(9).setserverid1(serverid1))
                             sendmsg(a00b4().setserverid2(serverid2))
                             
                         elif isinstance(request, a00b2): # server join step 2
                             serverid2 = request.findbytype(m02c4).value
-                            serverdata = self.findserverbyid2(serverid2)
+                            server = self.findserverbyid2(serverid2)
                             sendmsg(a00b0(10))
-                            sendmsg(a0035().setserverdata(serverdata))
+                            sendmsg(a0035().setserverdata(server))
+                            currentplayer.server = server
+
+                        # TODO: reset currentplayer.server when the player exits the match
                             
                         elif isinstance(request, a0070): # chat
                             if request.findbytype(m009e).value == 3:
@@ -164,9 +203,9 @@ class Server():
                             else:
                                 request.content.append(m02fe().set(currentplayer.displayname))
                                 request.content.append(m06de().set(currentplayer.tag))
-                                
-                                for otherclientid in self.players.keys():
-                                    sendmsg(request, otherclientid)
+
+                                if currentplayer.server:
+                                    sendallonserver(request, server)
 
                         elif isinstance(request, a0175): # redeem promotion code
                             authcode = request.findbytype(m0669).value
@@ -179,10 +218,77 @@ class Server():
                                 currentplayer.authenticated = True
                             else:
                                 invalidcodemsg = a0175()
-                                invalidcodemsg.findbytype(m02fc).set(0x00019646)
+                                invalidcodemsg.findbytype(m02fc).set(0x00019646) # message type
                                 invalidcodemsg.findbytype(m0669).set(authcode)
                                 sendmsg(invalidcodemsg)
+
+                        elif isinstance(request, a018c): # votekick
+                            response = request.findbytype(m0592)
                             
+                            if response is None: # votekick initiation
+                                otherplayer = self.findplayerbydisplayname(request.findbytype(m034a).value)
+                                
+                                if ( otherplayer and
+                                     currentplayer.server and
+                                     otherplayer.server and
+                                     currentplayer.server == otherplayer.server and
+                                     currentplayer.server.playerbeingkicked == None ):
+
+                                    # Start a new vote
+                                    reply = a018c()
+                                    reply.content = [
+                                        m02c4().set(currentplayer.server.serverid2),
+                                        m034a().set(currentplayer.displayname),
+                                        m0348().set(currentplayer.id),
+                                        m02fc().set(0x0001942F),
+                                        m0442(),
+                                        m0704().set(otherplayer.id),
+                                        m0705().set(otherplayer.displayname)
+                                    ]
+                                    sendallonserver(reply, currentplayer.server)
+
+                                    for player in self.players.values():
+                                        player.vote = None
+                                    currentplayer.server.playerbeingkicked = otherplayer
+                                    
+                            else: # votekick response
+                                if ( currentplayer.server and
+                                     currentplayer.server.playerbeingkicked != None ):
+                                    
+                                    currentplayer.vote = (response.value == 1)
+
+                                    votes = [p.vote for p in self.players.values() if p.vote is not None]
+                                    yesvotes = [v for v in votes if v]
+
+                                    if len(votes) >= 1:
+                                        playertokick = currentplayer.server.playerbeingkicked
+                                        
+                                        reply = a018c()
+                                        reply.content = [
+                                            m0348().set(playertokick.id),
+                                            m034a().set(playertokick.displayname)
+                                        ]
+                                        
+                                        if len(yesvotes) >= 1:
+                                            print('now I would like to kick')
+                                            # TODO: actually send the player to the main menu
+                                            reply.content.extend([
+                                                m02fc().set(0x00019430),
+                                                m0442().set(1)
+                                            ])
+                                        else:
+                                            reply.content.extend([
+                                                m02fc().set(0x00019431),
+                                                m0442().set(0)
+                                            ])
+
+                                        sendallonserver(reply, currentplayer.server)
+                                            
+                                        currentplayer.server.playerbeingkicked = None
+
+                            # TODO: implement removal of kickvote on timeout
+                                
+                                    
                         else:
                             pass
 
