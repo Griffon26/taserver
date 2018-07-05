@@ -75,6 +75,7 @@ def enum2desc(enumid):
         0x02c4 : 'server id 2',
         0x02c7 : 'server id 1',
         0x02e6 : 'message text',
+        0x02fc : 'std message id',
         0x02fe : 'sender name',
         0x0300 : 'map+gamemode, server or region name',
         0x0348 : 'player id',
@@ -102,7 +103,7 @@ def dumperror(infile, outfile, offset):
         outfile.write('%08X: %s  %s\n' % (offset, bytearray2hex(value), bytearray2ascii(value)))
         offset += 16
 
-toplevelids_enumblockarray = (20, 51, 53, 58, 61, 65, 109, 111, 112,
+toplevelids_enumblockarray = (20, 51, 53, 58, 61, 65, 76, 109, 111, 112,
                               133, 176, 177, 178, 179, 180, 213, 236,
                               251, 284, 283, 325, 373, 374, 375, 386,
                               387, 395, 396, 407, 437, 444, 454, 456)
