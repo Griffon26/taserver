@@ -181,13 +181,13 @@ class Server():
                             serverid1 = request.findbytype(m02c7).value
                             server = self.findserverbyid1(serverid1)
                             serverid2 = server.serverid2
-                            sendmsg(a00b0(9).setserverid1(serverid1))
+                            sendmsg(a00b0().setlength(9).setserverid1(serverid1))
                             sendmsg(a00b4().setserverid2(serverid2))
                             
                         elif isinstance(request, a00b2): # server join step 2
                             serverid2 = request.findbytype(m02c4).value
                             server = self.findserverbyid2(serverid2)
-                            sendmsg(a00b0(10))
+                            sendmsg(a00b0().setlength(10))
                             sendmsg(a0035().setserverdata(server))
                             currentplayer.server = server
 
@@ -254,6 +254,7 @@ class Server():
                             else: # votekick response
                                 if ( currentplayer.server and
                                      currentplayer.server.playerbeingkicked != None ):
+                                    currentserver = currentplayer.server
                                     
                                     currentplayer.vote = (response.value == 1)
 
@@ -261,30 +262,41 @@ class Server():
                                     yesvotes = [v for v in votes if v]
 
                                     if len(votes) >= 1:
-                                        playertokick = currentplayer.server.playerbeingkicked
-                                        
+                                        playertokick = currentserver.playerbeingkicked
+                                        kick = len(yesvotes) >= 1
+
                                         reply = a018c()
                                         reply.content = [
                                             m0348().set(playertokick.id),
                                             m034a().set(playertokick.displayname)
                                         ]
                                         
-                                        if len(yesvotes) >= 1:
-                                            print('now I would like to kick')
-                                            # TODO: actually send the player to the main menu
+                                        if kick:
                                             reply.content.extend([
                                                 m02fc().set(0x00019430),
                                                 m0442().set(1)
                                             ])
+                                            
                                         else:
                                             reply.content.extend([
                                                 m02fc().set(0x00019431),
                                                 m0442().set(0)
                                             ])
 
-                                        sendallonserver(reply, currentplayer.server)
-                                            
-                                        currentplayer.server.playerbeingkicked = None
+                                        sendallonserver(reply, currentserver)
+
+                                        if kick:
+                                            # TODO: figure out if a real votekick also causes an
+                                            # inconsistency between the menu you see and the one
+                                            # you're really in
+                                            for msg in [a00b0(),
+                                                        a0035().setmainmenu(),
+                                                        a006f()]:
+                                                sendmsg(msg, playertokick.id)
+                                            playertokick.server = None
+                                        
+                                        currentserver.playerbeingkicked = None
+                                        
 
                             # TODO: implement removal of kickvote on timeout
                                 
