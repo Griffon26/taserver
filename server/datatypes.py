@@ -316,7 +316,7 @@ class m02ab(fourbytes):
 
 class m02b2(fourbytes): 
     def __init__(self):
-        super(m02b2, self).__init__(0x02b2, 0x000005b0)
+        super(m02b2, self).__init__(0x02b2, 0x00000000)
 
 class m02b3(fourbytes): 
     def __init__(self):
@@ -428,7 +428,7 @@ class m03fd(fourbytes):
 
 class m042a(fourbytes): 
     def __init__(self):
-        super(m042a, self).__init__(0x042a, 0x00000007)
+        super(m042a, self).__init__(0x042a, 0x00000000)
 
 class m042b(fourbytes): 
     def __init__(self):
@@ -795,7 +795,7 @@ class m00e9(arrayofenumblockarrays):
                 m069b(),
                 m0300().set(server.description),
                 m01a4().set(server.motd),
-                m02b2(),
+                m02b2().set(0x000005A7),
                 m02b5(),
                 m0347().set(0x00000018),
                 m02f4(),
@@ -921,38 +921,46 @@ class a0035(enumblockarray):
         self.content = [
             m0348(),
             m0095(),
+            m02be().set(0x0000034f),
+            m02b2().set(0x000005A7),
+            m02b1().set('TrCTF-ArxNovena'),
+            m00a3().set('TribesGame.TrGame_TRCTF'),
+            m0326(),
+            m0600(),
+            m02ff().set(0x000198B1),
+            m01a3(),
+            m020b().set(0x000198B0),
+            m0345(),
+            m0346(),
+            m02d8()
+        ]
+
+    def setmainmenu(self):
+        self.findbytype(m02b2).set(0x000005c2)
+        self.findbytype(m02be).set(0x00002774)
+        self.findbytype(m02b1).set('TribesMainEntry')
+        self.findbytype(m00a3).set('TribesGame.TrEntryGame')
+        return self
+
+    def setserverdata(self, server):
+        self.content.extend([
             m02c7().set(0x00000000),
             m06ee(),
             m02c4(),
-            m02b2(),
             m037c(),
             m0452(),
             m0225(),
             m0363(),
             m0615(),
             m06ef(),
-            m024f().set(127,0,0,1,7777),
+            m024f().set(*server.ip, server.port),
             m0246().set(127,0,0,1,1234),
             m0448().set(4),
             m02b5(),
             m03e0(),
             m0347().set(7),
-            m060a(),
-            m02be().set(0x0000034f),
-            m02b1().set('TrCTF-ArxNovena'),
-            m00a3().set('TribesGame.TrGame_TRCTF'),
-            m0326(),
-            m0600(),
-            m02ff(),
-            m01a3(),
-            m020b(),
-            m0345(),
-            m0346(),
-            m02d8()
-        ]
-
-    def setserverdata(self, server):
-        self.findbytype(m024f).set(*server.ip, server.port)
+            m060a()
+        ])
         return self
 
 class a003a(enumblockarray):
@@ -1026,6 +1034,9 @@ class a006d(enumblockarray):
 class a006f(enumblockarray):
     def __init__(self):
         super(a006f, self).__init__(0x006f)
+        self.content = [
+            m00e9()
+        ]
 
 class a0070(enumblockarray):
     def __init__(self):
@@ -1042,7 +1053,7 @@ class a0085(enumblockarray):
         super(a0085, self).__init__(0x0085)
 
 class a00b0(enumblockarray):
-    def __init__(self, length):
+    def __init__(self):
         super(a00b0, self).__init__(0x00b0)
         self.content = [
             m035b(),
@@ -1052,6 +1063,8 @@ class a00b0(enumblockarray):
             m02c7(),
             m0333()
         ]
+
+    def setlength(self, length):
         if length == 9:
             self.content.extend([
                 m02ff(),
@@ -1065,6 +1078,7 @@ class a00b0(enumblockarray):
                 m0452(),
                 m0225()
             ])
+        return self
 
     def setserverid1(self, serverid1):
         self.findbytype(m02c7).set(serverid1)
