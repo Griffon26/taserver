@@ -41,4 +41,4 @@ If you do decide to try it out, here's how.
 
 ## Limitations
 
-This is very much a work in progress and even basic functionality (such as correct player names or chat) does not work correctly yet. This will come over time.
+This is very much a work in progress and even basic functionality may not work correctly yet. This will come over time.
