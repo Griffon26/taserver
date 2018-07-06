@@ -30,16 +30,25 @@ class PacketReader():
         self.buffer = bytes()
         self.dumpqueue = dumpqueue
 
+    def recvall(self, size):
+        remainingsize = size
+        msg = bytes()
+        while remainingsize > 0:
+            chunk = self.socket.recv(remainingsize)
+            if not chunk:
+                raise RuntimeError('Socket connection closed')
+            remainingsize -= len(chunk)
+            msg += chunk
+        return msg
+        
     def prepare(self, length):
         ''' Makes sure that at least length bytes are available in self.buffer '''
         while len(self.buffer) < length:
-            packetsizebytes = self.socket.recv(2)
-            if len(packetsizebytes) == 0:
-                raise RuntimeError('Client disconnected')
+            packetsizebytes = self.recvall(2)
             packetsize = struct.unpack('<H', packetsizebytes)[0]
             if packetsize == 0:
                 packetsize = 1450
-            packetbodybytes = self.socket.recv(packetsize)
+            packetbodybytes = self.recvall(packetsize)
             #print('Received:')
             #hexdump(packetbodybytes)
             if self.dumpqueue:
