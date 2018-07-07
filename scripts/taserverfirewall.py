@@ -46,7 +46,8 @@ def removeallrules():
     ]
     # Don't check for failure here, because it is expected to
     # fail if there are no left-over rules from a previous run.
-    sp.call(args)
+    print('Removing any previous TAserverfirewall rules')
+    sp.call(args, stdout=sp.DEVNULL)
 
 def removewhitelistrule(ip):
     args = [
@@ -63,9 +64,9 @@ def removewhitelistrule(ip):
         'remoteip=%d.%d.%d.%d' % ip
     ]
     try:
-        sp.check_call(args)
+        output = sp.check_output(args, text = True)
     except sp.CalledProcessError as e:
-        print('Failed to remove rule from firewall.')
+        print('Failed to remove rule from firewall:\n%s' % output)
 
 def addwhitelistrule(ip):
     args = [
@@ -84,10 +85,65 @@ def addwhitelistrule(ip):
         'remoteip=%d.%d.%d.%d' % ip
     ]
     try:
-        sp.check_call(args)
+        output = sp.check_output(args, text = True)
     except sp.CalledProcessError as e:
-        print('Failed to add rule to firewall.')
+        print('Failed to add rule to firewall:\n%s' % output)
 
+def findtribesascendrules():
+    args = [
+        'c:\\windows\\system32\\Netsh.exe',
+        'advfirewall',
+        'firewall',
+        'show',
+        'rule',
+        'name=all',
+        'dir=in',
+        'status=enabled',
+        'verbose'
+    ]
+    try:
+        output = sp.check_output(args, text = True)
+    except sp.CalledProcessError as e:
+        print('Failed to request firewall rules.')
+        output = ''
+
+    tarules = []
+    for line in output.splitlines():
+        if line.startswith('Rule Name:'):
+            newrule = {}
+        elif ':' in line:
+            key, value = line.split(':', maxsplit=1)
+            key = key.strip()
+            value = value.strip()
+            
+            newrule[key] = value
+
+            if key == 'Program' and value.lower().endswith('tribesascend.exe'):
+                tarules.append(newrule)
+
+    return tarules
+            
+def disablerulesforprogramname(programname):
+    args = [
+        'c:\\windows\\system32\\Netsh.exe',
+        'advfirewall',
+        'firewall',
+        'set',
+        'rule',
+        'name=all',
+        'dir=in',
+        'program="%s"' % programname,
+        'new',
+        'enable=no'
+    ]
+    
+    try:
+        print('Disabling rule for %s' % program)
+        output = sp.check_output(args, text = True)
+    except sp.CalledProcessError as e:
+        print('Failed to remove firewall rules for program %s. Output:\n%s' %
+              (programname, output))
+    
 def handleserver(serverqueue):
     try:
         iplist = readiplist(whitelistfilename)
@@ -96,9 +152,15 @@ def handleserver(serverqueue):
         print('File not found. Starting with empty IP list')
         iplist = set()
 
+    # First disable the rules that are created by Windows itself when you run tribesascend.exe
+    tribesascendprograms = set(rule['Program'] for rule in findtribesascendrules())
+    for program in tribesascendprograms:
+        disablerulesforprogramname(program)
+        
     # Default is to block, so for a whitelist we only need to add allow rules
     removeallrules()
     for ip in iplist:
+        print('Adding rule to allow %d.%d.%d.%d' % ip)
         addwhitelistrule(ip)
     
     while True:
@@ -135,7 +197,7 @@ def main(args):
     except KeyboardInterrupt:
         removeallrules()
 
-if __name__ == '__main__':
+if __name__ == '__main__':        
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     main(args)
