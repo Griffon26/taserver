@@ -11,6 +11,11 @@ class ClientMessage():
         self.clientseq = clientseq
         self.requests = requests
 
+class ClientConnectedMessage():
+    def __init__(self, clientid, clientaddress):
+        self.clientid = clientid
+        self.clientaddress = clientaddress
+        
 class ClientDisconnectedMessage():
     def __init__(self, clientid):
         self.clientid = clientid

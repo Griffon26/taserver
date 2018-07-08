@@ -3,7 +3,9 @@
 import io
 import struct
 
-from datatypes import ClientMessage, ClientDisconnectedMessage, \
+from datatypes import ClientMessage, \
+                      ClientConnectedMessage, \
+                      ClientDisconnectedMessage, \
                       constructenumblockarray, ParseError
 from utils import hexdump
 
@@ -101,11 +103,16 @@ class StreamParser():
 
 
 class ClientReader():
-    def __init__(self, socket, clientid, serverqueue, dumpqueue):
+    def __init__(self, socket, clientid, clientaddress, serverqueue, dumpqueue):
         self.clientid = clientid
         self.socket = socket
         self.serverqueue = serverqueue
         self.dumpqueue = dumpqueue
+
+        ip, port = clientaddress
+        playerip = tuple(int(ippart) for ippart in ip.split('.'))
+
+        self.serverqueue.put(ClientConnectedMessage(self.clientid, playerip))
 
     def run(self):
         packetreader = PacketReader(self.socket, self.dumpqueue)
