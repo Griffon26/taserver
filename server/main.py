@@ -41,8 +41,8 @@ def handleserver(serverqueue, clientqueues, authcodequeue, accounts):
 
 def handleclient(serverqueue, clientqueue, socket, address, dumpqueue):
     myid = id(gevent.getcurrent())
-    print('client(%s): connected' % myid)
-    reader = ClientReader(socket, myid, serverqueue, dumpqueue)
+    print('client(%s): connected from %s:%s' % (myid, address[0], address[1]))
+    reader = ClientReader(socket, myid, address, serverqueue, dumpqueue)
     gevent.spawn(reader.run)
 
     writer = ClientWriter(socket, myid, clientqueue, dumpqueue)

@@ -2,9 +2,15 @@
 
 from accounts import AccountInfo
 from datatypes import *
+import gevent.subprocess as sp
 import random
 import socket
 import string
+
+def allowplayeronserver(allow, player, server):
+    ipstring = '%d.%d.%d.%d' % player.ip
+    sp.check_call('..\\scripts\\modifywhitelist.py %s %s' %
+                   ('add' if allow else 'remove', ipstring), shell=True)
 
 class ProtocolViolation(Exception):
     pass
@@ -20,12 +26,13 @@ class ServerInfo():
         self.playerbeingkicked = None
 
 class PlayerInfo():
-    def __init__(self, playerid):
+    def __init__(self, playerid, playerip):
         self.id = playerid
         self.loginname = None
         self.displayname = None
         self.passwdhash = None
         self.tag = ''
+        self.ip = playerip
         self.server = None
         self.authenticated = False
         self.lastreceivedseq = 0
@@ -104,9 +111,10 @@ class Server():
                     # Remove and don't complain if it wasn't there yet
                     self.players.pop(msg.clientid, None)
 
+                elif isinstance(msg, ClientConnectedMessage):
+                    self.players[msg.clientid] = PlayerInfo(msg.clientid, msg.clientaddress)
+
                 elif isinstance(msg, ClientMessage):
-                    if not msg.clientid in self.players:
-                        self.players[msg.clientid] = PlayerInfo(msg.clientid)
                     currentplayer = self.players[msg.clientid]
                     currentplayer.lastreceivedseq = msg.clientseq
 
@@ -189,9 +197,15 @@ class Server():
                             server = self.findserverbyid2(serverid2)
                             sendmsg(a00b0().setlength(10))
                             sendmsg(a0035().setserverdata(server))
+                            
+                            allowplayeronserver(True, currentplayer, currentplayer.server)
                             currentplayer.server = server
 
-                        # TODO: reset currentplayer.server when the player exits the match
+                        elif isinstance(request, a00b3): # server disconnect
+                            # TODO: check on the real server if there's a response to this msg
+                            #serverid2 = request.findbytype(m02c4).value
+                            allowplayeronserver(False, currentplayer, currentplayer.server)
+                            currentplayer.server = None
                             
                         elif isinstance(request, a0070): # chat
                             if request.findbytype(m009e).value == 3:
@@ -294,6 +308,7 @@ class Server():
                                                         a006f()]:
                                                 sendmsg(msg, playertokick.id)
                                             playertokick.server = None
+                                            allowplayeronserver(False, playertokick, currentserver)
                                         
                                         currentserver.playerbeingkicked = None
                                         

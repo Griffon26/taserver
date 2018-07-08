@@ -60,11 +60,18 @@ def desc2suffix(desc):
 
 def enum2desc(enumid):
     knownenums = {
+        0x0014 : 'class menu content',
+        0x0070 : 'chat message',
         0x009e : 'message type (2=public, 3=team, 6=private)',
+        0x00b1 : 'server join step 1',
+        0x00b2 : 'server join step 2',
+        0x00b3 : 'server disconnect',
         0x00ec : '"/report" command',
         0x011b : 'player online/join notification',
+        0x0175 : 'promotion code',
         0x018c : '"/votekick" command',
         0x01a4 : 'motd/report text',
+        0x01b5 : 'watch now menu content',
         0x021a : 'game mode',
         0x0246 : 'two bytes unknown + port + IP (9002 server)',
         0x024f : 'two bytes unknown + port + IP (game server)',
