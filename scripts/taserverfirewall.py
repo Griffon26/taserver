@@ -64,9 +64,9 @@ def removewhitelistrule(ip):
         'remoteip=%d.%d.%d.%d' % ip
     ]
     try:
-        output = sp.check_output(args, text = True)
+        sp.check_output(args, text = True)
     except sp.CalledProcessError as e:
-        print('Failed to remove rule from firewall:\n%s' % output)
+        print('Failed to remove rule from firewall:\n%s' % e.output)
 
 def addwhitelistrule(ip):
     args = [
@@ -85,9 +85,9 @@ def addwhitelistrule(ip):
         'remoteip=%d.%d.%d.%d' % ip
     ]
     try:
-        output = sp.check_output(args, text = True)
+        sp.check_output(args, text = True)
     except sp.CalledProcessError as e:
-        print('Failed to add rule to firewall:\n%s' % output)
+        print('Failed to add rule to firewall:\n%s' % e.output)
 
 def findtribesascendrules():
     args = [
@@ -139,10 +139,10 @@ def disablerulesforprogramname(programname):
     
     try:
         print('Disabling rule for %s' % programname)
-        output = sp.check_output(args, text = True)
+        sp.check_output(args, text = True)
     except sp.CalledProcessError as e:
         print('Failed to remove firewall rules for program %s. Output:\n%s' %
-              (programname, output))
+              (programname, e.output))
     
 def handleserver(serverqueue):
     try:
