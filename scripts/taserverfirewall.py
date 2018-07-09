@@ -59,7 +59,7 @@ def removewhitelistrule(ip):
         'name="TAserverfirewall"',
         'protocol=udp',
         'dir=in',
-        'profile=Private',
+        'profile=any',
         'localport=7777',
         'remoteip=%d.%d.%d.%d' % ip
     ]
@@ -79,7 +79,7 @@ def addwhitelistrule(ip):
         'protocol=udp',
         'dir=in',
         'enable=yes',
-        'profile=Private',
+        'profile=any',
         'localport=7777',
         'action=allow',
         'remoteip=%d.%d.%d.%d' % ip
@@ -138,7 +138,7 @@ def disablerulesforprogramname(programname):
     ]
     
     try:
-        print('Disabling rule for %s' % program)
+        print('Disabling rule for %s' % programname)
         output = sp.check_output(args, text = True)
     except sp.CalledProcessError as e:
         print('Failed to remove firewall rules for program %s. Output:\n%s' %
