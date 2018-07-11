@@ -296,7 +296,7 @@ def hexdump2indentandbytesperline(hexdumpfile):
         if lineoffset > lastoffset[indent]:
             lastoffset[indent] = lineoffset
         else:
-            print('Warning: found non-increasing offset on line %d: %s\n' % (linenum, offsettext) +
+            print('Warning: found non-increasing offset on line %d: %s\n' % (linenum + 1, offsettext) +
                   '\n' +
                   'This is probably caused by a known bug in Wireshark,\n' +
                   'so we\'ll silently ignore this and stop parsing here.\n'
