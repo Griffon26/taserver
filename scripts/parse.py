@@ -278,7 +278,11 @@ def parse(infile):
         pass
 
 def hexdump2indentandbytesperline(hexdumpfile):
-    for line in hexdumpfile:
+    lastoffset = {
+        False : -1,
+        True : -1
+    }
+    for linenum, line in enumerate(hexdumpfile):
         indent = line.startswith('   ')
         line = line.strip()
         
@@ -287,6 +291,17 @@ def hexdump2indentandbytesperline(hexdumpfile):
         
         offsettext, rest = line.split('  ', maxsplit=1)
         hexpart, asciipart = rest.split('   ', maxsplit=1)
+
+        lineoffset = int(offsettext, 16)
+        if lineoffset > lastoffset[indent]:
+            lastoffset[indent] = lineoffset
+        else:
+            print('Warning: found non-increasing offset on line %d: %s\n' % (linenum, offsettext) +
+                  '\n' +
+                  'This is probably caused by a known bug in Wireshark,\n' +
+                  'so we\'ll silently ignore this and stop parsing here.\n'
+                  'Everything up to this point has been parsed successfully.')
+            break
 
         hexline = [int('0x%s' % hextext, 16) for hextext in hexpart.split()]
 
@@ -310,13 +325,15 @@ def hexdump2indentandbytesperblock(hexdumpfile):
     if collectedbytes:
         yield indent, collectedbytes
 
-def removepacketsizes(bytestreamin):
+def removepacketsizes(indent, bytestreamin):
     packetboundaries = []
     bytestreamout = io.BytesIO()
 
+    rawoffset = 0
     offset = 0
     while True:
         packetsizebytes = bytestreamin.read(2)
+        rawoffset += 2
         if len(packetsizebytes) == 0:
             break
         packetboundaries.append(offset)
@@ -325,9 +342,12 @@ def removepacketsizes(bytestreamin):
             packetsize = 1450
         packetbodybytes = bytestreamin.read(packetsize)
         bytestreamout.write(packetbodybytes)
-        offset += packetsize
         if len(packetbodybytes) != packetsize:
-            raise ParseError('The number of bytes available in the file (%d) is not equal to the number of bytes expected (%d)' % (len(packetbodybytes), packetsize))
+            raise ParseError('The number of bytes available in the file (%d) is not equal ' % len(packetbodybytes) +
+                             'to the number of bytes expected (%d) starting at offset ' % packetsize +
+                             '0x%08X in the %s datastream' % (rawoffset, "indented" if indent else "not indented"))
+        offset += packetsize
+        rawoffset += packetsize
     
     bytestreamout.seek(0)
     return packetboundaries, bytestreamout
@@ -379,7 +399,7 @@ if __name__ == '__main__':
             parsedbyoffset = {}
             for i in (False, True):
                 data[i].seek(0)
-                packetboundaries[i], payloaddata[i] = removepacketsizes(data[i])
+                packetboundaries[i], payloaddata[i] = removepacketsizes(i, data[i])
                 for payloadoffset, parsedoutput in parse(payloaddata[i]):
                     rawoffset = payloadoffset2rawoffset(payloadoffset, packetboundaries[i])
                     globaloffset = indentandrawoffset2globaloffset(i, rawoffset, offsetlist)
