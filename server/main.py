@@ -9,27 +9,14 @@ from accounts import Accounts
 from authcodehandler import AuthCodeHandler
 from clientreader import ClientReader
 from clientwriter import ClientWriter
+from hexdumper import HexDumper, dumpfilename
 from server import Server
 
-dumpfilename = 'taserverdump.hexdump'
 
 def handledump(dumpqueue):
-    if not dumpqueue:
-        return
-
-    clientoffset = 0
-    serveroffset = 0
-    with open(dumpfilename, 'wt') as dumpfile:
-        while True:
-            source, packetbytes = dumpqueue.get()
-            indent = '    ' if source == 'server' else ''
-            bytelist = [ '%02X' % b for b in packetbytes ]
-            offset = 0
-            while len(bytelist) > offset + 16:
-                dumpfile.write('%s%04X  %s   .\n' % (indent, clientoffset + offset, ' '.join(bytelist[offset:offset + 16])))
-                offset += 16
-            dumpfile.write('%s%04X  %s   .\n' % (indent, offset, ' '.join(bytelist[offset:])))
-            dumpfile.flush()
+    if dumpqueue:
+        hexdumper = HexDumper(dumpqueue)
+        hexdumper.run()
 
 def handleauthcodes(serverqueue, authcodequeue):
     authcodehandler = AuthCodeHandler(serverqueue, authcodequeue)
