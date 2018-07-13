@@ -7,6 +7,8 @@ from gevent.server import StreamServer
 import gevent.subprocess as sp
 import re
 
+# Unused for now, but it'll need to move to the login server
+'''
 whitelistfilename = 'firewallwhitelist.txt'
 
 def readiplist(filename):
@@ -34,6 +36,7 @@ def writeiplist(filename, iplist):
     with open(filename, 'wt') as f:
         for ip in sorted(iplist):
             f.write('%d.%d.%d.%d\n' % ip)
+'''
 
 def removeallrules():
     args = [
@@ -49,26 +52,9 @@ def removeallrules():
     print('Removing any previous TAserverfirewall rules')
     sp.call(args, stdout=sp.DEVNULL)
 
-def removewhitelistrule(ip):
-    args = [
-        'c:\\windows\\system32\\Netsh.exe',
-        'advfirewall',
-        'firewall',
-        'delete',
-        'rule',
-        'name="TAserverfirewall"',
-        'protocol=udp',
-        'dir=in',
-        'profile=any',
-        'localport=7777',
-        'remoteip=%d.%d.%d.%d' % ip
-    ]
-    try:
-        sp.check_output(args, text = True)
-    except sp.CalledProcessError as e:
-        print('Failed to remove rule from firewall:\n%s' % e.output)
-
-def addwhitelistrule(ip):
+def createinitialrules():
+    # The only initial rule we need is an allow rule for
+    # the login server
     args = [
         'c:\\windows\\system32\\Netsh.exe',
         'advfirewall',
@@ -80,8 +66,49 @@ def addwhitelistrule(ip):
         'dir=in',
         'enable=yes',
         'profile=any',
-        'localport=7777',
-        'action=allow',
+        'localport=9000',
+        'action=allow'
+    ]
+    try:
+        sp.check_output(args, text = True)
+    except sp.CalledProcessError as e:
+        print('Failed to add initial rule to firewall:\n%s' % e.output)
+
+def removerule(ip, port):
+    args = [
+        'c:\\windows\\system32\\Netsh.exe',
+        'advfirewall',
+        'firewall',
+        'delete',
+        'rule',
+        'name="TAserverfirewall"',
+        'protocol=udp',
+        'dir=in',
+        'profile=any',
+        'localport=%d' % port,
+        'remoteip=%d.%d.%d.%d' % ip
+    ]
+    try:
+        sp.check_output(args, text = True)
+    except sp.CalledProcessError as e:
+        print('Failed to remove rule from firewall:\n%s' % e.output)
+
+def addrule(ip, port, allow_or_block):
+    if allow_or_block not in ('allow', 'block'):
+        raise RuntimeError('Invalid argument provided: %s' % allow_or_block)
+    args = [
+        'c:\\windows\\system32\\Netsh.exe',
+        'advfirewall',
+        'firewall',
+        'add',
+        'rule',
+        'name="TAserverfirewall"',
+        'protocol=udp',
+        'dir=in',
+        'enable=yes',
+        'profile=any',
+        'localport=%d' % port,
+        'action=%s' % allow_or_block,
         'remoteip=%d.%d.%d.%d' % ip
     ]
     try:
@@ -145,39 +172,43 @@ def disablerulesforprogramname(programname):
               (programname, e.output))
     
 def handleserver(serverqueue):
-    try:
-        iplist = readiplist(whitelistfilename)
-        print('Loaded IP list from %s' % whitelistfilename)
-    except FileNotFoundError:
-        print('File not found. Starting with empty IP list')
-        iplist = set()
+    lists = {
+        'whitelist' : {
+            'ruletype' : 'allow',
+            'port' : 7777,
+            'IPs' : set(),
+        },
+        'blacklist' : {
+            'ruletype' : 'block',
+            'port' : 9000,
+            'IPs' : set()
+        }
+    }
 
     # First disable the rules that are created by Windows itself when you run tribesascend.exe
     tribesascendprograms = set(rule['Program'] for rule in findtribesascendrules())
     for program in tribesascendprograms:
         disablerulesforprogramname(program)
-        
-    # Default is to block, so for a whitelist we only need to add allow rules
+
     removeallrules()
-    for ip in iplist:
-        print('Adding rule to allow %d.%d.%d.%d' % ip)
-        addwhitelistrule(ip)
+    createinitialrules()
     
     while True:
-        action, ip = serverqueue.get()
+        listtype, action, ip = serverqueue.get()
+        thelist = lists[listtype]
 
         if action == 'add':
-            if ip not in iplist:
-                print('add firewall rule for', ip)
-                iplist.add(ip)
-                addwhitelistrule(ip)
+            if ip not in thelist['IPs']:
+                print('add %sing firewall rule for %s to port %d' %
+                      (thelist['ruletype'], ip, thelist['port']))
+                thelist['IPs'].add(ip)
+                addrule(ip, thelist['port'], thelist['ruletype'])
         else:
-            if ip in iplist:
-                print('remove firewall rule for', ip)
-                iplist.remove(ip)
-                removewhitelistrule(ip)
-
-        writeiplist(whitelistfilename, iplist)
+            if ip in thelist['IPs']:
+                print('remove %sing firewall rule for %s to port %d' %
+                      (thelist['ruletype'], ip, thelist['port']))
+                thelist['IPs'].remove(ip)
+                removerule(ip, thelist['port'])
        
 def main(args):
     serverqueue = gevent.queue.Queue()
@@ -185,11 +216,14 @@ def main(args):
     gevent.spawn(handleserver, serverqueue)
 
     def handleclient(socket, address):
-        ipbytes = socket.recv(5)
+        ipbytes = socket.recv(6)
         socket.close()
-        if(len(ipbytes) == 5):
-            serverqueue.put( ('add' if ipbytes[0] == ord('a') else 'remove',
-                              (ipbytes[1], ipbytes[2], ipbytes[3], ipbytes[4])) )
+        if(len(ipbytes) == 6):
+            listtype = 'whitelist' if ipbytes[0] == ord('w') else 'blacklist'
+            action = 'add' if ipbytes[1] == ord('a') else 'remove'
+            serverqueue.put( (listtype,
+                              action,
+                              (ipbytes[2], ipbytes[3], ipbytes[4], ipbytes[5])) )
 
     server = StreamServer(('127.0.0.1', 9801), handleclient)
     try:

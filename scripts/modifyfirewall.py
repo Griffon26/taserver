@@ -11,10 +11,11 @@ def main(args):
     try:
         sock.connect(serveraddress)
 
+        listtype = b'w' if args.listtype == 'whitelist' else b'b'
         action = b'a' if args.action == 'add' else b'r'
         ipparts = bytes(int(ippart) for ippart in args.ip.split('.'))
 
-        data = action + ipparts
+        data = listtype + action + ipparts
         sock.send(data)
         sock.close()
 
@@ -31,6 +32,10 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('listtype',
+                        type=str,
+                        choices=['blacklist', 'whitelist'],
+                        help='Which list to modify')
     parser.add_argument('action',
                         type=str,
                         choices=['add', 'remove'],

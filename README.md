@@ -33,11 +33,13 @@ If you do decide to try it out, here's how.
 
 3. Start the login server by running the main.py script in the server directory of this repository (preferably from a command window so you can read the errors if it exits for some reason).
 
-4. Start both the dedicated server and the client using the shortcuts you created
+4. As administrator start taserverfirewall.py in the script directory of this repository. This script will manage firewall rules to keep kicked players out and only allow logged in players on the game server.
 
-5. You can log on with any credentials. They are not checked (yet).
+5. Start both the dedicated server and the client using the shortcuts you created
 
-6. There should be only one server in the server list. When you connect to that you will be connecting to your own dedicated server.
+6. You can log on with any credentials. They are not checked (yet).
+
+7. There should be two servers in the server list. When you connect to the "server on 127.0.0.1" you will be connecting to your own dedicated server.
 
 ## Limitations
 
