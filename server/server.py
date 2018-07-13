@@ -7,10 +7,19 @@ import random
 import socket
 import string
 
-def allowplayeronserver(allow, player, server):
+def modifygameserverwhitelist(add_or_remove, player, server):
+    if add_or_remove not in ('add', 'remove'):
+        raise RuntimeError('Invalid argument provided')
     ipstring = '%d.%d.%d.%d' % player.ip
-    sp.call('..\\scripts\\modifywhitelist.py %s %s' %
-             ('add' if allow else 'remove', ipstring), shell=True)
+    sp.call('..\\scripts\\modifyfirewall.py whitelist %s %s' %
+             (add_or_remove, ipstring), shell=True)
+
+def modifyloginserverblacklist(add_or_remove, player):
+    if add_or_remove not in ('add', 'remove'):
+        raise RuntimeError('Invalid argument provided')
+    ipstring = '%d.%d.%d.%d' % player.ip
+    sp.call('..\\scripts\\modifyfirewall.py blacklist %s %s' %
+             (add_or_remove, ipstring), shell=True)
 
 class ProtocolViolation(Exception):
     pass
@@ -207,13 +216,13 @@ class Server():
                 sendmsg(a00b0().setlength(10))
                 sendmsg(a0035().setserverdata(server))
                 
-                allowplayeronserver(True, currentplayer, currentplayer.server)
+                modifygameserverwhitelist('add', currentplayer, currentplayer.server)
                 currentplayer.server = server
 
             elif isinstance(request, a00b3): # server disconnect
                 # TODO: check on the real server if there's a response to this msg
                 #serverid2 = request.findbytype(m02c4).value
-                allowplayeronserver(False, currentplayer, currentplayer.server)
+                modifygameserverwhitelist('remove', currentplayer, currentplayer.server)
                 currentplayer.server = None
                 
             elif isinstance(request, a0070): # chat
@@ -317,7 +326,8 @@ class Server():
                                             a006f()]:
                                     sendmsg(msg, playertokick.id)
                                 playertokick.server = None
-                                allowplayeronserver(False, playertokick, currentserver)
+                                modifygameserverwhitelist('remove', playertokick, currentserver)
+                                modifyloginserverblacklist('add', playertokick)
                             
                             currentserver.playerbeingkicked = None
 
