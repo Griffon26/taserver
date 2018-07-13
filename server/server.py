@@ -9,8 +9,8 @@ import string
 
 def allowplayeronserver(allow, player, server):
     ipstring = '%d.%d.%d.%d' % player.ip
-    sp.check_call('..\\scripts\\modifywhitelist.py %s %s' %
-                   ('add' if allow else 'remove', ipstring), shell=True)
+    sp.call('..\\scripts\\modifywhitelist.py %s %s' %
+             ('add' if allow else 'remove', ipstring), shell=True)
 
 class ProtocolViolation(Exception):
     pass

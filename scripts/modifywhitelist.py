@@ -8,16 +8,26 @@ serveraddress = ("127.0.0.1", 9801)
 
 def main(args):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(serveraddress)
+    try:
+        sock.connect(serveraddress)
 
-    action = b'a' if args.action == 'add' else b'r'
-    ipparts = bytes(int(ippart) for ippart in args.ip.split('.'))
+        action = b'a' if args.action == 'add' else b'r'
+        ipparts = bytes(int(ippart) for ippart in args.ip.split('.'))
 
-    data = action + ipparts
-    sock.send(data)
-    sock.close()
+        data = action + ipparts
+        sock.send(data)
+        sock.close()
 
-    print('Sent data', data)
+        print('Sent data', data)
+        return 0
+    
+    except ConnectionRefusedError:
+        print('-------------------------------------------------------------\n'
+              'Warning: Failed to connect to taserverfirewall for modifying \n'
+              'the firewall rules on the game server.\n'
+              'Did you forget to start taserverfirewall.py there?\n'
+              '-------------------------------------------------------------')
+        return -1
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -29,4 +39,7 @@ if __name__ == '__main__':
                         type=str,
                         help='an IP address')
     args = parser.parse_args()
-    main(args)
+
+    retcode = main(args)
+
+    exit(retcode)
