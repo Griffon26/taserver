@@ -80,8 +80,8 @@ def enum2desc(enumid):
         0x02b1 : 'internal map name',
         0x02b2 : 'map id',
         0x02b6 : 'map name',
-        0x02c4 : 'server id 2',
-        0x02c7 : 'server id 1',
+        0x02c4 : 'match id?',
+        0x02c7 : 'server id',
         0x02e6 : 'message text',
         0x02fc : 'std message id',
         0x02fe : 'sender name',
@@ -299,7 +299,7 @@ def hexdump2indentandbytesperline(hexdumpfile):
             print('Warning: found non-increasing offset on line %d: %s\n' % (linenum + 1, offsettext) +
                   '\n' +
                   'This is probably caused by a known bug in Wireshark,\n' +
-                  'so we\'ll silently ignore this and stop parsing here.\n'
+                  'so we\'ll just ignore this and stop parsing here.\n'
                   'Everything up to this point has been parsed successfully.')
             break
 
