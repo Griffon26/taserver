@@ -166,7 +166,7 @@ class Server():
                         currentplayer.passwdhash == self.accounts[currentplayer.loginname].passwdhash):
                         currentplayer.authenticated = True
                     
-                    currentplayer.displayname = ('' if currentplayer.authenticated else 'unverif.') + currentplayer.loginname
+                    currentplayer.displayname = ('' if currentplayer.authenticated else 'unverif-') + currentplayer.loginname
                     sendmsg([
                         a003d().setplayer(currentplayer.displayname, ''),
                         m0662(0x8898, 0xdaff),
@@ -226,18 +226,33 @@ class Server():
                 currentplayer.server = None
                 
             elif isinstance(request, a0070): # chat
-                if request.findbytype(m009e).value == 3:
+                messagetype = request.findbytype(m009e).value
+                
+                if messagetype == 3: # team
                     reply = a0070()
                     reply.findbytype(m009e).set(3)
                     reply.findbytype(m02e6).set('Unfortunately team messages are not yet supported. Use VGS for now.')
                     reply.findbytype(m02fe).set('taserver')
                     sendmsg(reply)
-                else:
+                    
+                elif messagetype == 6: # private
+                    addressedplayername = request.findbytype(m034a).value;
+                    addressedplayer = self.findplayerbydisplayname(addressedplayername)
+                    if addressedplayer:
+                        request.content.append(m02fe().set(currentplayer.displayname))
+                        request.content.append(m06de().set(currentplayer.tag))
+                        
+                        sendmsg(request, clientid=currentplayer.id)
+                        
+                        if currentplayer.id != addressedplayer.id:
+                            sendmsg(request, clientid=addressedplayer.id)
+                    
+                else: # public
                     request.content.append(m02fe().set(currentplayer.displayname))
                     request.content.append(m06de().set(currentplayer.tag))
 
                     if currentplayer.server:
-                        sendallonserver(request, server)
+                        sendallonserver(request, currentplayer.server)
 
             elif isinstance(request, a0175): # redeem promotion code
                 authcode = request.findbytype(m0669).value
