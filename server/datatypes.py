@@ -30,9 +30,10 @@ class ClientMessage():
         self.requests = requests
 
 class ClientConnectedMessage():
-    def __init__(self, clientid, clientaddress):
+    def __init__(self, clientid, clientaddress, clientport):
         self.clientid = clientid
         self.clientaddress = clientaddress
+        self.clientport = clientport
         
 class ClientDisconnectedMessage():
     def __init__(self, clientid):
@@ -200,6 +201,10 @@ class enumblockarray():
 #------------------------------------------------------------
 # onebyte
 #------------------------------------------------------------
+
+class m01fa(onebyte):
+    def __init__(self):
+        super(m01fa, self).__init__(0x01fa, 0x00)
 
 class m02c9(onebyte):
     def __init__(self):

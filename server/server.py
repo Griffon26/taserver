@@ -25,6 +25,9 @@ import random
 import socket
 import string
 
+def tuple2ipstring(iptuple):
+    return '%d.%d.%d.%d' % iptuple
+
 def modifygameserverwhitelist(add_or_remove, player, server):
     if add_or_remove not in ('add', 'remove'):
         raise RuntimeError('Invalid argument provided')
@@ -53,13 +56,14 @@ class ServerInfo():
         self.playerbeingkicked = None
 
 class PlayerInfo():
-    def __init__(self, playerid, playerip):
+    def __init__(self, playerid, playerip, playerport):
         self.id = playerid
         self.loginname = None
         self.displayname = None
         self.passwdhash = None
         self.tag = ''
         self.ip = playerip
+        self.port = playerport
         self.server = None
         self.authenticated = False
         self.lastreceivedseq = 0
@@ -70,24 +74,36 @@ class Server():
         self.serverqueue = serverqueue
         self.clientqueues = clientqueues
         self.authcodequeue = authcodequeue
+        
         taserveripstr = socket.gethostbyname('ta.kfk4ever.com')
         taserverip = [int(part) for part in taserveripstr.split('.')]
+
+        samserveripstr = socket.gethostbyname('sam.kfk4ever.com')
+        samserverip = [int(part) for part in samserveripstr.split('.')]
         
         self.servers = [
             ServerInfo(
                 0x00000001,
                 0x80000001,
-                'server on 127.0.0.1',
-                'Join this server to connect to a dedicated server running on the same machine as your client',
+                '127.0.0.1',
+                'Join this server to connect to a game server running on the same machine as your client',
                 (127, 0, 0, 1),
                 7777
             ),
             ServerInfo(
                 0x00000002,
                 0x80000002,
-                'server on ta.kfk4ever.com',
-                'Join this server to connect to a dedicated server hosted by Griffon26',
+                'ta.kfk4ever.com (AWS t2.micro)',
+                'Join this server to connect to a game server hosted by Griffon26',
                 taserverip,
+                7777
+            ),
+            ServerInfo(
+                0x00000003,
+                0x80000003,
+                "sam.kfk4ever.com (AWS t2.medium)",
+                'Join this server to connect to a game server hosted by Sam',
+                samserverip,
                 7777
             )
         ]
@@ -147,7 +163,7 @@ class Server():
         self.players.pop(msg.clientid, None)
 
     def handleclientconnectedmessage(self, msg):
-        self.players[msg.clientid] = PlayerInfo(msg.clientid, msg.clientaddress)
+        self.players[msg.clientid] = PlayerInfo(msg.clientid, msg.clientaddress, msg.clientport)
 
     def handleclientmessage(self, msg):
 
@@ -161,8 +177,12 @@ class Server():
             for player in self.allplayersonserver(server):
                 sendmsg(data, player.id)
 
-        print('server: received from client(%s) (seq = %s):\n%s' %
-                (msg.clientid, msg.clientseq, '\n'.join(['  %04X' % req.ident for req in msg.requests])))
+        print('server: client(%s, %s:%s, "%s") sent:\n%s' %
+                (msg.clientid,
+                 tuple2ipstring(currentplayer.ip),
+                 currentplayer.port,
+                 currentplayer.displayname,
+                 '\n'.join(['  %04X' % req.ident for req in msg.requests])))
 
         # TODO: implement a state machine in player such that we only
         # attempt to parse all kinds of messages after the player has

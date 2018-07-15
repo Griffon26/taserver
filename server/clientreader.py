@@ -130,7 +130,7 @@ class ClientReader():
         ip, port = clientaddress
         playerip = tuple(int(ippart) for ippart in ip.split('.'))
 
-        self.serverqueue.put(ClientConnectedMessage(self.clientid, playerip))
+        self.serverqueue.put(ClientConnectedMessage(self.clientid, playerip, port))
 
     def run(self):
         packetreader = PacketReader(self.socket, self.dumpqueue)
