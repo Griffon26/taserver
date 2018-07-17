@@ -18,13 +18,17 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from typing import Optional, Set
 import io
 import os
 import struct
 import sys
 import time
 
+from taconstants import TAConstants, read_taconstants
+
 last_seen_seqnr = None
+knownTAConstants = read_taconstants('known_constants.txt')
 
 class ParseError(Exception):
     pass
@@ -73,8 +77,11 @@ def offset2string(offset):
     ''' Put a ` character after the offset to facilitate text searches '''
     return '%08X`  ' % offset
 
-def desc2suffix(desc):
-    return ' (%s)' % desc if desc else ''
+def desc2suffix(desc: str, valuedescSet: Optional[Set[str]] = None) -> str:
+    if valuedescSet is not None:
+        return ' (%s) (value matches constants: %s)' % (desc, str(valuedescSet)) if desc else ''
+    else:
+        return ' (%s)' % desc if desc else ''
 
 def enum2desc(enumid):
     knownenums = {
@@ -93,6 +100,7 @@ def enum2desc(enumid):
         0x021a : 'game mode',
         0x0246 : 'two bytes unknown + port + IP (9002 server)',
         0x024f : 'two bytes unknown + port + IP (game server)',
+        0x0261 : 'integer-valued menu option',
         0x026f : 'purchase name',
         0x0296 : 'player rank (unused)',
         0x02b1 : 'internal map name',
@@ -106,6 +114,8 @@ def enum2desc(enumid):
         0x0300 : 'map+gamemode, server or region name',
         0x0348 : 'player id',
         0x034a : 'player name',
+        0x0369 : 'menu option identifier',
+        0x0437 : 'string-valued menu option',
         0x0448 : 'region id',
         0x0452 : 'team id',
         0x0494 : 'login name',
@@ -121,6 +131,15 @@ def enum2desc(enumid):
         0x0705 : 'player name to kick'
     }
     return knownenums[enumid] if enumid in knownenums else None
+
+def enumwithvalue2valuedesc(constants: TAConstants, enumid: int, value: int) -> Optional[Set[str]]:
+    enums_to_check_constants_against = {
+        0x0261,
+        0x0369,
+        0x0437
+    }
+    return constants[value] if enumid in enums_to_check_constants_against and value in constants else None
+    
 
 def dumperror(infile, outfile, offset):
     outfile.write('\n\n************\n')
@@ -170,10 +189,17 @@ def parsesalt(infile, outfile, nestinglevel):
     salt = bytearray2hex(readbytearray(infile, 16))
     outfile.write(salt + ' (salt)\n')
 
-def parsesizedcontent(infile, outfile, nestinglevel, desc):
+def parsesizedcontent(infile, outfile, nestinglevel, enumid):
     length = readshort(infile)
     text = readstring(infile, length)
-    outfile.write('"%s"%s\n' % (text, desc2suffix(desc)))
+    valuedescSet = None
+    # See if text parses to int, it might be a known constant value
+    try:
+        value = int(text, 0)
+        valuedescSet = enumwithvalue2valuedesc(knownTAConstants, enumid, value)
+    except ValueError:
+        pass
+    outfile.write('"%s"%s\n' % (text, desc2suffix(enum2desc(enumid), valuedescSet)))
 
 def parsearrayofenumblockarrays(infile, outfile, nestinglevel):
     size = readshort(infile)
@@ -181,25 +207,30 @@ def parsearrayofenumblockarrays(infile, outfile, nestinglevel):
     for i in range(size):
         parseenumblockarray(infile, outfile, nestinglevel + 1, True, prefix=index2prefix(i))
 
-def parseonebyte(infile, outfile, nestinglevel, desc):
+def parseonebyte(infile, outfile, nestinglevel, enumid):
     value = readbyte(infile)
-    outfile.write('%02X%s\n' % (value, desc2suffix(desc)))
+    valuedescSet = enumwithvalue2valuedesc(knownTAConstants, enumid, value)
+    outfile.write('%02X%s\n' % (value, desc2suffix(enum2desc(enumid), valuedescSet)))
     
-def parsetwobytes(infile, outfile, nestinglevel, desc):
+def parsetwobytes(infile, outfile, nestinglevel, enumid):
     value = readshort(infile)
-    outfile.write('%04X%s\n' % (value, desc2suffix(desc)))
+    valuedescSet = enumwithvalue2valuedesc(knownTAConstants, enumid, value)
+    outfile.write('%04X%s\n' % (value, desc2suffix(enum2desc(enumid), valuedescSet)))
 
-def parsethreebytes(infile, outfile, nestinglevel, desc):
+def parsethreebytes(infile, outfile, nestinglevel, enumid):
     value = bytearray2hex(readbytearray(infile, 3))
-    outfile.write('%s%s\n' % (value, desc2suffix(desc)))
+    valuedescSet = enumwithvalue2valuedesc(knownTAConstants, enumid, value)
+    outfile.write('%s%s\n' % (value, desc2suffix(enum2desc(enumid), valuedescSet)))
 
-def parsefourbytes(infile, outfile, nestinglevel, desc):
+def parsefourbytes(infile, outfile, nestinglevel, enumid):
     value = readlong(infile)
-    outfile.write('%08X%s\n' % (value, desc2suffix(desc)))
+    valuedescSet = enumwithvalue2valuedesc(knownTAConstants, enumid, value)
+    outfile.write('%08X%s\n' % (value, desc2suffix(enum2desc(enumid), valuedescSet)))
 
-def parseeightbytes(infile, outfile, nestinglevel, desc):
+def parseeightbytes(infile, outfile, nestinglevel, enumid):
     value = bytearray2hex(readbytearray(infile, 8))
-    outfile.write('%s%s\n' % (value, desc2suffix(desc)))
+    valuedescSet = enumwithvalue2valuedesc(knownTAConstants, enumid, value)
+    outfile.write('%s%s\n' % (value, desc2suffix(enum2desc(enumid), valuedescSet)))
 
 def parseauthenticationbytes(infile, outfile, nestinglevel):
     size = readlong(infile)
@@ -218,7 +249,7 @@ def parseenumfield(infile, outfile, nestinglevel, prefix = ''):
         parsesalt(infile, outfile, nestinglevel + 1)
     elif enumid in enumids_sizedcontent or (nestinglevel != 0 and enumid == 444):
         try:
-            parsesizedcontent(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+            parsesizedcontent(infile, outfile, nestinglevel + 1, enumid)
         except UnicodeDecodeError:
             offset = infile.tell()
             dumperror(infile, outfile, offset)
@@ -226,15 +257,15 @@ def parseenumfield(infile, outfile, nestinglevel, prefix = ''):
     elif enumid in enumids_arrayofenumblockarrays:
         parsearrayofenumblockarrays(infile, outfile, nestinglevel + 1)
     elif enumid in enumids_onebyte:
-        parseonebyte(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+        parseonebyte(infile, outfile, nestinglevel + 1, enumid)
     elif enumid in enumids_twobytes:
-        parsetwobytes(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+        parsetwobytes(infile, outfile, nestinglevel + 1, enumid)
     elif enumid in enumids_threebytes:
-        parsethreebytes(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+        parsethreebytes(infile, outfile, nestinglevel + 1, enumid)
     elif enumid in enumids_fourbytes:
-        parsefourbytes(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+        parsefourbytes(infile, outfile, nestinglevel + 1, enumid)
     elif enumid in enumids_eightbytes:
-        parseeightbytes(infile, outfile, nestinglevel + 1, enum2desc(enumid))
+        parseeightbytes(infile, outfile, nestinglevel + 1, enumid)
     elif enumid in enumids_authentication:
         parseauthenticationbytes(infile, outfile, nestinglevel + 1)
     else:
@@ -385,7 +416,7 @@ def indentandrawoffset2globaloffset(indent, rawoffset, offsetlist):
     raise RuntimeError('There\'s a bug in this code. This statement should not have been reached.')
 
 if __name__ == '__main__':
-    
+
     if len(sys.argv) != 2:
         print('Usage: %s <captureddatahexdump>' % sys.argv[0])
         print('')
