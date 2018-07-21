@@ -34,6 +34,8 @@ def toint(bits):
     return struct.unpack('<L', longbytes)[0]
 
 def getnbits(n, bits):
+    if n > len(bits):
+        raise EOFError
     return bits[0:n], bits[n:]
 
 def getstring(bits):
@@ -55,7 +57,7 @@ class PacketWriter():
 
     def _writeindentedline(self, something):
         self.outfile.write(self.offset * ' ' + something + '\n')
-        
+
     def writefield(self, bits, description):
         if bits:
             self._writeindentedline('%s %s' % (bits.to01(), description))
@@ -65,10 +67,11 @@ class PacketWriter():
             self.offset += 1
         self.indentlevels.append(self.offset)
 
-    def writerest(self, bits):
-        self._writeindentedline(bits.to01() + '\n')
+    def writerest(self, message, bits):
         self.offset = 0
         self.indentlevels = []
+        if len(bits) > 0:
+            self._writeindentedline(message + ': ' + bits.to01() + '\n')
 
     def writeline(self, line):
         if self.offset != 0:
@@ -120,7 +123,7 @@ def main(infilename):
         with open(outfilename, 'wt') as outfile:
             packetwriter = PacketWriter(outfile)
             
-            for line in infile.readlines():
+            for linenr, line in enumerate(infile.readlines()):
 
                 line = line.strip()
 
@@ -131,6 +134,12 @@ def main(infilename):
 
                 packetsize = int(packetsizestr)
                 bindata = bitarray(bindatastr, endian='little')
+                originalbindata = bitarray(bindata)
+
+                if packetsize != len(bindata) / 8:
+                    raise RuntimeError('Packet size does not match number of bits on line %d' % (linenr + 1))
+
+                packetwriter.writeline('Packet with size %d' % packetsize)
 
                 shiftedstrings = [findshiftedstrings(bindata, i) for i in range(8)]
 
@@ -138,59 +147,100 @@ def main(infilename):
                 seqnr = toint(seqnrbits)
                 packetwriter.writefield(seqnrbits, '(seqnr = %d)' % seqnr)
 
-                flag1bits, bindata = getnbits(1, bindata)
-                flag1 = toint(flag1bits)
-                packetwriter.writefield(flag1bits, '(flag1)')
-                if flag1 == 1:
-                    
-                    num1bits, bindata = getnbits(14, bindata)
-                    num1 = toint(num1bits)
-                    packetwriter.writefield(num1bits, '(num1 = %d)' % num1)
+                try:
+                    state = 'flag1'
+                    while len(bindata) > 0:
+                        if state == 'flag1':
+                            flag1bits, bindata = getnbits(1, bindata)
+                            flag1 = toint(flag1bits)
+                            packetwriter.writefield(flag1bits, '(flag1 = %d)' % flag1)
 
-                    flag2bits, bindata = getnbits(1, bindata)
-                    flag2 = toint(flag2bits)
-                    packetwriter.writefield(flag2bits, '(flag2)')
-                    if flag2 == 1:
+                            if flag1:
+                                numbits, bindata = getnbits(14, bindata)
+                                num = toint(numbits)
+                                packetwriter.writefield(numbits, '(num = %d)' % num)
+                                continue
+                            else:
+                                state = 'flag1a'
 
-                        num2bits, bindata = getnbits(14, bindata)
-                        num2 = toint(num2bits)
-                        packetwriter.writefield(num2bits, '(num2 = %d)' % num2)
+                        elif state == 'flag1a':
+                            flag1abits, bindata = getnbits(2, bindata)
+                            flag1a = toint(flag1abits)
+                            packetwriter.writefield(flag1abits, '(flag1a = %d)' % flag1a)
 
+                            if flag1a == 0b00:
+                                channelbits, bindata = getnbits(10, bindata)
+                                channel = toint(channelbits)
+                                packetwriter.writefield(channelbits, '(channel = %d)' % channel)
+
+                                unknownbits, bindata = getnbits(14, bindata)
+                                packetwriter.writefield(unknownbits, '')
+
+                                propertybits, bindata = getnbits(6, bindata)
+                                property_ = toint(propertybits)
+                                packetwriter.writefield(propertybits, '(property = %d)' % property_)
+                                
+                                actorbits, bindata = getnbits(4, bindata)
+                                actor = toint(actorbits)
+                                packetwriter.writefield(actorbits, '(actor = %d)' % actor)
+
+                            elif flag1a == 0b10:
+                                unknownbits, bindata = getnbits(10, bindata)
+                                packetwriter.writefield(unknownbits, '')
+
+                                counterbits, bindata = getnbits(5, bindata)
+                                counter = toint(counterbits)
+                                packetwriter.writefield(counterbits, '(counter = %d)' % counter)
+
+                                unknownbits, bindata = getnbits(17, bindata)
+                                packetwriter.writefield(unknownbits, '')
+
+                                nrofitemsbits, bindata = getnbits(5, bindata)
+                                nrofitems = toint(nrofitemsbits)
+                                packetwriter.writefield(nrofitemsbits, '(nr of items = %d)' % nrofitems)
+
+                                while True:
+                                    part1flags, bindatatmp = getnbits(2, bindata)
+                                    if toint(part1flags) == 0b01:
+                                        packetwriter.writefield(part1flags, '(end of list)')
+                                        bindata = bindatatmp
+                                        state = 'flag1'
+                                        break
+                                    
+                                    part1bits, bindata = getnbits(168, bindata)
+                                    packetwriter.writefield(part1bits, '')
+
+                                    part1name, bindata = getstring(bindata)
+                                    packetwriter.writefield(None, '(%s)' % part1name)
+
+                                    part2flags, _ = getnbits(2, bindata)
+                                    nbits = 144 if part2flags[1] else 128
+                                    part2bits, bindata = getnbits(nbits, bindata)
+                                    packetwriter.writefield(part2bits, '')
+                                    
+                                    part2name, bindata = getstring(bindata)
+                                    packetwriter.writefield(None, '(%s)' % part2name)
+
+                                    packetwriter.exdent(4)
+
+                            elif flag1a == 0b01:
+                                break
+                            elif flag1a == 0b11:
+                                break
+                            else:
+                                raise ParseError('Unknown value for flag1a: %s' % flag1a)
+                        else:
+                            raise ParseError('Unknown value for state: %s' % state)
+
+                except UnicodeEncodeError as e:
+                    packetwriter.writerest('ERROR: Failed conversion to unicode (%s)' % str(e), bindata)
+                except EOFError:
+                    packetwriter.writerest('ERROR: Attempted to read more bits than what\'s left', bindata)
                 else:
-                    unknownbits, bindata = getnbits(12, bindata)
-                    packetwriter.writefield(unknownbits, '')
+                    packetwriter.writerest('ERROR: Bits left after parsing', bindata)
 
-                    counterbits, bindata = getnbits(5, bindata)
-                    counter = toint(counterbits)
-                    packetwriter.writefield(counterbits, '(counter = %d)' % counter)
-
-                    unknownbits, bindata = getnbits(17, bindata)
-                    packetwriter.writefield(unknownbits, '')
-
-                    nrofitemsbits, bindata = getnbits(5, bindata)
-                    nrofitems = toint(nrofitemsbits)
-                    packetwriter.writefield(nrofitemsbits, '(nr of items = %d)' % nrofitems)
-
-                    for i in range(nrofitems):
-                        part1bits, bindata = getnbits(168, bindata)
-                        packetwriter.writefield(part1bits, '')
-
-                        part1name, bindata = getstring(bindata)
-                        packetwriter.writefield(None, '(%s)' % part1name)
-
-                        part2bits, bindata = getnbits(128, bindata)
-                        packetwriter.writefield(part2bits, '')
-                        
-                        part2name, bindata = getstring(bindata)
-                        packetwriter.writefield(None, '(%s)' % part2name)
-
-                        packetwriter.exdent(4)
-
-                    terminatorbits, bindata = getnbits(2, bindata)
-                    packetwriter.writefield(terminatorbits, '(terminator)')
-                
-                packetwriter.writerest(bindata)
-                
+                packetwriter.writeline('String overview:')
+                packetwriter.writeline(originalbindata.to01())
                 for i, shiftedstring in enumerate(shiftedstrings):
                     if shiftedstring:
                         packetwriter.writeline('%s%s (shifted by %d bits)' % (' ' * i, shiftedstring, i))
