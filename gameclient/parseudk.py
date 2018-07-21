@@ -113,9 +113,8 @@ def findshiftedstrings(bindata, i):
     else:
         return result
 
-def main():
-    infilename = 'serverpacketbindump.txt'
-    outfilename = 'serverpacketbindump_parsed.txt'
+def main(infilename):
+    outfilename = infilename + '_parsed.txt'
 
     with open(infilename, 'rt') as infile:
         with open(outfilename, 'wt') as outfile:
@@ -198,7 +197,18 @@ def main():
                 
 if __name__ == '__main__':
     try:
-        main()
+        if len(sys.argv) != 2:
+            print('Usage: %s <captureddatabindump>' % sys.argv[0])
+            print('')
+            print('This program will parse a binary dump of gameserver packets')
+            print('such as the one written by gameclient.py, parses it and writes')
+            print('the result into a text file with the same name as the input,')
+            print('but with a _parsed.txt suffix')
+            exit(0)
+
+        infilename = sys.argv[1]
+        
+        main(infilename)
     except Exception as e:
         traceback.print_exc()
         time.sleep(5)
