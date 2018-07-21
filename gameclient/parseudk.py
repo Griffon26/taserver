@@ -239,11 +239,13 @@ def main(infilename):
                 else:
                     packetwriter.writerest('ERROR: Bits left after parsing', bindata)
 
-                packetwriter.writeline('String overview:')
-                packetwriter.writeline(originalbindata.to01())
-                for i, shiftedstring in enumerate(shiftedstrings):
-                    if shiftedstring:
-                        packetwriter.writeline('%s%s (shifted by %d bits)' % (' ' * i, shiftedstring, i))
+                if any(shiftedstrings):
+                    packetwriter.writeline('    String overview:')
+                    packetwriter.writeline('    ' + originalbindata.to01())
+                    for i, shiftedstring in enumerate(shiftedstrings):
+                        if shiftedstring:
+                            packetwriter.writeline('    %s%s (shifted by %d bits)' % (' ' * i, shiftedstring, i))
+                    packetwriter.writeline('')
                 
 if __name__ == '__main__':
     try:
