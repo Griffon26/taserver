@@ -185,28 +185,29 @@ def main(infilename):
                                 channel = toint(channelbits)
                                 packetwriter.writefield(channelbits, '(channel = %d)' % channel)
 
-                                extradatasizebits, bindata = getnbits(3, bindata)
-                                extradatasize = toint(extradatasizebits)
-                                packetwriter.writefield(extradatasizebits, '(extradatasize = %d)' % extradatasize)
+                                sizebits, bindata = getnbits(8, bindata)
+                                size = toint(sizebits)
+                                packetwriter.writefield(sizebits, '(size = %d)' % size)
 
-                                channeltypebits, bindata = getnbits(11, bindata)
-                                channeltype = toint(channeltypebits)
-                                packetwriter.writefield(channeltypebits, '(channeltype = %d)' % channeltype)
+                                payloadbits, bindata = getnbits(size, bindata)
 
-                                propertybits, bindata = getnbits(6, bindata)
-                                property_ = toint(propertybits)
-                                packetwriter.writefield(propertybits, '(property = %d:%s)' % (property_, propertymap.get(property_, '???')))
-                                
-                                actorbits, bindata = getnbits(4, bindata)
-                                actor = toint(actorbits)
-                                packetwriter.writefield(actorbits, '(actor = %d:%s)' % (actor, actormap.get(actor, '???')))
+                                if len(payloadbits) == 16:
+                                    unknownbits, payloadbits = getnbits(6, payloadbits)
+                                    packetwriter.writefield(unknownbits, '(unknown)')
+                                    
+                                    propertybits, payloadbits = getnbits(6, payloadbits)
+                                    property_ = toint(propertybits)
+                                    packetwriter.writefield(propertybits, '(property = %d:%s)' % (property_, propertymap.get(property_, '???')))
+                                    
+                                    actorbits, payloadbits = getnbits(4, payloadbits)
+                                    actor = toint(actorbits)
+                                    packetwriter.writefield(actorbits, '(actor = %d:%s)' % (actor, actormap.get(actor, '???')))
+                                else:
+                                    packetwriter.writefield(payloadbits, '(payload)')
 
-                                if extradatasize > 0:
-                                    extrabits, bindata = getnbits(extradatasize, bindata)
-                                    packetwriter.writefield(extrabits, '(extrabits)')
-                                
                                 endmarkerbits, bindata = getnbits(7, bindata)
-                                packetwriter.writefield(endmarkerbits, '(endmarker)')
+                                theend = 'yes' if endmarkerbits[6] else 'no'
+                                packetwriter.writefield(endmarkerbits, '(theend? = %s)' % theend)
 
                                 if endmarkerbits == bitarray('0000001'):
                                     break
