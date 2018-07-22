@@ -35,9 +35,13 @@ actormap = {
                   'class' : 'TrFlagCTF' },
     0b00101101: { 'name'  : 'TrCTFBase_BloodEagle_0', # none
                   'class' : 'TrCTFBase' },
+    0b01101101: { 'name'  : 'TrCTFBase_BloodEagle_0', # none
+                  'class' : 'TrCTFBase' },
     0b10001101: { 'name'  : 'TrFlagCTF_DiamondSword_0', # dirty
                   'class' : 'TrFlagCTF' },
     0b11001101: { 'name'  : 'TrCTFBase_DiamondSword_0', # none
+                  'class' : 'TrCTFBase' },
+    0b11011101: { 'name'  : 'TrCTFBase_DiamondSword_0', # none
                   'class' : 'TrCTFBase' },
     0b00101110: { 'name'  : 'UTTeamInfo_0', # none
                   'class' : 'UTTeamInfo' },
@@ -45,6 +49,8 @@ actormap = {
                   'class' : 'UTTeamInfo' },
     0b11001110: { 'name'  : 'UTTeamInfo_1', # none or dirty
                   'class' : 'UTTeamInfo' },
+    0b11011110: { 'name'  : 'UTTeamInfo_1', # dirty|netinitial
+                  'class' : 'UTTeamInfo' }
 }
 
 classpropertymap = {
@@ -314,7 +320,31 @@ def main(infilename):
                             elif flag1a == 0b01:
                                 break
                             elif flag1a == 0b11:
-                                break
+
+                                # This is only correct for one instance where
+                                # flag1a is 3. TODO: gather other small packets
+                                # with flag1a == 3 and see how to make this more
+                                # generally applicable
+                                
+                                unknownbits, bindata = getnbits(2, bindata)
+                                packetwriter.writefield(unknownbits, '')
+
+                                channelbits, bindata = getnbits(10, bindata)
+                                channel = toint(channelbits)
+                                packetwriter.writefield(channelbits, '(channel = %d)' % channel)
+
+                                unknownbits, bindata = getnbits(108, bindata)
+                                packetwriter.writefield(unknownbits, '')
+                                
+                                playername, bindata = getstring(bindata)
+                                packetwriter.writefield(None, '(player = %s)' % playername)
+
+                                unknownbits, bindata = getnbits(8, bindata)
+                                packetwriter.writefield(unknownbits, '')
+
+                                state = 'flag1a'
+                                packetwriter.restoreindentlevel(flag1alevel)
+
                             else:
                                 raise ParseError('Unknown value for flag1a: %s' % flag1a)
                         else:
