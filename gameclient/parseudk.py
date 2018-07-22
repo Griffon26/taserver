@@ -186,7 +186,7 @@ def main(infilename):
 
                 try:
                     state = 'flag1'
-                    while len(bindata) > 0:
+                    while len(bindata) > 0 and state != 'end':
                         if state == 'flag1':
                             flag1bits, bindata = getnbits(1, bindata)
                             flag1 = toint(flag1bits)
@@ -235,7 +235,8 @@ def main(infilename):
                                 packetwriter.writefield(endmarkerbits, '(theend? = %s)' % theend)
 
                                 if endmarkerbits == bitarray('0000001'):
-                                    break
+                                    state = 'end'
+                                    continue
 
                                 packetwriter.restoreindentlevel(flag1alevel)
 
@@ -255,16 +256,22 @@ def main(infilename):
                                 packetwriter.writefield(nrofitemsbits, '(nr of items = %d)' % nrofitems)
 
                                 while True:
-                                    part1flags, bindatatmp = getnbits(2, bindata)
-                                    if toint(part1flags) == 0b01:
+                                    part1flags, bindata = getnbits(2, bindata)
+                                    if part1flags == bitarray('10'):
                                         packetwriter.writefield(part1flags, '(end of list)')
-                                        bindata = bindatatmp
-                                        state = 'flag1'
+                                        state = 'end'
                                         break
 
+                                    elif part1flags == bitarray('11'):
+                                        part1size = 166
+                                    elif part1flags == bitarray('00'):
+                                        part1size = 206
+                                    else:
+                                        raise ParseError('Unknown part1flags: %s' % part1flags)
+
                                     level = packetwriter.getindentlevel()
-                                    
-                                    part1bits, bindata = getnbits(168, bindata)
+
+                                    part1bits, bindata = getnbits(part1size, bindata)
                                     packetwriter.writefield(part1bits, '')
 
                                     part1name, bindata = getstring(bindata)
