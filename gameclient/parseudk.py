@@ -25,19 +25,26 @@ import sys
 import time
 import traceback
 
+# Something's wrong with the values that we use to identify class instances.
+# The IDs of UTTeamInfo_0 seems to indicate that bit 6 should not be part of
+# the ID, but if we reduce the ID from 8 to 6 bits, the distinction between
+# TrFlagCTF_DiamondSword_0 and TrCTFBase_DiamondSword_0 also disappears
+# (both will be 0b1101).
 actormap = {
-    125: { 'name'  : 'TrFlagCTF_BloodEagle_0',
-           'class' : 'TrFlagCTF' },
-    141: { 'name'  : 'TrFlagCTF_DiamondSword_0',
-           'class' : 'TrFlagCTF' },
-     45: { 'name'  : 'TrCTFBase_BloodEagle_0',
-           'class' : 'TrCTFBase' },
-    205: { 'name'  : 'TrCTFBase_DiamondSword_0',
-           'class' : 'TrCTFBase' },
-     46: { 'name'  : 'UTTeamInfo_0',
-           'class' : 'UTTeamInfo' },
-    206: { 'name'  : 'UTTeamInfo_1',
-           'class' : 'UTTeamInfo' }
+    0b01111101: { 'name'  : 'TrFlagCTF_BloodEagle_0', # dirty
+                  'class' : 'TrFlagCTF' },
+    0b00101101: { 'name'  : 'TrCTFBase_BloodEagle_0', # none
+                  'class' : 'TrCTFBase' },
+    0b10001101: { 'name'  : 'TrFlagCTF_DiamondSword_0', # dirty
+                  'class' : 'TrFlagCTF' },
+    0b11001101: { 'name'  : 'TrCTFBase_DiamondSword_0', # none
+                  'class' : 'TrCTFBase' },
+    0b00101110: { 'name'  : 'UTTeamInfo_0', # none
+                  'class' : 'UTTeamInfo' },
+    0b01101110: { 'name'  : 'UTTeamInfo_0', # dirty|netinitial
+                  'class' : 'UTTeamInfo' },
+    0b11001110: { 'name'  : 'UTTeamInfo_1', # none or dirty
+                  'class' : 'UTTeamInfo' },
 }
 
 classpropertymap = {
@@ -51,6 +58,17 @@ def getactor(actorid):
 
 def getproperty(actorid, propertyid):
     return classpropertymap[actormap[actorid]['class']].get(propertyid, '???') if actorid in actormap else '???'
+
+def actorflags2string(flagbits):
+    flagtext = []
+    if flagbits == bitarray('00'):
+        flagtext.append('None')
+    else:
+        if flagbits[1]:
+            flagtext.append('UNKNOWN2')
+        if flagbits[0]:
+            flagtext.append('UNKNOWN1')
+    return '|'.join(flagtext)
 
 class ParseError(Exception):
     pass
@@ -224,12 +242,15 @@ def main(infilename):
                                 if len(payloadbits) == 16:
                                     propertybits, payloadbits = getnbits(8, payloadbits)
                                     property_ = toint(propertybits)
-                                    
+
                                     actorbits, payloadbits = getnbits(8, payloadbits)
                                     actor = toint(actorbits)
                                     
+                                    #actorflags, payloadbits = getnbits(0, payloadbits)
+                                    
                                     packetwriter.writefield(propertybits, '(property = %d:%s)' % (property_, getproperty(actor, property_)))
                                     packetwriter.writefield(actorbits, '(actor = %d:%s)' % (actor, getactor(actor)))
+                                    #packetwriter.writefield(actorflags, '(flags = %s)' % actorflags2string(actorflags))
                                 else:
                                     packetwriter.writefield(payloadbits, '(payload)')
 
@@ -303,6 +324,8 @@ def main(infilename):
                     packetwriter.writerest('ERROR: Failed conversion to unicode (%s)' % str(e), bindata)
                 except EOFError:
                     packetwriter.writerest('ERROR: Attempted to read more bits than what\'s left', bindata)
+                except ParseError as e:
+                    packetwriter.writerest('ERROR: Parsing failed (%s). Remaining bits:' % str(e), bindata)
                 else:
                     # Don't report an error when the only bits left are the last few of the last byte
                     if len(bindata) > 7 or toint(bindata) != 0:
