@@ -264,7 +264,11 @@ def main(infilename):
                 except EOFError:
                     packetwriter.writerest('ERROR: Attempted to read more bits than what\'s left', bindata)
                 else:
-                    packetwriter.writerest('ERROR: Bits left after parsing', bindata)
+                    # Don't report an error when the only bits left are the last few of the last byte
+                    if len(bindata) > 7 or toint(bindata) != 0:
+                        packetwriter.writerest('ERROR: Bits left after parsing', bindata)
+                    else:
+                        packetwriter.writerest('Bits left over in the last byte', bindata)
 
                 if any(shiftedstrings):
                     packetwriter.writeline('    String overview:')
