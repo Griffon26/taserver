@@ -26,16 +26,27 @@ import time
 import traceback
 
 actormap = {
-    4: 'TrPlayerController_0',
-    7: 'TrFlagCTF_BloodEagle_0',
-    8: 'TrFlagCTF_DiamondSword_0'
+    4: { 'name' : 'TrPlayerController_0',
+         'class' : 'TrPlayerController' },
+    7: { 'name' : 'TrFlagCTF_BloodEagle_0',
+         'class' : 'TrFlagCTF' },
+    8: { 'name' : 'TrFlagCTF_DiamondSword_0',
+         'class' : 'TrFlagCTF' },
+    12: { 'name' : 'TrCTFBase_DiamondSword_0',
+          'class' : 'TrCTFBase' }
 }
 
-propertymap = {
-    21: 'PlayerReplicationInfo',
-    55: 'Team'
+classpropertymap = {
+    'TrPlayerController' : { 21: 'PlayerReplicationInfo' },
+    'TrFlagCTF'          : { 55: 'Team' },
+    'TrCTFBase'          : { 55: 'myFlag' }
 }
 
+def getactor(actorid):
+    return actormap[actorid]['name'] if actorid in actormap else '???'
+
+def getproperty(actorid, propertyid):
+    return classpropertymap[actormap[actorid]['class']].get(propertyid, '???') if actorid in actormap else '???'
 
 class ParseError(Exception):
     pass
@@ -197,11 +208,12 @@ def main(infilename):
                                     
                                     propertybits, payloadbits = getnbits(6, payloadbits)
                                     property_ = toint(propertybits)
-                                    packetwriter.writefield(propertybits, '(property = %d:%s)' % (property_, propertymap.get(property_, '???')))
                                     
                                     actorbits, payloadbits = getnbits(4, payloadbits)
                                     actor = toint(actorbits)
-                                    packetwriter.writefield(actorbits, '(actor = %d:%s)' % (actor, actormap.get(actor, '???')))
+                                    
+                                    packetwriter.writefield(propertybits, '(property = %d:%s)' % (property_, getproperty(actor, property_)))
+                                    packetwriter.writefield(actorbits, '(actor = %d:%s)' % (actor, getactor(actor)))
                                 else:
                                     packetwriter.writefield(payloadbits, '(payload)')
 
