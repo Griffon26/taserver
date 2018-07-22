@@ -26,20 +26,24 @@ import time
 import traceback
 
 actormap = {
-    4: { 'name' : 'TrPlayerController_0',
-         'class' : 'TrPlayerController' },
-    7: { 'name' : 'TrFlagCTF_BloodEagle_0',
-         'class' : 'TrFlagCTF' },
-    8: { 'name' : 'TrFlagCTF_DiamondSword_0',
-         'class' : 'TrFlagCTF' },
-    12: { 'name' : 'TrCTFBase_DiamondSword_0',
-          'class' : 'TrCTFBase' }
+    125: { 'name'  : 'TrFlagCTF_BloodEagle_0',
+           'class' : 'TrFlagCTF' },
+    141: { 'name'  : 'TrFlagCTF_DiamondSword_0',
+           'class' : 'TrFlagCTF' },
+     45: { 'name'  : 'TrCTFBase_BloodEagle_0',
+           'class' : 'TrCTFBase' },
+    205: { 'name'  : 'TrCTFBase_DiamondSword_0',
+           'class' : 'TrCTFBase' },
+     46: { 'name'  : 'UTTeamInfo_0',
+           'class' : 'UTTeamInfo' },
+    206: { 'name'  : 'UTTeamInfo_1',
+           'class' : 'UTTeamInfo' }
 }
 
 classpropertymap = {
-    'TrPlayerController' : { 21: 'PlayerReplicationInfo' },
-    'TrFlagCTF'          : { 55: 'Team' },
-    'TrCTFBase'          : { 55: 'myFlag' }
+    'TrFlagCTF'          : { 192: 'Team' },
+    'TrCTFBase'          : { 192: 'myFlag' },
+    'UTTeamInfo'         : {   0: 'TeamFlag' }
 }
 
 def getactor(actorid):
@@ -100,6 +104,16 @@ class PacketWriter():
         if self.offset != 0:
             raise RuntimeError('Cannot write line in the middle of another')
         self.outfile.write(line + '\n')
+
+
+    def getindentlevel(self):
+        return len(self.indentlevels)
+
+    def restoreindentlevel(self, level):
+        if level >= len(self.indentlevels):
+            raise RuntimeError('Cannot restore indent to a deeper level')
+        self.indentlevels = self.indentlevels[:level]
+        self.offset = self.indentlevels[-1]
 
     def exdent(self, count):
         self.indentlevels = self.indentlevels[:-count]
@@ -187,6 +201,8 @@ def main(infilename):
                                 state = 'flag1a'
 
                         elif state == 'flag1a':
+                            flag1alevel = packetwriter.getindentlevel()
+                            
                             flag1abits, bindata = getnbits(2, bindata)
                             flag1a = toint(flag1abits)
                             packetwriter.writefield(flag1abits, '(flag1a = %d)' % flag1a)
@@ -203,13 +219,10 @@ def main(infilename):
                                 payloadbits, bindata = getnbits(size, bindata)
 
                                 if len(payloadbits) == 16:
-                                    unknownbits, payloadbits = getnbits(6, payloadbits)
-                                    packetwriter.writefield(unknownbits, '(unknown)')
-                                    
-                                    propertybits, payloadbits = getnbits(6, payloadbits)
+                                    propertybits, payloadbits = getnbits(8, payloadbits)
                                     property_ = toint(propertybits)
                                     
-                                    actorbits, payloadbits = getnbits(4, payloadbits)
+                                    actorbits, payloadbits = getnbits(8, payloadbits)
                                     actor = toint(actorbits)
                                     
                                     packetwriter.writefield(propertybits, '(property = %d:%s)' % (property_, getproperty(actor, property_)))
@@ -223,6 +236,8 @@ def main(infilename):
 
                                 if endmarkerbits == bitarray('0000001'):
                                     break
+
+                                packetwriter.restoreindentlevel(flag1alevel)
 
                             elif flag1a == 0b10:
                                 unknownbits, bindata = getnbits(10, bindata)
@@ -246,6 +261,8 @@ def main(infilename):
                                         bindata = bindatatmp
                                         state = 'flag1'
                                         break
+
+                                    level = packetwriter.getindentlevel()
                                     
                                     part1bits, bindata = getnbits(168, bindata)
                                     packetwriter.writefield(part1bits, '')
@@ -261,7 +278,7 @@ def main(infilename):
                                     part2name, bindata = getstring(bindata)
                                     packetwriter.writefield(None, '(%s)' % part2name)
 
-                                    packetwriter.exdent(4)
+                                    packetwriter.restoreindentlevel(level)
 
                             elif flag1a == 0b01:
                                 break
