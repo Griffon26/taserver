@@ -25,6 +25,18 @@ import sys
 import time
 import traceback
 
+actormap = {
+    4: 'TrPlayerController_0',
+    7: 'TrFlagCTF_BloodEagle_0',
+    8: 'TrFlagCTF_DiamondSword_0'
+}
+
+propertymap = {
+    21: 'PlayerReplicationInfo',
+    55: 'Team'
+}
+
+
 class ParseError(Exception):
     pass
 
@@ -173,16 +185,31 @@ def main(infilename):
                                 channel = toint(channelbits)
                                 packetwriter.writefield(channelbits, '(channel = %d)' % channel)
 
-                                unknownbits, bindata = getnbits(14, bindata)
-                                packetwriter.writefield(unknownbits, '')
+                                extradatasizebits, bindata = getnbits(3, bindata)
+                                extradatasize = toint(extradatasizebits)
+                                packetwriter.writefield(extradatasizebits, '(extradatasize = %d)' % extradatasize)
+
+                                channeltypebits, bindata = getnbits(11, bindata)
+                                channeltype = toint(channeltypebits)
+                                packetwriter.writefield(channeltypebits, '(channeltype = %d)' % channeltype)
 
                                 propertybits, bindata = getnbits(6, bindata)
                                 property_ = toint(propertybits)
-                                packetwriter.writefield(propertybits, '(property = %d)' % property_)
+                                packetwriter.writefield(propertybits, '(property = %d:%s)' % (property_, propertymap.get(property_, '???')))
                                 
                                 actorbits, bindata = getnbits(4, bindata)
                                 actor = toint(actorbits)
-                                packetwriter.writefield(actorbits, '(actor = %d)' % actor)
+                                packetwriter.writefield(actorbits, '(actor = %d:%s)' % (actor, actormap.get(actor, '???')))
+
+                                if extradatasize > 0:
+                                    extrabits, bindata = getnbits(extradatasize, bindata)
+                                    packetwriter.writefield(extrabits, '(extrabits)')
+                                
+                                endmarkerbits, bindata = getnbits(7, bindata)
+                                packetwriter.writefield(endmarkerbits, '(endmarker)')
+
+                                if endmarkerbits == bitarray('0000001'):
+                                    break
 
                             elif flag1a == 0b10:
                                 unknownbits, bindata = getnbits(10, bindata)
