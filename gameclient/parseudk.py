@@ -188,6 +188,8 @@ def main(infilename):
                     state = 'flag1'
                     while len(bindata) > 0 and state != 'end':
                         if state == 'flag1':
+                            flag1level = packetwriter.getindentlevel()
+                            
                             flag1bits, bindata = getnbits(1, bindata)
                             flag1 = toint(flag1bits)
                             packetwriter.writefield(flag1bits, '(flag1 = %d)' % flag1)
@@ -196,7 +198,8 @@ def main(infilename):
                                 numbits, bindata = getnbits(14, bindata)
                                 num = toint(numbits)
                                 packetwriter.writefield(numbits, '(num = %d)' % num)
-                                continue
+
+                                packetwriter.restoreindentlevel(flag1level)
                             else:
                                 state = 'flag1a'
 
@@ -305,7 +308,7 @@ def main(infilename):
                     if len(bindata) > 7 or toint(bindata) != 0:
                         packetwriter.writerest('ERROR: Bits left after parsing', bindata)
                     else:
-                        packetwriter.writerest('Bits left over in the last byte', bindata)
+                        packetwriter.writerest('    Bits left over in the last byte', bindata)
 
                 if any(shiftedstrings):
                     packetwriter.writeline('    String overview:')
