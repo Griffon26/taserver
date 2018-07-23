@@ -23,8 +23,8 @@ import sys
 
 def main(infilename):
 
-    if infilename.endswith('hexdump'):
-        outfilename = infilename[:-7] + 'bindump'
+    if infilename.endswith('carray'):
+        outfilename = infilename[:-6] + 'bindump'
     else:
         outfilename = infilename + '.bindump'
 
@@ -33,31 +33,23 @@ def main(infilename):
 
             lastoffset = -1
             hexoverall = []
+            lastlineofpacket = False
             
             for linenum, line in enumerate(infile):
                 line = line.strip()
                 
-                if not line:
+                if not line or line.startswith('char'):
                     continue
 
-                offsettext, rest = line.split('  ', maxsplit=1)
-                hexpart, asciipart = rest.split('   ', maxsplit=1)
+                lastlineofpacket = line.endswith('};')
+                line = line.replace('};', '')
+                line = line.rstrip(',')
 
-                lineoffset = int(offsettext, 16)
-                if lineoffset > lastoffset:
-                    lastoffset = lineoffset
-                else:
-                    print('Warning: found non-increasing offset on line %d: %s\n' % (linenum + 1, offsettext) +
-                          '\n' +
-                          'This is probably caused by a known bug in Wireshark,\n' +
-                          'so we\'ll just ignore this and stop parsing here.\n'
-                          'Everything up to this point has been parsed successfully.')
-                    break
-
-                hexthisline = [int('0x%s' % hextext, 16) for hextext in hexpart.split()]
+                print(line)
+                hexthisline = [int('%s' % hextext, 16) for hextext in line.split(',')]
                 hexoverall.extend(hexthisline)
 
-                if len(hexthisline) < 16:
+                if lastlineofpacket:
                     hexbytes = bytes(hexoverall)
                     hexoverall = []
                     
@@ -68,7 +60,10 @@ def main(infilename):
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print('Usage: %s <inputfile.hexdump>')
+        print('Usage: %s <inputfile.carrays>' % sys.argv[0])
+        print('')
+        print('Where the input file is server traffic captured by wireshark')
+        print('and saved in the "C Arrays" format.')
         sys.exit(-1)
         
     main(sys.argv[1])
