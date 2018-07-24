@@ -18,6 +18,9 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from typing import List, Set, Dict, Tuple, Generator, TextIO, BinaryIO
+
+import csv
 import io
 import os
 import struct
@@ -26,55 +29,184 @@ import time
 
 last_seen_seqnr = None
 
+
 class ParseError(Exception):
     pass
+
 
 def indentlevel2string(i):
     return '  ' * i
 
-def peekshort(infile):
+
+def peekshort(infile: BinaryIO) -> int:
     values = infile.read(2)
     infile.seek(-2, 1)
     if len(values) == 0:
         raise EOFError
     return struct.unpack('<H', values)[0]
 
-def readbyte(infile):
+
+def readbyte(infile: BinaryIO) -> int:
     return infile.read(1)[0]
 
-def readshort(infile):
+
+def readshort(infile: BinaryIO) -> int:
     values = infile.read(2)
     if len(values) == 0:
         raise EOFError
     return struct.unpack('<H', values)[0]
 
-def readlong(infile):
+
+def readlong(infile: BinaryIO) -> int:
     values = infile.read(4)
     if len(values) == 0:
         raise EOFError
     return struct.unpack('<L', values)[0]
 
-def readbytearray(infile, length):
+
+def readbytearray(infile: BinaryIO, length) -> bytes:
     return infile.read(length)
 
-def readstring(infile, length):
+
+def readstring(infile: BinaryIO, length) -> str:
     return infile.read(length).decode('utf-8')
 
-def bytearray2ascii(ba):
+
+def bytearray2ascii(ba: bytes) -> str:
     return ''.join([chr(b) if 0x20 <= b <= 0x7F else '.' for b in ba])
 
-def bytearray2hex(ba):
+
+def bytearray2hex(ba: bytes) -> str:
     return ' '.join(['%02X' % b for b in ba])
 
-def index2prefix(i):
+
+def index2prefix(i: int) -> str:
     return '%-3d: ' % i
 
-def offset2string(offset):
+
+def offset2string(offset: int) -> str:
     ''' Put a ` character after the offset to facilitate text searches '''
     return '%08X`  ' % offset
 
+
 def desc2suffix(desc):
     return ' (%s)' % desc if desc else ''
+
+
+class ParserConfigError(Exception):
+    pass
+
+
+class Parser():
+    def __init__(self, enumfields_file: str, fieldvalues_file: str) -> None:
+        def load_known_values_dict(fname: str, id_idx: int, value_idx: int) -> Dict[int, Set[str]]:
+            d = dict()
+            with open(fname, 'r') as f:
+                r = csv.reader(f)
+                for row in r:
+                    if not row[value_idx].strip():
+                        # No defined value
+                        continue
+                    if row[id_idx] not in d:
+                        d[row[id_idx]] = set()
+                    d[row[id_idx]].add(int(row[value_idx], 0))
+            return d
+
+        def load_enum_kinds_dict(fname: str) -> Dict[str, Set[int]]:
+            d = {
+                'onebyte': set(),
+                'twobytes': set(),
+                'threebytes': set(),
+                'fourbytes': set(),
+                'eightbytes': set(),
+                'sizedcontent': set(),
+                'enumblockarray': set(),
+                'arrayofenumblockarrays': set(),
+                'authentication': set(),
+                'salt': set(),
+            }
+            with open(fname, 'r') as f:
+                r = csv.reader(f)
+                for row in r:
+                    if row[1].lower() not in d:
+                        raise ParserConfigError()
+                    d[row[1]].add(int(row[0], 0))
+            return d
+
+        self.known_enum_fields = load_known_values_dict(enumfields_file, 0, 2)
+        self.known_field_values = load_known_values_dict(fieldvalues_file, 0, 1)
+        self.enum_ids = load_enum_kinds_dict(enumfields_file)
+
+        self.infile: BinaryIO = None
+        self.outfile: TextIO = None
+
+    def parse(self, infile: BinaryIO) -> Generator[Tuple[int, str], None, None]:
+        self.infile = infile
+        try:
+            packet_idx = 0
+            while True:
+                start_offset = self.infile.tell()
+                self.outfile = io.StringIO()
+                next_value = peekshort(self.infile)
+
+                # FIXME: That we have to look at the first short to see how 
+                # many items are in this packet probably indicates that we 
+                # interpret the packet structure incorrectly.
+                if next_value == 0x01BC:
+                    item_count = 2
+                elif next_value == 0x003D:
+                    item_count = 12
+                else:
+                    item_count = 1
+
+                self.outfile.write('--------------------------------------------------------------------------\n')
+                try:
+                    for i in range(item_count):
+                        self.parse_enumfield(0, index2prefix(i))
+                    self.parse_seq_ack()
+
+                except ParseError as e:
+                    self.outfile.write(str(e))
+                    break
+                finally:
+                    self.outfile.seek(0)
+                    yield start_offset, self.outfile.read()
+
+                packet_idx += 1
+        except EOFError:
+            pass
+
+    def parse_sizedcontent(self, nesting_level: int) -> None:
+        pass
+
+    def parse_onebyte(self, nesting_level: int) -> None:
+        pass
+
+    def parse_twobytes(self, nesting_level: int) -> None:
+        pass
+
+    def parse_threebytes(self, nesting_level: int) -> None:
+        pass
+
+    def parse_eightbytes(self, nesting_level: int) -> None:
+        pass
+
+    def parse_authentication(self, nesting_level: int) -> None:
+        pass
+
+    def parse_salt(self, nesting_level: int) -> None:
+        salt = bytearray2hex(readbytearray(infile, 16))
+        self.outfile.write(salt)
+
+    def parse_enumfield(self, nesting_level: int, prefix='') -> None:
+        pass
+
+    def parse_enumblockarray(self, nesting_level: int, newline: bool, prefix='') -> None:
+        pass
+
+    def parse_seq_ack(self) -> None:
+        pass
+
 
 def enum2desc(enumid):
     knownenums = {
@@ -122,6 +254,7 @@ def enum2desc(enumid):
     }
     return knownenums[enumid] if enumid in knownenums else None
 
+
 def dumperror(infile, outfile, offset):
     outfile.write('\n\n************\n')
     outfile.write('Parse error occurred at offset 0x%08X. Next bunch of bytes were:\n' % offset)
@@ -129,6 +262,7 @@ def dumperror(infile, outfile, offset):
         value = readbytearray(infile, 16)
         outfile.write('%08X: %s  %s\n' % (offset, bytearray2hex(value), bytearray2ascii(value)))
         offset += 16
+
 
 toplevelids_enumblockarray = (20, 51, 53, 58, 61, 65, 76, 109, 111, 112,
                               133, 176, 177, 178, 179, 180, 213, 236,
