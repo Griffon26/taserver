@@ -182,6 +182,7 @@ def main(infilename):
 
     with open(infilename, 'rt') as infile:
         with open(outfilename, 'wt') as outfile:
+            print('Writing output to %s...' % outfilename)
             packetwriter = PacketWriter(outfile)
             
             for linenr, line in enumerate(infile.readlines()):
@@ -234,7 +235,7 @@ def main(infilename):
                             flag1a = toint(flag1abits)
                             packetwriter.writefield(flag1abits, '(flag1a = %d)' % flag1a)
 
-                            if flag1a == 0b00:
+                            if flag1abits == bitarray('00'):
                                 channelbits, bindata = getnbits(10, bindata)
                                 channel = toint(channelbits)
                                 packetwriter.writefield(channelbits, '(channel = %d)' % channel)
@@ -264,34 +265,48 @@ def main(infilename):
                                 theend = 'yes' if endmarkerbits[6] else 'no'
                                 packetwriter.writefield(endmarkerbits, '(theend? = %s)' % theend)
 
-                                if endmarkerbits == bitarray('0000001'):
+                                if endmarkerbits[6]:
                                     state = 'end'
                                     continue
 
                                 packetwriter.restoreindentlevel(flag1alevel)
 
-                            elif flag1a == 0b10:
-                                unknownbits, bindata = getnbits(10, bindata)
-                                packetwriter.writefield(unknownbits, '')
+                            elif flag1abits == bitarray('01'):
+                                channelbits, bindata = getnbits(10, bindata)
+                                channel = toint(channelbits)
+                                packetwriter.writefield(channelbits, '(channel = %d)' % channel)
 
                                 counterbits, bindata = getnbits(5, bindata)
                                 counter = toint(counterbits)
                                 packetwriter.writefield(counterbits, '(counter = %d)' % counter)
 
-                                unknownbits, bindata = getnbits(17, bindata)
+                                unknownbits, bindata = getnbits(8, bindata)
                                 packetwriter.writefield(unknownbits, '')
 
-                                nrofitemsbits, bindata = getnbits(5, bindata)
-                                nrofitems = toint(nrofitemsbits)
-                                packetwriter.writefield(nrofitemsbits, '(nr of items = %d)' % nrofitems)
+                                rpcsizebits, bindata = getnbits(14, bindata)
+                                rpcsize = toint(rpcsizebits)
+                                packetwriter.writefield(rpcsizebits, '(rpcsize = %d)' % rpcsize)
 
+                                rpcdatabits, bindata = getnbits(rpcsize, bindata)
+                                packetwriter.writefield(rpcdatabits, '(rpcdata)')
+
+                                endbit, bindata = getnbits(1, bindata)
+                                end = toint(endbit)
+                                packetwriter.writefield(endbit, '(theend? = %d)' % end)
+
+                                if endbit == bitarray('1'):
+                                    state = 'end'
+
+                                '''
                                 while True:
+                                    level = packetwriter.getindentlevel()
+                                    
                                     part1flags, bindata = getnbits(2, bindata)
+                                    packetwriter.writefield(part1flags, '(part1flags = %s)' % part1flags)
+
                                     if part1flags == bitarray('10'):
-                                        packetwriter.writefield(part1flags, '(end of list)')
                                         state = 'end'
                                         break
-
                                     elif part1flags == bitarray('11'):
                                         part1size = 166
                                     elif part1flags == bitarray('00'):
@@ -299,7 +314,6 @@ def main(infilename):
                                     else:
                                         raise ParseError('Unknown part1flags: %s' % part1flags)
 
-                                    level = packetwriter.getindentlevel()
 
                                     part1bits, bindata = getnbits(part1size, bindata)
                                     packetwriter.writefield(part1bits, '')
@@ -308,7 +322,14 @@ def main(infilename):
                                     packetwriter.writefield(None, '(%s)' % part1name)
 
                                     part2flags, _ = getnbits(2, bindata)
-                                    nbits = 144 if part2flags[1] else 128
+                                    if part2flags == bitarray('00'):
+                                        nbits = 128
+                                    elif part2flags == bitarray('01'):
+                                        nbits = 144
+                                    elif part2flags == bitarray('11') or part2flags == bitarray('10'):
+                                        nbits = 168
+                                    else:
+                                        raise ParseError('Unknown part2flags: %s' % part2flags)
                                     part2bits, bindata = getnbits(nbits, bindata)
                                     packetwriter.writefield(part2bits, '')
                                     
@@ -316,10 +337,13 @@ def main(infilename):
                                     packetwriter.writefield(None, '(%s)' % part2name)
 
                                     packetwriter.restoreindentlevel(level)
+                                '''
 
-                            elif flag1a == 0b01:
+                                packetwriter.restoreindentlevel(flag1alevel)
+
+                            elif flag1abits == bitarray('10'):
                                 break
-                            elif flag1a == 0b11:
+                            elif flag1abits == bitarray('11'):
 
                                 # This is only correct for one instance where
                                 # flag1a is 3. TODO: gather other small packets

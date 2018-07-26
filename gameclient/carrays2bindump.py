@@ -23,8 +23,8 @@ import sys
 
 def main(infilename):
 
-    if infilename.endswith('carray'):
-        outfilename = infilename[:-6] + 'bindump'
+    if infilename.endswith('carrays'):
+        outfilename = infilename[:-len('carrays')] + 'bindump'
     else:
         outfilename = infilename + '.bindump'
 
@@ -45,7 +45,6 @@ def main(infilename):
                 line = line.replace('};', '')
                 line = line.rstrip(',')
 
-                print(line)
                 hexthisline = [int('%s' % hextext, 16) for hextext in line.split(',')]
                 hexoverall.extend(hexthisline)
 
