@@ -25,57 +25,6 @@ import sys
 import time
 import traceback
 
-# Something's wrong with the values that we use to identify class instances.
-# The IDs of UTTeamInfo_0 seems to indicate that bit 6 should not be part of
-# the ID, but if we reduce the ID from 8 to 6 bits, the distinction between
-# TrFlagCTF_DiamondSword_0 and TrCTFBase_DiamondSword_0 also disappears
-# (both will be 0b1101).
-actormap = {
-    0b01111101: { 'name'  : 'TrFlagCTF_BloodEagle_0', # dirty
-                  'class' : 'TrFlagCTF' },
-    0b00101101: { 'name'  : 'TrCTFBase_BloodEagle_0', # none
-                  'class' : 'TrCTFBase' },
-    0b01101101: { 'name'  : 'TrCTFBase_BloodEagle_0', # none
-                  'class' : 'TrCTFBase' },
-    0b10001101: { 'name'  : 'TrFlagCTF_DiamondSword_0', # dirty
-                  'class' : 'TrFlagCTF' },
-    0b11001101: { 'name'  : 'TrCTFBase_DiamondSword_0', # none
-                  'class' : 'TrCTFBase' },
-    0b11011101: { 'name'  : 'TrCTFBase_DiamondSword_0', # none
-                  'class' : 'TrCTFBase' },
-    0b00101110: { 'name'  : 'UTTeamInfo_0', # none
-                  'class' : 'UTTeamInfo' },
-    0b01101110: { 'name'  : 'UTTeamInfo_0', # dirty|netinitial
-                  'class' : 'UTTeamInfo' },
-    0b11001110: { 'name'  : 'UTTeamInfo_1', # none or dirty
-                  'class' : 'UTTeamInfo' },
-    0b11011110: { 'name'  : 'UTTeamInfo_1', # dirty|netinitial
-                  'class' : 'UTTeamInfo' }
-}
-
-classpropertymap = {
-    'TrFlagCTF'          : { 192: 'Team' },
-    'TrCTFBase'          : { 192: 'myFlag' },
-    'UTTeamInfo'         : {   0: 'TeamFlag' }
-}
-
-def getactor(actorid):
-    return actormap[actorid]['name'] if actorid in actormap else '???'
-
-def getproperty(actorid, propertyid):
-    return classpropertymap[actormap[actorid]['class']].get(propertyid, '???') if actorid in actormap else '???'
-
-def actorflags2string(flagbits):
-    flagtext = []
-    if flagbits == bitarray('00'):
-        flagtext.append('None')
-    else:
-        if flagbits[1]:
-            flagtext.append('UNKNOWN2')
-        if flagbits[0]:
-            flagtext.append('UNKNOWN1')
-    return '|'.join(flagtext)
-
 class ParseError(Exception):
     pass
 
@@ -199,24 +148,71 @@ def binfile2packetbits(infile):
 class Parser():
     def __init__(self, packetwriter):
         self.packetwriter = packetwriter
+        self.channels = {}
+        self.classdict = {
+            '00110100101111010100000000000000' : 'TrFlagCTF_DiamondSword',
+            '00100111010010011000000000000000' : 'UTTeamInfo',
+            '00100100101111010100000000000000' : 'TrFlagCTF_BloodEagle',
+            '00000110101111001100000000000000' : 'TrPlayerReplicationInfo',
+            '00110001010000010100000000000000' : 'TrPlayerController',
+            '01110001101110110100000000000000' : 'TrGameReplicationInfo',
+            '00000101100101011110000000000000' : 'WorldInfo',
+            '00010011100001101100000000000000' : 'TrServerSettingsInfo',
+            '00111100001100100100000000000000' : 'TrBaseTurret_DiamondSword',
+            '01001010100010101100000000000000' : 'TrRadarStation_DiamondSword',
+            '00110111000101011110000000000000' : 'TrCTFBase_DiamondSword',
+            '01100110100101011110000000000000' : 'TrVehicleStation_DiamondSword',
+            '01001011110100001100000000000000' : 'TrInventoryStationCollision',
+            '00000000110010101100000000000000' : 'TrRepairStationCollision',
+        }
+        self.propertydict = {
+            '1110110' : ('Team', 9)
+        }
+        self.instancedict = {}
 
-    def _parsepayload(self, bindata, payloadsize):
+    def _parsepayload(self, bindata, payloadsize, channel):
+        
         payloadbits, bindata = getnbits(payloadsize, bindata)
         
-        if len(payloadbits) == 16:
-            propertybits, payloadbits = getnbits(8, payloadbits)
-            property_ = toint(propertybits)
+        channelisnew = channel not in self.channels
 
-            actorbits, payloadbits = getnbits(8, payloadbits)
-            actor = toint(actorbits)
-            
-            #actorflags, payloadbits = getnbits(0, payloadbits)
-            
-            self.packetwriter.writefield(propertybits, '(property = %d:%s)' % (property_, getproperty(actor, property_)))
-            self.packetwriter.writefield(actorbits, '(actor = %d:%s with property %d)' % (actor, getactor(actor), property_))
-            #self.packetwriter.writefield(actorflags, '(flags = %s)' % actorflags2string(actorflags))
+        if channelisnew:
+            try:
+                classbits, payloadbits = getnbits(32, payloadbits)
+                classkey = classbits.to01()
+                if classkey not in self.classdict:
+                    classname = 'unknown%d' % len(self.classdict)
+                    self.classdict[classkey] = classname
+                classname = self.classdict[classkey]
+                self.packetwriter.writefield(classbits, '(class = %s)' % classname)
+
+                self.instancedict[classname] = self.instancedict.get(classname, -1) + 1
+                self.channels[channel] = '%s_%d' % (classname, self.instancedict[classname])
+
+                if(len(payloadbits) > 0):
+                    self.packetwriter.writefield(payloadbits, '(rest of payload)')
+
+            except:
+                self.packetwriter.writefield(payloadbits, 'ERROR: exception during parsing of payload')
         else:
-            self.packetwriter.writefield(payloadbits, '(payload)')
+            self.packetwriter.writefield(bitarray(), '(object = %s)' % self.channels[channel])
+
+            if len(payloadbits) == 16:
+                while payloadbits:
+                    propertyidbits, payloadbits = getnbits(7, payloadbits)
+                    propertykey = propertyidbits.to01()
+                    propertyname, propertylength = self.propertydict.get(propertykey, (None, None))
+
+                    if propertyname:
+                        self.packetwriter.writefield(propertyidbits, '(property = %s)' % propertyname)
+
+                        propertyvaluebits, payloadbits = getnbits(propertylength, payloadbits)
+                        self.packetwriter.writefield(propertyvaluebits, '(value)')
+                    else:
+                        self.packetwriter.writefield(payloadbits, '(rest of payload)')
+                        break
+            else:
+                self.packetwriter.writefield(payloadbits, '(rest of payload)')
 
         return bindata
 
@@ -237,7 +233,7 @@ class Parser():
         payloadsize = toint(payloadsizebits)
         self.packetwriter.writefield(payloadsizebits, '(payloadsize = %d)' % payloadsize)
 
-        bindata = self._parsepayload(bindata, payloadsize)
+        bindata = self._parsepayload(bindata, payloadsize, channel)
 
         state = 'flag1'
         self.packetwriter.restoreindentlevel(flag1level)
