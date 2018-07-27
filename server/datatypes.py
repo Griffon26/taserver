@@ -1170,7 +1170,7 @@ class a0035(enumblockarray):
             m0363(),
             m0615(),
             m06ef(),
-            m024f().set(*server.ip, server.port),
+            m024f().set(server.ip, server.port),
             m0246().set(127, 0, 0, 1, 1234),
             m0448().set(4),
             m02b5(),
