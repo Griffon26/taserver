@@ -18,24 +18,26 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from typing import cast, Optional, Union, List, Set, Dict, Tuple, Generator, TextIO, BinaryIO
+from typing import cast, Optional, List, Union, Set, Dict, Tuple, Generator, TextIO, BinaryIO
 
 import csv
 import io
-import os
 import struct
 import sys
-import time
-
-class ParseError(Exception):
-    pass
 
 
-def indentlevel2string(i):
+def indentlevel2string(i: int) -> str:
+    """
+    :param i: the indent level
+    :returns: spaces representing the given level of indent
+    """
     return '  ' * i
 
 
 def peek_short(infile: BinaryIO) -> int:
+    """
+    Get the next short (two bytes) from a stream without advancing
+    """
     values = infile.read(2)
     infile.seek(-2, 1)
     if len(values) == 0:
@@ -44,10 +46,16 @@ def peek_short(infile: BinaryIO) -> int:
 
 
 def read_byte(infile: BinaryIO) -> int:
+    """
+    Read the next byte from a stream
+    """
     return infile.read(1)[0]
 
 
 def read_short(infile: BinaryIO) -> int:
+    """
+    Read the next short (two bytes) from a stream
+    """
     values = infile.read(2)
     if len(values) == 0:
         raise EOFError
@@ -55,48 +63,85 @@ def read_short(infile: BinaryIO) -> int:
 
 
 def read_long(infile: BinaryIO) -> int:
+    """
+    Read the next long (four bytes) from a stream
+    """
     values = infile.read(4)
     if len(values) == 0:
         raise EOFError
     return struct.unpack('<L', values)[0]
 
 
-def read_bytearray(infile: BinaryIO, length) -> bytes:
+def read_bytearray(infile: BinaryIO, length: int) -> bytes:
+    """
+    Read a specified number of bytes from a stream
+    """
     return infile.read(length)
 
 
 def read_string(infile: BinaryIO, length) -> str:
+    """
+    Read a specified number from bytes from a stream, interpreting them as a utf-8 string
+    """
     return infile.read(length).decode('utf-8')
 
 
 def bytearray2ascii(ba: bytes) -> str:
+    """
+    Interpret raw bytes as an ASCII string
+    """
     return ''.join([chr(b) if 0x20 <= b <= 0x7F else '.' for b in ba])
 
 
 def bytearray2hex(ba: bytes) -> str:
+    """
+    Convert raw bytes into a hex string of space-separated bytes
+    """
     return ' '.join(['%02X' % b for b in ba])
 
 
 def index2prefix(i: int) -> str:
+    """
+    Convert an array index into the appropriate prefix string for printing
+    """
     return '%-3d: ' % i
 
 
 def offset2string(offset: int) -> str:
-    ''' Put a ` character after the offset to facilitate text searches '''
+    """
+    Print the offset, with a ` character for easier searching
+    """
     return '%08X`  ' % offset
 
 
-def desc2suffix(desc):
-    return ' (%s)' % desc if desc else ''
-
-
 class ParserConfigError(Exception):
+    """
+    An exception arising from a failure to read or process Parser configuration
+    """
+    pass
+
+
+class ParseError(Exception):
+    """
+    An exception arising from a failure during parsing
+    """
     pass
 
 
 class Parser():
+    """
+    Stateful recursive-descent parser for a hexdump
+    """
+
     def __init__(self, enumfields_file: str, fieldvalues_file: str) -> None:
+        """
+        :param enumfields_file: File containing descriptions of enum ids
+        :param fieldvalues_file: File containing descriptions of enum values
+        """
         def load_known_values_dict(fname: str, id_idx: int, value_idx: int) -> Dict[int, Set[str]]:
+            """
+            Load a mapping of value -> set of possible meanings from a file
+            """
             d: Dict[int, Set[str]] = dict()
             with open(fname, 'r') as f:
                 r = csv.reader(f)
@@ -111,6 +156,9 @@ class Parser():
             return d
 
         def load_enum_kinds_dict(fname: str) -> Dict[str, Set[int]]:
+            """
+            Load information about the enumfield types of enum ids
+            """
             d: Dict[str, Set[int]] = {
                 'onebyte': set(),
                 'twobytes': set(),
@@ -140,6 +188,11 @@ class Parser():
         self.last_seen_seqnr = None
 
     def get_description(self, enumid: int, value: Optional[Union[str, int]]) -> str:
+        """
+        :param enumid: the enum id to get a description for
+        :param value: the enum value to get a description for, or None to not interpret the value
+        :returns: a description string about the enumfield
+        """
         desc = ''
         if enumid in self.known_enum_fields:
             enumStr = '%04X' % enumid
@@ -166,6 +219,14 @@ class Parser():
         return desc
 
     def parse(self, infile: BinaryIO) -> Generator[Tuple[int, str], None, None]:
+        """
+        Runs the Parser on the given binary stream
+        
+        This is a generator, yielding the parsed data of each message in the stream
+
+        :param infile: The binary stream to parse
+        :yields: tuple of the initial offset in the stream of this message, and the parsed message contents
+        """
         self.infile = infile
         try:
             packet_idx = 0
@@ -202,40 +263,67 @@ class Parser():
             pass
 
     def parse_sizedcontent(self, enumid: int, nesting_level: int) -> None:
+        """
+        Parses a length-specified field from the stream as a string
+        """
         length = read_short(self.infile)
         text = read_string(self.infile, length)
         self.outfile.write(f'"{text}"{self.get_description(enumid, text)}\n')
 
     def parse_onebyte(self, enumid: int, nesting_level: int) -> None:
+        """
+        Parses a one-byte field from the stream
+        """
         value = read_byte(self.infile)
         self.outfile.write('%02X%s\n' % (value, self.get_description(enumid, value)))
 
     def parse_twobytes(self, enumid: int, nesting_level: int) -> None:
+        """
+        Parses a two-byte field from the stream
+        """
         value = read_short(self.infile)
         self.outfile.write('%04X%s\n' % (value, self.get_description(enumid, value)))
 
     def parse_threebytes(self, enumid: int, nesting_level: int) -> None:
+        """
+        Parses a three-byte field from the stream
+        """
         value = bytearray2hex(read_bytearray(self.infile, 3))
         self.outfile.write('%s%s\n' % (value, self.get_description(enumid, value)))
 
-    def parse_fourbytes(self, enumid, nesting_level):
+    def parse_fourbytes(self, enumid: int, nesting_level: int) -> None:
+        """
+        Parses a four-byte field from the stream
+        """
         value = read_long(self.infile)
         self.outfile.write('%08X%s\n' % (value, self.get_description(enumid, value)))
 
     def parse_eightbytes(self, enumid: int, nesting_level: int) -> None:
+        """
+        Parses an eight-byte field from the stream, printing it as space-separated hex bytes
+        """
         value = read_bytearray(self.infile, 8)
-        self.outfile.write('%s%s\n' % (bytearray2hex(value), self.get_description(enumid, -1)))
+        self.outfile.write('%s%s\n' % (bytearray2hex(value), self.get_description(enumid, None)))
 
     def parse_authentication(self, enumid: int, nesting_level: int) -> None:
+        """
+        Parses an authentication value from the stream
+        """
         size = read_long(self.infile)
         self.outfile.write(f'{size} bytes containing authentication data based on your password\n')
         read_bytearray(self.infile, size)
 
     def parse_salt(self, enumid: int, nesting_level: int) -> None:
+        """
+        Parses a salt value from the stream
+        """
         salt = bytearray2hex(read_bytearray(self.infile, 16))
         self.outfile.write(f'{salt} (salt)\n')
 
     def parse_seq_ack(self) -> None:
+        """
+        Parses a seq/ack from the stream
+        """
         offset = self.infile.tell()
         seq = read_long(self.infile)
         if self.last_seen_seqnr and seq != self.last_seen_seqnr + 1:
@@ -246,6 +334,9 @@ class Parser():
         self.outfile.write(offset2string(offset) + 'seq %08X ack %08X\n' % (seq, ack))
 
     def parse_enumblockarray(self, enumid: int, nesting_level: int, newline: bool, prefix='') -> None:
+        """
+        Parses an enumfield containing an array of enumfields from the stream
+        """
         offset = self.infile.tell()
         length = read_short(self.infile)
         if newline:
@@ -255,12 +346,18 @@ class Parser():
             self.parse_enumfield(nesting_level + 1, index2prefix(i))
 
     def parse_arrayofenumblockarrays(self, enumid: int, nesting_level: int) -> None:
+        """
+        Parses an array of enumfield arrays from the stream
+        """
         size = read_short(self.infile)
         self.outfile.write(f'arrayofenumblockarrays size {size}\n')
         for i in range(size):
             self.parse_enumblockarray(-1, nesting_level + 1, True, prefix=index2prefix(i))
 
     def parse_enumfield(self, nesting_level: int, prefix='') -> None:
+        """
+        Parses any enumfield from the stream
+        """
         offset = self.infile.tell()
         enumid = read_short(self.infile)
         self.outfile.write(offset2string(offset) + indentlevel2string(nesting_level) + prefix + 'enumfield %04X ' % enumid)
@@ -296,6 +393,9 @@ class Parser():
             raise ParseError('Unknown enumtype %d (0x%04X) at offset 0x%08X' % (enumid, enumid, offset))
 
     def dump_error(self, offset: int) -> None:
+        """
+        Dump out error information from stream, listing the given offset
+        """
         self.outfile.write('\n\n************\n')
         self.outfile.write('Parse error occurred at offset 0x%08X. Next bunch of bytes were:\n' % offset)
         for l in range(20):
@@ -304,14 +404,17 @@ class Parser():
             offset += 16
 
 
-def hexdump2indentandbytesperline(hexdumpfile):
-    lastoffset = {
+def hexdump2indentandbytesperline(hexdumpfile: TextIO) -> Generator[Tuple[bool, bytearray], None, None]:
+    """
+    Generator yielding, for each line of a hexdump, whether the line is indented and the bytes contained
+    """
+    lastoffset: Dict[bool, int] = {
         False: -1,
         True: -1
     }
     for linenum, line in enumerate(hexdumpfile):
-        indent = line.startswith('   ')
-        line = line.strip()
+        indent: bool = line.startswith('   ')
+        line: str = line.strip()
 
         if not line:
             continue
@@ -330,14 +433,17 @@ def hexdump2indentandbytesperline(hexdumpfile):
                   'Everything up to this point has been parsed successfully.')
             break
 
-        hexline = [int('0x%s' % hextext, 16) for hextext in hexpart.split()]
+        hexline = cast(bytearray, [int('0x%s' % hextext, 16) for hextext in hexpart.split()])
 
         yield indent, hexline
 
 
-def hexdump2indentandbytesperblock(hexdumpfile):
+def hexdump2indentandbytesperblock(hexdumpfile: TextIO) -> Generator[Tuple[bool, bytearray], None, None]:
+    """
+    Generator yielding the indent status and the data for each block of the given hexdump file
+    """
     lastindent = None
-    collectedbytes = []
+    collectedbytes: bytearray = []
     for indent, hexline in hexdump2indentandbytesperline(hexdumpfile):
 
         if lastindent is None:
@@ -354,7 +460,12 @@ def hexdump2indentandbytesperblock(hexdumpfile):
         yield indent, collectedbytes
 
 
-def removepacketsizes(indent, bytestreamin):
+def removepacketsizes(indent: bool, bytestreamin: BinaryIO) -> Tuple[List[int], BinaryIO]:
+    """
+    Remove the packet size information from the given bytestream
+
+    :returns: tuple of a list of packet boundary positions in the stream, and the stream with packet sizes removed
+    """
     packetboundaries = []
     bytestreamout = io.BytesIO()
 
@@ -382,7 +493,10 @@ def removepacketsizes(indent, bytestreamin):
     return packetboundaries, bytestreamout
 
 
-def payloadoffset2rawoffset(payloadoffset, packetboundaries):
+def payloadoffset2rawoffset(payloadoffset: int, packetboundaries: List[int]) -> int:
+    """
+    Convert a payload offset to the raw offset in the original stream
+    """
     rawoffset = payloadoffset
     for boundary in packetboundaries:
         if payloadoffset > boundary:
@@ -391,7 +505,10 @@ def payloadoffset2rawoffset(payloadoffset, packetboundaries):
     return rawoffset
 
 
-def indentandrawoffset2globaloffset(indent, rawoffset, offsetlist):
+def indentandrawoffset2globaloffset(indent: bool, rawoffset: int, offsetlist: List[Tuple[bool, int, int]]) -> int:
+    """
+    Get the global offset associated with the given raw offset
+    """
     for i, (ind, start, end) in enumerate(offsetlist):
         if indent == ind and start <= rawoffset < end:
             return i
@@ -399,7 +516,6 @@ def indentandrawoffset2globaloffset(indent, rawoffset, offsetlist):
 
 
 if __name__ == '__main__':
-    
     if len(sys.argv) != 2:
         print('Usage: %s <captureddatahexdump>' % sys.argv[0])
         print('')
@@ -442,6 +558,3 @@ if __name__ == '__main__':
                 indent, parsedoutput = parsedbyoffset[key]
                 for line in parsedoutput.splitlines():
                     outfile.write(('    ' if indent else '') + line + '\n')
-
-
-
