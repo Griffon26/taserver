@@ -19,6 +19,7 @@
 #
     
 from bitarray import bitarray
+import re
 import sys
 
 def main(infilename):
@@ -31,16 +32,29 @@ def main(infilename):
     with open(infilename, 'rt') as infile:
         with open(outfilename, 'wt') as outfile:
 
-            lastoffset = -1
+            lastpacketnumber = -1
             hexoverall = []
             lastlineofpacket = False
             
             for linenum, line in enumerate(infile):
                 line = line.strip()
-                
-                if not line or line.startswith('char'):
+
+                if not line:
                     continue
 
+                match = re.match('char peer.* Packet ([^ ]*) .*', line)
+                if match:
+                    packetnumber = int(match.group(1))
+                    if packetnumber < lastpacketnumber:
+                        print('Warning: found non-increasing packet number on line %d: %s\n' % (linenum + 1, packetnumber) +
+                              '\n' +
+                              'This is probably caused by a known bug in Wireshark,\n' +
+                              'so we\'ll just ignore this and stop reading here.\n'
+                              'Everything up to this point has been converted successfully.')
+                        break
+                    lastpacketnumber = packetnumber
+                    continue
+                
                 lastlineofpacket = line.endswith('};')
                 line = line.replace('};', '')
                 line = line.rstrip(',')
