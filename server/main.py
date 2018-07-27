@@ -27,6 +27,7 @@ from accounts import Accounts
 from authcodehandler import AuthCodeHandler
 from clientreader import ClientReader
 from clientwriter import ClientWriter
+from configuration import Configuration
 from hexdumper import HexDumper, dumpfilename
 from server import Server
 
@@ -36,13 +37,16 @@ def handledump(dumpqueue):
         hexdumper = HexDumper(dumpqueue)
         hexdumper.run()
 
+
 def handleauthcodes(serverqueue, authcodequeue):
     authcodehandler = AuthCodeHandler(serverqueue, authcodequeue)
     authcodehandler.run()
 
-def handleserver(serverqueue, clientqueues, authcodequeue, accounts):
-    server = Server(serverqueue, clientqueues, authcodequeue, accounts)
+
+def handleserver(serverqueue, clientqueues, authcodequeue, accounts, configuration):
+    server = Server(serverqueue, clientqueues, authcodequeue, accounts, configuration)
     server.run()
+
 
 def handleclient(serverqueue, clientqueue, socket, address, dumpqueue):
     myid = id(gevent.getcurrent())
@@ -53,6 +57,7 @@ def handleclient(serverqueue, clientqueue, socket, address, dumpqueue):
     writer = ClientWriter(socket, myid, clientqueue, dumpqueue)
     writer.run()
 
+
 def main(dump):
     clientqueues = {}
     serverqueue = gevent.queue.Queue()
@@ -60,8 +65,8 @@ def main(dump):
     dumpqueue = gevent.queue.Queue() if dump else None
 
     accounts = Accounts('accountdatabase.json')
-    
-    gevent.spawn(handleserver, serverqueue, clientqueues, authcodequeue, accounts)
+    configuration = Configuration()
+    gevent.spawn(handleserver, serverqueue, clientqueues, authcodequeue, accounts, configuration)
     gevent.spawn(handledump, dumpqueue)
     gevent.spawn(handleauthcodes, serverqueue, authcodequeue)
 
@@ -77,6 +82,7 @@ def main(dump):
     except KeyboardInterrupt:
         accounts.save()
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dump', action='store_true',
@@ -85,4 +91,3 @@ if __name__ == '__main__':
                              dumpfilename)
     args = parser.parse_args()
     main(args.dump)
-
