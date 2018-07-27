@@ -135,7 +135,7 @@ class PacketWriter():
 
     def restoreindentlevel(self, level):
         if level >= len(self.indentlevels):
-            raise RuntimeError('Cannot restore indent to a deeper level')
+            raise RuntimeError('Cannot restore indent to a deeper level (at %d, requested %d)' % (len(self.indentlevels), level))
         self.indentlevels = self.indentlevels[:level]
         self.offset = self.indentlevels[-1]
 
@@ -220,11 +220,14 @@ def main(infilename):
                             packetwriter.writefield(flag1bits, '(flag1 = %d)' % flag1)
 
                             if flag1:
-                                numbits, bindata = getnbits(14, bindata)
-                                num = toint(numbits)
-                                packetwriter.writefield(numbits, '(num = %d)' % num)
+                                if len(bindata) >= 14:
+                                    numbits, bindata = getnbits(14, bindata)
+                                    num = toint(numbits)
+                                    packetwriter.writefield(numbits, '(num = %d)' % num)
 
-                                packetwriter.restoreindentlevel(flag1level)
+                                    packetwriter.restoreindentlevel(flag1level)
+                                else:
+                                    state = 'end'
                             else:
                                 state = 'flag1a'
 
@@ -235,12 +238,12 @@ def main(infilename):
                             flag1a = toint(flag1abits)
                             packetwriter.writefield(flag1abits, '(flag1a = %d)' % flag1a)
 
-                            if flag1abits == bitarray('00'):
+                            if flag1abits == bitarray('00'): # actor
                                 channelbits, bindata = getnbits(10, bindata)
                                 channel = toint(channelbits)
                                 packetwriter.writefield(channelbits, '(channel = %d)' % channel)
 
-                                sizebits, bindata = getnbits(8, bindata)
+                                sizebits, bindata = getnbits(14, bindata)
                                 size = toint(sizebits)
                                 packetwriter.writefield(sizebits, '(size = %d)' % size)
 
@@ -256,22 +259,15 @@ def main(infilename):
                                     #actorflags, payloadbits = getnbits(0, payloadbits)
                                     
                                     packetwriter.writefield(propertybits, '(property = %d:%s)' % (property_, getproperty(actor, property_)))
-                                    packetwriter.writefield(actorbits, '(actor = %d:%s)' % (actor, getactor(actor)))
+                                    packetwriter.writefield(actorbits, '(actor = %d:%s with property %d)' % (actor, getactor(actor), property_))
                                     #packetwriter.writefield(actorflags, '(flags = %s)' % actorflags2string(actorflags))
                                 else:
                                     packetwriter.writefield(payloadbits, '(payload)')
 
-                                endmarkerbits, bindata = getnbits(7, bindata)
-                                theend = 'yes' if endmarkerbits[6] else 'no'
-                                packetwriter.writefield(endmarkerbits, '(theend? = %s)' % theend)
+                                state = 'flag1'
+                                packetwriter.restoreindentlevel(flag1level)
 
-                                if endmarkerbits[6]:
-                                    state = 'end'
-                                    continue
-
-                                packetwriter.restoreindentlevel(flag1alevel)
-
-                            elif flag1abits == bitarray('01'):
+                            elif flag1abits == bitarray('01'): # RPC
                                 channelbits, bindata = getnbits(10, bindata)
                                 channel = toint(channelbits)
                                 packetwriter.writefield(channelbits, '(channel = %d)' % channel)
@@ -290,12 +286,8 @@ def main(infilename):
                                 rpcdatabits, bindata = getnbits(rpcsize, bindata)
                                 packetwriter.writefield(rpcdatabits, '(rpcdata)')
 
-                                endbit, bindata = getnbits(1, bindata)
-                                end = toint(endbit)
-                                packetwriter.writefield(endbit, '(theend? = %d)' % end)
-
-                                if endbit == bitarray('1'):
-                                    state = 'end'
+                                state = 'flag1'
+                                packetwriter.restoreindentlevel(flag1level)
 
                                 '''
                                 while True:
@@ -338,12 +330,33 @@ def main(infilename):
 
                                     packetwriter.restoreindentlevel(level)
                                 '''
+                            elif flag1abits == bitarray('10'):
+                                
+                                unknownbits, bindata = getnbits(2, bindata)
+                                packetwriter.writefield(unknownbits, '')
 
+                                channelbits, bindata = getnbits(10, bindata)
+                                channel = toint(channelbits)
+                                packetwriter.writefield(channelbits, '(channel = %d)' % channel)
+
+                                unknownbits, bindata = getnbits(13, bindata)
+                                packetwriter.writefield(unknownbits, '')
+
+                                sizebits, bindata = getnbits(14, bindata)
+                                size = toint(sizebits)
+                                packetwriter.writefield(sizebits, '(size = %d)' % size)
+
+                                payloadbits, bindata = getnbits(size, bindata)
+                                packetwriter.writefield(payloadbits, '(payload2)')
+
+                                state = 'flag1'
+                                packetwriter.restoreindentlevel(flag1level)
+                                
+                            elif flag1abits == bitarray('11'):
+                                state = 'flag1a'
                                 packetwriter.restoreindentlevel(flag1alevel)
 
-                            elif flag1abits == bitarray('10'):
-                                break
-                            elif flag1abits == bitarray('11'):
+                                '''
 
                                 # This is only correct for one instance where
                                 # flag1a is 3. TODO: gather other small packets
@@ -357,6 +370,9 @@ def main(infilename):
                                 channel = toint(channelbits)
                                 packetwriter.writefield(channelbits, '(channel = %d)' % channel)
 
+                                state = 'end'
+                                '''
+                                '''
                                 unknownbits, bindata = getnbits(108, bindata)
                                 packetwriter.writefield(unknownbits, '')
                                 
@@ -368,6 +384,7 @@ def main(infilename):
 
                                 state = 'flag1a'
                                 packetwriter.restoreindentlevel(flag1alevel)
+                                '''
 
                             else:
                                 raise ParseError('Unknown value for flag1a: %s' % flag1a)
