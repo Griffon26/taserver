@@ -151,27 +151,54 @@ class Parser():
         self.channels = {}
 
         TrGameReplicationInfoProps = {
-            '000001' : ('GameClass', 32),
-            '110110' : ('RemainingTime', 32),
-            '000110' : ('GoalScore', 32),
-            '111010' : ('TimeLimit', 32),
-            '011010' : ('ServerName', str),
-            '100001' : ('MessageOfTheDay', str),
-            '010001' : ('RulesString', 544),
-            '111001' : ('bAllowKeyboardAndMouse', 1),
-            '010101' : ('bWarmupRound', 1),
-            '001101' : ('MinNetPlayers', 32),
-            '101111' : ('r_nBlip', 8),
-            '101000' : ('r_ServerConfig', 12),
+            '000000' : { 'name' : 'prefix?',
+                         'type' : bitarray,
+                         'size' : 5 },
+            '000001' : { 'name' : 'GameClass', 'type' : int },
+            '110110' : { 'name' : 'RemainingTime', 'type' : int },
+            '000110' : { 'name' : 'GoalScore', 'type' : int },
+            '111010' : { 'name' : 'TimeLimit', 'type' : int },
+            '011010' : { 'name' : 'ServerName', 'type' : str },
+            '100001' : { 'name' : 'MessageOfTheDay', 'type' : str },
+            '010001' : { 'name' : 'RulesString',
+                         'type': bitarray,
+                         'size' : 544 },
+            '111001' : { 'name' : 'bAllowKeyboardAndMouse', 'type' : bool },
+            '010101' : { 'name' : 'bWarmupRound', 'type' : bool },
+            '001101' : { 'name' : 'MinNetPlayers', 'type' : int },
+            '101111' : { 'name' : 'r_nBlip',
+                         'type' : bitarray,
+                         'size' : 8 },
+            '101000' : { 'name' : 'r_ServerConfig',
+                         'type' : bitarray,
+                         'size' : 12 },
         }
 
         TrFlagCTFProps = {
-            '111011' : ('Team (10 bits)', 10),
+            '111011' : { 'name' : 'Team',
+                         'type' : bitarray,
+                         'size' : 10 },
         }
 
         TrPlayerReplicationInfoProps = {
-            '111110' : ('Team (11 bits)', 11),
-            '100001' : ('PlayerName', str),
+            '000000' : { 'name' : 'prefix?',
+                         'type' : bitarray,
+                         'size' : 5 },
+            '101010' : { 'name' : 'UniqueId',
+                         'type' : bitarray,
+                         'size' : 64 },
+            '110110' : { 'name' : 'bWaitingPlayer', 'type' : bool },
+            '000110' : { 'name' : 'bBot', 'type' : bool },
+            '101110' : { 'name' : 'bIsSpectator', 'type' : bool },
+            '111110' : { 'name' : 'Team (11 bits)',
+                         'type' : bitarray,
+                         'size' : 11,
+                         'values' : { '10001000000' : 'DiamondSword',
+                                      '11110000000' : 'BloodEagle' } },
+            '000001' : { 'name' : 'PlayerID', 'type' : int },
+            '100001' : { 'name' : 'PlayerName', 'type' : str },
+            '010001' : { 'name' : 'bWaitingPlayer or bIsSpectator', 'type' : bool },
+            '001111' : { 'name' : 'bIsSpectator or bWaitingPlayer', 'type' : bool },
         }
 
         self.classdict = {
@@ -259,10 +286,7 @@ class Parser():
                 self.channels[channel] = { 'class' : class_,
                                            'instancename' : instancename }
                 self.packetwriter.writefield(classbits, '(new object %s)' % instancename)
-
-                unknownbits, payloadbits = getnbits(11, payloadbits)
-                self.packetwriter.writefield(unknownbits, '')
-                
+                   
             except:
                 raise ParseError('ERROR: exception during parsing of payload: %s' % payloadbits.to01())
         else:
@@ -273,11 +297,20 @@ class Parser():
             propertyidbits, payloadbits = getnbits(6, payloadbits)
             propertykey = propertyidbits.to01()
             propertydict = self.channels[channel]['class']['props']
-            propertyname, propertylength = propertydict.get(propertykey, ('Unknown', None))
+            property_ = propertydict.get(propertykey, { 'name' : 'Unknown'})
 
-            self.packetwriter.writefield(propertyidbits, '(property = %s)' % propertyname)
-            if propertylength:
-                if propertylength is str:
+            self.packetwriter.writefield(propertyidbits, '(property = %s)' % property_['name'])
+
+            propertytype = property_.get('type', None)
+            propertysize = property_.get('size', None)
+            propertyvalues = property_.get('values', None)
+            if propertyvalues:
+                propertyvaluebits, payloadbits = getnbits(propertysize, payloadbits)
+                propertyvalue = propertyvalues.get(propertyvaluebits.to01(), 'Unknown')
+                self.packetwriter.writefield(propertyvaluebits, '(value = %s)' % propertyvalue)
+            
+            elif propertytype:
+                if propertytype is str:
                     stringsizebits, payloadbits = getnbits(32, payloadbits)
                     stringsize = toint(stringsizebits)
                     self.packetwriter.writefield(stringsizebits, '(strsize = %d)' % stringsize)
@@ -291,8 +324,16 @@ class Parser():
                                              (len(propertystring) + 1,
                                               stringsize))
                     
-                else:
-                    propertyvaluebits, payloadbits = getnbits(propertylength, payloadbits)
+                elif propertytype is int:
+                    propertyvaluebits, payloadbits = getnbits(32, payloadbits)
+                    propertyvalue = toint(propertyvaluebits)
+                    self.packetwriter.writefield(propertyvaluebits, '(value = %d)' % propertyvalue)
+                elif propertytype is bool:
+                    propertyvaluebits, payloadbits = getnbits(1, payloadbits)
+                    propertyvalue = (propertyvaluebits[0] == 1)
+                    self.packetwriter.writefield(propertyvaluebits, '(value = %s)' % propertyvalue)
+                elif propertytype is bitarray:
+                    propertyvaluebits, payloadbits = getnbits(propertysize, payloadbits)
                     self.packetwriter.writefield(propertyvaluebits, '(value)')
             else:
                 self.packetwriter.writefield(payloadbits, '(rest of payload)')
