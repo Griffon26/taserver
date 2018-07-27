@@ -1,5 +1,6 @@
 7422,Light Spinfusor
 7425,Bolt Launcher
+7438,Light Assault Rifle
 7419,Falcon
 7433,Sparrow
 7399,Shotgun
@@ -11,3 +12,32 @@
 7834,Pathfinder Skin
 7835,Infiltrator Skin
 8666,Light Voice
+1683,Light Class
+7401,Spinfusor
+7385,Assault Rifle
+7384,Arx Buster
+7416,Grenade Launcher
+7832,Shield Pack
+7434,AP Grenades
+8328,Soldier Skin
+8667,Medium Voice
+1693,Medium Class
+7448,Heavy Spinfusor
+7458,X1 LMG
+7386,Chaingun
+7393,Fusion Mortar
+7826,Heavy Shield Pack
+7390,Frag Grenades
+8331,Juggernaut Skin
+8668,Heavy Voice
+1692,Heavy Class
+0x0000043E,Primary weapon loadout item
+0x0000043F,Secondary weapon loadout item
+0x00000440,Pack loadout item
+0x00000441,Belt loadout item
+0x00000445,Skin loadout item
+0x00000446,Voice loadout item
+0x00000447,Class loadout item
+0x0000053C,Loadout index loadout item
+0x0000053D,Loadout name loadout item
+0x000006E5,Tertiary weapon loadout item

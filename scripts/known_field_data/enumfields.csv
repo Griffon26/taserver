@@ -75,7 +75,7 @@
 0x034A,SizedContent,player name
 0x035B,SizedContent,
 0x037C,SizedContent,
-0x0437,SizedContent,
+0x0437,SizedContent,string-valued menu option
 0x045E,SizedContent,
 0x0468,SizedContent,
 0x0494,SizedContent,login name
