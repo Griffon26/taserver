@@ -164,9 +164,26 @@ class Parser():
             '01100110100101011110000000000000' : 'TrVehicleStation_DiamondSword',
             '01001011110100001100000000000000' : 'TrInventoryStationCollision',
             '00000000110010101100000000000000' : 'TrRepairStationCollision',
+            '00111010100001100100000000000000' : 'TrPlayerPawn',
+            '01111100101110010100000000000000' : 'TrDevice_LightSpinfusor',
+            '01101100101110010100000000000000' : 'TrDevice_LightAssaultRifle',
+            '01100101110110010100000000000000' : 'TrDevice_GrenadeLauncher_Light',
+            '01001000101110010100000000000000' : 'TrDevice_LaserTargeter',
+            '01111000100110010100000000000000' : 'TrDevice_Blink',
+            '01000011100110010100000000000000' : 'TrDevice_ConcussionGrenade',
+            '00100111101110010100000000000000' : 'TrDevice_Melee_DS',
+            '01101101010100001100000000000000' : 'TrInventoryManager',
+            '00000011110100001100000000000000' : 'TrStationCollision',
+            '00011100001100100100000000000000' : 'TrBaseTurret_BloodEagle',
+            '01110010100010101100000000000000' : 'TrRadarStation_BloodEagle',
+            '00100110100101011110000000000000' : 'TrVehicleStation_BloodEagle',
+            '00111100100101011110000000000000' : 'TrPowerGenerator_BloodEagle',
+            '01010111000101011110000000000000' : 'TrCTFBase_BloodEagle',
+            
         }
         self.propertydict = {
-            '1110110' : ('Team', 9)
+            '1110110' : ('Team (9 bits)', 9),
+            '1111101' : ('Team (10 bits)', 10)
         }
         self.instancedict = {}
 
@@ -184,11 +201,11 @@ class Parser():
                     classname = 'unknown%d' % len(self.classdict)
                     self.classdict[classkey] = classname
                 classname = self.classdict[classkey]
-                self.packetwriter.writefield(classbits, '(class = %s)' % classname)
 
                 self.instancedict[classname] = self.instancedict.get(classname, -1) + 1
                 self.channels[channel] = '%s_%d' % (classname, self.instancedict[classname])
-
+                self.packetwriter.writefield(classbits, '(new object %s)' % self.channels[channel])
+                
                 if(len(payloadbits) > 0):
                     self.packetwriter.writefield(payloadbits, '(rest of payload)')
 
@@ -197,22 +214,21 @@ class Parser():
         else:
             self.packetwriter.writefield(bitarray(), '(object = %s)' % self.channels[channel])
 
-            if len(payloadbits) == 16:
-                while payloadbits:
-                    propertyidbits, payloadbits = getnbits(7, payloadbits)
-                    propertykey = propertyidbits.to01()
-                    propertyname, propertylength = self.propertydict.get(propertykey, (None, None))
+            while payloadbits:
+                propertylevel = self.packetwriter.getindentlevel()
+                propertyidbits, payloadbits = getnbits(7, payloadbits)
+                propertykey = propertyidbits.to01()
+                propertyname, propertylength = self.propertydict.get(propertykey, ('Unknown', None))
 
-                    if propertyname:
-                        self.packetwriter.writefield(propertyidbits, '(property = %s)' % propertyname)
+                self.packetwriter.writefield(propertyidbits, '(property = %s)' % propertyname)
+                if propertylength:
+                    propertyvaluebits, payloadbits = getnbits(propertylength, payloadbits)
+                    self.packetwriter.writefield(propertyvaluebits, '(value)')
+                else:
+                    self.packetwriter.writefield(payloadbits, '(rest of payload)')
+                    break
 
-                        propertyvaluebits, payloadbits = getnbits(propertylength, payloadbits)
-                        self.packetwriter.writefield(propertyvaluebits, '(value)')
-                    else:
-                        self.packetwriter.writefield(payloadbits, '(rest of payload)')
-                        break
-            else:
-                self.packetwriter.writefield(payloadbits, '(rest of payload)')
+                self.packetwriter.restoreindentlevel(propertylevel)
 
         return bindata
 
