@@ -149,42 +149,92 @@ class Parser():
     def __init__(self, packetwriter):
         self.packetwriter = packetwriter
         self.channels = {}
+
+        TrGameReplicationInfoProps = {
+            '000001' : ('GameClass', 32),
+            '110110' : ('RemainingTime', 32),
+            '000110' : ('GoalScore', 32),
+            '111010' : ('TimeLimit', 32),
+            '011010' : ('ServerName', str),
+            '100001' : ('MessageOfTheDay', str),
+            '010001' : ('RulesString', 544),
+            '111001' : ('bAllowKeyboardAndMouse', 1),
+            '010101' : ('bWarmupRound', 1),
+            '001101' : ('MinNetPlayers', 32),
+            '101111' : ('r_nBlip', 8),
+            '101000' : ('r_ServerConfig', 12),
+        }
+
+        TrFlagCTFProps = {
+            '111011' : ('Team (10 bits)', 10),
+        }
+
+        TrPlayerReplicationInfoProps = {
+            '111110' : ('Team (11 bits)', 11),
+            '100001' : ('PlayerName', str),
+        }
+
         self.classdict = {
-            '00110100101111010100000000000000' : 'TrFlagCTF_DiamondSword',
-            '00100111010010011000000000000000' : 'UTTeamInfo',
-            '00100100101111010100000000000000' : 'TrFlagCTF_BloodEagle',
-            '00000110101111001100000000000000' : 'TrPlayerReplicationInfo',
-            '00110001010000010100000000000000' : 'TrPlayerController',
-            '01110001101110110100000000000000' : 'TrGameReplicationInfo',
-            '00000101100101011110000000000000' : 'WorldInfo',
-            '00010011100001101100000000000000' : 'TrServerSettingsInfo',
-            '00111100001100100100000000000000' : 'TrBaseTurret_DiamondSword',
-            '01001010100010101100000000000000' : 'TrRadarStation_DiamondSword',
-            '00110111000101011110000000000000' : 'TrCTFBase_DiamondSword',
-            '01100110100101011110000000000000' : 'TrVehicleStation_DiamondSword',
-            '01001011110100001100000000000000' : 'TrInventoryStationCollision',
-            '00000000110010101100000000000000' : 'TrRepairStationCollision',
-            '00111010100001100100000000000000' : 'TrPlayerPawn',
-            '01111100101110010100000000000000' : 'TrDevice_LightSpinfusor',
-            '01101100101110010100000000000000' : 'TrDevice_LightAssaultRifle',
-            '01100101110110010100000000000000' : 'TrDevice_GrenadeLauncher_Light',
-            '01001000101110010100000000000000' : 'TrDevice_LaserTargeter',
-            '01111000100110010100000000000000' : 'TrDevice_Blink',
-            '01000011100110010100000000000000' : 'TrDevice_ConcussionGrenade',
-            '00100111101110010100000000000000' : 'TrDevice_Melee_DS',
-            '01101101010100001100000000000000' : 'TrInventoryManager',
-            '00000011110100001100000000000000' : 'TrStationCollision',
-            '00011100001100100100000000000000' : 'TrBaseTurret_BloodEagle',
-            '01110010100010101100000000000000' : 'TrRadarStation_BloodEagle',
-            '00100110100101011110000000000000' : 'TrVehicleStation_BloodEagle',
-            '00111100100101011110000000000000' : 'TrPowerGenerator_BloodEagle',
-            '01010111000101011110000000000000' : 'TrCTFBase_BloodEagle',
-            
+            '00110100101111010100000000000000' : { 'name' : 'TrFlagCTF_DiamondSword',
+                                                   'props' : TrFlagCTFProps },
+            '00100111010010011000000000000000' : { 'name' : 'UTTeamInfo',
+                                                   'props' : {} },
+            '00100100101111010100000000000000' : { 'name' : 'TrFlagCTF_BloodEagle',
+                                                   'props' : TrFlagCTFProps },
+            '00000110101111001100000000000000' : { 'name' : 'TrPlayerReplicationInfo',
+                                                   'props' : TrPlayerReplicationInfoProps },
+            '00110001010000010100000000000000' : { 'name' : 'TrPlayerController',
+                                                   'props' : {} },
+            '01110001101110110100000000000000' : { 'name' : 'TrGameReplicationInfo',
+                                                   'props' : TrGameReplicationInfoProps },
+            '00000101100101011110000000000000' : { 'name' : 'WorldInfo',
+                                                   'props' : {} },
+            '00010011100001101100000000000000' : { 'name' : 'TrServerSettingsInfo',
+                                                   'props' : {} },
+            '00111100001100100100000000000000' : { 'name' : 'TrBaseTurret_DiamondSword',
+                                                   'props' : {} },
+            '01001010100010101100000000000000' : { 'name' : 'TrRadarStation_DiamondSword',
+                                                   'props' : {} },
+            '00110111000101011110000000000000' : { 'name' : 'TrCTFBase_DiamondSword',
+                                                   'props' : {} },
+            '01100110100101011110000000000000' : { 'name' : 'TrVehicleStation_DiamondSword',
+                                                   'props' : {} },
+            '01001011110100001100000000000000' : { 'name' : 'TrInventoryStationCollision',
+                                                   'props' : {} },
+            '00000000110010101100000000000000' : { 'name' : 'TrRepairStationCollision',
+                                                   'props' : {} },
+            '00111010100001100100000000000000' : { 'name' : 'TrPlayerPawn',
+                                                   'props' : {} },
+            '01111100101110010100000000000000' : { 'name' : 'TrDevice_LightSpinfusor',
+                                                   'props' : {} },
+            '01101100101110010100000000000000' : { 'name' : 'TrDevice_LightAssaultRifle',
+                                                   'props' : {} },
+            '01100101110110010100000000000000' : { 'name' : 'TrDevice_GrenadeLauncher_Light',
+                                                   'props' : {} },
+            '01001000101110010100000000000000' : { 'name' : 'TrDevice_LaserTargeter',
+                                                   'props' : {} },
+            '01111000100110010100000000000000' : { 'name' : 'TrDevice_Blink',
+                                                   'props' : {} },
+            '01000011100110010100000000000000' : { 'name' : 'TrDevice_ConcussionGrenade',
+                                                   'props' : {} },
+            '00100111101110010100000000000000' : { 'name' : 'TrDevice_Melee_DS',
+                                                   'props' : {} },
+            '01101101010100001100000000000000' : { 'name' : 'TrInventoryManager',
+                                                   'props' : {} },
+            '00000011110100001100000000000000' : { 'name' : 'TrStationCollision',
+                                                   'props' : {} },
+            '00011100001100100100000000000000' : { 'name' : 'TrBaseTurret_BloodEagle',
+                                                   'props' : {} },
+            '01110010100010101100000000000000' : { 'name' : 'TrRadarStation_BloodEagle',
+                                                   'props' : {} },
+            '00100110100101011110000000000000' : { 'name' : 'TrVehicleStation_BloodEagle',
+                                                   'props' : {} },
+            '00111100100101011110000000000000' : { 'name' : 'TrPowerGenerator_BloodEagle',
+                                                   'props' : {} },
+            '01010111000101011110000000000000' : { 'name' : 'TrCTFBase_BloodEagle',
+                                                   'props' : {} },
         }
-        self.propertydict = {
-            '1110110' : ('Team (9 bits)', 9),
-            '1111101' : ('Team (10 bits)', 10)
-        }
+
         self.instancedict = {}
 
     def _parsepayload(self, bindata, payloadsize, channel):
@@ -199,36 +249,56 @@ class Parser():
                 classkey = classbits.to01()
                 if classkey not in self.classdict:
                     classname = 'unknown%d' % len(self.classdict)
-                    self.classdict[classkey] = classname
-                classname = self.classdict[classkey]
+                    self.classdict[classkey] = { 'name' : classname,
+                                                 'props' : {} }
+                class_ = self.classdict[classkey]
+                classname = class_['name']
 
                 self.instancedict[classname] = self.instancedict.get(classname, -1) + 1
-                self.channels[channel] = '%s_%d' % (classname, self.instancedict[classname])
-                self.packetwriter.writefield(classbits, '(new object %s)' % self.channels[channel])
+                instancename = '%s_%d' % (classname, self.instancedict[classname])
+                self.channels[channel] = { 'class' : class_,
+                                           'instancename' : instancename }
+                self.packetwriter.writefield(classbits, '(new object %s)' % instancename)
+
+                unknownbits, payloadbits = getnbits(11, payloadbits)
+                self.packetwriter.writefield(unknownbits, '')
                 
-                if(len(payloadbits) > 0):
-                    self.packetwriter.writefield(payloadbits, '(rest of payload)')
-
             except:
-                self.packetwriter.writefield(payloadbits, 'ERROR: exception during parsing of payload')
+                raise ParseError('ERROR: exception during parsing of payload: %s' % payloadbits.to01())
         else:
-            self.packetwriter.writefield(bitarray(), '(object = %s)' % self.channels[channel])
+            self.packetwriter.writefield(bitarray(), '(object = %s)' % self.channels[channel]['instancename'])
 
-            while payloadbits:
-                propertylevel = self.packetwriter.getindentlevel()
-                propertyidbits, payloadbits = getnbits(7, payloadbits)
-                propertykey = propertyidbits.to01()
-                propertyname, propertylength = self.propertydict.get(propertykey, ('Unknown', None))
+        while payloadbits:
+            propertylevel = self.packetwriter.getindentlevel()
+            propertyidbits, payloadbits = getnbits(6, payloadbits)
+            propertykey = propertyidbits.to01()
+            propertydict = self.channels[channel]['class']['props']
+            propertyname, propertylength = propertydict.get(propertykey, ('Unknown', None))
 
-                self.packetwriter.writefield(propertyidbits, '(property = %s)' % propertyname)
-                if propertylength:
+            self.packetwriter.writefield(propertyidbits, '(property = %s)' % propertyname)
+            if propertylength:
+                if propertylength is str:
+                    stringsizebits, payloadbits = getnbits(32, payloadbits)
+                    stringsize = toint(stringsizebits)
+                    self.packetwriter.writefield(stringsizebits, '(strsize = %d)' % stringsize)
+
+                    if stringsize > 0:
+                        propertystring, payloadbits = getstring(payloadbits)
+                        self.packetwriter.writefield(bitarray(), '(value = %s)' % propertystring)
+
+                        if len(propertystring) + 1 != stringsize:
+                            raise ParseError('ERROR: string size (%d) was not equal to expected size (%d)' %
+                                             (len(propertystring) + 1,
+                                              stringsize))
+                    
+                else:
                     propertyvaluebits, payloadbits = getnbits(propertylength, payloadbits)
                     self.packetwriter.writefield(propertyvaluebits, '(value)')
-                else:
-                    self.packetwriter.writefield(payloadbits, '(rest of payload)')
-                    break
+            else:
+                self.packetwriter.writefield(payloadbits, '(rest of payload)')
+                break
 
-                self.packetwriter.restoreindentlevel(propertylevel)
+            self.packetwriter.restoreindentlevel(propertylevel)
 
         return bindata
 
