@@ -17,10 +17,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
+from typing import Callable
 
 
-class PlayerInfo:
-    def __init__(self, id, ip, port):
+class Player:
+    def __init__(self, id, ip, port, state):
         self.id = id
         self.login_name = None
         self.display_name = None
@@ -28,7 +29,15 @@ class PlayerInfo:
         self.tag = ''
         self.ip = ip
         self.port = port
-        self.server = None
+        self.game_server = None
         self.authenticated = False
         self.last_received_seq = 0
         self.vote = None
+        self.state = None
+        self.set_state(state)
+
+    def set_state(self, state):
+        self.state = state(self)
+
+    def send(self, data, server):
+        server.client_queues[self.id].put((data, self.last_received_seq))
