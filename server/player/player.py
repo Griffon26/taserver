@@ -17,8 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
-from typing import Callable
-
 
 class Player:
     def __init__(self, id, ip, port, state):
