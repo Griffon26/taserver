@@ -26,7 +26,7 @@ import string
 
 from player.player import Player
 from player.state.unauthenticated_state import UnauthenticatedState
-from protocols.error import ProtocolViolationError
+from protocol_errors import ProtocolViolationError
 
 
 class Server:
