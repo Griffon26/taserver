@@ -29,7 +29,6 @@ from player.state.unauthenticated_state import UnauthenticatedState
 from protocols.error import ProtocolViolationError
 
 
-
 class Server:
     def __init__(self, server_queue, client_queues, authcode_queue, accounts, configuration: Configuration):
         self.server_queue = server_queue
@@ -107,15 +106,15 @@ class Server:
         self.players[msg.clientid] = Player(msg.clientid, msg.clientaddress, msg.clientport, UnauthenticatedState)
 
     def handle_client_message(self, msg):
-        self.player = self.players[msg.clientid]
-        self.player.last_received_seq = msg.clientseq
+        current_player = self.players[msg.clientid]
+        current_player.last_received_seq = msg.clientseq
 
         print('server: client(%s, %s:%s, "%s") sent:\n%s' %
               (msg.clientid,
-               self.player.ip,
-               self.player.port,
-               self.player.display_name,
+               current_player.ip,
+               current_player.port,
+               current_player.display_name,
                '\n'.join(['  %04X' % req.ident for req in msg.requests])))
 
         for request in msg.requests:
-            self.player.state.handle_request(request, self)
+            current_player.state.handle_request(request, self)
