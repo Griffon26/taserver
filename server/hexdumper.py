@@ -20,39 +20,41 @@
 
 dumpfilename = 'taserverdump.hexdump'
 
-class HexDumper():
-    def __init__(self, dumpqueue):
-        self.dumpqueue = dumpqueue
-        self.clientoffset = 0
-        self.serveroffset = 0
+
+class HexDumper:
+    def __init__(self, dump_queue):
+        self.dump_queue = dump_queue
+        self.client_offset = 0
+        self.server_offset = 0
 
     def run(self):
-        with open(dumpfilename, 'wt') as dumpfile:
+        with open(dumpfilename, 'wt') as dump_file:
             while True:
-                source, packetbytes = self.dumpqueue.get()
+                source, packet_bytes = self.dump_queue.get()
                 indent = '    ' if source == 'server' else ''
-                bytelist = [ '%02X' % b for b in packetbytes ]
+                byte_list = ['%02X' % b for b in packet_bytes]
 
                 if source == 'server':
-                    overalloffset = self.serveroffset
+                    overall_offset = self.server_offset
                 else:
-                    overalloffset = self.clientoffset
-                
-                hexblockoffset = 0
-                while len(bytelist) > hexblockoffset + 16:
-                    dumpfile.write('%s%08X  %-47s   .\n' % (indent,
-                                                            overalloffset + hexblockoffset,
-                                                            ' '.join(bytelist[hexblockoffset:hexblockoffset + 16])))
-                    hexblockoffset += 16
-                dumpfile.write('%s%08X  %-47s   .\n' % (indent,
-                                                        overalloffset + hexblockoffset,
-                                                        ' '.join(bytelist[hexblockoffset:])))
-                hexblockoffset += len(bytelist[hexblockoffset:])
-                overalloffset += hexblockoffset
-                
+                    overall_offset = self.client_offset
+
+                hex_block_offset = 0
+                while len(byte_list) > hex_block_offset + 16:
+                    dump_file.write('%s%08X  %-47s   .\n' % (indent,
+                                                             overall_offset + hex_block_offset,
+                                                             ' '.join(
+                                                                 byte_list[hex_block_offset:hex_block_offset + 16])))
+                    hex_block_offset += 16
+                dump_file.write('%s%08X  %-47s   .\n' % (indent,
+                                                         overall_offset + hex_block_offset,
+                                                         ' '.join(byte_list[hex_block_offset:])))
+                hex_block_offset += len(byte_list[hex_block_offset:])
+                overall_offset += hex_block_offset
+
                 if source == 'server':
-                    self.serveroffset = overalloffset
+                    self.server_offset = overall_offset
                 else:
-                    self.clientoffset = overalloffset
-                
-                dumpfile.flush()
+                    self.client_offset = overall_offset
+
+                dump_file.flush()

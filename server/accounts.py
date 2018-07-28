@@ -22,10 +22,10 @@ import base64
 import json
 
 class AccountInfo():
-    def __init__(self, loginname, authcode=None, passwdhash=None):
-        self.loginname = loginname
+    def __init__(self, login_name, authcode=None, password_hash=None):
+        self.login_name = login_name
         self.authcode = authcode
-        self.passwdhash = passwdhash
+        self.password_hash = password_hash
 
 class Accounts():
     def __init__(self, filename):
@@ -40,14 +40,14 @@ class Accounts():
             if data:
                 accountlist = json.loads(data)
                 for accountentry in accountlist:
-                    loginname = accountentry['loginname']
+                    login_name = accountentry['login_name']
                     authcode = accountentry['authcode']
-                    passwdhash = accountentry['passwdhash']
-                    if passwdhash is not None:
-                        passwdhash = base64.b64decode(passwdhash)
-                    self.accounts[loginname] = AccountInfo(loginname,
+                    password_hash = accountentry['password_hash']
+                    if password_hash is not None:
+                        password_hash = base64.b64decode(password_hash)
+                    self.accounts[login_name] = AccountInfo(login_name,
                                                            authcode,
-                                                           passwdhash)
+                                                           password_hash)
         except FileNotFoundError:
             pass
 
@@ -55,13 +55,13 @@ class Accounts():
         with open(self.filename, 'wt') as f:
             accountlist = []
             for accountinfo in self.accounts.values():
-                passwdhash = accountinfo.passwdhash
-                if passwdhash is not None:
-                    passwdhash = base64.b64encode(passwdhash).decode('utf-8')
+                password_hash = accountinfo.password_hash
+                if password_hash is not None:
+                    password_hash = base64.b64encode(password_hash).decode('utf-8')
                 accountlist.append({
-                    'loginname' : accountinfo.loginname,
+                    'login_name' : accountinfo.login_name,
                     'authcode' : accountinfo.authcode,
-                    'passwdhash' : passwdhash
+                    'password_hash' : password_hash
                 })
             json.dump(accountlist, f)
 
