@@ -412,9 +412,9 @@ class Parser():
 
                     if flag1:
                         if len(bindata) >= 14:
-                            numbits, bindata = getnbits(14, bindata)
-                            num = toint(numbits)
-                            self.packetwriter.writefield(numbits, '(num = %d)' % num)
+                            acknrbits, bindata = getnbits(14, bindata)
+                            acknr = toint(acknrbits)
+                            self.packetwriter.writefield(acknrbits, '(acknr = %d)' % acknr)
 
                             self.packetwriter.restoreindentlevel(flag1level)
                         else:
