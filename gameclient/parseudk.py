@@ -167,7 +167,9 @@ class Parser():
             '111010' : { 'name' : 'TimeLimit', 'type' : int },
             '000110' : { 'name' : 'GoalScore', 'type' : int },
             '100110' : { 'name' : 'RemainingMinute', 'type' : int },
+            '010110' : { 'name' : 'ElapsedTime', 'type' : int },
             '110110' : { 'name' : 'RemainingTime', 'type' : int },
+            '111110' : { 'name' : 'bStopCountDown', 'type' : bool },
             '000001' : { 'name' : 'GameClass', 'type' : int },
             '100001' : { 'name' : 'MessageOfTheDay', 'type' : str },
             '010001' : { 'name' : 'RulesString',
@@ -213,8 +215,12 @@ class Parser():
                                       '11110000000' : 'BloodEagle' } },
             '000001' : { 'name' : 'PlayerID', 'type' : int },
             '100001' : { 'name' : 'PlayerName', 'type' : str },
-            '010001' : { 'name' : 'bWaitingPlayer or bIsSpectator', 'type' : bool },
-            '001111' : { 'name' : 'bIsSpectator or bWaitingPlayer', 'type' : bool },
+            '110001' : { 'name' : 'Deaths', 'type' : int },
+            '011001' : { 'name' : 'CharClassInfo', 'type' : int },
+            '000011' : { 'name' : 'r_VoiceClass', 'type' : int },
+            '000111' : { 'name' : 'm_nPlayerIconIndex', 'type' : int },
+            '001111' : { 'name' : 'm_PendingBaseClass', 'type' : int },
+            '101111' : { 'name' : 'm_CurrentBaseClass', 'type' : int },
         }
 
         self.classdict = {
