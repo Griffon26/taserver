@@ -25,57 +25,6 @@ import sys
 import time
 import traceback
 
-# Something's wrong with the values that we use to identify class instances.
-# The IDs of UTTeamInfo_0 seems to indicate that bit 6 should not be part of
-# the ID, but if we reduce the ID from 8 to 6 bits, the distinction between
-# TrFlagCTF_DiamondSword_0 and TrCTFBase_DiamondSword_0 also disappears
-# (both will be 0b1101).
-actormap = {
-    0b01111101: { 'name'  : 'TrFlagCTF_BloodEagle_0', # dirty
-                  'class' : 'TrFlagCTF' },
-    0b00101101: { 'name'  : 'TrCTFBase_BloodEagle_0', # none
-                  'class' : 'TrCTFBase' },
-    0b01101101: { 'name'  : 'TrCTFBase_BloodEagle_0', # none
-                  'class' : 'TrCTFBase' },
-    0b10001101: { 'name'  : 'TrFlagCTF_DiamondSword_0', # dirty
-                  'class' : 'TrFlagCTF' },
-    0b11001101: { 'name'  : 'TrCTFBase_DiamondSword_0', # none
-                  'class' : 'TrCTFBase' },
-    0b11011101: { 'name'  : 'TrCTFBase_DiamondSword_0', # none
-                  'class' : 'TrCTFBase' },
-    0b00101110: { 'name'  : 'UTTeamInfo_0', # none
-                  'class' : 'UTTeamInfo' },
-    0b01101110: { 'name'  : 'UTTeamInfo_0', # dirty|netinitial
-                  'class' : 'UTTeamInfo' },
-    0b11001110: { 'name'  : 'UTTeamInfo_1', # none or dirty
-                  'class' : 'UTTeamInfo' },
-    0b11011110: { 'name'  : 'UTTeamInfo_1', # dirty|netinitial
-                  'class' : 'UTTeamInfo' }
-}
-
-classpropertymap = {
-    'TrFlagCTF'          : { 192: 'Team' },
-    'TrCTFBase'          : { 192: 'myFlag' },
-    'UTTeamInfo'         : {   0: 'TeamFlag' }
-}
-
-def getactor(actorid):
-    return actormap[actorid]['name'] if actorid in actormap else '???'
-
-def getproperty(actorid, propertyid):
-    return classpropertymap[actormap[actorid]['class']].get(propertyid, '???') if actorid in actormap else '???'
-
-def actorflags2string(flagbits):
-    flagtext = []
-    if flagbits == bitarray('00'):
-        flagtext.append('None')
-    else:
-        if flagbits[1]:
-            flagtext.append('UNKNOWN2')
-        if flagbits[0]:
-            flagtext.append('UNKNOWN1')
-    return '|'.join(flagtext)
-
 class ParseError(Exception):
     pass
 
@@ -135,7 +84,7 @@ class PacketWriter():
 
     def restoreindentlevel(self, level):
         if level >= len(self.indentlevels):
-            raise RuntimeError('Cannot restore indent to a deeper level')
+            raise RuntimeError('Cannot restore indent to a deeper level (at %d, requested %d)' % (len(self.indentlevels), level))
         self.indentlevels = self.indentlevels[:level]
         self.offset = self.indentlevels[-1]
 
@@ -177,223 +126,440 @@ def findshiftedstrings(bindata, i):
     else:
         return result
 
+def binfile2packetbits(infile):
+    for linenr, line in enumerate(infile.readlines()):
+
+        line = line.strip()
+
+        if not line:
+            continue
+
+        packetsizestr, bindatastr = line.split()
+
+        packetsize = int(packetsizestr)
+        bindata = bitarray(bindatastr, endian='little')
+
+        if packetsize != len(bindata) / 8:
+            raise RuntimeError('Packet size does not match number of bits on line %d' % (linenr + 1))
+
+        yield bindata
+    
+
+class Parser():
+    def __init__(self, packetwriter):
+        self.packetwriter = packetwriter
+        self.channels = {}
+
+        TrGameReplicationInfoProps = {
+            '000000' : { 'name' : 'prefix?',
+                         'type' : bitarray,
+                         'size' : 5 },
+            '011000' : { 'name' : 'm_Flags',
+                         'type' : bitarray,
+                         'size' : 20 },
+            '101000' : { 'name' : 'r_ServerConfig',
+                         'type' : bitarray,
+                         'size' : 12 },
+            '111000' : { 'name' : 'FlagReturnTime',
+                         'type' : bitarray,
+                         'size' : 41 },
+            '011010' : { 'name' : 'ServerName', 'type' : str },
+            '111010' : { 'name' : 'TimeLimit', 'type' : int },
+            '000110' : { 'name' : 'GoalScore', 'type' : int },
+            '100110' : { 'name' : 'RemainingMinute', 'type' : int },
+            '010110' : { 'name' : 'ElapsedTime', 'type' : int },
+            '110110' : { 'name' : 'RemainingTime', 'type' : int },
+            '111110' : { 'name' : 'bStopCountDown', 'type' : bool },
+            '000001' : { 'name' : 'GameClass', 'type' : int },
+            '100001' : { 'name' : 'MessageOfTheDay', 'type' : str },
+            '010001' : { 'name' : 'RulesString',
+                         'type' : bitarray,
+                         'size' : 544 },
+            '001001' : { 'name' : 'FlagState',
+                         'type' : bitarray,
+                         'size' : 10,
+                         'values' : { '0000000000' : 'Enemy flag on stand',
+                                      '0000000001' : 'Enemy flag taken',
+                                      '0000000011' : 'Enemy flag dropped',
+                                      '1000000000' : 'Own flag on stand',
+                                      '1000000001' : 'Own flag taken',
+                                      '1000000011' : 'Own flag dropped' } },
+            '111001' : { 'name' : 'bAllowKeyboardAndMouse', 'type' : bool },
+            '010101' : { 'name' : 'bWarmupRound', 'type' : bool },
+            '001101' : { 'name' : 'MinNetPlayers', 'type' : int },
+            '101111' : { 'name' : 'r_nBlip',
+                         'type' : bitarray,
+                         'size' : 8 },
+        }
+
+        TrFlagCTFProps = {
+            '111011' : { 'name' : 'Team',
+                         'type' : bitarray,
+                         'size' : 10 },
+        }
+
+        TrPlayerReplicationInfoProps = {
+            '000000' : { 'name' : 'prefix?',
+                         'type' : bitarray,
+                         'size' : 5 },
+            '101010' : { 'name' : 'UniqueId',
+                         'type' : bitarray,
+                         'size' : 64 },
+            '110110' : { 'name' : 'bWaitingPlayer', 'type' : bool },
+            '000110' : { 'name' : 'bBot', 'type' : bool },
+            '101110' : { 'name' : 'bIsSpectator', 'type' : bool },
+            '111110' : { 'name' : 'Team (11 bits)',
+                         'type' : bitarray,
+                         'size' : 11,
+                         'values' : { '10001000000' : 'DiamondSword',
+                                      '11110000000' : 'BloodEagle' } },
+            '000001' : { 'name' : 'PlayerID', 'type' : int },
+            '100001' : { 'name' : 'PlayerName', 'type' : str },
+            '110001' : { 'name' : 'Deaths', 'type' : int },
+            '011001' : { 'name' : 'CharClassInfo', 'type' : int },
+            '000011' : { 'name' : 'r_VoiceClass', 'type' : int },
+            '000111' : { 'name' : 'm_nPlayerIconIndex', 'type' : int },
+            '001111' : { 'name' : 'm_PendingBaseClass', 'type' : int },
+            '101111' : { 'name' : 'm_CurrentBaseClass', 'type' : int },
+        }
+
+        self.classdict = {
+            '00110100101111010100000000000000' : { 'name' : 'TrFlagCTF_DiamondSword',
+                                                   'props' : TrFlagCTFProps },
+            '00100111010010011000000000000000' : { 'name' : 'UTTeamInfo',
+                                                   'props' : {} },
+            '00100100101111010100000000000000' : { 'name' : 'TrFlagCTF_BloodEagle',
+                                                   'props' : TrFlagCTFProps },
+            '00000110101111001100000000000000' : { 'name' : 'TrPlayerReplicationInfo',
+                                                   'props' : TrPlayerReplicationInfoProps },
+            '00110001010000010100000000000000' : { 'name' : 'TrPlayerController',
+                                                   'props' : {} },
+            '01110001101110110100000000000000' : { 'name' : 'TrGameReplicationInfo',
+                                                   'props' : TrGameReplicationInfoProps },
+            '00000101100101011110000000000000' : { 'name' : 'WorldInfo',
+                                                   'props' : {} },
+            '00010011100001101100000000000000' : { 'name' : 'TrServerSettingsInfo',
+                                                   'props' : {} },
+            '00111100001100100100000000000000' : { 'name' : 'TrBaseTurret_DiamondSword',
+                                                   'props' : {} },
+            '01001010100010101100000000000000' : { 'name' : 'TrRadarStation_DiamondSword',
+                                                   'props' : {} },
+            '00110111000101011110000000000000' : { 'name' : 'TrCTFBase_DiamondSword',
+                                                   'props' : {} },
+            '01100110100101011110000000000000' : { 'name' : 'TrVehicleStation_DiamondSword',
+                                                   'props' : {} },
+            '01001011110100001100000000000000' : { 'name' : 'TrInventoryStationCollision',
+                                                   'props' : {} },
+            '00000000110010101100000000000000' : { 'name' : 'TrRepairStationCollision',
+                                                   'props' : {} },
+            '00111010100001100100000000000000' : { 'name' : 'TrPlayerPawn',
+                                                   'props' : {} },
+            '01111100101110010100000000000000' : { 'name' : 'TrDevice_LightSpinfusor',
+                                                   'props' : {} },
+            '01101100101110010100000000000000' : { 'name' : 'TrDevice_LightAssaultRifle',
+                                                   'props' : {} },
+            '01100101110110010100000000000000' : { 'name' : 'TrDevice_GrenadeLauncher_Light',
+                                                   'props' : {} },
+            '01001000101110010100000000000000' : { 'name' : 'TrDevice_LaserTargeter',
+                                                   'props' : {} },
+            '01111000100110010100000000000000' : { 'name' : 'TrDevice_Blink',
+                                                   'props' : {} },
+            '01000011100110010100000000000000' : { 'name' : 'TrDevice_ConcussionGrenade',
+                                                   'props' : {} },
+            '00100111101110010100000000000000' : { 'name' : 'TrDevice_Melee_DS',
+                                                   'props' : {} },
+            '01101101010100001100000000000000' : { 'name' : 'TrInventoryManager',
+                                                   'props' : {} },
+            '00000011110100001100000000000000' : { 'name' : 'TrStationCollision',
+                                                   'props' : {} },
+            '00011100001100100100000000000000' : { 'name' : 'TrBaseTurret_BloodEagle',
+                                                   'props' : {} },
+            '01110010100010101100000000000000' : { 'name' : 'TrRadarStation_BloodEagle',
+                                                   'props' : {} },
+            '00100110100101011110000000000000' : { 'name' : 'TrVehicleStation_BloodEagle',
+                                                   'props' : {} },
+            '00111100100101011110000000000000' : { 'name' : 'TrPowerGenerator_BloodEagle',
+                                                   'props' : {} },
+            '01010111000101011110000000000000' : { 'name' : 'TrCTFBase_BloodEagle',
+                                                   'props' : {} },
+        }
+
+        self.instancedict = {}
+
+    def _parsepayload(self, bindata, payloadsize, channel):
+        
+        payloadbits, bindata = getnbits(payloadsize, bindata)
+        
+        channelisnew = channel not in self.channels
+
+        if channelisnew:
+            try:
+                classbits, payloadbits = getnbits(32, payloadbits)
+                classkey = classbits.to01()
+                if classkey not in self.classdict:
+                    classname = 'unknown%d' % len(self.classdict)
+                    self.classdict[classkey] = { 'name' : classname,
+                                                 'props' : {} }
+                class_ = self.classdict[classkey]
+                classname = class_['name']
+
+                self.instancedict[classname] = self.instancedict.get(classname, -1) + 1
+                instancename = '%s_%d' % (classname, self.instancedict[classname])
+                self.channels[channel] = { 'class' : class_,
+                                           'instancename' : instancename }
+                self.packetwriter.writefield(classbits, '(new object %s)' % instancename)
+                   
+            except:
+                raise ParseError('ERROR: exception during parsing of payload: %s' % payloadbits.to01())
+        else:
+            self.packetwriter.writefield(bitarray(), '(object = %s)' % self.channels[channel]['instancename'])
+
+        while payloadbits:
+            propertylevel = self.packetwriter.getindentlevel()
+            propertyidbits, payloadbits = getnbits(6, payloadbits)
+            propertykey = propertyidbits.to01()
+            propertydict = self.channels[channel]['class']['props']
+            property_ = propertydict.get(propertykey, { 'name' : 'Unknown'})
+
+            self.packetwriter.writefield(propertyidbits, '(property = %s)' % property_['name'])
+
+            propertytype = property_.get('type', None)
+            propertysize = property_.get('size', None)
+            propertyvalues = property_.get('values', None)
+            if propertyvalues:
+                propertyvaluebits, payloadbits = getnbits(propertysize, payloadbits)
+                propertyvalue = propertyvalues.get(propertyvaluebits.to01(), 'Unknown')
+                self.packetwriter.writefield(propertyvaluebits, '(value = %s)' % propertyvalue)
+            
+            elif propertytype:
+                if propertytype is str:
+                    stringsizebits, payloadbits = getnbits(32, payloadbits)
+                    stringsize = toint(stringsizebits)
+                    self.packetwriter.writefield(stringsizebits, '(strsize = %d)' % stringsize)
+
+                    if stringsize > 0:
+                        propertystring, payloadbits = getstring(payloadbits)
+                        self.packetwriter.writefield(bitarray(), '(value = %s)' % propertystring)
+
+                        if len(propertystring) + 1 != stringsize:
+                            raise ParseError('ERROR: string size (%d) was not equal to expected size (%d)' %
+                                             (len(propertystring) + 1,
+                                              stringsize))
+                    
+                elif propertytype is int:
+                    propertyvaluebits, payloadbits = getnbits(32, payloadbits)
+                    propertyvalue = toint(propertyvaluebits)
+                    self.packetwriter.writefield(propertyvaluebits, '(value = %d)' % propertyvalue)
+                elif propertytype is bool:
+                    propertyvaluebits, payloadbits = getnbits(1, payloadbits)
+                    propertyvalue = (propertyvaluebits[0] == 1)
+                    self.packetwriter.writefield(propertyvaluebits, '(value = %s)' % propertyvalue)
+                elif propertytype is bitarray:
+                    propertyvaluebits, payloadbits = getnbits(propertysize, payloadbits)
+                    self.packetwriter.writefield(propertyvaluebits, '(value)')
+            else:
+                self.packetwriter.writefield(payloadbits, '(rest of payload)')
+                break
+
+            self.packetwriter.restoreindentlevel(propertylevel)
+
+        return bindata
+
+    def _parsechannel(self, bindata, withcounter, flag1level):
+        channelbits, bindata = getnbits(10, bindata)
+        channel = toint(channelbits)
+        self.packetwriter.writefield(channelbits, '(channel = %d)' % channel)
+
+        if withcounter:
+            counterbits, bindata = getnbits(5, bindata)
+            counter = toint(counterbits)
+            self.packetwriter.writefield(counterbits, '(counter = %d)' % counter)
+
+            unknownbits, bindata = getnbits(8, bindata)
+            self.packetwriter.writefield(unknownbits, '')
+
+        payloadsizebits, bindata = getnbits(14, bindata)
+        payloadsize = toint(payloadsizebits)
+        self.packetwriter.writefield(payloadsizebits, '(payloadsize = %d)' % payloadsize)
+
+        bindata = self._parsepayload(bindata, payloadsize, channel)
+
+        state = 'flag1'
+        self.packetwriter.restoreindentlevel(flag1level)
+
+        return bindata, state
+        
+    def parse(self, bindata):
+        originalbindata = bitarray(bindata)
+
+        self.packetwriter.writeline('Packet with size %d' % (len(bindata) / 8))
+
+        shiftedstrings = [findshiftedstrings(bindata, i) for i in range(8)]
+
+        seqnrbits, bindata = getnbits(14, bindata)
+        seqnr = toint(seqnrbits)
+        self.packetwriter.writefield(seqnrbits, '(seqnr = %d)' % seqnr)
+
+        try:
+            state = 'flag1'
+            while len(bindata) > 0 and state != 'end':
+                if state == 'flag1':
+                    flag1level = self.packetwriter.getindentlevel()
+                    
+                    flag1bits, bindata = getnbits(1, bindata)
+                    flag1 = toint(flag1bits)
+                    self.packetwriter.writefield(flag1bits, '(flag1 = %d)' % flag1)
+
+                    if flag1:
+                        if len(bindata) >= 14:
+                            numbits, bindata = getnbits(14, bindata)
+                            num = toint(numbits)
+                            self.packetwriter.writefield(numbits, '(num = %d)' % num)
+
+                            self.packetwriter.restoreindentlevel(flag1level)
+                        else:
+                            state = 'end'
+                    else:
+                        state = 'flag1a'
+
+                elif state == 'flag1a':
+                    flag1alevel = self.packetwriter.getindentlevel()
+                    
+                    flag1abits, bindata = getnbits(2, bindata)
+                    flag1a = toint(flag1abits)
+                    self.packetwriter.writefield(flag1abits, '(flag1a = %d)' % flag1a)
+
+
+                    if flag1abits == bitarray('00'): # actor
+                        bindata, state = self._parsechannel(bindata, False, flag1level)
+                    
+                    elif flag1abits == bitarray('01'): # RPC
+                        bindata, state = self._parsechannel(bindata, True, flag1level)
+
+                        # TODO: integrate the code below into _parsepayload
+                        '''
+                        while True:
+                            level = self.packetwriter.getindentlevel()
+                            
+                            part1flags, bindata = getnbits(2, bindata)
+                            self.packetwriter.writefield(part1flags, '(part1flags = %s)' % part1flags)
+
+                            if part1flags == bitarray('10'):
+                                state = 'end'
+                                break
+                            elif part1flags == bitarray('11'):
+                                part1size = 166
+                            elif part1flags == bitarray('00'):
+                                part1size = 206
+                            else:
+                                raise ParseError('Unknown part1flags: %s' % part1flags)
+
+
+                            part1bits, bindata = getnbits(part1size, bindata)
+                            self.packetwriter.writefield(part1bits, '')
+
+                            part1name, bindata = getstring(bindata)
+                            self.packetwriter.writefield(None, '(%s)' % part1name)
+
+                            part2flags, _ = getnbits(2, bindata)
+                            if part2flags == bitarray('00'):
+                                nbits = 128
+                            elif part2flags == bitarray('01'):
+                                nbits = 144
+                            elif part2flags == bitarray('11') or part2flags == bitarray('10'):
+                                nbits = 168
+                            else:
+                                raise ParseError('Unknown part2flags: %s' % part2flags)
+                            part2bits, bindata = getnbits(nbits, bindata)
+                            self.packetwriter.writefield(part2bits, '')
+                            
+                            part2name, bindata = getstring(bindata)
+                            self.packetwriter.writefield(None, '(%s)' % part2name)
+
+                            self.packetwriter.restoreindentlevel(level)
+                        '''
+                    elif flag1abits == bitarray('10'):
+                        
+                        unknownbits, bindata = getnbits(2, bindata)
+                        self.packetwriter.writefield(unknownbits, '')
+
+                        bindata, state = self._parsechannel(bindata, True, flag1level)
+                        
+                    elif flag1abits == bitarray('11'):
+                        state = 'flag1a'
+                        self.packetwriter.restoreindentlevel(flag1alevel)
+
+
+                        # TODO: integrate the code below into _parsepayload
+                        '''
+
+                        # This is only correct for one instance where
+                        # flag1a is 3. TODO: gather other small packets
+                        # with flag1a == 3 and see how to make this more
+                        # generally applicable
+                        
+                        unknownbits, bindata = getnbits(2, bindata)
+                        self.packetwriter.writefield(unknownbits, '')
+
+                        channelbits, bindata = getnbits(10, bindata)
+                        channel = toint(channelbits)
+                        self.packetwriter.writefield(channelbits, '(channel = %d)' % channel)
+
+                        state = 'end'
+                        '''
+                        '''
+                        unknownbits, bindata = getnbits(108, bindata)
+                        self.packetwriter.writefield(unknownbits, '')
+                        
+                        playername, bindata = getstring(bindata)
+                        self.packetwriter.writefield(None, '(player = %s)' % playername)
+
+                        unknownbits, bindata = getnbits(8, bindata)
+                        self.packetwriter.writefield(unknownbits, '')
+
+                        state = 'flag1a'
+                        self.packetwriter.restoreindentlevel(flag1alevel)
+                        '''
+
+                    else:
+                        raise ParseError('Unknown value for flag1a: %s' % flag1a)
+                else:
+                    raise ParseError('Unknown value for state: %s' % state)
+
+        except UnicodeEncodeError as e:
+            self.packetwriter.writerest('ERROR: Failed conversion to unicode (%s)' % str(e), bindata)
+        except EOFError:
+            self.packetwriter.writerest('ERROR: Attempted to read more bits than what\'s left', bindata)
+        except ParseError as e:
+            self.packetwriter.writerest('ERROR: Parsing failed (%s). Remaining bits:' % str(e), bindata)
+        else:
+            # Don't report an error when the only bits left are the last few of the last byte
+            if len(bindata) > 7 or toint(bindata) != 0:
+                self.packetwriter.writerest('ERROR: Bits left after parsing', bindata)
+            else:
+                self.packetwriter.writerest('    Bits left over in the last byte', bindata)
+
+        if any(shiftedstrings):
+            self.packetwriter.writeline('    String overview:')
+            self.packetwriter.writeline('    ' + originalbindata.to01())
+            for i, shiftedstring in enumerate(shiftedstrings):
+                if shiftedstring:
+                    self.packetwriter.writeline('    %s%s (shifted by %d bits)' % (' ' * i, shiftedstring, i))
+            self.packetwriter.writeline('')
+        
+
 def main(infilename):
     outfilename = infilename + '_parsed.txt'
 
     with open(infilename, 'rt') as infile:
         with open(outfilename, 'wt') as outfile:
             print('Writing output to %s...' % outfilename)
-            packetwriter = PacketWriter(outfile)
             
-            for linenr, line in enumerate(infile.readlines()):
+            packetwriter = PacketWriter(outfile)
+            parser = Parser(packetwriter)
 
-                line = line.strip()
-
-                if not line:
-                    continue
-
-                packetsizestr, bindatastr = line.split()
-
-                packetsize = int(packetsizestr)
-                bindata = bitarray(bindatastr, endian='little')
-                originalbindata = bitarray(bindata)
-
-                if packetsize != len(bindata) / 8:
-                    raise RuntimeError('Packet size does not match number of bits on line %d' % (linenr + 1))
-
-                packetwriter.writeline('Packet with size %d' % packetsize)
-
-                shiftedstrings = [findshiftedstrings(bindata, i) for i in range(8)]
-
-                seqnrbits, bindata = getnbits(14, bindata)
-                seqnr = toint(seqnrbits)
-                packetwriter.writefield(seqnrbits, '(seqnr = %d)' % seqnr)
-
-                try:
-                    state = 'flag1'
-                    while len(bindata) > 0 and state != 'end':
-                        if state == 'flag1':
-                            flag1level = packetwriter.getindentlevel()
-                            
-                            flag1bits, bindata = getnbits(1, bindata)
-                            flag1 = toint(flag1bits)
-                            packetwriter.writefield(flag1bits, '(flag1 = %d)' % flag1)
-
-                            if flag1:
-                                numbits, bindata = getnbits(14, bindata)
-                                num = toint(numbits)
-                                packetwriter.writefield(numbits, '(num = %d)' % num)
-
-                                packetwriter.restoreindentlevel(flag1level)
-                            else:
-                                state = 'flag1a'
-
-                        elif state == 'flag1a':
-                            flag1alevel = packetwriter.getindentlevel()
-                            
-                            flag1abits, bindata = getnbits(2, bindata)
-                            flag1a = toint(flag1abits)
-                            packetwriter.writefield(flag1abits, '(flag1a = %d)' % flag1a)
-
-                            if flag1abits == bitarray('00'):
-                                channelbits, bindata = getnbits(10, bindata)
-                                channel = toint(channelbits)
-                                packetwriter.writefield(channelbits, '(channel = %d)' % channel)
-
-                                sizebits, bindata = getnbits(8, bindata)
-                                size = toint(sizebits)
-                                packetwriter.writefield(sizebits, '(size = %d)' % size)
-
-                                payloadbits, bindata = getnbits(size, bindata)
-
-                                if len(payloadbits) == 16:
-                                    propertybits, payloadbits = getnbits(8, payloadbits)
-                                    property_ = toint(propertybits)
-
-                                    actorbits, payloadbits = getnbits(8, payloadbits)
-                                    actor = toint(actorbits)
-                                    
-                                    #actorflags, payloadbits = getnbits(0, payloadbits)
-                                    
-                                    packetwriter.writefield(propertybits, '(property = %d:%s)' % (property_, getproperty(actor, property_)))
-                                    packetwriter.writefield(actorbits, '(actor = %d:%s)' % (actor, getactor(actor)))
-                                    #packetwriter.writefield(actorflags, '(flags = %s)' % actorflags2string(actorflags))
-                                else:
-                                    packetwriter.writefield(payloadbits, '(payload)')
-
-                                endmarkerbits, bindata = getnbits(7, bindata)
-                                theend = 'yes' if endmarkerbits[6] else 'no'
-                                packetwriter.writefield(endmarkerbits, '(theend? = %s)' % theend)
-
-                                if endmarkerbits[6]:
-                                    state = 'end'
-                                    continue
-
-                                packetwriter.restoreindentlevel(flag1alevel)
-
-                            elif flag1abits == bitarray('01'):
-                                channelbits, bindata = getnbits(10, bindata)
-                                channel = toint(channelbits)
-                                packetwriter.writefield(channelbits, '(channel = %d)' % channel)
-
-                                counterbits, bindata = getnbits(5, bindata)
-                                counter = toint(counterbits)
-                                packetwriter.writefield(counterbits, '(counter = %d)' % counter)
-
-                                unknownbits, bindata = getnbits(8, bindata)
-                                packetwriter.writefield(unknownbits, '')
-
-                                rpcsizebits, bindata = getnbits(14, bindata)
-                                rpcsize = toint(rpcsizebits)
-                                packetwriter.writefield(rpcsizebits, '(rpcsize = %d)' % rpcsize)
-
-                                rpcdatabits, bindata = getnbits(rpcsize, bindata)
-                                packetwriter.writefield(rpcdatabits, '(rpcdata)')
-
-                                endbit, bindata = getnbits(1, bindata)
-                                end = toint(endbit)
-                                packetwriter.writefield(endbit, '(theend? = %d)' % end)
-
-                                if endbit == bitarray('1'):
-                                    state = 'end'
-
-                                '''
-                                while True:
-                                    level = packetwriter.getindentlevel()
-                                    
-                                    part1flags, bindata = getnbits(2, bindata)
-                                    packetwriter.writefield(part1flags, '(part1flags = %s)' % part1flags)
-
-                                    if part1flags == bitarray('10'):
-                                        state = 'end'
-                                        break
-                                    elif part1flags == bitarray('11'):
-                                        part1size = 166
-                                    elif part1flags == bitarray('00'):
-                                        part1size = 206
-                                    else:
-                                        raise ParseError('Unknown part1flags: %s' % part1flags)
-
-
-                                    part1bits, bindata = getnbits(part1size, bindata)
-                                    packetwriter.writefield(part1bits, '')
-
-                                    part1name, bindata = getstring(bindata)
-                                    packetwriter.writefield(None, '(%s)' % part1name)
-
-                                    part2flags, _ = getnbits(2, bindata)
-                                    if part2flags == bitarray('00'):
-                                        nbits = 128
-                                    elif part2flags == bitarray('01'):
-                                        nbits = 144
-                                    elif part2flags == bitarray('11') or part2flags == bitarray('10'):
-                                        nbits = 168
-                                    else:
-                                        raise ParseError('Unknown part2flags: %s' % part2flags)
-                                    part2bits, bindata = getnbits(nbits, bindata)
-                                    packetwriter.writefield(part2bits, '')
-                                    
-                                    part2name, bindata = getstring(bindata)
-                                    packetwriter.writefield(None, '(%s)' % part2name)
-
-                                    packetwriter.restoreindentlevel(level)
-                                '''
-
-                                packetwriter.restoreindentlevel(flag1alevel)
-
-                            elif flag1abits == bitarray('10'):
-                                break
-                            elif flag1abits == bitarray('11'):
-
-                                # This is only correct for one instance where
-                                # flag1a is 3. TODO: gather other small packets
-                                # with flag1a == 3 and see how to make this more
-                                # generally applicable
-                                
-                                unknownbits, bindata = getnbits(2, bindata)
-                                packetwriter.writefield(unknownbits, '')
-
-                                channelbits, bindata = getnbits(10, bindata)
-                                channel = toint(channelbits)
-                                packetwriter.writefield(channelbits, '(channel = %d)' % channel)
-
-                                unknownbits, bindata = getnbits(108, bindata)
-                                packetwriter.writefield(unknownbits, '')
-                                
-                                playername, bindata = getstring(bindata)
-                                packetwriter.writefield(None, '(player = %s)' % playername)
-
-                                unknownbits, bindata = getnbits(8, bindata)
-                                packetwriter.writefield(unknownbits, '')
-
-                                state = 'flag1a'
-                                packetwriter.restoreindentlevel(flag1alevel)
-
-                            else:
-                                raise ParseError('Unknown value for flag1a: %s' % flag1a)
-                        else:
-                            raise ParseError('Unknown value for state: %s' % state)
-
-                except UnicodeEncodeError as e:
-                    packetwriter.writerest('ERROR: Failed conversion to unicode (%s)' % str(e), bindata)
-                except EOFError:
-                    packetwriter.writerest('ERROR: Attempted to read more bits than what\'s left', bindata)
-                except ParseError as e:
-                    packetwriter.writerest('ERROR: Parsing failed (%s). Remaining bits:' % str(e), bindata)
-                else:
-                    # Don't report an error when the only bits left are the last few of the last byte
-                    if len(bindata) > 7 or toint(bindata) != 0:
-                        packetwriter.writerest('ERROR: Bits left after parsing', bindata)
-                    else:
-                        packetwriter.writerest('    Bits left over in the last byte', bindata)
-
-                if any(shiftedstrings):
-                    packetwriter.writeline('    String overview:')
-                    packetwriter.writeline('    ' + originalbindata.to01())
-                    for i, shiftedstring in enumerate(shiftedstrings):
-                        if shiftedstring:
-                            packetwriter.writeline('    %s%s (shifted by %d bits)' % (' ' * i, shiftedstring, i))
-                    packetwriter.writeline('')
+            for bindata in binfile2packetbits(infile):
+                parser.parse(bindata)
                 
 if __name__ == '__main__':
     try:

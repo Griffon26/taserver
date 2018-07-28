@@ -140,7 +140,7 @@ def main():
         packetack = parsehexdump(f.read())
 
     try:
-        with open('serverpacketbindump.txt', 'wt') as outfile:
+        with open('serverpackets.bindump', 'wt') as outfile:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
             protocol = [
