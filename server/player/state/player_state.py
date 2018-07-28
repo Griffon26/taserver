@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 #
+# Copyright (C) 2018  Maurice van der Pot <griffon26@kfk4ever.com>,
 # Copyright (C) 2018 Timo Pomer <timopomer@gmail.com>
 #
 # This file is part of taserver
