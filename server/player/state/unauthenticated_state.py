@@ -45,8 +45,8 @@ class UnauthenticatedState(PlayerState):
                         self.player.password_hash == server.accounts[self.player.login_name].password_hash):
                     self.player.authenticated = True
 
-                self.player.display_name = (
-                                               '' if self.player.authenticated else 'unverif-') + self.player.login_name
+                name_prefix = '' if self.player.authenticated else 'unverif-'
+                self.player.display_name = name_prefix + self.player.login_name
                 send([
                     a003d().setplayer(self.player.display_name, ''),
                     m0662(0x8898, 0xdaff),
