@@ -32,50 +32,50 @@ from hexdumper import HexDumper, dumpfilename
 from server import Server
 
 
-def handledump(dumpqueue):
+def handle_dump(dumpqueue):
     if dumpqueue:
-        hexdumper = HexDumper(dumpqueue)
-        hexdumper.run()
+        hex_dumper = HexDumper(dumpqueue)
+        hex_dumper.run()
 
 
-def handleauthcodes(serverqueue, authcodequeue):
-    authcodehandler = AuthCodeHandler(serverqueue, authcodequeue)
-    authcodehandler.run()
+def handle_authcodes(server_queue, authcode_queue):
+    authcode_handler = AuthCodeHandler(server_queue, authcode_queue)
+    authcode_handler.run()
 
 
-def handleserver(serverqueue, clientqueues, authcodequeue, accounts, configuration):
-    server = Server(serverqueue, clientqueues, authcodequeue, accounts, configuration)
+def handle_server(server_queue, client_queues, authcode_queue, accounts, configuration):
+    server = Server(server_queue, client_queues, authcode_queue, accounts, configuration)
     server.run()
 
 
-def handleclient(serverqueue, clientqueue, socket, address, dumpqueue):
+def handle_client(server_queue, client_queue, socket, address, dump_queue):
     myid = id(gevent.getcurrent())
     print('client(%s): connected from %s:%s' % (myid, address[0], address[1]))
-    reader = ClientReader(socket, myid, address, serverqueue, dumpqueue)
+    reader = ClientReader(socket, myid, address, server_queue, dump_queue)
     gevent.spawn(reader.run)
 
-    writer = ClientWriter(socket, myid, clientqueue, dumpqueue)
+    writer = ClientWriter(socket, myid, client_queue, dump_queue)
     writer.run()
 
 
 def main(dump):
-    clientqueues = {}
-    serverqueue = gevent.queue.Queue()
-    authcodequeue = gevent.queue.Queue()
-    dumpqueue = gevent.queue.Queue() if dump else None
+    client_queues = {}
+    server_queue = gevent.queue.Queue()
+    authcode_queue = gevent.queue.Queue()
+    dump_queue = gevent.queue.Queue() if dump else None
 
     accounts = Accounts('accountdatabase.json')
     configuration = Configuration()
-    gevent.spawn(handleserver, serverqueue, clientqueues, authcodequeue, accounts, configuration)
-    gevent.spawn(handledump, dumpqueue)
-    gevent.spawn(handleauthcodes, serverqueue, authcodequeue)
+    gevent.spawn(handle_server, server_queue, client_queues, authcode_queue, accounts, configuration)
+    gevent.spawn(handle_dump, dump_queue)
+    gevent.spawn(handle_authcodes, server_queue, authcode_queue)
 
-    def handleclientwrapper(socket, address):
-        clientqueue = gevent.queue.Queue()
-        clientqueues[id(gevent.getcurrent())] = clientqueue
-        handleclient(serverqueue, clientqueue, socket, address, dumpqueue)
+    def handle_client_wrapper(socket, address):
+        client_queue = gevent.queue.Queue()
+        client_queues[id(gevent.getcurrent())] = client_queue
+        handle_client(server_queue, client_queue, socket, address, dump_queue)
 
-    server = StreamServer(('0.0.0.0', 9000), handleclientwrapper)
+    server = StreamServer(('0.0.0.0', 9000), handle_client_wrapper)
 
     try:
         server.serve_forever()

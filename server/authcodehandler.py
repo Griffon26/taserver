@@ -22,23 +22,24 @@ from gevent import socket
 from datatypes import AuthCodeRequestMessage
 import struct
 
-authcodeaddress = ('127.0.0.1', 9800)
+authcode_address = ('127.0.0.1', 9800)
 
-class AuthCodeHandler():
-    def __init__(self, serverqueue, authcodequeue):
-        self.serverqueue = serverqueue
-        self.authcodequeue = authcodequeue
+
+class AuthCodeHandler:
+    def __init__(self, server_queue, authcode_queue):
+        self.server_queue = server_queue
+        self.authcode_queue = authcode_queue
 
     def run(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind(authcodeaddress)
+        sock.bind(authcode_address)
         while True:
             data, addr = sock.recvfrom(4096)
             length = struct.unpack('<H', data[0:2])[0]
-            namefromclient = data[2:2+length].decode('latin1')
-            self.serverqueue.put(AuthCodeRequestMessage(namefromclient))
-            
-            namefromserver, authcode = self.authcodequeue.get()
-            if namefromserver != namefromclient:
+            name_from_client = data[2:2 + length].decode('latin1')
+            self.server_queue.put(AuthCodeRequestMessage(name_from_client))
+
+            name_from_server, authcode = self.authcode_queue.get()
+            if name_from_server != name_from_client:
                 raise RuntimeError('bug!')
             sock.sendto(struct.pack('<H', len(authcode)) + authcode.encode('latin1'), addr)

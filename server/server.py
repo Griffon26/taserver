@@ -29,7 +29,7 @@ from player_info import PlayerInfo
 from protocols.error import ProtocolViolationError
 
 
-def modifygameserverwhitelist(add_or_remove, player, server):
+def modify_gameserver_whitelist(add_or_remove, player, server):
     if add_or_remove not in ('add', 'remove'):
         raise RuntimeError('Invalid argument provided')
     ipstring = '%d.%d.%d.%d' % player.ip
@@ -37,7 +37,7 @@ def modifygameserverwhitelist(add_or_remove, player, server):
             (add_or_remove, ipstring), shell=True)
 
 
-def modifyloginserverblacklist(add_or_remove, player):
+def modify_loginserver_blacklist(add_or_remove, player):
     if add_or_remove not in ('add', 'remove'):
         raise RuntimeError('Invalid argument provided')
     ipstring = '%d.%d.%d.%d' % player.ip
@@ -46,87 +46,94 @@ def modifyloginserverblacklist(add_or_remove, player):
 
 
 class Server:
-    def __init__(self, serverqueue, clientqueues, authcodequeue, accounts, configuration: Configuration):
-        self.serverqueue = serverqueue
-        self.clientqueues = clientqueues
-        self.authcodequeue = authcodequeue
+    def __init__(self, server_queue, client_queues, authcode_queue, accounts, configuration: Configuration):
+        self.server_queue = server_queue
+        self.client_queues = client_queues
+        self.authcode_queue = authcode_queue
 
         self.servers = configuration.server_config.servers
 
         self.players = {}
         self.accounts = accounts
+        self.message_handlers = {
+            AuthCodeRequestMessage: self.handle_authcode_request_message,
+            ClientDisconnectedMessage: self.handle_client_disconnected_message,
+            ClientConnectedMessage: self.handle_client_connected_message,
+            ClientMessage: self.handle_client_message
+        }
 
     def run(self):
         while True:
-            for msg in self.serverqueue:
-                messagehandlers = {
-                    AuthCodeRequestMessage: self.handleauthcoderequestmessage,
-                    ClientDisconnectedMessage: self.handleclientdisconnectedmessage,
-                    ClientConnectedMessage: self.handleclientconnectedmessage,
-                    ClientMessage: self.handleclientmessage
-                }
-                messagehandlers[type(msg)](msg)
+            for message in self.server_queue:
+                handler = self.message_handlers[type(message)]
+                handler(message)
 
-    def findserverbyid1(self, id1):
+    def find_server_by_id1(self, id1):
         for server in self.servers:
             if server.serverid1 == id1:
                 return server
         raise ProtocolViolationError('No server found with specified serverid1')
 
-    def findserverbyid2(self, id2):
+    def find_server_by_id2(self, id2):
         for server in self.servers:
             if server.serverid2 == id2:
                 return server
         raise ProtocolViolationError('No server found with specified serverid2')
 
-    def findplayerbyid(self, playerid):
-        return self.players[playerid] if playerid in self.players else None
+    def find_player_by(self, **kwargs):
+        matching_players = self.find_players_by(**kwargs)
 
-    def findplayerbydisplayname(self, displayname):
-        for player in self.players.values():
-            if player.displayname == displayname:
-                return player
-        return None
+        if len(matching_players) == 0:
+            raise ValueError("No player matched query")
 
-    def allplayersonserver(self, server):
-        return (p for p in self.players.values() if p.server is server)
+        if len(matching_players) > 1:
+            raise ValueError("More than one player matched query")
+        return matching_players[0]
 
-    def handleauthcoderequestmessage(self, msg):
+    def find_players_by(self, **kwargs):
+        matching_players = self.players
+
+        for key, val in kwargs.items():
+            matching_players = [player for player in matching_players if getattr(player, key) == val]
+
+        return matching_players
+
+    def handle_authcode_request_message(self, msg):
         availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
         authcode = ''.join([random.choice(availablechars) for i in range(8)])
-        print('server: authcode requested for %s, returned %s' % (msg.loginname, authcode))
-        self.accounts[msg.loginname] = AccountInfo(msg.loginname, authcode)
+        print('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
+        self.accounts[msg.login_name] = AccountInfo(msg.login_name, authcode)
         self.accounts.save()
-        self.authcodequeue.put((msg.loginname, authcode))
+        self.authcode_queue.put((msg.login_name, authcode))
 
-    def handleclientdisconnectedmessage(self, msg):
+    def handle_client_disconnected_message(self, msg):
         print('server: client(%s)\'s reader quit; stopping writer' % msg.clientid)
-        self.clientqueues[msg.clientid].put((None, None))
-        del (self.clientqueues[msg.clientid])
+        self.client_queues[msg.clientid].put((None, None))
+        del (self.client_queues[msg.clientid])
 
         # Remove and don't complain if it wasn't there yet
         self.players.pop(msg.clientid, None)
 
-    def handleclientconnectedmessage(self, msg):
+    def handle_client_connected_message(self, msg):
         self.players[msg.clientid] = PlayerInfo(msg.clientid, msg.clientaddress, msg.clientport)
 
-    def handleclientmessage(self, msg):
+    def handle_client_message(self, msg):
 
-        currentplayer = self.players[msg.clientid]
-        currentplayer.lastreceivedseq = msg.clientseq
+        current_player = self.players[msg.clientid]
+        current_player.lastreceivedseq = msg.clientseq
 
         def sendmsg(data, clientid=msg.clientid):
-            self.clientqueues[clientid].put((data, self.players[clientid].lastreceivedseq))
+            self.client_queues[clientid].put((data, self.players[clientid].lastreceivedseq))
 
-        def sendallonserver(data, server):
-            for player in self.allplayersonserver(server):
+        def send_all_on_server(data, server):
+            for player in self.find_players_by(server=server):
                 sendmsg(data, player.id)
 
         print('server: client(%s, %s:%s, "%s") sent:\n%s' %
               (msg.clientid,
-               currentplayer.ip,
-               currentplayer.port,
-               currentplayer.displayname,
+               current_player.ip,
+               current_player.port,
+               current_player.display_name,
                '\n'.join(['  %04X' % req.ident for req in msg.requests])))
 
         # TODO: implement a state machine in player such that we only
@@ -142,17 +149,17 @@ class Server:
                     sendmsg(a003a())
 
                 else:  # actual login
-                    currentplayer.loginname = request.findbytype(m0494).value
-                    currentplayer.passwdhash = request.findbytype(m0056).content
+                    current_player.login_name = request.findbytype(m0494).value
+                    current_player.password_hash = request.findbytype(m0056).content
 
-                    if (currentplayer.loginname in self.accounts and
-                            currentplayer.passwdhash == self.accounts[currentplayer.loginname].passwdhash):
-                        currentplayer.authenticated = True
+                    if (current_player.login_name in self.accounts and
+                            current_player.password_hash == self.accounts[current_player.login_name].password_hash):
+                        current_player.authenticated = True
 
-                    currentplayer.displayname = (
-                                                    '' if currentplayer.authenticated else 'unverif-') + currentplayer.loginname
+                    current_player.display_name = (
+                                                    '' if current_player.authenticated else 'unverif-') + current_player.login_name
                     sendmsg([
-                        a003d().setplayer(currentplayer.displayname, ''),
+                        a003d().setplayer(current_player.display_name, ''),
                         m0662(0x8898, 0xdaff),
                         m0633(),
                         m063e(),
@@ -189,25 +196,25 @@ class Server:
 
             elif isinstance(request, a00b1):  # server join step 1
                 serverid1 = request.findbytype(m02c7).value
-                server = self.findserverbyid1(serverid1)
+                server = self.find_server_by_id1(serverid1)
                 serverid2 = server.serverid2
                 sendmsg(a00b0().setlength(9).setserverid1(serverid1))
                 sendmsg(a00b4().setserverid2(serverid2))
 
             elif isinstance(request, a00b2):  # server join step 2
                 serverid2 = request.findbytype(m02c4).value
-                server = self.findserverbyid2(serverid2)
+                server = self.find_server_by_id2(serverid2)
                 sendmsg(a00b0().setlength(10))
                 sendmsg(a0035().setserverdata(server))
 
-                modifygameserverwhitelist('add', currentplayer, currentplayer.server)
-                currentplayer.server = server
+                modify_gameserver_whitelist('add', current_player, current_player.server)
+                current_player.server = server
 
             elif isinstance(request, a00b3):  # server disconnect
                 # TODO: check on the real server if there's a response to this msg
                 # serverid2 = request.findbytype(m02c4).value
-                modifygameserverwhitelist('remove', currentplayer, currentplayer.server)
-                currentplayer.server = None
+                modify_gameserver_whitelist('remove', current_player, current_player.server)
+                current_player.server = None
 
             elif isinstance(request, a0070):  # chat
                 messagetype = request.findbytype(m009e).value
@@ -221,32 +228,32 @@ class Server:
 
                 elif messagetype == 6:  # private
                     addressedplayername = request.findbytype(m034a).value
-                    addressedplayer = self.findplayerbydisplayname(addressedplayername)
+                    addressedplayer = self.find_player_by(display_name=addressedplayername)
                     if addressedplayer:
-                        request.content.append(m02fe().set(currentplayer.displayname))
-                        request.content.append(m06de().set(currentplayer.tag))
+                        request.content.append(m02fe().set(current_player.display_name))
+                        request.content.append(m06de().set(current_player.tag))
 
-                        sendmsg(request, clientid=currentplayer.id)
+                        sendmsg(request, clientid=current_player.id)
 
-                        if currentplayer.id != addressedplayer.id:
+                        if current_player.id != addressedplayer.id:
                             sendmsg(request, clientid=addressedplayer.id)
 
                 else:  # public
-                    request.content.append(m02fe().set(currentplayer.displayname))
-                    request.content.append(m06de().set(currentplayer.tag))
+                    request.content.append(m02fe().set(current_player.display_name))
+                    request.content.append(m06de().set(current_player.tag))
 
-                    if currentplayer.server:
-                        sendallonserver(request, currentplayer.server)
+                    if current_player.server:
+                        send_all_on_server(request, current_player.server)
 
             elif isinstance(request, a0175):  # redeem promotion code
                 authcode = request.findbytype(m0669).value
-                if (currentplayer.loginname in self.accounts and
-                        self.accounts[currentplayer.loginname].authcode == authcode):
+                if (current_player.login_name in self.accounts and
+                        self.accounts[current_player.login_name].authcode == authcode):
 
-                    self.accounts[currentplayer.loginname].passwdhash = currentplayer.passwdhash
-                    self.accounts[currentplayer.loginname].authcode = None
+                    self.accounts[current_player.login_name].password_hash = current_player.password_hash
+                    self.accounts[current_player.login_name].authcode = None
                     self.accounts.save()
-                    currentplayer.authenticated = True
+                    current_player.authenticated = True
                 else:
                     invalidcodemsg = a0175()
                     invalidcodemsg.findbytype(m02fc).set(0x00019646)  # message type
@@ -257,37 +264,37 @@ class Server:
                 response = request.findbytype(m0592)
 
                 if response is None:  # votekick initiation
-                    otherplayer = self.findplayerbydisplayname(request.findbytype(m034a).value)
+                    otherplayer = self.find_player_by(display_name=request.findbytype(m034a).value)
 
                     if (otherplayer and
-                            currentplayer.server and
+                            current_player.server and
                             otherplayer.server and
-                            currentplayer.server == otherplayer.server and
-                            currentplayer.server.playerbeingkicked == None):
+                            current_player.server == otherplayer.server and
+                            current_player.server.playerbeingkicked == None):
 
                         # Start a new vote
                         reply = a018c()
                         reply.content = [
-                            m02c4().set(currentplayer.server.serverid2),
-                            m034a().set(currentplayer.displayname),
-                            m0348().set(currentplayer.id),
+                            m02c4().set(current_player.server.serverid2),
+                            m034a().set(current_player.display_name),
+                            m0348().set(current_player.id),
                             m02fc().set(0x0001942F),
                             m0442(),
                             m0704().set(otherplayer.id),
-                            m0705().set(otherplayer.displayname)
+                            m0705().set(otherplayer.display_name)
                         ]
-                        sendallonserver(reply, currentplayer.server)
+                        send_all_on_server(reply, current_player.server)
 
                         for player in self.players.values():
                             player.vote = None
-                        currentplayer.server.playerbeingkicked = otherplayer
+                        current_player.server.playerbeingkicked = otherplayer
 
                 else:  # votekick response
-                    if (currentplayer.server and
-                            currentplayer.server.playerbeingkicked != None):
-                        currentserver = currentplayer.server
+                    if (current_player.server and
+                            current_player.server.playerbeingkicked != None):
+                        currentserver = current_player.server
 
-                        currentplayer.vote = (response.value == 1)
+                        current_player.vote = (response.value == 1)
 
                         votes = [p.vote for p in self.players.values() if p.vote is not None]
                         yesvotes = [v for v in votes if v]
@@ -299,7 +306,7 @@ class Server:
                             reply = a018c()
                             reply.content = [
                                 m0348().set(playertokick.id),
-                                m034a().set(playertokick.displayname)
+                                m034a().set(playertokick.display_name)
                             ]
 
                             if kick:
@@ -314,7 +321,7 @@ class Server:
                                     m0442().set(0)
                                 ])
 
-                            sendallonserver(reply, currentserver)
+                            send_all_on_server(reply, currentserver)
 
                             if kick:
                                 # TODO: figure out if a real votekick also causes an
@@ -325,8 +332,8 @@ class Server:
                                             a006f()]:
                                     sendmsg(msg, playertokick.id)
                                 playertokick.server = None
-                                modifygameserverwhitelist('remove', playertokick, currentserver)
-                                modifyloginserverblacklist('add', playertokick)
+                                modify_gameserver_whitelist('remove', playertokick, currentserver)
+                                modify_loginserver_blacklist('add', playertokick)
 
                             currentserver.playerbeingkicked = None
 

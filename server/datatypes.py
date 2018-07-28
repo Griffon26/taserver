@@ -46,8 +46,8 @@ class ClientDisconnectedMessage():
 
 
 class AuthCodeRequestMessage():
-    def __init__(self, loginname):
-        self.loginname = loginname
+    def __init__(self, login_name):
+        self.login_name = login_name
 
 
 def hexparse(hexstring):

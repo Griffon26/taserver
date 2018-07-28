@@ -21,30 +21,29 @@
 import io
 import struct
 
-from utils import hexdump
 
 def packetize(bytestream):
     while len(bytestream) > 0:
-        chunksize = min(len(bytestream), 1450)
-        sizetosend = 0 if chunksize == 1450 else chunksize
-        packet = struct.pack('<H', sizetosend) + bytestream[:chunksize]
+        chunk_size = min(len(bytestream), 1450)
+        size_to_send = 0 if chunk_size == 1450 else chunk_size
+        packet = struct.pack('<H', size_to_send) + bytestream[:chunk_size]
         yield packet
-        bytestream = bytestream[chunksize:]
+        bytestream = bytestream[chunk_size:]
 
-class ClientWriter():
-    def __init__(self, socket, clientid, clientqueue, dumpqueue):
-        self.clientid = clientid
+class ClientWriter:
+    def __init__(self, socket, client_id, client_queue, dump_queue):
+        self.client_id = client_id
         self.socket = socket
-        self.clientqueue = clientqueue
-        self.dumpqueue = dumpqueue
+        self.client_queue = client_queue
+        self.dump_queue = dump_queue
         self.seq = None
 
     def run(self):
         while True:
             stream = io.BytesIO()
-            message, ack = self.clientqueue.get()
+            message, ack = self.client_queue.get()
             if message is None:
-                print('client(%s): writer closing socket' % self.clientid)
+                print('client(%s): writer closing socket' % self.client_id)
                 self.socket.close()
                 break
 
@@ -65,16 +64,16 @@ class ClientWriter():
                 self.seq = 0
 
             stream.seek(0)
-            packetstream = io.BytesIO()
+            packet_stream = io.BytesIO()
             for packet in packetize(stream.read()):
-                if self.dumpqueue:
-                    self.dumpqueue.put(('server', packet))
+                if self.dump_queue:
+                    self.dump_queue.put(('server', packet))
 
-                packetstream.write(packet)
+                packet_stream.write(packet)
 
-            packetstream.seek(0)
-            self.socket.sendall(packetstream.read())
+            packet_stream.seek(0)
+            self.socket.sendall(packet_stream.read())
                 
                     
-        print('client(%s): writer exiting gracefully' % self.clientid)
+        print('client(%s): writer exiting gracefully' % self.client_id)
 

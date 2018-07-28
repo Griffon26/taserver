@@ -18,16 +18,17 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+
 class PlayerInfo:
-    def __init__(self, playerid, playerip, playerport):
-        self.id = playerid
-        self.loginname = None
-        self.displayname = None
-        self.passwdhash = None
+    def __init__(self, id, ip, port):
+        self.id = id
+        self.login_name = None
+        self.display_name = None
+        self.password_hash = None
         self.tag = ''
-        self.ip = playerip
-        self.port = playerport
+        self.ip = ip
+        self.port = port
         self.server = None
         self.authenticated = False
-        self.lastreceivedseq = 0
+        self.last_received_seq = 0
         self.vote = None
