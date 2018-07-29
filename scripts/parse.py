@@ -29,14 +29,14 @@ K = TypeVar('K')
 V = TypeVar('V')
 
 
-def merge_value_dicts(ds: List[Dict[K, Set[V]]]) -> Dict[K, Set[V]]:
-    r = dict()
-    for d in ds:
-        for k, vset in d.items():
-            if k not in r:
-                r[k] = set()
-            r[k].update(vset)
-    return r
+def merge_value_dicts(dict_list: List[Dict[K, Set[V]]]) -> Dict[K, Set[V]]:
+    result_dict = dict()
+    for dictionary in dict_list:
+        for key, value_set in dictionary.items():
+            if key not in result_dict:
+                result_dict[key] = set()
+                result_dict[key].update(value_set)
+    return result_dict
 
 
 def indentlevel2string(i: int) -> str:
