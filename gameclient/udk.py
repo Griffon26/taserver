@@ -26,8 +26,9 @@ class ParseError(Exception):
     pass
 
 class UnparseableBitsError(ParseError):
-    def __init__(self, message, bits):
+    def __init__(self, message, partialobject, bits):
         super().__init__(message)
+        self.partialobject = partialobject
         self.bits = bits
 
 class ParserState():
@@ -374,13 +375,15 @@ class ObjectProperty():
         else:
             raise UnparseableBitsError('Unknown property %s for class %s' %
                                        (propertykey, class_['name']),
+                                       object_property,
                                        bits)
         
         return object_property, bits
 
     def tobitarray(self):
         bits = int2bitarray(self.propertyid, 6)
-        bits.extend(self.value.tobitarray())
+        if self.value is not None:
+            bits.extend(self.value.tobitarray())
         return bits
 
     def tostring(self, indent = 0):
@@ -389,7 +392,8 @@ class ObjectProperty():
         text = '%s%s (property = %s)\n' % (indent_prefix,
                                            propertykey,
                                            self.property_['name'])
-        text += self.value.tostring(indent = indent + len(propertykey))
+        if self.value is not None:
+            text += self.value.tostring(indent = indent + len(propertykey))
         return text
 
 class ObjectInstance():
@@ -419,8 +423,13 @@ class ObjectInstance():
         object_instance.name = state.channels[channel]['instancename']
 
         while bits:
-            property_, bits = ObjectProperty.frombitarray(bits, class_, debug = debug)
-            object_instance.properties.append(property_)
+            try:
+                property_, bits = ObjectProperty.frombitarray(bits, class_, debug = debug)
+                object_instance.properties.append(property_)
+            except UnparseableBitsError as e:
+                object_instance.properties.append(e.partialobject)
+                e.partialobject = object_instance
+                raise e
 
         return object_instance, bits
 
@@ -472,7 +481,7 @@ class PayloadData():
         self.object_class = None
         self.instance = None
         self.error = None
-        self.payload = None
+        self.bitsleft = None
 
     @classmethod
     def frombitarray(cls, bits, channel, state, debug = False):
@@ -502,38 +511,37 @@ class PayloadData():
             
             if payloadbits:
                 payload_data.error = 'Bits of payload left over: %s' % payloadbits.to01()
+                payload_data.bitsleft = e.bits
             
         except UnparseableBitsError as e:
             payload_data.error = '%s, bits left: %s' % (str(e), e.bits.to01())
-            payload_data.payload = originalpayloadbits
+            payload_data.instance = e.partialobject
+            payload_data.bitsleft = e.bits
 
         return payload_data, bits
 
     def tobitarray(self):
-        if not self.error:
-            databits = self.object_class.tobitarray() + self.instance.tobitarray()
-        else:
-            databits = self.payload
+        databits = self.object_class.tobitarray() + self.instance.tobitarray()
+        if self.error:
+            databits.extend(self.bitsleft)
         bits = int2bitarray(len(databits), 14)
         bits.extend(databits)
         return bits
     
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
-        items = []
-        if not self.error:
-            payloadsize = len(self.object_class.tobitarray() +
-                              self.instance.tobitarray())
-        else:
-            payloadsize = len(self.payload)
-        items.append('%s (payloadsize = %d)\n' % (int2bitarray(payloadsize, 14).to01(),
-                                                  payloadsize))
-        text = ''.join(['%s%s' % (indent_prefix, item) for item in items])
-        indent += 14
+        payloadsize = len(self.object_class.tobitarray() +
+                          self.instance.tobitarray())
         if self.error:
-            text += ' ' * indent + self.payload.to01() + ' (unparseable)\n'
-        else:
-            text += self.instance.tostring(indent = indent)
+            payloadsize += len(self.bitsleft)
+            
+        text = ('%s%s (payloadsize = %d)\n' % (indent_prefix,
+                                               int2bitarray(payloadsize, 14).to01(),
+                                               payloadsize))
+        indent += 14
+        text += self.instance.tostring(indent = indent)
+        if self.error:
+            text += ' ' * indent + 'ERROR: bits left: ' + self.bitsleft.to01() + '\n'
         return text
 
 class ChannelData():
