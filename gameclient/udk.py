@@ -198,16 +198,39 @@ def getstring(bits):
 
     return ''.join(result), bits[(len(result) + 1) * 8:]
 
+def debugbits(func):
+    def wrapper(*args, **kwargs):
+        cls = args[0]
+        bitsbefore = args[1]
+        debug = kwargs['debug']
+
+        if debug:
+            print('%s::frombitarray (entry): starting with %s%s' %
+                  (cls.__name__,
+                   bitsbefore.to01()[0:32],
+                   '...' if len(bitsbefore) > 32 else ' EOF'))
+        retval = func(*args, **kwargs)
+
+        bitsafter = retval[1]
+        if debug:
+            nbits_consumed = len(bitsbefore) - len(bitsafter)
+            if bitsbefore[nbits_consumed:] != bitsafter:
+                raise RuntimeError('Function not returning a tail of the input bits')
+            print('%s::frombitarray (exit) : consumed \'%s\'' %
+                  (cls.__name__, bitsbefore.to01()[:nbits_consumed]))
+
+        return retval
+    
+    return wrapper
+
 class PropertyValueMultipleChoice():
     def __init__(self):
         self.value = None
         self.valuebits = None
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, size, values, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         property_value = PropertyValueMultipleChoice()
         
         property_value.valuebits, bits = getnbits(size, bits)
@@ -229,10 +252,8 @@ class PropertyValueString():
         self.value = None
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         property_value = PropertyValueString()
         
         stringsizebits, bits = getnbits(32, bits)
@@ -266,10 +287,8 @@ class PropertyValueInt():
         self.value = None
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         property_value = PropertyValueInt()
         
         propertyvaluebits, bits = getnbits(32, bits)
@@ -291,10 +310,8 @@ class PropertyValueBool():
         self.value = None
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         property_value = PropertyValueBool()
         
         propertyvaluebits, bits = getnbits(1, bits)
@@ -314,10 +331,8 @@ class PropertyValueBitarray():
         self.value = None
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, size, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         property_value = PropertyValueBitarray()
         
         property_value.value, bits = getnbits(size, bits)
@@ -337,10 +352,8 @@ class ObjectProperty():
         self.value = None
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, class_, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         object_property = ObjectProperty()
         
         propertyidbits, bits = getnbits(6, bits)
@@ -354,7 +367,8 @@ class ObjectProperty():
         propertysize = property_.get('size', None)
         propertyvalues = property_.get('values', None)
         if propertyvalues:
-            object_property.value = PropertyValueMultipleChoice.frombitarray(bits, propertysize, propertyvalues)
+            object_property.value = \
+                PropertyValueMultipleChoice.frombitarray(bits, propertysize, propertyvalues)
         
         elif propertytype:
             if propertytype is str:
@@ -403,10 +417,8 @@ class ObjectInstance():
         self.properties = []
     
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, object_class, channel, state, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         object_instance = ObjectInstance()
 
         object_instance.object_class = object_class
@@ -456,10 +468,8 @@ class ObjectClass():
         return int2bitarray(self.classid, 32).to01()
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, state, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         object_class = ObjectClass()
         
         classbits, bits = getnbits(32, bits)
@@ -484,10 +494,8 @@ class PayloadData():
         self.bitsleft = None
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, channel, state, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         payload_data = PayloadData()
         
         payloadsizebits, bits = getnbits(14, bits)
@@ -498,16 +506,10 @@ class PayloadData():
 
         try:
             payload_data.object_class, payloadbits = \
-                ObjectClass.frombitarray(payloadbits,
-                                         state,
-                                         debug = debug)
+                ObjectClass.frombitarray(payloadbits, state, debug = debug)
             
             payload_data.instance, payloadbits = \
-                ObjectInstance.frombitarray(payloadbits,
-                                            payload_data.object_class,
-                                            channel,
-                                            state,
-                                            debug = debug)
+                ObjectInstance.frombitarray(payloadbits, payload_data.object_class, channel, state, debug = debug)
             
             if payloadbits:
                 payload_data.error = 'Bits of payload left over: %s' % payloadbits.to01()
@@ -552,10 +554,8 @@ class ChannelData():
         self.payload = None
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, with_counter, state, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         channel_data = ChannelData()
         channelbits, bits = getnbits(10, bits)
         channel_data.channel = toint(channelbits)
@@ -566,10 +566,8 @@ class ChannelData():
 
             channel_data.unknownbits, bits = getnbits(8, bits)
 
-        channel_data.payload, bits = PayloadData.frombitarray(bits,
-                                                              channel_data.channel,
-                                                              state,
-                                                              debug = debug)
+        channel_data.payload, bits = \
+            PayloadData.frombitarray(bits, channel_data.channel, state, debug = debug)
 
         return channel_data, bits
 
@@ -604,10 +602,8 @@ class PacketData():
         self.channeldata = None
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, state, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         packet_data = PacketData()
 
         flag1a, bits = getnbits(2, bits)
@@ -627,10 +623,8 @@ class PacketData():
         else:
             raise ParseError('Unexpected value for flag1a')
 
-        packet_data.channel_data, bits = ChannelData.frombitarray(bits,
-                                                                  channel_with_counter,
-                                                                  state,
-                                                                  debug = debug)
+        packet_data.channel_data, bits = \
+            ChannelData.frombitarray(bits, channel_with_counter, state, debug = debug)
             
         return packet_data, bits
 
@@ -671,10 +665,8 @@ class PacketAck():
         self.acknr = None
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-
         packet_ack = PacketAck()
             
         acknrbits, bits = getnbits(14, bits)
@@ -698,10 +690,8 @@ class Packet():
         self.leftoverbits = bitarray()
 
     @classmethod
+    @debugbits
     def frombitarray(cls, bits, state, debug = False):
-        if debug:
-            print('%s::frombitarray' % cls.__name__)
-            
         seqnr, bits = getnbits(14, bits)
         packet = Packet(toint(seqnr))
 
@@ -757,7 +747,7 @@ class Parser():
         self.parser_state = ParserState()
 
     def parsepacket(self, bits, debug = False):
-        packet, bits = Packet.frombitarray(bits, self.parser_state, debug = False)
+        packet, bits = Packet.frombitarray(bits, self.parser_state, debug = debug)
         if len(bits) >= 8:
             raise UnparseableBitsError('More than 8 bits were left after parsing', bits)
         return packet
