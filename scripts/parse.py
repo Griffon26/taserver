@@ -535,7 +535,7 @@ def indentandrawoffset2globaloffset(indent: bool, rawoffset: int, offsetlist: Li
 
 
 @click.command()
-@click.option('--file', '-f', prompt='File to parse', help='hexdump to parse')
+@click.argument('file')
 @click.option('--disable-id-annotations', is_flag=True,
               help='disable printing annotations for enumfield ids')
 @click.option('--disable-value-annotations', is_flag=True,
