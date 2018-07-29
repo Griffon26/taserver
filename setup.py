@@ -6,6 +6,7 @@ setup(
     license='AGPLv3',
     description='A reference implementation of the tribes ascend server',
     install_requires=[
-        "gevent"
+        "gevent",
+        "click"
     ],
 )

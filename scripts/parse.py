@@ -18,12 +18,25 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from typing import cast, Optional, List, Union, Set, Dict, Tuple, Generator, TextIO, BinaryIO
+from typing import TypeVar, cast, Optional, List, Union, Set, Dict, Tuple, Generator, TextIO, BinaryIO
 
 import csv
 import io
 import struct
-import sys
+import click
+
+K = TypeVar('K')
+V = TypeVar('V')
+
+
+def merge_value_dicts(ds: List[Dict[K, Set[V]]]) -> Dict[K, Set[V]]:
+    r = dict()
+    for d in ds:
+        for k, vset in d.items():
+            if k not in r:
+                r[k] = set()
+            r[k].update(vset)
+    return r
 
 
 def indentlevel2string(i: int) -> str:
@@ -128,12 +141,13 @@ class ParseError(Exception):
     pass
 
 
-class Parser():
+class Parser:
     """
     Stateful recursive-descent parser for a hexdump
     """
 
-    def __init__(self, enumfields_file: str, fieldvalues_file: str) -> None:
+    def __init__(self, enumfields_files: List[str], fieldvalues_files: List[str],
+                 do_annotate_fields: bool = True, do_annotate_values: bool = True) -> None:
         """
         :param enumfields_file: File containing descriptions of enum ids
         :param fieldvalues_file: File containing descriptions of enum values
@@ -179,9 +193,12 @@ class Parser():
                     d[row[1].lower()].add(int(row[0], 0))
             return d
 
-        self.known_enum_fields = load_known_values_dict(enumfields_file, 0, 2)
-        self.known_field_values = load_known_values_dict(fieldvalues_file, 0, 1)
-        self.enum_ids = load_enum_kinds_dict(enumfields_file)
+        self.known_enum_fields = merge_value_dicts([load_known_values_dict(f, 0, 2) for f in enumfields_files])
+        self.known_field_values = merge_value_dicts([load_known_values_dict(f, 0, 1) for f in fieldvalues_files])
+        self.enum_ids = merge_value_dicts([load_enum_kinds_dict(f) for f in enumfields_files])
+
+        self.do_annotate_fields = do_annotate_fields
+        self.do_annotate_values = do_annotate_values
 
         self.infile: BinaryIO = None
         self.outfile: TextIO = None
@@ -195,25 +212,27 @@ class Parser():
         """
         desc = ''
         if enumid in self.known_enum_fields:
-            enumStr = '%04X' % enumid
-            valuesStr = ', '.join(self.known_enum_fields[enumid])
-            desc += f' (field 0x{enumStr}: {valuesStr})'
+            enum_str = '%04X' % enumid
+            values_str = ', '.join(self.known_enum_fields[enumid])
+            if self.do_annotate_fields:
+                desc += f' (field 0x{enum_str}: {values_str})'
         if value is None:
             return desc
         try:
             possible_values = set()
             if type(value) is str:
-                hexVal = int(cast(str, value), 16)
-                if hexVal in self.known_field_values:
-                    possible_values.update(self.known_field_values[hexVal])
-                decVal = int(cast(str, value), 10)
+                hex_val = int(cast(str, value), 16)
+                if hex_val in self.known_field_values:
+                    possible_values.update(self.known_field_values[hex_val])
+                dec_val = int(cast(str, value), 10)
             else:
-                decVal = cast(int, value)
-            if decVal in self.known_field_values:
-                possible_values.update(self.known_field_values[decVal])
+                dec_val = cast(int, value)
+            if dec_val in self.known_field_values:
+                possible_values.update(self.known_field_values[dec_val])
             if len(possible_values) > 0:
-                valuesStr = ', '.join(possible_values)
-                desc += f' (value {decVal}: {valuesStr})'
+                values_str = ', '.join(possible_values)
+                if self.do_annotate_values:
+                    desc += f' (value {dec_val}: {values_str})'
         except ValueError:
             pass
         return desc
@@ -515,46 +534,58 @@ def indentandrawoffset2globaloffset(indent: bool, rawoffset: int, offsetlist: Li
     raise RuntimeError('There\'s a bug in this code. This statement should not have been reached.')
 
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print('Usage: %s <captureddatahexdump>' % sys.argv[0])
-        print('')
-        print('This program will parse a wireshark hexdump of communication')
-        print('between the TA client and the login server (port 9000) and')
-        print('dump it into a text file')
-        exit(0)
+@click.command()
+@click.option('--file', '-f', prompt='File to parse', help='hexdump to parse')
+@click.option('--disable-id-annotations', is_flag=True,
+              help='disable printing annotations for enumfield ids')
+@click.option('--disable-value-annotations', is_flag=True,
+              help='disable printing annotations for enumfield values')
+@click.option('--id-annotation-sources', multiple=True,
+              help='list of additional CSVs to source enumfield id annotations from')
+@click.option('--value-annotation-sources', multiple=True,
+              help='list of additional CSVs to source enumfield value annotations from')
+def run_parse(file: str, disable_id_annotations: bool, disable_value_annotations: bool,
+              id_annotation_sources: List[str], value_annotation_sources: List[str]) -> None:
+    infile_name = file
 
-    infilename = sys.argv[1]
-
-    with open(infilename, 'rt') as infile:
-        with open(infilename + '_parsed.txt', 'wt') as outfile:
+    with open(infile_name, 'rt') as infile:
+        with open(infile_name + '_parsed.txt', 'wt') as outfile:
             offsets = {
                 False: 0,
                 True: 0
             }
-            offsetlist = []
+            offset_list = []
             data = {
                 False: io.BytesIO(),
                 True: io.BytesIO()
             }
-            for indent, hexbytes in hexdump2indentandbytesperblock(infile):
-                offsetlist.append((indent, offsets[indent], offsets[indent] + len(hexbytes)))
-                offsets[indent] += len(hexbytes)
-                data[indent].write(bytes(hexbytes))
+            for indent, hex_bytes in hexdump2indentandbytesperblock(infile):
+                offset_list.append((indent, offsets[indent], offsets[indent] + len(hex_bytes)))
+                offsets[indent] += len(hex_bytes)
+                data[indent].write(bytes(hex_bytes))
 
-            packetboundaries = {}
-            payloaddata = {}
-            parsedbyoffset = {}
-            parser = Parser('known_field_data/enumfields.csv', 'known_field_data/fieldvalues.csv')
+            packet_boundaries = {}
+            payload_data = {}
+            parsed_by_offset = {}
+            id_sources_list = ['known_field_data/enumfields.csv']
+            id_sources_list.extend(id_annotation_sources)
+            value_sources_list = ['known_field_data/fieldvalues.csv']
+            value_sources_list.extend(value_annotation_sources)
+            parser = Parser(id_sources_list, value_sources_list,
+                            not disable_id_annotations, not disable_value_annotations)
             for i in (False, True):
                 data[i].seek(0)
-                packetboundaries[i], payloaddata[i] = removepacketsizes(i, data[i])
-                for payloadoffset, parsedoutput in parser.parse(payloaddata[i]):
-                    rawoffset = payloadoffset2rawoffset(payloadoffset, packetboundaries[i])
-                    globaloffset = indentandrawoffset2globaloffset(i, rawoffset, offsetlist)
-                    parsedbyoffset[(globaloffset, rawoffset)] = (i, parsedoutput)
+                packet_boundaries[i], payload_data[i] = removepacketsizes(i, data[i])
+                for payload_offset, parsed_output in parser.parse(payload_data[i]):
+                    raw_offset = payloadoffset2rawoffset(payload_offset, packet_boundaries[i])
+                    global_offset = indentandrawoffset2globaloffset(i, raw_offset, offset_list)
+                    parsed_by_offset[(global_offset, raw_offset)] = (i, parsed_output)
 
-            for key in sorted(parsedbyoffset.keys()):
-                indent, parsedoutput = parsedbyoffset[key]
-                for line in parsedoutput.splitlines():
+            for key in sorted(parsed_by_offset.keys()):
+                indent, parsed_output = parsed_by_offset[key]
+                for line in parsed_output.splitlines():
                     outfile.write(('    ' if indent else '') + line + '\n')
+
+
+if __name__ == '__main__':
+    run_parse()
