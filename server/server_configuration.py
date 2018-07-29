@@ -33,8 +33,7 @@ class ServerConfiguration:
     @classmethod
     def from_configuration(cls, configuration: dict):
         servers = []
-        first_id = 1
-        for key in configuration:
+        for first_id, key in enumerate(configuration):
             server_config = configuration[key]
             second_id = 2 ** 31 + first_id
             description = server_config["description"]
