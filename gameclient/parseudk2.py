@@ -77,8 +77,20 @@ def binfile2packetbits(infile):
 
         yield bindata
 
+def outputshiftedstrings(outfile, bindata):
+    shiftedstrings = [findshiftedstrings(bindata, i) for i in range(8)]
+
+    if any(shiftedstrings):
+        outfile.write('    String overview:\n')
+        outfile.write('    %s\n' % bindata.to01())
+        for i, shiftedstring in enumerate(shiftedstrings):
+            if shiftedstring:
+                outfile.write('    %s%s (shifted by %d bits)\n' % (' ' * i, shiftedstring, i))
+        outfile.write('\n')
+
 def main(infilename):
     outfilename = infilename + '_parsed2.txt'
+    binoutfilename = infilename + '2'
 
     with open(infilename, 'rt') as infile:
         with open(outfilename, 'wt') as outfile:
@@ -88,8 +100,10 @@ def main(infilename):
 
             for i, bindata in enumerate(binfile2packetbits(infile)):
                 print('Parsing packet %d...' % (i + 1))
-                packet = parser.parsepacket(bindata, debug = True)
+                packet = parser.parsepacket(bindata, debug = False)
                 outfile.write(packet.tostring() + '\n')
+
+                outputshiftedstrings(outfile, bindata)
                 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
