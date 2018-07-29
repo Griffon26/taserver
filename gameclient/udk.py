@@ -363,6 +363,7 @@ class PropertyValueBitarray():
 class ObjectProperty():
     def __init__(self):
         self.propertyid = None
+        self.property_ = { 'name' : 'Unknown' }
         self.value = None
 
     @classmethod
@@ -536,7 +537,7 @@ class PayloadData():
         if self.object_class:
             databits = self.object_class.tobitarray() + databits
             
-        if self.error:
+        if self.bitsleft:
             databits.extend(self.bitsleft)
             
         bits = int2bitarray(len(databits), 14)
@@ -562,7 +563,7 @@ class PayloadData():
             indent += 1
             
         text += self.instance.tostring(indent = indent)
-        if self.error:
+        if self.bitsleft:
             bits = self.bitsleft.to01() if self.bitsleft else 'x'
             text += ' ' * indent + bits + ' (rest of payload)\n'
         return text
@@ -620,7 +621,7 @@ class PacketData():
     def __init__(self):
         self.unknownbits11 = False
         self.unknownbits10 = bitarray()
-        self.channeldata = None
+        self.channel_data = None
 
     @classmethod
     @debugbits
