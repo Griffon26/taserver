@@ -18,21 +18,27 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
-from abc import ABCMeta, abstractmethod
+from player.player import Player
+from player.state.player_state import PlayerState
 
-from server import Server
+from typing import List
 
 
-class PlayerState(metaclass=ABCMeta):
-    def __init__(self, player):
+class StateStack:
+    def __init__(self, player: Player):
+        self.stack = List[PlayerState]
         self.player = player
 
-    @abstractmethod
-    def handle_request(self, request, server: Server, inherited: bool):
-        pass
+    def enter_state(self, state_constructor, **kwargs):
+        state = state_constructor(self.player, **kwargs)
+        state.on_enter()
+        self.stack.append(state)
 
-    def on_enter(self):
-        pass
+    def exit_state(self):
+        state = self.stack.pop()
+        state.on_exit()
 
-    def on_exit(self):
-        pass
+    def handle_request(self, request, server):
+        for state in self.stack:
+            state.handle_request(request, server, inherited=True)
+        self.stack[-1].handle_request(request, server, inherited=False)

@@ -103,18 +103,16 @@ class Server:
             player.send(data, self)
 
     def handle_client_connected_message(self, msg):
-        self.players[msg.clientid] = Player(msg.clientid, msg.clientaddress, msg.clientport, UnauthenticatedState)
+        player = Player(msg.clientid, msg.clientaddress, msg.clientport)
+        player.enter_state(UnauthenticatedState)
+        self.players[msg.clientid] = player
 
     def handle_client_message(self, msg):
         current_player = self.players[msg.clientid]
         current_player.last_received_seq = msg.clientseq
 
-        print('server: client(%s, %s:%s, "%s") sent:\n%s' %
-              (msg.clientid,
-               current_player.ip,
-               current_player.port,
-               current_player.display_name,
-               '\n'.join(['  %04X' % req.ident for req in msg.requests])))
+        requests = '\n'.join(['  %04X' % req.ident for req in msg.requests])
+        print('server: client(%s) sent:\n%s' % (current_player, requests))
 
         for request in msg.requests:
             current_player.state.handle_request(request, self)

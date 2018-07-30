@@ -25,7 +25,7 @@ from datatypes import *
 
 
 class UnauthenticatedState(PlayerState):
-    def handle_request(self, request, server):
+    def handle_request(self, request, server, inherited):
         def send(data, client_id=None):
             player = server.players[client_id] if client_id is not None else self.player
             player.send(data, server)

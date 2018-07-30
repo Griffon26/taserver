@@ -17,9 +17,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
+from player.state.state_stack import StateStack
+
 
 class Player:
-    def __init__(self, id, ip, port, state):
+    def __init__(self, id, ip, port):
         self.id = id
         self.login_name = None
         self.display_name = None
@@ -31,11 +33,16 @@ class Player:
         self.authenticated = False
         self.last_received_seq = 0
         self.vote = None
-        self.state = None
-        self.set_state(state)
+        self.state = StateStack(self)
 
-    def set_state(self, state):
-        self.state = state(self)
+    def enter_state(self, state_constructor, **kwargs):
+        self.state.enter_state(state_constructor, **kwargs)
+
+    def exit_state(self):
+        self.state.exit_state()
 
     def send(self, data, server):
         server.client_queues[self.id].put((data, self.last_received_seq))
+
+    def __repr__(self):
+        return '%s, %s:%s, "%s"' % (self.id, self.ip, self.port, self.display_name)
