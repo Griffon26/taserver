@@ -18,21 +18,26 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
-from abc import ABCMeta, abstractmethod
-
-from server import Server
+import inspect
 
 
-class PlayerState(metaclass=ABCMeta):
+class PlayerState:
     def __init__(self, player):
         self.player = player
 
-    @abstractmethod
-    def handle_request(self, request, server: Server, inherited: bool):
-        pass
+    def handle_request(self, request, inherited: bool):
+        methods = [
+            func for name, func in inspect.getmembers(self) if
+            not name.startswith("__")
+            and hasattr(func, "handler")
+            and func.inherited == inherited
+            and isinstance(request, func.packet)
+        ]
+        for method in methods:
+            method(request)
 
     def on_enter(self):
-        pass
+        print("%s is entering state %s" % (self.player, self))
 
     def on_exit(self):
-        pass
+        print("%s is exiting state %s" % (self.player, self))

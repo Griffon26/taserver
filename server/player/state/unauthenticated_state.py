@@ -18,49 +18,49 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
-from firewall import modify_gameserver_whitelist, modify_loginserver_blacklist
+from player.state.handles_decorator import handles
+from player.state.logged_in_state import LoggedInState
 from player.state.player_state import PlayerState
-
 from datatypes import *
 
 
 class UnauthenticatedState(PlayerState):
-    def handle_request(self, request, server, inherited):
-        def send(data, client_id=None):
-            player = server.players[client_id] if client_id is not None else self.player
-            player.send(data, server)
+    @handles(packet=a01bc, inherited=False)
+    def handle_a01bc(self, request):
+        self.player.send(a01bc())
+        self.player.send(a0197())
 
-        if isinstance(request, a01bc):
-            send(a01bc())
-            send(a0197())
+    @handles(packet=a0033, inherited=False)
+    def handle_a0033(self, request):
+        self.player.send(a0033())
 
-        elif isinstance(request, a003a):
-            if request.findbytype(m0056) is None:  # request for login
-                send(a003a())
+    @handles(packet=a003a, inherited=False)
+    def handle_login_request(self, request):
+        if request.findbytype(m0056) is None:  # request for login
+            self.player.send(a003a())
 
-            else:  # actual login
-                self.player.login_name = request.findbytype(m0494).value
-                self.player.password_hash = request.findbytype(m0056).content
+        else:  # actual login
+            self.player.login_name = request.findbytype(m0494).value
+            self.player.password_hash = request.findbytype(m0056).content
 
-                if (self.player.login_name in server.accounts and
-                        self.player.password_hash == server.accounts[self.player.login_name].password_hash):
-                    self.player.authenticated = True
+            if (self.player.login_name in self.player.server.accounts and
+                    self.player.password_hash == self.player.server.accounts[self.player.login_name].password_hash):
+                self.player.authenticated = True
 
-                name_prefix = '' if self.player.authenticated else 'unverif-'
-                self.player.display_name = name_prefix + self.player.login_name
-                send([
-                    a003d().setplayer(self.player.display_name, ''),
-                    m0662(0x8898, 0xdaff),
-                    m0633(),
-                    m063e(),
-                    m067e(),
-                    m0442(),
-                    m02fc(),
-                    m0219(),
-                    m0019(),
-                    m0623(),
-                    m05d6(),
-                    m00ba()
-                ])
-        elif isinstance(request, a0033):
-            send(a0033())
+            name_prefix = '' if self.player.authenticated else 'unverif-'
+            self.player.display_name = name_prefix + self.player.login_name
+            self.player.send([
+                a003d().setplayer(self.player.display_name, ''),
+                m0662(0x8898, 0xdaff),
+                m0633(),
+                m063e(),
+                m067e(),
+                m0442(),
+                m02fc(),
+                m0219(),
+                m0019(),
+                m0623(),
+                m05d6(),
+                m00ba()
+            ])
+            self.player.enter_state(LoggedInState)

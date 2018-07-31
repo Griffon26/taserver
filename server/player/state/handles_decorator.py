@@ -18,23 +18,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
+from functools import wraps
 
 
-class StateStack:
-    def __init__(self, player):
-        self.stack = []
-        self.player = player
+def handles(packet, inherited):
+    def real_decorator(func):
+        func.handler = True
+        func.packet = packet
+        func.inherited = inherited
 
-    def enter_state(self, state_constructor, **kwargs):
-        state = state_constructor(self.player, **kwargs)
-        state.on_enter()
-        self.stack.append(state)
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
 
-    def exit_state(self):
-        state = self.stack.pop()
-        state.on_exit()
+        return wrapper
 
-    def handle_request(self, request):
-        for state in self.stack:
-            state.handle_request(request, inherited=True)
-        self.stack[-1].handle_request(request, inherited=False)
+    return real_decorator
