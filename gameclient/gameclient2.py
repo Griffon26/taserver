@@ -48,7 +48,8 @@ def main():
     parser = Parser()
     sock = DumpingSocket(socket.socket(socket.AF_INET, socket.SOCK_DGRAM))
 
-    packet = Packet(seqnrgen.get())
+    packet = Packet()
+    packet.seqnr = seqnrgen.get()
     packetdata = PacketData()
     packetdata.unknownbits11 = True
     packetdata.channel_data = ChannelData()
@@ -70,7 +71,8 @@ def main():
     print(packet.tostring())
     sock.sendto(packet.tobitarray().tobytes(), (serverip, serverport))
     
-    packet = Packet(seqnrgen.get())
+    packet = Packet()
+    packet.seqnr = seqnrgen.get()
     packetdata = PacketData()
     packetdata.channel_data = ChannelData()
     packetdata.channel_data.channel = 0
@@ -89,7 +91,8 @@ def main():
     print(packet.tostring())
     sock.sendto(packet.tobitarray().tobytes(), (serverip, serverport))
 
-    packet = Packet(seqnrgen.get())
+    packet = Packet()
+    packet.seqnr = seqnrgen.get()
     packetdata = PacketData()
     packetdata.channel_data = ChannelData()
     packetdata.channel_data.channel = 0
@@ -115,7 +118,8 @@ def main():
     print('Received from %s:%s:' % addr)
     print('%s\n' % packet.tostring())
 
-    packet = Packet(seqnrgen.get())
+    packet = Packet()
+    packet.seqnr = seqnrgen.get()
     packetack = PacketAck()
     packetack.acknr = serverpacket.seqnr
     packet.parts.append(packetack)
@@ -147,7 +151,8 @@ def main():
             print('%s\n' % packet.tostring())
             unacknowledged.append(serverpacket.seqnr)
 
-            clientpacket = Packet(seqnrgen.get())
+            clientpacket = Packet()
+            clientpacket.seqnr = seqnrgen.get()
             for serverseqnr in unacknowledged:
                 packetack = PacketAck()
                 packetack.acknr = serverpacket.seqnr

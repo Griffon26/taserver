@@ -23,13 +23,9 @@ import string
 import struct
 
 class ParseError(Exception):
-    pass
-
-class UnparseableBitsError(ParseError):
-    def __init__(self, message, partialobject, bits):
+    def __init__(self, message, bitsleft):
         super().__init__(message)
-        self.partialobject = partialobject
-        self.bits = bits
+        self.bitsleft = bitsleft
 
 class ParserState():
     def __init__(self):
@@ -106,6 +102,17 @@ class ParserState():
             '101111' : { 'name' : 'm_CurrentBaseClass', 'type' : int },
         }
 
+        FirstClientObjectProps = {
+            '000100' : { 'name' : 'prop8',
+                         'type' : bitarray,
+                         'size' : 162 },
+        }                
+
+        FirstServerObjectProps = {
+            '111000' : { 'name' : 'mysteryproperty',
+                         'type' : PropertyValueMystery },
+        }                
+
         self.class_dict = {
             '00110100101111010100000000000000' : { 'name' : 'TrFlagCTF_DiamondSword',
                                                    'props' : TrFlagCTFProps },
@@ -165,6 +172,10 @@ class ParserState():
                                                    'props' : {} },
             '01010111000101011110000000000000' : { 'name' : 'TrCTFBase_BloodEagle',
                                                    'props' : {} },
+            '00001000100000000111111011011000' : { 'name' : 'FirstClientObject',
+                                                   'props' : FirstClientObjectProps },
+            '10001000000000000000000000000000' : { 'name' : 'FirstServerObject',
+                                                   'props' : FirstServerObjectProps },
         }
 
         self.instance_count = {}
@@ -183,7 +194,10 @@ def toint(bits):
 
 def getnbits(n, bits):
     if n > len(bits):
-        raise EOFError
+        raise ParseError('Tried to get more bits (%d) than are available (%d)' %
+                             (n, len(bits)),
+                         bits)
+    
     return bits[0:n], bits[n:]
 
 def getstring(bits):
@@ -199,31 +213,30 @@ def getstring(bits):
 
 def debugbits(func):
     def wrapper(*args, **kwargs):
-        cls = args[0]
+        self = args[0]
         bitsbefore = args[1]
         debug = kwargs['debug']
 
         if debug:
             print('%s::frombitarray (entry): starting with %s%s' %
-                  (cls.__name__,
+                  (self.__class__.__name__,
                    bitsbefore.to01()[0:32],
                    '...' if len(bitsbefore) > 32 else ' EOF'))
-        retval = func(*args, **kwargs)
+        bitsafter = func(*args, **kwargs)
 
-        bitsafter = retval[1]
         if debug:
             nbits_consumed = len(bitsbefore) - len(bitsafter)
             if bitsbefore[nbits_consumed:] != bitsafter:
                 raise RuntimeError('Function not returning a tail of the input bits')
             print('%s::frombitarray (exit) : consumed \'%s\'' %
-                  (cls.__name__, bitsbefore.to01()[:nbits_consumed]))
+                  (self.__class__.__name__, bitsbefore.to01()[:nbits_consumed]))
 
-            if bitsbefore[:nbits_consumed] != retval[0].tobitarray():
-                raise RuntimeError('Object %s serialized into bits is not equal to bits parsed:\n' % cls.__name__ +
+            if bitsbefore[:nbits_consumed] != self.tobitarray():
+                raise RuntimeError('Object %s serialized into bits is not equal to bits parsed:\n' % self.__name__ +
                                    'in : %s\n' % bitsbefore[:nbits_consumed].to01() +
-                                   'out: %s\n' % retval[0].tobitarray().to01())
+                                   'out: %s\n' % self.tobitarray().to01())
 
-        return retval
+        return bitsafter
     
     return wrapper
 
@@ -232,133 +245,219 @@ class PropertyValueMultipleChoice():
         self.value = None
         self.valuebits = None
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, size, values, debug = False):
-        property_value = PropertyValueMultipleChoice()
-        
-        property_value.valuebits, bits = getnbits(size, bits)
-        property_value.value = values.get(property_value.valuebits.to01(), 'Unknown')
-
-        return property_value, bits
+    def frombitarray(self, bits, size, values, debug = False):
+        self.valuebits, bits = getnbits(size, bits)
+        self.value = values.get(self.valuebits.to01(), 'Unknown')
+        return bits
 
     def tobitarray(self):
-        return self.valuebits
+        return self.valuebits if self.value is not None else bitarray()
 
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
-        return '%s%s (value = %s)\n' % (indent_prefix,
-                                        self.valuebits.to01(),
-                                        self.value)
+        if self.value is not None:
+            text = '%s%s (value = %s)\n' % (indent_prefix,
+                                            self.valuebits.to01(),
+                                            self.value)
+        else:
+            text = '%sempty\n' % indent_prefix
+        return text
 
 class PropertyValueString():
     def __init__(self):
         self.size = None
         self.value = None
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, debug = False):
-        property_value = PropertyValueString()
-        
+    def frombitarray(self, bits, debug = False):
         stringsizebits, bits = getnbits(32, bits)
-        property_value.size = toint(stringsizebits)
+        self.size = toint(stringsizebits)
 
-        if property_value.size > 0:
-            property_value.value, bits = getstring(bits)
+        if self.size > 0:
+            self.value, bits = getstring(bits)
 
-            if len(property_value.value) + 1 != property_value.size:
+            if len(self.value) + 1 != self.size:
                 raise ParseError('ERROR: string size (%d) was not equal to expected size (%d)' %
-                                 (len(property_value.value) + 1,
-                                  property_value.size))
+                                     (len(self.value) + 1,
+                                      self.size),
+                                 bits)
         else:
-            property_value.value = ''
+            self.value = ''
 
-        return property_value, bits
+        return bits
 
     def tobitarray(self):
-        bits = int2bitarray(self.size, 32)
-        if self.size > 0:
-            bits.frombytes(bytes(self.value, encoding = 'latin1'))
-            bits.extend('00000000')
+        if self.value is not None:
+            bits = int2bitarray(self.size, 32)
+            if self.size > 0:
+                bits.frombytes(bytes(self.value, encoding = 'latin1'))
+                bits.extend('00000000')
+        else:
+            bits = bitarray()
         return bits
     
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
-        text = '%s%s (strsize = %d)\n' % (indent_prefix, int2bitarray(self.size, 32).to01(), self.size)
+        if self.value is not None:
+            text = '%s%s (strsize = %d)\n' % (indent_prefix, int2bitarray(self.size, 32).to01(), self.size)
 
-        if self.size > 0:
-            indent_prefix += ' ' * 32        
-            text += '%sx (value = %s)\n' % (indent_prefix,
-                                    self.value)
+            if self.size > 0:
+                indent_prefix += ' ' * 32        
+                text += '%sx (value = "%s")\n' % (indent_prefix,
+                                                  self.value)
+        else:
+            text = '%sempty\n' % indent_prefix
             
         return text
+
+class PropertyValueVector():
+    def __init__(self):
+        self.short1 = None
+        self.short2 = None
+        self.short3 = None
+
+    @debugbits
+    def frombitarray(self, bits, debug = False):
+        valuebits, bits = getnbits(16, bits)
+        self.short1 = toint(valuebits)
+        valuebits, bits = getnbits(16, bits)
+        self.short2 = toint(valuebits)
+        valuebits, bits = getnbits(16, bits)
+        self.short3 = toint(valuebits)
+        return bits
+
+    def tobitarray(self):
+        if self.short3 is not None:
+            return (int2bitarray(self.short1, 16) +
+                    int2bitarray(self.short2, 16) +
+                    int2bitarray(self.short3, 16))
+        else:
+            return bitarray()
+    
+    def tostring(self, indent = 0):
+        indent_prefix = ' ' * indent
+        if self.short3 is not None:
+            return '%s%s (value = (%d,%d,%d))\n' % (indent_prefix,
+                                                    self.tobitarray().to01(),
+                                                    self.short1,
+                                                    self.short2,
+                                                    self.short3)
+        else:
+            return '%sempty\n' % indent_prefix
 
 class PropertyValueInt():
     def __init__(self):
         self.value = None
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, debug = False):
-        property_value = PropertyValueInt()
-        
-        propertyvaluebits, bits = getnbits(32, bits)
-        property_value.value = toint(propertyvaluebits)
-
-        return property_value, bits
+    def frombitarray(self, bits, debug = False):
+        valuebits, bits = getnbits(32, bits)
+        self.value = toint(valuebits)
+        return bits
 
     def tobitarray(self):
-        return int2bitarray(self.value, 32)
+        return int2bitarray(self.value, 32) if self.value is not None else bitarray()
     
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
-        return '%s%s (value = %d)\n' % (indent_prefix,
-                                        self.tobitarray().to01(),
-                                        self.value)
+        if self.value is not None:
+            text = '%s%s (value = %d)\n' % (indent_prefix,
+                                            self.tobitarray().to01(),
+                                            self.value)
+        else:
+            text = '%sempty\n' % indent_prefix
+        return text
 
 class PropertyValueBool():
     def __init__(self):
         self.value = None
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, debug = False):
-        property_value = PropertyValueBool()
-        
-        propertyvaluebits, bits = getnbits(1, bits)
-        property_value.value = (propertyvaluebits[0] == 1)
-
-        return property_value, bits
+    def frombitarray(self, bits, debug = False):
+        valuebits, bits = getnbits(1, bits)
+        self.value = (valuebits[0] == 1)
+        return bits
 
     def tobitarray(self):
-        return bitarray([self.value])
+        return bitarray([self.value]) if self.value is not None else bitarray()
 
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
-        return '%s%s (value = %s)\n' % (indent_prefix,
-                                        '1' if self.value else '0',
-                                        self.value)
+        if self.value is not None:
+            text = '%s%s (value = %s)\n' % (indent_prefix,
+                                            '1' if self.value else '0',
+                                            self.value)
+        else:
+            text = '%sempty\n' % indent_prefix
+        return text
         
 class PropertyValueBitarray():
     def __init__(self):
         self.value = None
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, size, debug = False):
-        property_value = PropertyValueBitarray()
-        
-        property_value.value, bits = getnbits(size, bits)
-
-        return property_value, bits
+    def frombitarray(self, bits, size, debug = False):
+        self.value, bits = getnbits(size, bits)
+        return bits
 
     def tobitarray(self):
-        return self.value
+        return self.value if self.value is not None else bitarray()
 
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
-        return '%s%s (value)\n' % (indent_prefix, self.value.to01())
+        if self.value is not None:
+            text = '%s%s (value)\n' % (indent_prefix, self.value.to01())
+        else:
+            text = '%sempty\n' % indent_prefix
+        return text
+
+class PropertyValueMystery():
+    def __init__(self):
+        self.bitarray = PropertyValueBitarray()
+        self.string1 = PropertyValueString()
+        self.determinator = PropertyValueInt()
+        self.int1 = PropertyValueInt()
+        self.int2 = PropertyValueInt()
+        self.vector = PropertyValueVector()
+        self.string2 = PropertyValueString()
+            
+    @debugbits
+    def frombitarray(self, bits, debug = False):
+        bits = self.bitarray.frombitarray(bits, 130, debug = debug)
+        bits = self.string1.frombitarray(bits, debug = debug)
+        bits = self.determinator.frombitarray(bits, debug = debug)
+        if self.determinator.value == 0:
+            bits = self.int1.frombitarray(bits, debug = debug)
+        else:
+            bits = self.vector.frombitarray(bits, debug = debug)
+        bits = self.int2.frombitarray(bits, debug = debug)
+        bits = self.string2.frombitarray(bits, debug = debug)
+        
+        return bits
+
+    def tobitarray(self):
+        return (self.bitarray.tobitarray() +
+                self.string1.tobitarray() +
+                self.determinator.tobitarray() +
+                (self.int1.tobitarray() if self.determinator.value == 0 else self.vector.tobitarray()) +
+                self.int2.tobitarray() +
+                self.string2.tobitarray())
+
+    def tostring(self, indent = 0):
+        indent_prefix = ' ' * indent
+        items = []
+        items.append(self.bitarray.tostring(indent))
+        items.append(self.string1.tostring(indent))
+        items.append(self.determinator.tostring(indent))
+        if self.determinator.value == 0:
+            items.append(self.int1.tostring(indent))
+        else:
+            items.append(self.vector.tostring(indent))
+        items.append(self.int2.tostring(indent))
+        items.append(self.string2.tostring(indent))
+        text = ''.join(items)
+        return text
         
 class ObjectProperty():
     def __init__(self):
@@ -366,61 +465,64 @@ class ObjectProperty():
         self.property_ = { 'name' : 'Unknown' }
         self.value = None
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, class_, debug = False):
-        object_property = ObjectProperty()
-        
+    def frombitarray(self, bits, class_, debug = False):
         propertyidbits, bits = getnbits(6, bits)
-        object_property.propertyid = toint(propertyidbits)
+        self.propertyid = toint(propertyidbits)
         
         propertykey = propertyidbits.to01()
         property_ = class_['props'].get(propertykey, {'name' : 'Unknown'})
-        object_property.property_ = property_
+        self.property_ = property_
 
         propertytype = property_.get('type', None)
         propertysize = property_.get('size', None)
         propertyvalues = property_.get('values', None)
         if propertyvalues:
-            object_property.value, bits = \
-                PropertyValueMultipleChoice.frombitarray(bits, propertysize, propertyvalues, debug = debug)
+            self.value = PropertyValueMultipleChoice()
+            bits = self.value.frombitarray(bits, propertysize, propertyvalues, debug = debug)
         
         elif propertytype:
             if propertytype is str:
-                object_property.value, bits = \
-                    PropertyValueString.frombitarray(bits, debug = debug)
+                self.value = PropertyValueString()
+                bits = self.value.frombitarray(bits, debug = debug)
             elif propertytype is int:
-                object_property.value, bits = \
-                    PropertyValueInt.frombitarray(bits, debug = debug)
+                self.value = PropertyValueInt()
+                bits = self.value.frombitarray(bits, debug = debug)
             elif propertytype is bool:
-                object_property.value, bits = \
-                    PropertyValueBool.frombitarray(bits, debug = debug)
+                self.value = PropertyValueBool()
+                bits = self.value.frombitarray(bits, debug = debug)
             elif propertytype is bitarray:
-                object_property.value, bits = \
-                    PropertyValueBitarray.frombitarray(bits, propertysize, debug = debug)
+                self.value = PropertyValueBitarray()
+                bits = self.value.frombitarray(bits, propertysize, debug = debug)
+            elif propertytype == PropertyValueMystery:
+                self.value = PropertyValueMystery()
+                bits = self.value.frombitarray(bits, debug = debug)                
             else:
                 raise RuntimeError('Coding error')
             
         else:
-            raise UnparseableBitsError('Unknown property %s for class %s' %
-                                       (propertykey, class_['name']),
-                                       object_property,
-                                       bits)
+            raise ParseError('Unknown property %s for class %s' %
+                                 (propertykey, class_['name']),
+                             bits)
         
-        return object_property, bits
+        return bits
 
     def tobitarray(self):
-        bits = int2bitarray(self.propertyid, 6)
+        bits = bitarray(endian='little')
+        if self.propertyid is not None:
+            bits.extend(int2bitarray(self.propertyid, 6))
         if self.value is not None:
             bits.extend(self.value.tobitarray())
         return bits
 
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
-        propertykey = int2bitarray(self.propertyid, 6).to01()
-        text = '%s%s (property = %s)\n' % (indent_prefix,
-                                           propertykey,
-                                           self.property_['name'])
+        text = ''
+        if self.propertyid is not None:
+            propertykey = int2bitarray(self.propertyid, 6).to01()
+            text += '%s%s (property = %s)\n' % (indent_prefix,
+                                               propertykey,
+                                               self.property_['name'])
         if self.value is not None:
             text += self.value.tostring(indent = indent + len(propertykey))
         return text
@@ -430,21 +532,15 @@ class ObjectInstance():
         self.class_ = None
         self.properties = []
     
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, class_, state, debug = False):
-        object_instance = ObjectInstance()
+    def frombitarray(self, bits, class_, state, debug = False):
         
         while bits:
-            try:
-                property_, bits = ObjectProperty.frombitarray(bits, class_, debug = debug)
-                object_instance.properties.append(property_)
-            except UnparseableBitsError as e:
-                object_instance.properties.append(e.partialobject)
-                e.partialobject = object_instance
-                raise e
+            property_ = ObjectProperty()
+            self.properties.append(property_)
+            bits = property_.frombitarray(bits, class_, debug = debug)
 
-        return object_instance, bits
+        return bits
 
     def tobitarray(self):
         bits = bitarray(endian = 'little')
@@ -463,13 +559,10 @@ class ObjectClass():
     def getclasskey(self):
         return int2bitarray(self.classid, 32).to01()
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, state, debug = False):
-        object_class = ObjectClass()
-        
+    def frombitarray(self, bits, state, debug = False):
         classbits, bits = getnbits(32, bits)
-        object_class.classid = toint(classbits)
+        self.classid = toint(classbits)
         
         classkey = classbits.to01()
         if classkey not in state.class_dict:
@@ -477,36 +570,37 @@ class ObjectClass():
             state.class_dict[classkey] = { 'name' : classname,
                                            'props' : {} }
 
-        return object_class, bits
+        return bits
 
     def tobitarray(self):
-        return int2bitarray(self.classid, 32)
+        bits = bitarray(endian = 'little')
+        if self.classid is not None:
+            bits.extend(int2bitarray(self.classid, 32))
+        return bits
 
 class PayloadData():
     def __init__(self):
+        self.size = None
         self.object_class = None
         self.instancename = None
         self.instance = None
-        self.error = None
+        self.bitsleftreason = None
         self.bitsleft = None
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, channel, state, debug = False):
-        payload_data = PayloadData()
-        
+    def frombitarray(self, bits, channel, state, debug = False):
         payloadsizebits, bits = getnbits(14, bits)
-        payloadsize = toint(payloadsizebits)
+        self.size = toint(payloadsizebits)
         
-        payloadbits, bits = getnbits(payloadsize, bits)
+        payloadbits, bits = getnbits(self.size, bits)
         originalpayloadbits = bitarray(payloadbits)
 
         try:
             if channel not in state.channels:
-                payload_data.object_class, payloadbits = \
-                    ObjectClass.frombitarray(payloadbits, state, debug = debug)
+                self.object_class = ObjectClass()
+                payloadbits = self.object_class.frombitarray(payloadbits, state, debug = debug)
 
-                class_ = state.class_dict[payload_data.object_class.getclasskey()]
+                class_ = state.class_dict[self.object_class.getclasskey()]
                 classname = class_['name']
 
                 state.instance_count[classname] = state.instance_count.get(classname, -1) + 1
@@ -517,55 +611,60 @@ class PayloadData():
                 class_ = state.channels[channel]['class']
                 instancename = state.channels[channel]['instancename']
 
-            payload_data.instancename = instancename
-            payload_data.instance, payloadbits = \
-                ObjectInstance.frombitarray(payloadbits, class_, state, debug = debug)
+            self.instancename = instancename
+            self.instance = ObjectInstance()
+            payloadbits = self.instance.frombitarray(payloadbits, class_, state, debug = debug)
             
             if payloadbits:
-                payload_data.error = 'Bits of payload left over: %s' % payloadbits.to01()
-                payload_data.bitsleft = e.bits
+                raise ParseError('Bits of payload left over',
+                                 payloadbits)
             
-        except UnparseableBitsError as e:
-            payload_data.error = '%s, bits left: %s' % (str(e), e.bits.to01())
-            payload_data.instance = e.partialobject
-            payload_data.bitsleft = e.bits
+        except ParseError as e:
+            self.bitsleftreason = str(e)
+            self.bitsleft = e.bitsleft
 
-        return payload_data, bits
+        return bits
 
     def tobitarray(self):
-        databits = self.instance.tobitarray()
-        if self.object_class:
-            databits = self.object_class.tobitarray() + databits
+        bits = bitarray(endian = 'little')
+
+        if self.size is not None:
+            bits.extend(int2bitarray(self.size, 14))
+        if self.object_class is not None:
+            bits.extend(self.object_class.tobitarray())
+        if self.instance is not None:
+            bits.extend(self.instance.tobitarray())
+        if self.bitsleft is not None:
+            bits.extend(self.bitsleft)
             
-        if self.bitsleft:
-            databits.extend(self.bitsleft)
-            
-        bits = int2bitarray(len(databits), 14)
-        bits.extend(databits)
         return bits
     
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
-        payloadsize = len(self.tobitarray()) - 14
+        text = ''
+
+        if self.size is not None:      
+            text += ('%s%s (payloadsize = %d)\n' % (indent_prefix,
+                                                    int2bitarray(self.size, 14).to01(),
+                                                    self.size))
+            indent += 14
             
-        text = ('%s%s (payloadsize = %d)\n' % (indent_prefix,
-                                               int2bitarray(payloadsize, 14).to01(),
-                                               payloadsize))
-        indent += 14
-        if self.object_class:
+        if self.object_class is not None:
             text += '%s%s (new object %s)\n' % (' ' * indent,
                                                 self.object_class.tobitarray().to01(),
                                                 self.instancename)
             indent += 32
         else:
             text += '%sx (object = %s)\n' % (' ' * indent,
-                                           self.instancename)
+                                             self.instancename)
             indent += 1
+
+        if self.instance is not None:
+            text += self.instance.tostring(indent = indent)
             
-        text += self.instance.tostring(indent = indent)
-        if self.bitsleft:
-            bits = self.bitsleft.to01() if self.bitsleft else 'x'
-            text += ' ' * indent + bits + ' (rest of payload)\n'
+        if self.bitsleft is not None:
+            text += ' ' * indent + self.bitsleft.to01() + ' (rest of payload)\n'
+            
         return text
 
 class ChannelData():
@@ -575,23 +674,20 @@ class ChannelData():
         self.unknownbits = None
         self.payload = None
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, with_counter, state, debug = False):
-        channel_data = ChannelData()
+    def frombitarray(self, bits, with_counter, state, debug = False):
         channelbits, bits = getnbits(10, bits)
-        channel_data.channel = toint(channelbits)
+        self.channel = toint(channelbits)
 
         if with_counter:
             counterbits, bits = getnbits(5, bits)
-            channel_data.counter = toint(counterbits)
+            self.counter = toint(counterbits)
 
-            channel_data.unknownbits, bits = getnbits(8, bits)
+            self.unknownbits, bits = getnbits(8, bits)
 
-        channel_data.payload, bits = \
-            PayloadData.frombitarray(bits, channel_data.channel, state, debug = debug)
-
-        return channel_data, bits
+        self.payload = PayloadData()
+        bits = self.payload.frombitarray(bits, self.channel, state, debug = debug)
+        return bits
 
     def tobitarray(self):
         bits = int2bitarray(self.channel, 10)
@@ -619,82 +715,80 @@ class ChannelData():
 
 class PacketData():
     def __init__(self):
-        self.unknownbits11 = False
-        self.unknownbits10 = bitarray()
+        self.flag1a = None
+        self.unknownbits11 = None
+        self.unknownbits10 = None
         self.channel_data = None
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, state, debug = False):
-        packet_data = PacketData()
+    def frombitarray(self, bits, state, debug = False):
 
-        flag1a, bits = getnbits(2, bits)
-        if flag1a == bitarray('11'):
-            packet_data.unknownbits11 = True
-            flag1a, bits = getnbits(2, bits)
+        self.flag1a, bits = getnbits(2, bits)
+        if self.flag1a == bitarray('11'):
+            self.unknownbits11 = True
+            self.flag1a = None
+            self.flag1a, bits = getnbits(2, bits)
 
-        if flag1a == bitarray('00'):
+        if self.flag1a == bitarray('00'):
             channel_with_counter = False
-        elif flag1a == bitarray('01'):
+        elif self.flag1a == bitarray('01'):
             channel_with_counter = True
-        elif flag1a == bitarray('10'):
-            packet_data.unknownbits10, bits = getnbits(2, bits)
-            if packet_data.unknownbits10 != bitarray('11'):
-                raise ParseError('Unexpected value for unknownbits10')
+        elif self.flag1a == bitarray('10'):
             channel_with_counter = True
-        else:
-            raise ParseError('Unexpected value for flag1a')
-
-        packet_data.channel_data, bits = \
-            ChannelData.frombitarray(bits, channel_with_counter, state, debug = debug)
+            self.unknownbits10, bits = getnbits(2, bits)
+            if self.unknownbits10 != bitarray('11'):
+                raise ParseError('Unexpected value for unknownbits10: %s' %
+                                     self.unknownbits10.to01(),
+                                 bits)
             
-        return packet_data, bits
+        else:
+            raise ParseError('Unexpected value for flag1a: %s' % self.flag1a.to01(),
+                             bits)
+
+        self.channel_data = ChannelData()
+        bits = self.channel_data.frombitarray(bits, channel_with_counter, state, debug = debug)
+            
+        return bits
 
     def tobitarray(self):
         bits = bitarray(endian = 'little')
         if self.unknownbits11:
             bits.extend('11')
-        if self.channel_data.counter is None:
-            bits.extend('00')
-        elif self.unknownbits10:
-            bits.extend('10')
+        if self.flag1a:
+            bits.extend(self.flag1a)
+        if self.unknownbits10 is not None:
             bits.extend(self.unknownbits10)
-        else:
-            bits.extend('01')
 
-        bits.extend(self.channel_data.tobitarray())
+        if self.channel_data:
+            bits.extend(self.channel_data.tobitarray())
 
         return bits
     
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
         items = []
-        if self.unknownbits11:
+        if self.unknownbits11 is not None:
             items.append('11 (flag1a = 3)\n')
-        if self.channel_data.counter is None:
-            items.append('00 (flag1a = 0)\n')
-        elif self.unknownbits10:
-            items.append('10 (flag1a = 1)\n')
+        if self.flag1a is not None:
+            items.append('%s (flag1a = %d)\n' % (self.flag1a.to01(),
+                                                 toint(self.flag1a)))
+        if self.unknownbits10 is not None:
             items.append('%s\n' % self.unknownbits10.to01())
-        else:
-            items.append('01 (flag1a = 2)\n')
+                         
         text = ''.join(['%s%s' % (indent_prefix, item) for item in items])
-        text += self.channel_data.tostring(indent = indent + 2)
+        if self.channel_data is not None:
+            text += self.channel_data.tostring(indent = indent + 2)
         return text
 
 class PacketAck():
     def __init__(self):
         self.acknr = None
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, debug = False):
-        packet_ack = PacketAck()
-            
+    def frombitarray(self, bits, debug = False):
         acknrbits, bits = getnbits(14, bits)
-        packet_ack.acknr = toint(acknrbits)
-
-        return packet_ack, bits
+        self.acknr = toint(acknrbits)
+        return bits
 
     def tobitarray(self):
         return int2bitarray(self.acknr, 14)
@@ -706,30 +800,47 @@ class PacketAck():
                                          self.acknr))
 
 class Packet():
-    def __init__(self, seqnr):
-        self.seqnr = seqnr
+    def __init__(self):
+        self.seqnr = None
         self.parts = []
-        self.leftoverbits = bitarray()
+        self.paddingbits = None
 
-    @classmethod
     @debugbits
-    def frombitarray(cls, bits, state, debug = False):
+    def frombitarray(self, bits, state, debug = False):
+        original_nbits = len(bits)
+        
         seqnr, bits = getnbits(14, bits)
-        packet = Packet(toint(seqnr))
+        self.seqnr = toint(seqnr)
 
         while bits:
             flag1, bits = getnbits(1, bits)
             if flag1 == bitarray('0'):
-                part, bits = PacketData.frombitarray(bits, state, debug = debug)
-                packet.parts.append(part)
+                part = PacketData()
+                self.parts.append(part)
+                bits = part.frombitarray(bits, state, debug = debug)
             elif len(bits) >= 14:
-                part, bits = PacketAck.frombitarray(bits, debug = debug)
-                packet.parts.append(part)
+                part = PacketAck()
+                self.parts.append(part)
+                bits = part.frombitarray(bits, debug = debug)
             else:
                 # the end
                 break
 
-        return packet, bits
+        parsed_nbits = len(self.tobitarray())
+
+        if len(bits) != original_nbits - parsed_nbits:
+            raise RuntimeError('Coding error: parsed bits + unparsed bits does not equal total bits')
+
+        nr_of_padding_bits = 8 - (parsed_nbits % 8)
+        if len(bits) != nr_of_padding_bits:
+            raise ParseError('Left over bits at the end of the packet',
+                             bits)
+
+        self.paddingbits, bits = getnbits(nr_of_padding_bits, bits)
+
+        # No need to return bits, because if we didn't parse everything
+        # we would have raised an exception anyway
+        return None
 
     def tobitarray(self):
         bits = int2bitarray(self.seqnr, 14)
@@ -752,11 +863,13 @@ class Packet():
         
         text = []
         text.append('%sPacket with size %d\n' % (indent_prefix, size))
-        text.append('%s%s (seqnr = %d)\n' % (indent_prefix,
-                                             int2bitarray(self.seqnr, 14).to01(),
-                                             self.seqnr))
+        if self.seqnr is not None:
+            text.append('%s%s (seqnr = %d)\n' % (indent_prefix,
+                                                 int2bitarray(self.seqnr, 14).to01(),
+                                                 self.seqnr))
 
-        indent = indent + 14
+            indent = indent + 14
+            
         indent_prefix = ' ' * indent
         for part in self.parts:
             if isinstance(part, PacketData):
@@ -764,12 +877,10 @@ class Packet():
             else:
                 text.append('%s1 (flag1 = 1)\n' % indent_prefix)
             text.append(part.tostring(indent = indent + 1))
-
-        text.append('%s1 (flag1 = 1)\n' % indent_prefix)
-
-        paddingbits = '0' * (len(packetbits) - len(databits))
-        if paddingbits:
-            text.append('    Bits left over in the last byte: %s\n' % paddingbits)
+            
+        if self.paddingbits:
+            text.append('%s1 (flag1 = 1)\n' % indent_prefix)
+            text.append('    Bits left over in the last byte: %s\n' % self.paddingbits.to01())
         
         return ''.join(text)
 
@@ -777,12 +888,19 @@ class Parser():
     def __init__(self):
         self.parser_state = ParserState()
 
-    def parsepacket(self, bits, debug = False):
-        packet, bits = Packet.frombitarray(bits, self.parser_state, debug = debug)
-        if len(bits) >= 8:
-            raise UnparseableBitsError('More than 8 bits were left after parsing', bits)
-        return packet
-            
+    def parsepacket(self, bits, debug = False, exception_on_failure = True):
+        packet = Packet()
+        bitsleft = None
+        errormsg = None
+        try:
+            packet.frombitarray(bits, self.parser_state, debug = debug)
+        except ParseError as e:
+            errormsg = str(e)
+            bitsleft = e.bitsleft
+            if exception_on_failure:
+                raise
 
-            
-
+        if exception_on_failure:
+            return packet
+        else:
+            return packet, bitsleft, errormsg
