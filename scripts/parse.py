@@ -534,21 +534,6 @@ def indentandrawoffset2globaloffset(indent: bool, rawoffset: int, offsetlist: Li
     raise RuntimeError('There\'s a bug in this code. This statement should not have been reached.')
 
 
-# @click.command()
-# @click.argument('file')
-# @click.option('--disable-id-annotations', is_flag=True,
-#               help='disable printing annotations for enumfield ids')
-# @click.option('--disable-value-annotations', is_flag=True,
-#               help='disable printing annotations for enumfield values')
-# @click.option('--id-annotation-sources', multiple=True,
-#               help='list of additional CSVs to source enumfield id annotations from')
-# @click.option('--value-annotation-sources', multiple=True,
-#               help='list of additional CSVs to source enumfield value annotations from')
-# def run_parse(file: str, disable_id_annotations: bool, disable_value_annotations: bool,
-#               id_annotation_sources: List[str], value_annotation_sources: List[str]) -> None:
-#     pass
-
-
 class CliArguments(NamedTuple):
     file: str
     disable_id_annotations: bool
