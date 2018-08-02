@@ -18,12 +18,12 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from typing import TypeVar, cast, Optional, List, Union, Set, Dict, Tuple, Generator, TextIO, BinaryIO
+from typing import TypeVar, cast, Optional, List, Union, Set, Dict, Tuple, Generator, TextIO, BinaryIO, NamedTuple
 
 import csv
 import io
 import struct
-import click
+import argparse
 
 K = TypeVar('K')
 V = TypeVar('V')
@@ -534,19 +534,44 @@ def indentandrawoffset2globaloffset(indent: bool, rawoffset: int, offsetlist: Li
     raise RuntimeError('There\'s a bug in this code. This statement should not have been reached.')
 
 
-@click.command()
-@click.argument('file')
-@click.option('--disable-id-annotations', is_flag=True,
-              help='disable printing annotations for enumfield ids')
-@click.option('--disable-value-annotations', is_flag=True,
-              help='disable printing annotations for enumfield values')
-@click.option('--id-annotation-sources', multiple=True,
-              help='list of additional CSVs to source enumfield id annotations from')
-@click.option('--value-annotation-sources', multiple=True,
-              help='list of additional CSVs to source enumfield value annotations from')
-def run_parse(file: str, disable_id_annotations: bool, disable_value_annotations: bool,
-              id_annotation_sources: List[str], value_annotation_sources: List[str]) -> None:
-    infile_name = file
+# @click.command()
+# @click.argument('file')
+# @click.option('--disable-id-annotations', is_flag=True,
+#               help='disable printing annotations for enumfield ids')
+# @click.option('--disable-value-annotations', is_flag=True,
+#               help='disable printing annotations for enumfield values')
+# @click.option('--id-annotation-sources', multiple=True,
+#               help='list of additional CSVs to source enumfield id annotations from')
+# @click.option('--value-annotation-sources', multiple=True,
+#               help='list of additional CSVs to source enumfield value annotations from')
+# def run_parse(file: str, disable_id_annotations: bool, disable_value_annotations: bool,
+#               id_annotation_sources: List[str], value_annotation_sources: List[str]) -> None:
+#     pass
+
+
+class CliArguments(NamedTuple):
+    file: str
+    disable_id_annotations: bool
+    disable_value_annotations: bool
+    id_annotation_sources: List[str]
+    value_annotation_sources: List[str]
+
+
+if __name__ == '__main__':
+    arg_parser = argparse.ArgumentParser(description='Client-Login Server Capture Parser')
+    arg_parser.add_argument('file', metavar='FILE', type=str)
+    arg_parser.add_argument('--disable-id-annotations', action='store_true',
+                            help='disable printing annotations for enumfield ids')
+    arg_parser.add_argument('--disable-value-annotations', action='store_true',
+                            help='disable printing annotations for enumfield values')
+    arg_parser.add_argument('--id-annotation-sources', type=str, nargs='+',
+                            help='list of additional CSVs to source enumfield id annotations from')
+    arg_parser.add_argument('--value-annotation-sources', type=str, nargs='+',
+                            help='list of additional CSVs to source enumfield value annotations from')
+
+    args: CliArguments = arg_parser.parse_args()
+
+    infile_name = args.file
 
     with open(infile_name, 'rt') as infile:
         with open(infile_name + '_parsed.txt', 'wt') as outfile:
@@ -568,11 +593,13 @@ def run_parse(file: str, disable_id_annotations: bool, disable_value_annotations
             payload_data = {}
             parsed_by_offset = {}
             id_sources_list = ['known_field_data/enumfields.csv']
-            id_sources_list.extend(id_annotation_sources)
+            if args.id_annotation_sources:
+                id_sources_list.extend(args.id_annotation_sources)
             value_sources_list = ['known_field_data/fieldvalues.csv']
-            value_sources_list.extend(value_annotation_sources)
+            if args.value_annotation_sources:
+                value_sources_list.extend(args.value_annotation_sources)
             parser = Parser(id_sources_list, value_sources_list,
-                            not disable_id_annotations, not disable_value_annotations)
+                            not args.disable_id_annotations, not args.disable_value_annotations)
             for i in (False, True):
                 data[i].seek(0)
                 packet_boundaries[i], payload_data[i] = removepacketsizes(i, data[i])
@@ -585,7 +612,3 @@ def run_parse(file: str, disable_id_annotations: bool, disable_value_annotations
                 indent, parsed_output = parsed_by_offset[key]
                 for line in parsed_output.splitlines():
                     outfile.write(('    ' if indent else '') + line + '\n')
-
-
-if __name__ == '__main__':
-    run_parse()
