@@ -60,7 +60,10 @@ class PacketWriter():
 
     def writefield(self, bits, description):
         if bits:
-            self._writeindentedline('%s %s' % (bits.to01(), description))
+            items = [bits.to01()]
+            if description:
+                items.append(description)
+            self._writeindentedline(' '.join(items))
             self.offset += len(bits)
         else:
             self._writeindentedline('x %s' % description)

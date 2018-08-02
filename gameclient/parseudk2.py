@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import argparse
 from bitarray import bitarray
 import string
 import sys
@@ -77,8 +78,20 @@ def binfile2packetbits(infile):
 
         yield bindata
 
-def main(infilename):
+def outputshiftedstrings(outfile, bindata):
+    shiftedstrings = [findshiftedstrings(bindata, i) for i in range(8)]
+
+    if any(shiftedstrings):
+        outfile.write('    String overview:\n')
+        outfile.write('    %s\n' % bindata.to01())
+        for i, shiftedstring in enumerate(shiftedstrings):
+            if shiftedstring:
+                outfile.write('    %s%s (shifted by %d bits)\n' % (' ' * i, shiftedstring, i))
+        outfile.write('\n')
+
+def main(infilename, debug):
     outfilename = infilename + '_parsed2.txt'
+    binoutfilename = infilename + '2'
 
     with open(infilename, 'rt') as infile:
         with open(outfilename, 'wt') as outfile:
@@ -86,25 +99,29 @@ def main(infilename):
             
             parser = udk.Parser()
 
-            for bindata in binfile2packetbits(infile):
-                packet = parser.parsepacket(bindata, debug = True)
+            for i, bindata in enumerate(binfile2packetbits(infile)):
+                print('Parsing packet %d...' % (i + 1))
+                packet, bitsleft, errormsg = parser.parsepacket(bindata,
+                                                                debug = debug,
+                                                                exception_on_failure = False)
+
                 outfile.write(packet.tostring() + '\n')
+                if bitsleft:
+                    outfile.write('Error: parsing failed with the following message:\n'
+                                  '    %s\n' % errormsg +
+                                  'At this point the following bits still had to be parsed:\n' +
+                                  '    %s\n\n' % bitsleft.to01())
+                outputshiftedstrings(outfile, bindata)
                 
 if __name__ == '__main__':
-    try:
-        if len(sys.argv) != 2:
-            print('Usage: %s <captureddatabindump>' % sys.argv[0])
-            print('')
-            print('This program will parse a binary dump of gameserver packets')
-            print('such as the one written by gameclient.py, parses it and writes')
-            print('the result into a text file with the same name as the input,')
-            print('but with a _parsed.txt suffix')
-            exit(0)
 
-        infilename = sys.argv[1]
-        
-        main(infilename)
-    except Exception as e:
-        traceback.print_exc()
-        time.sleep(5)
-        sys.exit(-1)
+    parser = argparse.ArgumentParser(description = 
+        'This program will parse a binary dump of gameserver packets '
+        'such as the one written by gameclient.py, parses it and writes '
+        'the result into a text file with the same name as the input, '
+        'but with a _parsed.txt suffix')
+    parser.add_argument('filename', type=str, help='the bindump file to parse')
+    parser.add_argument('-d', '--debug', action='store_true')
+    args = parser.parse_args()
+
+    main(args.filename, args.debug)
