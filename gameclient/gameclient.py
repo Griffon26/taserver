@@ -140,60 +140,65 @@ def main():
         packetack = parsehexdump(f.read())
 
     try:
-        with open('serverpackets.bindump', 'wt') as outfile:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        with open('clientpackets.bindump', 'wt') as clientoutfile:
+            with open('serverpackets.bindump', 'wt') as serveroutfile:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-            protocol = [
-                ('send', 0),
-                ('send', 1),
-                    ('wait', 0),
-                ('send', 2),
-                ('send', 3),
-                ('send', 4),
-                ('send', 5),
-                ('send', 6),
-                ('send', 7),
-                ('send', 8),
-                    ('wait', 1),
-                ('send', 9),
-                ('send', 10),
-                ('send', 11),
-                    ('wait', 30),
-                ('send', 12),
-                ('send', 13),
-                ('send', 14)
-            ]
+                protocol = [
+                    ('send', 0),
+                    ('send', 1),
+                        ('wait', 0),
+                    ('send', 2),
+                    ('send', 3),
+                    ('send', 4),
+                    ('send', 5),
+                    ('send', 6),
+                    ('send', 7),
+                    ('send', 8),
+                        ('wait', 1),
+                    ('send', 9),
+                    # The next packets are optional. The server
+                    # will already start sending game updates.
+                    ('send', 10),
+                    ('send', 11),
+                        ('wait', 30),
+                    ('send', 12),
+                    ('send', 13),
+                    ('send', 14)
+                ]
 
-            print('Starting initial packet exchange...')
-            for action, seq in protocol:
-                if action == 'send':
-                    print('  Sending recorded packet %d...' % seq)
-                    sock.sendto(packets[seq], (serverip, serverport))
-                else:
-                    print('  Waiting for at least seqnr %d...' % seq)
-                    while True:
-                        data, addr = sock.recvfrom(4096)
-                        # cut off seqnr
-                        bindumptofile(data, outfile)
-                        receivedseq = struct.unpack('<H', data[0:2])[0] & 0x3FFF
-                        print('    received %d bytes with seqnr %d' % (len(data), receivedseq))
-                        if receivedseq >= seq:
-                            break
+                print('Starting initial packet exchange...')
+                for action, seq in protocol:
+                    if action == 'send':
+                        print('  Sending recorded packet %d...' % seq)
+                        sock.sendto(packets[seq], (serverip, serverport))
+                        bindumptofile(packets[seq], clientoutfile)
+                    else:
+                        print('  Waiting for at least seqnr %d...' % seq)
+                        while True:
+                            data, addr = sock.recvfrom(4096)
+                            # cut off seqnr
+                            bindumptofile(data, serveroutfile)
+                            receivedseq = struct.unpack('<H', data[0:2])[0] & 0x3FFF
+                            print('    received %d bytes with seqnr %d' % (len(data), receivedseq))
+                            if receivedseq >= seq:
+                                break
 
-            print('Initial packet exchange finished; keeping the server talking...')
-            while True:
-                data, addr = sock.recvfrom(4096)
-                bindumptofile(data, outfile)
-                receivedseq = struct.unpack('<H', data[0:2])[0] & 0x3FFF
-                print("  received %d bytes with seqnr %d" % (len(data), receivedseq))
+                print('Initial packet exchange finished; keeping the server talking...')
+                while True:
+                    data, addr = sock.recvfrom(4096)
+                    bindumptofile(data, serveroutfile)
+                    receivedseq = struct.unpack('<H', data[0:2])[0] & 0x3FFF
+                    print("  received %d bytes with seqnr %d" % (len(data), receivedseq))
 
-                seq += 1
-                newvalue = (seq | (1 << 14) | (receivedseq << 15))
-                oldvalue = struct.unpack('<L', data[0:4])[0] & 0xE000000
-                newseqack = struct.pack('<L', newvalue | oldvalue)
+                    seq += 1
+                    newvalue = (seq | (1 << 14) | (receivedseq << 15))
+                    oldvalue = struct.unpack('<L', data[0:4])[0] & 0xE000000
+                    newseqack = struct.pack('<L', newvalue | oldvalue)
 
-                packettosend = newseqack + packetack[4:]
-                sock.sendto(packettosend, (serverip, serverport))
+                    packettosend = newseqack + packetack[4:]
+                    sock.sendto(packettosend, (serverip, serverport))
+                    bindumptofile(packettosend, clientoutfile)
                 
     except KeyboardInterrupt:
         print('Interrupted by CTRL-C')
