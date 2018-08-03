@@ -186,11 +186,10 @@ class Parser:
                 'salt': set(),
             }
             with open(fname, 'r') as f:
-                r = csv.reader(f)
-                for row in r:
-                    if row[1].lower() not in d:
+                for enumid, enumtype, _ in csv.reader(f):
+                    if enumtype.lower() not in d:
                         raise ParserConfigError()
-                    d[row[1].lower()].add(int(row[0], 0))
+                    d[enumtype.lower()].add(int(enumid, 0))
             return d
 
         self.known_enum_fields = merge_value_dicts([load_known_values_dict(f, 0, 2) for f in enumfields_files])

@@ -75,10 +75,8 @@ class Server:
         return matching_players[0]
 
     def find_players_by(self, **kwargs):
-        matching_players = self.players
-
         for key, val in kwargs.items():
-            matching_players = [player for player in matching_players if getattr(player, key) == val]
+            matching_players = [player for player in self.players.values() if getattr(player, key) == val]
 
         return matching_players
 
