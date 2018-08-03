@@ -26,37 +26,37 @@ from datatypes import *
 
 
 class LoggedInState(PlayerState):
-    @handles(packet=a0033, inherited=False)
+    @handles(packet=a0033)
     def handle_a0033(self, request):
         self.player.send(a0033())
 
-    @handles(packet=a00d5, inherited=False)
+    @handles(packet=a00d5)
     def handle_a00d5(self, request):
         if request.findbytype(m0228).value == 1:
             self.player.send(originalfragment(0x1EEB3, 0x20A10))  # 00d5 (map list)
         else:
             self.player.send(a00d5().setservers(self.player.server.game_servers))  # 00d5 (server list)
 
-    @handles(packet=a0014, inherited=False)
+    @handles(packet=a0014)
     def handle_a0014(self, request):
         self.player.send(originalfragment(0x20A18, 0x20B3F))  # 0014 (class list)
 
-    @handles(packet=a018b, inherited=False)
+    @handles(packet=a018b)
     def handle_a018b(self, request):
         self.player.send(originalfragment(0x20B47, 0x20B4B))  # 018b
 
-    @handles(packet=a01b5, inherited=False)
+    @handles(packet=a01b5)
     def handle_a01b5(self, request):
         self.player.send(originalfragment(0x20B53, 0x218F7))  # 01b5 (watch now)
 
-    @handles(packet=a0176, inherited=False)
+    @handles(packet=a0176)
     def handle_a0176(self, request):
         self.player.send(originalfragment(0x218FF, 0x219D1))  # 0176
 
-    @handles(packet=a0177, inherited=False)
+    @handles(packet=a0177)
     def handle_menu(self, request):
-        menupart = request.findbytype(m02ab).value
-        menufragments = {
+        menu_part = request.findbytype(m02ab).value
+        menu_fragments = {
             0x01de: originalfragment(0x38d17, 0x3d0fe),
             0x01ed: originalfragment(0x219d9, 0x2219e),
             0x01f0: originalfragment(0x4758e, 0x54bbe),
@@ -81,10 +81,10 @@ class LoggedInState(PlayerState):
             0x0221: originalfragment(0x2f4df, 0x2f69f),
             0x0227: originalfragment(0x2f6a7, 0x38d0f),
         }
-        if menupart in menufragments:
-            self.player.send(menufragments[menupart])
+        if menu_part in menu_fragments:
+            self.player.send(menu_fragments[menu_part])
 
-    @handles(packet=a00b1, inherited=False)
+    @handles(packet=a00b1)
     def handle_server_join_first_step(self, request):
         serverid1 = request.findbytype(m02c7).value
         game_server = self.player.server.find_server_by_id1(serverid1)
@@ -92,7 +92,7 @@ class LoggedInState(PlayerState):
         self.player.send(a00b0().setlength(9).setserverid1(serverid1))
         self.player.send(a00b4().setserverid2(serverid2))
 
-    @handles(packet=a00b2, inherited=False)
+    @handles(packet=a00b2)
     def handle_server_join_second_step(self, request):
         serverid2 = request.findbytype(m02c4).value
         game_server = self.player.server.find_server_by_id2(serverid2)
@@ -104,14 +104,14 @@ class LoggedInState(PlayerState):
 
         # todo: add joined server state and enter it
 
-    @handles(packet=a00b3, inherited=True)
+    @handles(packet=a00b3)
     def handle_server_disconnect(self, request):  # server disconnect
         # TODO: check on the real server if there's a response to this msg
         # serverid2 = request.findbytype(m02c4).value
         modify_gameserver_whitelist('remove', self.player, self.player.game_server)
         self.player.game_server = None
 
-    @handles(packet=a0070, inherited=True)
+    @handles(packet=a0070)
     def handle_chat(self, request):
         message_type = request.findbytype(m009e).value
 
@@ -141,7 +141,7 @@ class LoggedInState(PlayerState):
             if self.player.game_server:
                 self.player.server.send_all_on_server(request, self.player.game_server)
 
-    @handles(packet=a0175, inherited=True)
+    @handles(packet=a0175)
     def handle_promotion_code_redemption(self, request):
         authcode = request.findbytype(m0669).value
         if (self.player.login_name in self.player.server.accounts and
@@ -157,7 +157,7 @@ class LoggedInState(PlayerState):
             invalid_code_msg.findbytype(m0669).set(authcode)
             self.player.send(invalid_code_msg)
 
-    @handles(packet=a018c, inherited=True)
+    @handles(packet=a018c)
     def handle_votekick(self, request):
         response = request.findbytype(m0592)
 

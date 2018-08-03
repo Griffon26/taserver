@@ -25,12 +25,11 @@ class PlayerState:
     def __init__(self, player):
         self.player = player
 
-    def handle_request(self, request, inherited: bool):
+    def handle_request(self, request):
         methods = [
             func for name, func in inspect.getmembers(self) if
             not name.startswith("__")
             and hasattr(func, "handler")
-            and func.inherited == inherited
             and isinstance(request, func.packet)
         ]
         for method in methods:

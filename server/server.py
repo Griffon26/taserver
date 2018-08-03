@@ -102,7 +102,7 @@ class Server:
 
     def handle_client_connected_message(self, msg):
         player = Player(msg.clientid, msg.clientaddress, msg.clientport, server=self)
-        player.enter_state(UnauthenticatedState)
+        player.set_state(UnauthenticatedState)
         self.players[msg.clientid] = player
 
     def handle_client_message(self, msg):
@@ -113,4 +113,4 @@ class Server:
         print('server: client(%s) sent:\n%s' % (current_player, requests))
 
         for request in msg.requests:
-            current_player.state.handle_request(request)
+            current_player.state_manager.handle_request(request)

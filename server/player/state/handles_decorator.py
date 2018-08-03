@@ -21,11 +21,10 @@
 from functools import wraps
 
 
-def handles(packet, inherited):
+def handles(packet):
     def real_decorator(func):
         func.handler = True
         func.packet = packet
-        func.inherited = inherited
 
         @wraps(func)
         def wrapper(*args, **kwargs):

@@ -20,21 +20,16 @@
 #
 
 
-class StateStack:
+class StateManager:
     def __init__(self, player):
-        self.stack = []
         self.player = player
+        self.state = None
 
-    def enter_state(self, state_constructor, **kwargs):
-        state = state_constructor(self.player, **kwargs)
-        state.on_enter()
-        self.stack.append(state)
-
-    def exit_state(self):
-        state = self.stack.pop()
-        state.on_exit()
+    def set_state(self, state_class, **kwargs):
+        if self.state:
+            self.state.on_exit()
+        self.state = state_class(self.player, **kwargs)
+        self.state.on_enter()
 
     def handle_request(self, request):
-        for state in self.stack:
-            state.handle_request(request, inherited=True)
-        self.stack[-1].handle_request(request, inherited=False)
+        self.state.handle_request(request)

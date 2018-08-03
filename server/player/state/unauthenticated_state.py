@@ -25,16 +25,16 @@ from datatypes import *
 
 
 class UnauthenticatedState(PlayerState):
-    @handles(packet=a01bc, inherited=False)
+    @handles(packet=a01bc)
     def handle_a01bc(self, request):
         self.player.send(a01bc())
         self.player.send(a0197())
 
-    @handles(packet=a0033, inherited=False)
+    @handles(packet=a0033)
     def handle_a0033(self, request):
         self.player.send(a0033())
 
-    @handles(packet=a003a, inherited=False)
+    @handles(packet=a003a)
     def handle_login_request(self, request):
         if request.findbytype(m0056) is None:  # request for login
             self.player.send(a003a())
@@ -63,4 +63,4 @@ class UnauthenticatedState(PlayerState):
                 m05d6(),
                 m00ba()
             ])
-            self.player.enter_state(LoggedInState)
+            self.player.set_state(LoggedInState)
