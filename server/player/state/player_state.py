@@ -31,8 +31,7 @@ class PlayerState:
     def handle_request(self, request):
         methods = [
             func for name, func in inspect.getmembers(self) if
-            not name.startswith("__")
-            and getattr(func, 'packet', None) == type(request)
+            getattr(func, 'packet', None) == type(request)
         ]
         if not methods:
             print("No handler found for request %s" % request)
