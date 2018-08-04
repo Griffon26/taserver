@@ -75,8 +75,9 @@ class Server:
         return matching_players[0]
 
     def find_players_by(self, **kwargs):
+        matching_players = self.players.values()
         for key, val in kwargs.items():
-            matching_players = [player for player in self.players.values() if getattr(player, key) == val]
+            matching_players = [player for player in matching_players if getattr(player, key) == val]
 
         return matching_players
 
@@ -101,7 +102,7 @@ class Server:
             player.send(data, self)
 
     def handle_client_connected_message(self, msg):
-        player = Player(msg.clientid, msg.clientaddress, msg.clientport, server=self)
+        player = Player(msg.clientid, msg.clientaddress, msg.clientport, login_server=self)
         player.set_state(UnauthenticatedState)
         self.players[msg.clientid] = player
 
@@ -113,4 +114,4 @@ class Server:
         print('server: client(%s) sent:\n%s' % (current_player, requests))
 
         for request in msg.requests:
-            current_player.state_manager.handle_request(request)
+            current_player.handle_request(request)

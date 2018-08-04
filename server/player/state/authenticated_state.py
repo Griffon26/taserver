@@ -19,13 +19,12 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 from firewall import modify_gameserver_whitelist, modify_loginserver_blacklist
-from player.state.handles_decorator import handles
-from player.state.player_state import PlayerState
+from player.state.player_state import PlayerState, handles
 
 from datatypes import *
 
 
-class LoggedInState(PlayerState):
+class AuthenticatedState(PlayerState):
     @handles(packet=a0033)
     def handle_a0033(self, request):
         self.player.send(a0033())
@@ -35,7 +34,7 @@ class LoggedInState(PlayerState):
         if request.findbytype(m0228).value == 1:
             self.player.send(originalfragment(0x1EEB3, 0x20A10))  # 00d5 (map list)
         else:
-            self.player.send(a00d5().setservers(self.player.server.game_servers))  # 00d5 (server list)
+            self.player.send(a00d5().setservers(self.player.login_server.game_servers))  # 00d5 (server list)
 
     @handles(packet=a0014)
     def handle_a0014(self, request):
@@ -87,7 +86,7 @@ class LoggedInState(PlayerState):
     @handles(packet=a00b1)
     def handle_server_join_first_step(self, request):
         serverid1 = request.findbytype(m02c7).value
-        game_server = self.player.server.find_server_by_id1(serverid1)
+        game_server = self.player.login_server.find_server_by_id1(serverid1)
         serverid2 = game_server.serverid2
         self.player.send(a00b0().setlength(9).setserverid1(serverid1))
         self.player.send(a00b4().setserverid2(serverid2))
@@ -95,7 +94,7 @@ class LoggedInState(PlayerState):
     @handles(packet=a00b2)
     def handle_server_join_second_step(self, request):
         serverid2 = request.findbytype(m02c4).value
-        game_server = self.player.server.find_server_by_id2(serverid2)
+        game_server = self.player.login_server.find_server_by_id2(serverid2)
         self.player.send(a00b0().setlength(10))
         self.player.send(a0035().setserverdata(game_server))
 
@@ -124,7 +123,7 @@ class LoggedInState(PlayerState):
 
         elif message_type == 6:  # private
             addressed_player_name = request.findbytype(m034a).value
-            addressed_player = self.player.server.find_player_by(display_name=addressed_player_name)
+            addressed_player = self.player.login_server.find_player_by(display_name=addressed_player_name)
             if addressed_player:
                 request.content.append(m02fe().set(self.player.display_name))
                 request.content.append(m06de().set(self.player.tag))
@@ -139,17 +138,17 @@ class LoggedInState(PlayerState):
             request.content.append(m06de().set(self.player.tag))
 
             if self.player.game_server:
-                self.player.server.send_all_on_server(request, self.player.game_server)
+                self.player.login_server.send_all_on_server(request, self.player.game_server)
 
     @handles(packet=a0175)
     def handle_promotion_code_redemption(self, request):
         authcode = request.findbytype(m0669).value
-        if (self.player.login_name in self.player.server.accounts and
-                self.player.server.accounts[self.player.login_name].authcode == authcode):
+        if (self.player.login_name in self.player.login_server.accounts and
+                self.player.login_server.accounts[self.player.login_name].authcode == authcode):
 
-            self.player.server.accounts[self.player.login_name].password_hash = self.player.password_hash
-            self.player.server.accounts[self.player.login_name].authcode = None
-            self.player.server.accounts.save()
+            self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
+            self.player.login_server.accounts[self.player.login_name].authcode = None
+            self.player.login_server.accounts.save()
             self.player.authenticated = True
         else:
             invalid_code_msg = a0175()
@@ -162,7 +161,7 @@ class LoggedInState(PlayerState):
         response = request.findbytype(m0592)
 
         if response is None:  # votekick initiation
-            other_player = self.player.server.find_player_by(display_name=request.findbytype(m034a).value)
+            other_player = self.player.login_server.find_player_by(display_name=request.findbytype(m034a).value)
 
             if (other_player and
                     self.player.game_server and
@@ -181,9 +180,9 @@ class LoggedInState(PlayerState):
                     m0704().set(other_player.id),
                     m0705().set(other_player.display_name)
                 ]
-                self.player.server.send_all_on_server(reply, self.player.game_server)
+                self.player.login_server.send_all_on_server(reply, self.player.game_server)
 
-                for player in self.player.server.players.values():
+                for player in self.player.login_server.players.values():
                     player.vote = None
                 self.player.game_server.playerbeingkicked = other_player
 
@@ -194,7 +193,7 @@ class LoggedInState(PlayerState):
 
                 self.player.vote = (response.value == 1)
 
-                votes = [p.vote for p in self.player.server.players.values() if p.vote is not None]
+                votes = [p.vote for p in self.player.login_server.players.values() if p.vote is not None]
                 yes_votes = [v for v in votes if v]
 
                 if len(votes) >= 1:
@@ -219,7 +218,7 @@ class LoggedInState(PlayerState):
                             m0442().set(0)
                         ])
 
-                        self.player.server.send_all_on_server(reply, current_server)
+                        self.player.login_server.send_all_on_server(reply, current_server)
 
                     if kick:
                         # TODO: figure out if a real votekick also causes an

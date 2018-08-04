@@ -18,9 +18,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
-from player.state.handles_decorator import handles
-from player.state.logged_in_state import LoggedInState
-from player.state.player_state import PlayerState
+from player.state.authenticated_state import AuthenticatedState
+from player.state.player_state import PlayerState, handles
 from datatypes import *
 
 
@@ -42,9 +41,9 @@ class UnauthenticatedState(PlayerState):
         else:  # actual login
             self.player.login_name = request.findbytype(m0494).value
             self.player.password_hash = request.findbytype(m0056).content
+            if (self.player.login_name in self.player.login_server.accounts and
+                self.player.password_hash == self.player.login_server.accounts[self.player.login_name].password_hash):
 
-            if (self.player.login_name in self.player.server.accounts and
-                    self.player.password_hash == self.player.server.accounts[self.player.login_name].password_hash):
                 self.player.authenticated = True
 
             name_prefix = '' if self.player.authenticated else 'unverif-'
@@ -63,4 +62,4 @@ class UnauthenticatedState(PlayerState):
                 m05d6(),
                 m00ba()
             ])
-            self.player.set_state(LoggedInState)
+            self.player.set_state(AuthenticatedState)
