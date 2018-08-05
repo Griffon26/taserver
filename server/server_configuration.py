@@ -38,9 +38,13 @@ class ServerConfiguration:
             second_id = 2 ** 31 + first_id
             description = server_config["description"]
             motd = server_config["motd"]
-            ip = IPv4Address(socket.gethostbyname(server_config["ip"]))
-            port = int(server_config["port"])
+            try:
+                ip = IPv4Address(socket.gethostbyname(server_config["ip"]))
+                port = int(server_config["port"])
 
-            server = ServerInfo(first_id, second_id, description, motd, ip, port)
-            servers.append(server)
+                server = ServerInfo(first_id, second_id, description, motd, ip, port)
+                servers.append(server)
+            except socket.gaierror:
+                print('ERROR: Failed to get host by name. Check your internet connection')
+                pass
         return ServerConfiguration(servers)
