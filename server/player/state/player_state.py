@@ -31,7 +31,7 @@ class PlayerState:
     def handle_request(self, request):
         methods = [
             func for name, func in inspect.getmembers(self) if
-            getattr(func, 'packet', None) == type(request)
+            getattr(func, 'handles_packet', None) == type(request)
         ]
         if not methods:
             print("No handler found for request %s" % request)
@@ -56,7 +56,7 @@ def handles(packet):
     """
 
     def real_decorator(func):
-        func.packet = packet
+        func.handles_packet = packet
 
         @wraps(func)
         def wrapper(*args, **kwargs):
