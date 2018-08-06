@@ -17,9 +17,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
-
 class Player:
-    def __init__(self, id, ip, port, state):
+    def __init__(self, id, ip, port, login_server):
         self.id = id
         self.login_name = None
         self.display_name = None
@@ -32,10 +31,19 @@ class Player:
         self.last_received_seq = 0
         self.vote = None
         self.state = None
-        self.set_state(state)
+        self.login_server = login_server
 
-    def set_state(self, state):
-        self.state = state(self)
+    def set_state(self, state_class, *args, **kwargs):
+        if self.state:
+            self.state.on_exit()
+        self.state = state_class(self, *args, **kwargs)
+        self.state.on_enter()
 
-    def send(self, data, server):
-        server.client_queues[self.id].put((data, self.last_received_seq))
+    def handle_request(self, request):
+        self.state.handle_request(request)
+
+    def send(self, data):
+        self.login_server.client_queues[self.id].put((data, self.last_received_seq))
+
+    def __repr__(self):
+        return '%s, %s:%s, "%s"' % (self.id, self.ip, self.port, self.display_name)
