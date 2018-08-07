@@ -18,244 +18,48 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
-from firewall import modify_gameserver_whitelist, modify_loginserver_blacklist
-from player.state.player_state import PlayerState
-
+from player.state.authenticated_state import AuthenticatedState
+from player.state.player_state import PlayerState, handles
 from datatypes import *
 
 
 class UnauthenticatedState(PlayerState):
-    def handle_request(self, request, server):
-        def send(data, client_id=None):
-            player = server.players[client_id] if client_id is not None else self.player
-            player.send(data, server)
+    @handles(packet=a01bc)
+    def handle_a01bc(self, request):
+        self.player.send(a01bc())
+        self.player.send(a0197())
 
-        if isinstance(request, a01bc):
-            send(a01bc())
-            send(a0197())
+    @handles(packet=a0033)
+    def handle_a0033(self, request):
+        self.player.send(a0033())
 
-        elif isinstance(request, a003a):
-            if request.findbytype(m0056) is None:  # request for login
-                send(a003a())
+    @handles(packet=a003a)
+    def handle_login_request(self, request):
+        if request.findbytype(m0056) is None:  # request for login
+            self.player.send(a003a())
 
-            else:  # actual login
-                self.player.login_name = request.findbytype(m0494).value
-                self.player.password_hash = request.findbytype(m0056).content
+        else:  # actual login
+            self.player.login_name = request.findbytype(m0494).value
+            self.player.password_hash = request.findbytype(m0056).content
+            if (self.player.login_name in self.player.login_server.accounts and
+                self.player.password_hash == self.player.login_server.accounts[self.player.login_name].password_hash):
 
-                if (self.player.login_name in server.accounts and
-                        self.player.password_hash == server.accounts[self.player.login_name].password_hash):
-                    self.player.authenticated = True
-
-                name_prefix = '' if self.player.authenticated else 'unverif-'
-                self.player.display_name = name_prefix + self.player.login_name
-                send([
-                    a003d().setplayer(self.player.display_name, ''),
-                    m0662(0x8898, 0xdaff),
-                    m0633(),
-                    m063e(),
-                    m067e(),
-                    m0442(),
-                    m02fc(),
-                    m0219(),
-                    m0019(),
-                    m0623(),
-                    m05d6(),
-                    m00ba()
-                ])
-        elif isinstance(request, a0033):
-            send(a0033())
-
-        elif isinstance(request, a00d5):
-            if request.findbytype(m0228).value == 1:
-                send(originalfragment(0x1EEB3, 0x20A10))  # 00d5 (map list)
-            else:
-                send(a00d5().setservers(server.game_servers))  # 00d5 (server list)
-
-        elif isinstance(request, a0014):
-            send(originalfragment(0x20A18, 0x20B3F))  # 0014 (class list)
-
-        elif isinstance(request, a018b):
-            send(originalfragment(0x20B47, 0x20B4B))  # 018b
-
-        elif isinstance(request, a01b5):
-            send(originalfragment(0x20B53, 0x218F7))  # 01b5 (watch now)
-
-        elif isinstance(request, a0176):
-            send(originalfragment(0x218FF, 0x219D1))  # 0176
-
-        elif isinstance(request, a0177):
-            menupart = request.findbytype(m02ab).value
-
-            menufragments = {
-                0x01de : originalfragment(0x38d17, 0x3d0fe),
-                0x01ed : originalfragment(0x219d9, 0x2219e),
-                0x01f0 : originalfragment(0x4758e, 0x54bbe),
-                0x01f1 : originalfragment(0x54bc6, 0x54db0),
-                0x01f2 : originalfragment(0x55a2e, 0x57375),
-                0x01f3 : originalfragment(0x54db8, 0x55a26),
-                0x01f4 : originalfragment(0x5a776, 0x6fde3),
-                0x01f6 : originalfragment(0x5965a, 0x5a72b),
-                0x01f7 : originalfragment(0x5a733, 0x5a76e),
-                0x01f8 : originalfragment(0x5737d, 0x579af),
-                0x01f9 : originalfragment(0x579b7, 0x586a7),
-                0x01fa : originalfragment(0x221a6, 0x22723),
-                0x01fb : originalfragment(0x2272b, 0x235b8),
-                0x01fc : originalfragment(0x235c0, 0x239dd),
-                0x0200 : originalfragment(0x239e5, 0x23acf),
-                0x0206 : originalfragment(0x2620e, 0x28ac1),
-                0x0214 : originalfragment(0x23ad7, 0x26206),
-                0x0218 : originalfragment(0x28ac9, 0x2f4d7),
-                0x021b : originalfragment(0x3d106, 0x47586),
-                0x021c : originalfragment(0x6fdeb, 0x6fecf),
-                0x0220 : originalfragment(0x586af, 0x59652),
-                0x0221 : originalfragment(0x2f4df, 0x2f69f),
-                0x0227 : originalfragment(0x2f6a7, 0x38d0f),
-            }
-
-            if menupart in menufragments:
-                send(menufragments[menupart])
-
-        elif isinstance(request, a00b1):  # server join step 1
-            serverid1 = request.findbytype(m02c7).value
-            game_server = server.find_server_by_id1(serverid1)
-            serverid2 = game_server.serverid2
-            send(a00b0().setlength(9).setserverid1(serverid1))
-            send(a00b4().setserverid2(serverid2))
-
-        elif isinstance(request, a00b2):  # server join step 2
-            serverid2 = request.findbytype(m02c4).value
-            game_server = server.find_server_by_id2(serverid2)
-            send(a00b0().setlength(10))
-            send(a0035().setserverdata(game_server))
-
-            modify_gameserver_whitelist('add', self.player, self.player.game_server)
-            self.player.game_server = game_server
-
-        elif isinstance(request, a00b3):  # server disconnect
-            # TODO: check on the real server if there's a response to this msg
-            # serverid2 = request.findbytype(m02c4).value
-            modify_gameserver_whitelist('remove', self.player, self.player.game_server)
-            self.player.game_server = None
-
-        elif isinstance(request, a0070):  # chat
-            message_type = request.findbytype(m009e).value
-
-            if message_type == 3:  # team
-                reply = a0070()
-                reply.findbytype(m009e).set(3)
-                reply.findbytype(m02e6).set('Unfortunately team messages are not yet supported. Use VGS for now.')
-                reply.findbytype(m02fe).set('taserver')
-                send(reply)
-
-            elif message_type == 6:  # private
-                addressed_player_name = request.findbytype(m034a).value
-                addressed_player = server.find_player_by(display_name=addressed_player_name)
-                if addressed_player:
-                    request.content.append(m02fe().set(self.player.display_name))
-                    request.content.append(m06de().set(self.player.tag))
-
-                    send(request, client_id=self.player.id)
-
-                    if self.player.id != addressed_player.id:
-                        send(request, client_id=addressed_player.id)
-
-            else:  # public
-                request.content.append(m02fe().set(self.player.display_name))
-                request.content.append(m06de().set(self.player.tag))
-
-                if self.player.game_server:
-                    server.send_all_on_server(request, self.player.game_server)
-
-        elif isinstance(request, a0175):  # redeem promotion code
-            authcode = request.findbytype(m0669).value
-            if (self.player.login_name in server.accounts and
-                    server.accounts[self.player.login_name].authcode == authcode):
-
-                server.accounts[self.player.login_name].password_hash = self.player.password_hash
-                server.accounts[self.player.login_name].authcode = None
-                server.accounts.save()
                 self.player.authenticated = True
-            else:
-                invalid_code_msg = a0175()
-                invalid_code_msg.findbytype(m02fc).set(0x00019646)  # message type
-                invalid_code_msg.findbytype(m0669).set(authcode)
-                send(invalid_code_msg)
 
-        elif isinstance(request, a018c):  # votekick
-            response = request.findbytype(m0592)
-
-            if response is None:  # votekick initiation
-                other_player = server.find_player_by(display_name=request.findbytype(m034a).value)
-
-                if (other_player and
-                        self.player.game_server and
-                        other_player.game_server and
-                        self.player.game_server == other_player.game_server and
-                        self.player.game_server.playerbeingkicked is None):
-
-                    # Start a new vote
-                    reply = a018c()
-                    reply.content = [
-                        m02c4().set(self.player.game_server.serverid2),
-                        m034a().set(self.player.display_name),
-                        m0348().set(self.player.id),
-                        m02fc().set(0x0001942F),
-                        m0442(),
-                        m0704().set(other_player.id),
-                        m0705().set(other_player.display_name)
-                    ]
-                    server.send_all_on_server(reply, self.player.game_server)
-
-                    for player in server.players.values():
-                        player.vote = None
-                    self.player.game_server.playerbeingkicked = other_player
-
-            else:  # votekick response
-                if (self.player.game_server and
-                        self.player.game_server.playerbeingkicked is not None):
-                    current_server = self.player.game_server
-
-                    self.player.vote = (response.value == 1)
-
-                    votes = [p.vote for p in server.players.values() if p.vote is not None]
-                    yes_votes = [v for v in votes if v]
-
-                    if len(votes) >= 1:
-                        playertokick = current_server.playerbeingkicked
-                        kick = len(yes_votes) >= 1
-
-                        reply = a018c()
-                        reply.content = [
-                            m0348().set(playertokick.id),
-                            m034a().set(playertokick.display_name)
-                        ]
-
-                        if kick:
-                            reply.content.extend([
-                                m02fc().set(0x00019430),
-                                m0442().set(1)
-                            ])
-
-                        else:
-                            reply.content.extend([
-                                m02fc().set(0x00019431),
-                                m0442().set(0)
-                            ])
-
-                        server.send_all_on_server(reply, current_server)
-
-                        if kick:
-                            # TODO: figure out if a real votekick also causes an
-                            # inconsistency between the menu you see and the one
-                            # you're really in
-                            for msg in [a00b0(),
-                                        a0035().setmainmenu(),
-                                        a006f()]:
-                                send(msg, playertokick.id)
-                            playertokick.game_server = None
-                            modify_gameserver_whitelist('remove', playertokick, current_server)
-                            modify_loginserver_blacklist('add', playertokick)
-
-                        current_server.playerbeingkicked = None
-
-            # TODO: implement removal of kickvote on timeout
+            name_prefix = '' if self.player.authenticated else 'unverif-'
+            self.player.display_name = name_prefix + self.player.login_name
+            self.player.send([
+                a003d().setplayer(self.player.display_name, ''),
+                m0662(0x8898, 0xdaff),
+                m0633(),
+                m063e(),
+                m067e(),
+                m0442(),
+                m02fc(),
+                m0219(),
+                m0019(),
+                m0623(),
+                m05d6(),
+                m00ba()
+            ])
+            self.player.set_state(AuthenticatedState)
