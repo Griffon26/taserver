@@ -26,6 +26,7 @@ from datatypes import ClientMessage, \
     ClientDisconnectedMessage, \
     constructenumblockarray, ParseError
 from utils import hexdump
+from tcpmessagereader import TcpMessageReader
 
 
 def peekshort(infile):
@@ -50,37 +51,20 @@ def parseseqack(infile):
 
 class PacketReader:
     def __init__(self, socket, dump_queue):
-        self.socket = socket
+        self.tcp_message_reader = TcpMessageReader(socket)
         self.buffer = bytes()
         self.dumpqueue = dump_queue
-
-    def recvall(self, size):
-        remaining_size = size
-        msg = bytes()
-        while remaining_size > 0:
-            chunk = self.socket.recv(remaining_size)
-            if not chunk:
-                raise RuntimeError('Socket connection closed')
-            remaining_size -= len(chunk)
-            msg += chunk
-        return msg
 
     def prepare(self, length):
         ''' Makes sure that at least length bytes are available in self.buffer '''
         while len(self.buffer) < length:
-            packetsizebytes = self.recvall(2)
-            packetsize = struct.unpack('<H', packetsizebytes)[0]
-            if packetsize == 0:
-                packetsize = 1450
-            packetbodybytes = self.recvall(packetsize)
+            message_data = self.tcp_message_reader.receive()
             # print('Received:')
             # hexdump(packetbodybytes)
             if self.dumpqueue:
-                self.dumpqueue.put(('client', packetsizebytes + packetbodybytes))
-            self.buffer += packetbodybytes
-            if len(packetbodybytes) != packetsize:
-                raise RuntimeError('Received %d bytes, but expected %d. Client probably disconnected' %
-                                   (len(packetbodybytes), packetsize))
+                packetsize = len(message_data)
+                self.dumpqueue.put(('client', struct.pack('<H', packetsize) + message_data))
+            self.buffer += message_data
 
     def read(self, length):
         self.prepare(length)
