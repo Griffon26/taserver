@@ -41,9 +41,12 @@ class Server:
         self.accounts = accounts
         self.message_handlers = {
             AuthCodeRequestMessage: self.handle_authcode_request_message,
-            ClientDisconnectedMessage: self.handle_client_disconnected_message,
             ClientConnectedMessage: self.handle_client_connected_message,
-            ClientMessage: self.handle_client_message
+            ClientDisconnectedMessage: self.handle_client_disconnected_message,
+            ClientMessage: self.handle_client_message,
+            GameServerConnectedMessage: self.handle_game_server_connected_message,
+            GameServerDisconnectedMessage: self.handle_game_server_disconnected_message,
+            GameServerMessage: self.handle_game_server_message,
         }
 
     def run(self):
@@ -115,3 +118,15 @@ class Server:
 
         for request in msg.requests:
             current_player.handle_request(request)
+
+    def handle_game_server_connected_message(self, msg):
+        print(msg)
+        pass
+
+    def handle_game_server_disconnected_message(self, msg):
+        print(msg)
+        pass
+
+    def handle_game_server_message(self, msg):
+        print(msg)
+        pass

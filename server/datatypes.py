@@ -45,6 +45,24 @@ class ClientDisconnectedMessage():
         self.clientid = clientid
 
 
+class GameServerMessage():
+    def __init__(self, clientid, content):
+        self.game_server_id = game_server_id
+        self.content = content
+
+
+class GameServerConnectedMessage():
+    def __init__(self, game_server_id, game_server_address, game_server_port):
+        self.game_server_id = game_server_id
+        self.game_server_address = game_server_address
+        self.game_server_port = game_server_port
+
+
+class GameServerDisconnectedMessage():
+    def __init__(self, game_server_id):
+        self.game_server_id = game_server_id
+
+
 class AuthCodeRequestMessage():
     def __init__(self, login_name):
         self.login_name = login_name

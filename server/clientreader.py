@@ -26,7 +26,7 @@ from datatypes import ClientMessage, \
     ClientDisconnectedMessage, \
     constructenumblockarray, ParseError
 from utils import hexdump
-from tcpmessagereader import TcpMessageReader
+from tcpmessage import TcpMessageReader
 
 
 def peekshort(infile):
