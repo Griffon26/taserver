@@ -99,7 +99,7 @@ class Server:
 
     def send_all_on_server(self, data, game_server):
         for player in self.find_players_by(game_server=game_server):
-            player.send(data, self)
+            player.send(data)
 
     def handle_client_connected_message(self, msg):
         player = Player(msg.clientid, msg.clientaddress, msg.clientport, login_server=self)
