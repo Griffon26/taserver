@@ -20,11 +20,11 @@
 
 import json
 
-from datatypes import \
+from .datatypes import \
     GameServerMessage, \
     GameServerConnectedMessage, \
     GameServerDisconnectedMessage
-from tcpmessage import TcpMessageReader
+from .tcpmessage import TcpMessageReader
 
 
 class GameServerReader:

@@ -20,7 +20,7 @@
 
 import struct
 
-from tcpmessage import TcpMessageWriter
+from .tcpmessage import TcpMessageWriter
 
 
 def packetize(bytestream):

@@ -1,3 +1,5 @@
 __pycache__/
 \.idea/
 .mypy_cache/
+/taserverdump.hexdump_parsed.txt
+/taserverdump.hexdump

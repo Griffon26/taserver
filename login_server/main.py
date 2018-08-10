@@ -23,15 +23,15 @@ import gevent
 import gevent.queue
 from gevent.server import StreamServer
 
-from accounts import Accounts
-from authcodehandler import AuthCodeHandler
-from clientreader import ClientReader
-from clientwriter import ClientWriter
-from configuration import Configuration
-from gameserverreader import GameServerReader
-from gameserverwriter import GameServerWriter
-from hexdumper import HexDumper, dumpfilename
-from server import Server
+from .accounts import Accounts
+from .authcodehandler import AuthCodeHandler
+from .clientreader import ClientReader
+from .clientwriter import ClientWriter
+from .configuration import Configuration
+from .gameserverreader import GameServerReader
+from .gameserverwriter import GameServerWriter
+from .hexdumper import HexDumper, dumpfilename
+from .server import Server
 
 
 def handle_dump(dumpqueue):
@@ -70,14 +70,21 @@ def handle_client(server_queue, client_queue, socket, address, dump_queue):
     writer.run()
 
 
-def main(dump):
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dump', action='store_true',
+                        help='Dump all traffic to %s in a format suitable '
+                             'for parsing with the parse.py utility.' %
+                             dumpfilename)
+    args = parser.parse_args()
+    
     client_queues = {}
     game_server_queues = {}
     server_queue = gevent.queue.Queue()
     authcode_queue = gevent.queue.Queue()
-    dump_queue = gevent.queue.Queue() if dump else None
+    dump_queue = gevent.queue.Queue() if args.dump else None
 
-    accounts = Accounts('accountdatabase.json')
+    accounts = Accounts('data/accountdatabase.json')
     configuration = Configuration()
     gevent.spawn(handle_server, server_queue, client_queues, authcode_queue, accounts, configuration)
     gevent.spawn(handle_dump, dump_queue)
@@ -101,13 +108,3 @@ def main(dump):
         login_server.serve_forever()
     except KeyboardInterrupt:
         accounts.save()
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--dump', action='store_true',
-                        help='Dump all traffic to %s in a format suitable '
-                             'for parsing with the parse.py utility.' %
-                             dumpfilename)
-    args = parser.parse_args()
-    main(args.dump)

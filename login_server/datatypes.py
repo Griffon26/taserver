@@ -73,7 +73,7 @@ def hexparse(hexstring):
 
 
 def _originalbytes(start, end):
-    with open('tribescapture.bin.stripped', 'rb') as f:
+    with open('data/tribescapture.bin.stripped', 'rb') as f:
         f.seek(start)
         return f.read(end - start)
 

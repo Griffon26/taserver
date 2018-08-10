@@ -17,10 +17,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
+
 import socket
 from ipaddress import IPv4Address
 
-from server_info import ServerInfo
+from .server_info import ServerInfo
 
 
 class ServerConfiguration:

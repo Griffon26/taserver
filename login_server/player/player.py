@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+
 class Player:
     def __init__(self, id, ip, port, login_server):
         self.id = id

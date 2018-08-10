@@ -18,15 +18,15 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from accounts import AccountInfo
-from configuration import Configuration
-from datatypes import *
 import random
 import string
 
-from player.player import Player
-from player.state.unauthenticated_state import UnauthenticatedState
-from protocol_errors import ProtocolViolationError
+from .accounts import AccountInfo
+from .configuration import Configuration
+from .datatypes import *
+from .player.player import Player
+from .player.state.unauthenticated_state import UnauthenticatedState
+from .protocol_errors import ProtocolViolationError
 
 
 class Server:
