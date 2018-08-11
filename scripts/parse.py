@@ -18,12 +18,12 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from typing import TypeVar, cast, Optional, List, Union, Set, Dict, Tuple, Generator, TextIO, BinaryIO, NamedTuple
-
+import argparse
 import csv
 import io
+import os
 import struct
-import argparse
+from typing import TypeVar, cast, Optional, List, Union, Set, Dict, Tuple, Generator, TextIO, BinaryIO, NamedTuple
 
 K = TypeVar('K')
 V = TypeVar('V')
@@ -576,10 +576,11 @@ if __name__ == '__main__':
             packet_boundaries = {}
             payload_data = {}
             parsed_by_offset = {}
-            id_sources_list = ['known_field_data/enumfields.csv']
+
+            id_sources_list = [os.path.join(os.path.dirname(__file__), 'known_field_data/enumfields.csv')]
             if args.id_annotation_sources:
                 id_sources_list.extend(args.id_annotation_sources)
-            value_sources_list = ['known_field_data/fieldvalues.csv']
+            value_sources_list = [os.path.join(os.path.dirname(__file__), 'known_field_data/fieldvalues.csv')]
             if args.value_annotation_sources:
                 value_sources_list.extend(args.value_annotation_sources)
             parser = Parser(id_sources_list, value_sources_list,
