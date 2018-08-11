@@ -1,19 +1,18 @@
 # taserver
 A replacement implementation of the Tribes Ascend login server
 
-# IMPORTANT NOTICE: using this might get you banned! #
-Although I have run this on my own machine with an internet connection and I have been able to log on to my real account afterwards, I can't guarantee that you won't get banned if you modify this code and connect to it.
-
 ## How to use it
 If you do decide to try it out, here's how.
 
-1. Create a shortcut to TribesAscend.exe with the following command line for starting a dedicated server:
+1. Get the code for this project from github
+
+2. Modify `dir` under the `[gameserver]` section in `data/gameserverlauncher.ini` to point to the directory where your TribesAscend.exe is located. For instance:
 
     ```
-    TribesAscend.exe server TrCtf-Katabatic
+    C:\Games\Tribes Ascend\Binaries\Win32
     ```
   
-2. Create another shortcut to TribesAscend.exe with the following command line for starting a client that will connect to the login server running on your own machine:
+3. Create a shortcut to TribesAscend.exe with the following command line for starting a client that will connect to the login server running on your own machine:
 
     ```
     TribesAscend.exe -hostx=127.0.0.1
@@ -31,15 +30,17 @@ If you do decide to try it out, here's how.
     C:\Program Files (x86)\Python36\Scripts\pip install gevent
     ```
 
-3. Start the login server by running the main.py script in the server directory of this repository (preferably from a command window so you can read the errors if it exits for some reason).
+5. Start the login server by running the `start_login_server.py` script in the root of this repository (preferably from a command window so you can read the errors if it exits for some reason).
 
-4. As administrator start taserverfirewall.py in the script directory of this repository. This script will manage firewall rules to keep kicked players out and only allow logged in players on the game server.
+6. (Optional) As administrator start `taserverfirewall.py` in the `script` directory of this repository. This script will manage firewall rules to keep kicked players out and only allow logged in players on the game server.
 
-5. Start both the dedicated server and the client using the shortcuts you created
+7. Start the game server launcher by running the `start_game_server_launcher.py` script. This will launch a dedicated Tribes Ascend server. If starting the server fails, for instance because you specified the wrong directory in `data/gameserverlauncher.ini`, then it will keep on trying to start the server every 5 seconds. In that case use ctrl-C to shut it down and fix what's wrong.
 
-6. You can log on with any credentials. They are not checked (yet).
+8. Start your Tribes Ascend client using the shortcut you created earlier.
 
-7. There should be two servers in the server list. When you connect to the "server on 127.0.0.1" you will be connecting to your own dedicated server.
+9. You can log on with any credentials. They are not checked (yet).
+
+10. There should be one server in the server list. Connect to that and you will be connecting to your own dedicated server.
 
 ## Limitations
 
