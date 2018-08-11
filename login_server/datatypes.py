@@ -45,16 +45,10 @@ class ClientDisconnectedMessage():
         self.clientid = clientid
 
 
-class GameServerMessage():
-    def __init__(self, clientid, content):
-        self.game_server_id = game_server_id
-        self.content = content
-
-
 class GameServerConnectedMessage():
-    def __init__(self, game_server_id, game_server_address, game_server_port):
+    def __init__(self, game_server_id, game_server_ip, game_server_port):
         self.game_server_id = game_server_id
-        self.game_server_address = game_server_address
+        self.game_server_ip = game_server_ip
         self.game_server_port = game_server_port
 
 
@@ -983,7 +977,10 @@ class m00e9(arrayofenumblockarrays):
 
     def setservers(self, servers):
         self.arrays = []
-        for server in servers:
+        for server in servers.values():
+            if not server.joinable:
+                continue
+
             self.arrays.append([
                 m0385(),
                 m06ee(),

@@ -22,38 +22,70 @@ import gevent.monkey
 gevent.monkey.patch_socket()
 
 import gevent
+from ipaddress import IPv4Address
 import socket
 
+from common.tcpmessage import TcpMessageReader, TcpMessageWriter
+from common.messages import parse_message
+from .launchermessages import LoginServerDisconnectedMessage
 
 class LoginServerReader():
-    def __init__(self, sock, incoming_queue):
-        self.sock = sock
+    def __init__(self, my_id, sock, incoming_queue):
+        self.my_id = my_id
+        self.tcp_reader = TcpMessageReader(sock)
         self.incoming_queue = incoming_queue
 
     def run(self):
-        while True:
-            print('LoginServerReader tick')
-            gevent.sleep(5)
+        try:
+            while True:
+                msg_bytes = self.tcp_reader.receive()
+                self.incoming_queue.put(parse_message(msg_bytes))
+        except ConnectionResetError:
+            print('loginserver(%s): disconnected' % self.my_id)
+
+        self.incoming_queue.put(LoginServerDisconnectedMessage())
+        print('loginserver(%s): signalled launcher; login server reader exiting' % self.my_id)
 
 
 class LoginServerWriter():
-    def __init__(self, sock, outgoing_queue):
-        self.sock = sock
+    def __init__(self, my_id, sock, outgoing_queue):
+        self.my_id = my_id
+        self.tcp_writer = TcpMessageWriter(sock)
         self.outgoing_queue = outgoing_queue
 
     def run(self):
         while True:
-            print('LoginServerWriter tick')
-            gevent.sleep(5)
+            msg = self.outgoing_queue.get()
+            if not isinstance(msg, LoginServerDisconnectedMessage):
+                self.tcp_writer.send(msg.to_bytes())
+            else:
+                break
+
+        print('loginserver(%s): writer exiting gracefully' % self.my_id)
+
 
 def handle_login_server(login_server_config, incoming_queue, outgoing_queue):
+    my_id = id(gevent.getcurrent())
     gevent.getcurrent().name = 'login_server_handler'
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((login_server_config['host'], login_server_config['port']))
+    success = False
+    while not success:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            ip = IPv4Address(socket.gethostbyname(login_server_config['host']))
+            port = login_server_config['port']
+            sock.connect((str(ip), port))
+            print('loginserver(%s): connected to login server at %s:%s' % (my_id, ip, port))
+            success = True
+        except ConnectionRefusedError:
+            sock.close()
+            print('loginserver(%s): remote end is refusing connections. Reconnecting in 10 seconds...' % my_id)
+            gevent.sleep(10)
 
-    reader = LoginServerReader(sock, incoming_queue)
+    reader = LoginServerReader(my_id, sock, incoming_queue)
     gevent.spawn(reader.run)
 
-    writer = LoginServerWriter(sock, outgoing_queue)
+    writer = LoginServerWriter(my_id, sock, outgoing_queue)
     writer.run()
+
+    print('loginserver(%s): remote end disconnected.' % my_id)

@@ -22,20 +22,21 @@ import random
 import string
 
 from .accounts import AccountInfo
-from .configuration import Configuration
 from .datatypes import *
 from .player.player import Player
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
+from .server_info import ServerInfo
+from common.messages import *
 
 
 class Server:
-    def __init__(self, server_queue, client_queues, authcode_queue, accounts, configuration: Configuration):
+    def __init__(self, server_queue, client_queues, authcode_queue, accounts, configuration):
         self.server_queue = server_queue
         self.client_queues = client_queues
         self.authcode_queue = authcode_queue
 
-        self.game_servers = configuration.server_config.servers
+        self.game_servers = {}
 
         self.players = {}
         self.accounts = accounts
@@ -46,7 +47,7 @@ class Server:
             ClientMessage: self.handle_client_message,
             GameServerConnectedMessage: self.handle_game_server_connected_message,
             GameServerDisconnectedMessage: self.handle_game_server_disconnected_message,
-            GameServerMessage: self.handle_game_server_message,
+            Launcher2LoginServerInfoMessage: self.handle_server_info_message,
         }
 
     def run(self):
@@ -56,13 +57,13 @@ class Server:
                 handler(message)
 
     def find_server_by_id1(self, id1):
-        for game_server in self.game_servers:
+        for game_server in self.game_servers.values():
             if game_server.serverid1 == id1:
                 return game_server
         raise ProtocolViolationError('No server found with specified serverid1')
 
     def find_server_by_id2(self, id2):
-        for game_server in self.game_servers:
+        for game_server in self.game_servers.values():
             if game_server.serverid2 == id2:
                 return game_server
         raise ProtocolViolationError('No server found with specified serverid2')
@@ -120,13 +121,20 @@ class Server:
             current_player.handle_request(request)
 
     def handle_game_server_connected_message(self, msg):
-        print(msg)
-        pass
+        print('server: added game server %s' % msg.game_server_id)
+        self.game_servers[msg.game_server_id] = ServerInfo(1, 2, msg.game_server_ip)
 
     def handle_game_server_disconnected_message(self, msg):
-        print(msg)
-        pass
+        server = self.game_servers[msg.game_server_id]
+        print('server: removed game server %s (%s:%s)' % (msg.game_server_id,
+                                                          server.ip,
+                                                          server.port))
+        del(self.game_servers[msg.game_server_id])
 
-    def handle_game_server_message(self, msg):
-        print(msg)
-        pass
+    def handle_server_info_message(self, msg):
+        server = self.game_servers[msg.game_server_id]
+        server.set_info(msg.port, msg.description, msg.motd)
+        print('server: server info received for server %s (%s:%s)' % (msg.game_server_id,
+                                                                      server.ip,
+                                                                      server.port))
+

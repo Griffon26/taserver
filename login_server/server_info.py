@@ -20,11 +20,18 @@
 
 
 class ServerInfo:
-    def __init__(self, first_id, second_id, description, motd, ip, port):
+    def __init__(self, first_id, second_id, ip):
         self.serverid1 = first_id
         self.serverid2 = second_id
+        self.ip = ip
+        self.port = None
+        self.description = None
+        self.motd = None
+        self.playerbeingkicked = None
+        self.joinable = False
+
+    def set_info(self, port, description, motd):
+        self.port = port
         self.description = description
         self.motd = motd
-        self.ip = ip
-        self.port = port
-        self.playerbeingkicked = None
+        self.joinable = True

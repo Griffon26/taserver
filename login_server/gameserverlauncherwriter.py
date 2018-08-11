@@ -20,7 +20,7 @@
 
 import struct
 
-from .tcpmessage import TcpMessageWriter
+from common.tcpmessage import TcpMessageWriter
 
 
 def packetize(bytestream):
@@ -32,7 +32,7 @@ def packetize(bytestream):
         bytestream = bytestream[chunk_size:]
 
 
-class GameServerWriter:
+class GameServerLauncherWriter:
     def __init__(self, socket, game_server_id, game_server_queue):
         self.game_server_id = game_server_id
         self.message_writer = TcpMessageWriter(socket)
@@ -42,11 +42,11 @@ class GameServerWriter:
         while True:
             message = self.game_server_queue.get()
             if message is None:
-                print('gameserver(%s): writer closing socket' % self.game_server_id)
+                print('gameserverlauncher(%s): writer closing socket' % self.game_server_id)
                 self.message_writer.close()
                 break
 
             self.message_writer.send(message)
 
-        print('gameserver(%s): writer exiting gracefully' % self.game_server_id)
+        print('gameserverlauncher(%s): writer exiting gracefully' % self.game_server_id)
 

@@ -34,7 +34,7 @@ class TcpMessageReader:
         while remaining_size > 0:
             chunk = self.socket.recv(remaining_size)
             if not chunk:
-                raise RuntimeError('Socket connection closed')
+                raise ConnectionResetError()
             remaining_size -= len(chunk)
             msg += chunk
         return msg
@@ -67,7 +67,7 @@ class TcpMessageWriter:
         while remaining_size > 0:
             chunk = self.socket.recv(remaining_size)
             if not chunk:
-                raise RuntimeError('Socket connection closed')
+                raise ConnectionResetError()
             remaining_size -= len(chunk)
             msg += chunk
         return msg

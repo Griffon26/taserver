@@ -18,36 +18,34 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import json
+from ipaddress import IPv4Address
 
-from .datatypes import \
-    GameServerMessage, \
-    GameServerConnectedMessage, \
-    GameServerDisconnectedMessage
-from .tcpmessage import TcpMessageReader
+from .datatypes import GameServerConnectedMessage, GameServerDisconnectedMessage
+from common.tcpmessage import TcpMessageReader
+from common.messages import parse_message
 
 
-class GameServerReader:
+class GameServerLauncherReader:
     def __init__(self, socket, game_server_id, game_server_address, server_queue):
         self.game_server_id = game_server_id
-        self.message_reader = TcpMessageReader(socket)
+        self.tcp_reader = TcpMessageReader(socket)
         self.server_queue = server_queue
 
         ip, port = game_server_address
-        server_ip = tuple(int(ippart) for ippart in ip.split('.'))
+        server_ip = IPv4Address(ip)
 
         self.server_queue.put(GameServerConnectedMessage(self.game_server_id, server_ip, port))
 
     def run(self):
-        while True:
-            try:
-                msg = self.message_reader.receive()
-                content = json.loads(msg)
-                self.server_queue.put(GameServerMessage(self.game_server_id, content))
-                print('gameserver(%s): received incoming message: %s' % (self.game_server_id, content))
-            except Exception as e:
-                print('gameserver(%s): caught exception: %s' % (self.game_server_id, str(e)))
-                break
+        try:
+            while True:
+                msg_bytes = self.tcp_reader.receive()
+                msg = parse_message(msg_bytes)
+                msg.game_server_id = self.game_server_id
+                self.server_queue.put(msg)
+
+        except ConnectionResetError as e:
+            print('gameserverlauncher(%s): disconnected' % self.game_server_id)
 
         self.server_queue.put(GameServerDisconnectedMessage(self.game_server_id))
-        print('gameserver(%s): signalled server; reader exiting' % self.game_server_id)
+        print('gameserverlauncher(%s): signalled server; reader exiting' % self.game_server_id)

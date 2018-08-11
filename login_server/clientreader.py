@@ -24,9 +24,8 @@ import struct
 from .datatypes import ClientMessage, \
     ClientConnectedMessage, \
     ClientDisconnectedMessage, \
-    constructenumblockarray, ParseError
-from .utils import hexdump
-from .tcpmessage import TcpMessageReader
+    constructenumblockarray
+from common.tcpmessage import TcpMessageReader
 
 
 def peekshort(infile):
@@ -129,8 +128,8 @@ class ClientReader:
                 seq, msg = stream_parser.parse()
                 self.server_queue.put(ClientMessage(self.client_id, seq, msg))
                 # print('client(%s): received incoming message' % self.clientid)
-            except RuntimeError as e:
-                print('client(%s): caught exception: %s' % (self.client_id, str(e)))
+            except ConnectionResetError as e:
+                print('client(%s): client disconnected' % self.client_id)
                 break
 
         self.server_queue.put(ClientDisconnectedMessage(self.client_id))

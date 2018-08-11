@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2018 Timo Pomer <timopomer@gmail.com>
+# Copyright (C) 2018  Maurice van der Pot <griffon26@kfk4ever.com>
 #
 # This file is part of taserver
 #
@@ -18,14 +18,5 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import configparser
-from os import path
-
-INI_PATH = path.join('data', 'loginserver.ini')
-
-
-class Configuration:
-    def __init__(self):
-        self.config = configparser.ConfigParser()
-        with open(INI_PATH) as f:
-            self.config.read_file(f)
+class LoginServerDisconnectedMessage:
+    pass
