@@ -2,7 +2,6 @@
 A replacement implementation of the Tribes Ascend login server
 
 ## How to use it
-If you do decide to try it out, here's how.
 
 1. Get the code for this project from github
 
