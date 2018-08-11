@@ -21,7 +21,26 @@
 import inspect
 from functools import wraps
 
+from ...datatypes import *
 from ..player import Player
+
+
+def handles(packet):
+    """
+    A decorator that defines a function as a handler for a certain packet
+    :param packet: the packet being handled by the function
+    """
+
+    def real_decorator(func):
+        func.handles_packet = packet
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return real_decorator
 
 
 class PlayerState:
@@ -42,6 +61,10 @@ class PlayerState:
 
         methods[0](request)
 
+    @handles(packet=a01c8)
+    def handle_ping(self, request):
+        pass
+
     def on_enter(self):
         print("%s is entering state %s" % (self.player, self))
 
@@ -49,19 +72,3 @@ class PlayerState:
         print("%s is exiting state %s" % (self.player, self))
 
 
-def handles(packet):
-    """
-    A decorator that defines a function as a handler for a certain packet
-    :param packet: the packet being handled by the function
-    """
-
-    def real_decorator(func):
-        func.handles_packet = packet
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        return wrapper
-
-    return real_decorator

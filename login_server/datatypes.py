@@ -71,6 +71,12 @@ def _originalbytes(start, end):
         f.seek(start)
         return f.read(end - start)
 
+def findbytype(arr, requestedtype):
+    for item in arr:
+        if type(item) == requestedtype:
+            return item
+    return None
+
 
 # ------------------------------------------------------------
 # base types

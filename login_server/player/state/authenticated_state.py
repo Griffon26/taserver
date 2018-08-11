@@ -233,3 +233,12 @@ class AuthenticatedState(PlayerState):
                     current_server.playerbeingkicked = None
 
         # TODO: implement removal of kickvote on timeout
+
+    @handles(packet=a006d)
+    def handle_menuchange(self, request):
+        for arr in request.findbytype(m0144).arrays:
+            menu_item = findbytype(arr, m0661).value
+            field = findbytype(arr, m0369).value
+            value = int(findbytype(arr, m0261).value)
+            if self.player.loadout.is_loadout_menu_item(menu_item):
+                self.player.loadout.modify(menu_item, field, value)
