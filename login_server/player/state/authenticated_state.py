@@ -18,10 +18,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
-from firewall import modify_gameserver_whitelist, modify_loginserver_blacklist
-from player.state.player_state import PlayerState, handles
 
-from datatypes import *
+from ...datatypes import *
+from ...firewall import modify_gameserver_whitelist, modify_loginserver_blacklist
+from .player_state import PlayerState, handles
 
 
 class AuthenticatedState(PlayerState):

@@ -18,15 +18,15 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from accounts import AccountInfo
-from configuration import Configuration
-from datatypes import *
 import random
 import string
 
-from player.player import Player
-from player.state.unauthenticated_state import UnauthenticatedState
-from protocol_errors import ProtocolViolationError
+from .accounts import AccountInfo
+from .configuration import Configuration
+from .datatypes import *
+from .player.player import Player
+from .player.state.unauthenticated_state import UnauthenticatedState
+from .protocol_errors import ProtocolViolationError
 
 
 class Server:
@@ -41,9 +41,12 @@ class Server:
         self.accounts = accounts
         self.message_handlers = {
             AuthCodeRequestMessage: self.handle_authcode_request_message,
-            ClientDisconnectedMessage: self.handle_client_disconnected_message,
             ClientConnectedMessage: self.handle_client_connected_message,
-            ClientMessage: self.handle_client_message
+            ClientDisconnectedMessage: self.handle_client_disconnected_message,
+            ClientMessage: self.handle_client_message,
+            GameServerConnectedMessage: self.handle_game_server_connected_message,
+            GameServerDisconnectedMessage: self.handle_game_server_disconnected_message,
+            GameServerMessage: self.handle_game_server_message,
         }
 
     def run(self):
@@ -99,7 +102,7 @@ class Server:
 
     def send_all_on_server(self, data, game_server):
         for player in self.find_players_by(game_server=game_server):
-            player.send(data, self)
+            player.send(data)
 
     def handle_client_connected_message(self, msg):
         player = Player(msg.clientid, msg.clientaddress, msg.clientport, login_server=self)
@@ -115,3 +118,15 @@ class Server:
 
         for request in msg.requests:
             current_player.handle_request(request)
+
+    def handle_game_server_connected_message(self, msg):
+        print(msg)
+        pass
+
+    def handle_game_server_disconnected_message(self, msg):
+        print(msg)
+        pass
+
+    def handle_game_server_message(self, msg):
+        print(msg)
+        pass

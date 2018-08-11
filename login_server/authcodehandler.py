@@ -19,8 +19,9 @@
 #
 
 from gevent import socket
-from datatypes import AuthCodeRequestMessage
 import struct
+
+from .datatypes import AuthCodeRequestMessage
 
 authcode_address = ('127.0.0.1', 9800)
 

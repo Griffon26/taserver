@@ -23,13 +23,15 @@ import gevent
 import gevent.queue
 from gevent.server import StreamServer
 
-from accounts import Accounts
-from authcodehandler import AuthCodeHandler
-from clientreader import ClientReader
-from clientwriter import ClientWriter
-from configuration import Configuration
-from hexdumper import HexDumper, dumpfilename
-from server import Server
+from .accounts import Accounts
+from .authcodehandler import AuthCodeHandler
+from .clientreader import ClientReader
+from .clientwriter import ClientWriter
+from .configuration import Configuration
+from .gameserverreader import GameServerReader
+from .gameserverwriter import GameServerWriter
+from .hexdumper import HexDumper, dumpfilename
+from .server import Server
 
 
 def handle_dump(dumpqueue):
@@ -48,6 +50,16 @@ def handle_server(server_queue, client_queues, authcode_queue, accounts, configu
     server.run()
 
 
+def handle_game_server(server_queue, game_server_queue, socket, address):
+    myid = id(gevent.getcurrent())
+    print('gameserver(%s): connected from %s:%s' % (myid, address[0], address[1]))
+    reader = GameServerReader(socket, myid, address, server_queue)
+    gevent.spawn(reader.run)
+
+    writer = GameServerWriter(socket, myid, game_server_queue)
+    writer.run()
+    
+
 def handle_client(server_queue, client_queue, socket, address, dump_queue):
     myid = id(gevent.getcurrent())
     print('client(%s): connected from %s:%s' % (myid, address[0], address[1]))
@@ -58,13 +70,21 @@ def handle_client(server_queue, client_queue, socket, address, dump_queue):
     writer.run()
 
 
-def main(dump):
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dump', action='store_true',
+                        help='Dump all traffic to %s in a format suitable '
+                             'for parsing with the parse.py utility.' %
+                             dumpfilename)
+    args = parser.parse_args()
+    
     client_queues = {}
+    game_server_queues = {}
     server_queue = gevent.queue.Queue()
     authcode_queue = gevent.queue.Queue()
-    dump_queue = gevent.queue.Queue() if dump else None
+    dump_queue = gevent.queue.Queue() if args.dump else None
 
-    accounts = Accounts('accountdatabase.json')
+    accounts = Accounts('data/accountdatabase.json')
     configuration = Configuration()
     gevent.spawn(handle_server, server_queue, client_queues, authcode_queue, accounts, configuration)
     gevent.spawn(handle_dump, dump_queue)
@@ -75,19 +95,16 @@ def main(dump):
         client_queues[id(gevent.getcurrent())] = client_queue
         handle_client(server_queue, client_queue, socket, address, dump_queue)
 
-    server = StreamServer(('0.0.0.0', 9000), handle_client_wrapper)
+    def handle_game_server_wrapper(socket, address):
+        game_server_queue = gevent.queue.Queue()
+        game_server_queues[id(gevent.getcurrent())] = game_server_queue
+        handle_game_server(server_queue, game_server_queue, socket, address)
 
+    login_server = StreamServer(('0.0.0.0', 9000), handle_client_wrapper)
+    game_server_handler = StreamServer(('0.0.0.0', 9001), handle_game_server_wrapper)
+
+    game_server_handler.start()
     try:
-        server.serve_forever()
+        login_server.serve_forever()
     except KeyboardInterrupt:
         accounts.save()
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--dump', action='store_true',
-                        help='Dump all traffic to %s in a format suitable '
-                             'for parsing with the parse.py utility.' %
-                             dumpfilename)
-    args = parser.parse_args()
-    main(args.dump)

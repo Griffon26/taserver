@@ -17,12 +17,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
+
 import configparser
 from os import path
 
-from server_configuration import ServerConfiguration
+from .server_configuration import ServerConfiguration
 
-SERVERS_INI_PATH = path.join("configurations", "servers.ini")
+SERVERS_INI_PATH = path.join('data', 'configurations', 'servers.ini')
 
 
 class Configuration:

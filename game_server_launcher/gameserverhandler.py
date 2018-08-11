@@ -18,20 +18,18 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import gevent.subprocess as sp
+import gevent.monkey
+gevent.monkey.patch_subprocess()
 
+import os
+import subprocess as sp
 
-def modify_gameserver_whitelist(add_or_remove, player, server):
-    if add_or_remove not in ('add', 'remove'):
-        raise RuntimeError('Invalid argument provided')
-    ipstring = '%d.%d.%d.%d' % player.ip
-    sp.call('..\\scripts\\modifyfirewall.py whitelist %s %s' %
-            (add_or_remove, ipstring), shell=True)
+def run_game_server(game_server_config):
 
+    working_dir = game_server_config['dir']
+    args = game_server_config['args'].split()
+    exepath = os.path.join(working_dir, 'TribesAscend.exe')
 
-def modify_loginserver_blacklist(add_or_remove, player):
-    if add_or_remove not in ('add', 'remove'):
-        raise RuntimeError('Invalid argument provided')
-    ipstring = '%d.%d.%d.%d' % player.ip
-    sp.call('..\\scripts\\modifyfirewall.py blacklist %s %s' %
-            (add_or_remove, ipstring), shell=True)
+    while True:
+        print('Starting a new TribesAscend server')
+        sp.call([exepath, *args], cwd = working_dir)

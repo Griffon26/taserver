@@ -21,7 +21,7 @@
 import inspect
 from functools import wraps
 
-from player.player import Player
+from ..player import Player
 
 
 class PlayerState:

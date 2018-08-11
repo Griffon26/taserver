@@ -18,9 +18,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
-from player.state.authenticated_state import AuthenticatedState
-from player.state.player_state import PlayerState, handles
-from datatypes import *
+
+from .authenticated_state import AuthenticatedState
+from ..state.player_state import PlayerState, handles
+from ...datatypes import *
 
 
 class UnauthenticatedState(PlayerState):
