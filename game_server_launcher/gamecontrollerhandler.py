@@ -46,11 +46,12 @@ class GameControllerWriter():
 
 class GameControllerHandler():
     def __init__(self, config, incoming_queue, outgoing_queue):
+        self.port = int(config['port'])
         self.incoming_queue = incoming_queue
         self.outgoing_queue = outgoing_queue
 
     def run(self):
-        server = StreamServer(('0.0.0.0', 9100), self._handle, 1)
+        server = StreamServer(('127.0.0.1', self.port), self._handle, 1)
         server.serve_forever()
 
     def _handle(self, sock, address):
