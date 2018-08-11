@@ -50,7 +50,7 @@ def parseseqack(infile):
 
 class PacketReader:
     def __init__(self, socket, dump_queue):
-        self.tcp_message_reader = TcpMessageReader(socket)
+        self.tcp_message_reader = TcpMessageReader(socket, max_message_size = 1450)
         self.buffer = bytes()
         self.dumpqueue = dump_queue
 

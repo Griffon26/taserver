@@ -21,6 +21,7 @@
 import io
 import struct
 
+from common.tcpmessage import TcpMessageWriter
 
 def packetize(bytestream):
     while len(bytestream) > 0:
@@ -34,6 +35,7 @@ class ClientWriter:
     def __init__(self, socket, client_id, client_queue, dump_queue):
         self.client_id = client_id
         self.socket = socket
+        self.tcp_writer = TcpMessageWriter(socket, max_message_size = 1450)
         self.client_queue = client_queue
         self.dump_queue = dump_queue
         self.seq = None
@@ -64,6 +66,17 @@ class ClientWriter:
                 self.seq = 0
 
             stream.seek(0)
+
+            # Instead of just using the tcp_writer we have to first collect the bytes of all
+            # messages and then send them in one call, otherwise Tribes Ascend cannot deal
+            # with it.
+            '''
+            while True:
+                chunk = stream.read(1450)
+                if not chunk:
+                    break
+                self.tcp_writer.send(chunk)
+            '''
             packet_stream = io.BytesIO()
             for packet in packetize(stream.read()):
                 if self.dump_queue:
@@ -73,7 +86,7 @@ class ClientWriter:
 
             packet_stream.seek(0)
             self.socket.sendall(packet_stream.read())
-                
-                    
+
+
         print('client(%s): writer exiting gracefully' % self.client_id)
 
