@@ -61,19 +61,10 @@ class TcpMessageWriter:
         if self.max_message_size > 0xFFFF:
             raise ValueError('max_message_size is not allowed to be greater than 0xFFFF')
 
-    def _recvall(self, size):
-        remaining_size = size
-        msg = bytes()
-        while remaining_size > 0:
-            chunk = self.socket.recv(remaining_size)
-            if not chunk:
-                raise ConnectionResetError()
-            remaining_size -= len(chunk)
-            msg += chunk
-        return msg
-
     def send(self, data):
         size = len(data)
+        if size == 0:
+            raise ValueError('TcpMessageWriter: Sending empty messages is not allowed')
         if size > self.max_message_size:
             raise ValueError('TcpMessageWriter: Can only send messages up to %d bytes in size' % self.max_message_size)
         size_bytes = struct.pack('<H', size)
