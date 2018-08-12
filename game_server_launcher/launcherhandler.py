@@ -34,6 +34,7 @@ class Launcher:
             LoginServerDisconnectedMessage : self.handle_login_server_disconnected,
             Login2LauncherNextMapMessage : self.handle_next_map_message,
             Login2LauncherSetPlayerLoadoutsMessage : self.handle_set_player_loadouts_message,
+            Login2LauncherRemovePlayerLoadoutsMessage : self.handle_remove_player_loadouts_message,
             Game2LauncherTeamSwitchMessage : self.handle_team_switch_message,
             Game2LauncherMatchTimeMessage : self.handle_match_time_message,
             Game2LauncherLoadoutRequest : self.handle_loadout_request_message,
@@ -59,8 +60,12 @@ class Launcher:
 
     def handle_set_player_loadouts_message(self, msg):
         # TODO: add a message to remove player-related data when players leave the server
-        print('launcher: loadout changed for player %08X' % msg.unique_id)
+        print('launcher: loadout changed for player 0x%08X' % msg.unique_id)
         self.players[msg.unique_id] = msg.loadouts
+
+    def handle_remove_player_loadouts_message(self, msg):
+        print('launcher: loadouts removed for player 0x%08X' % msg.unique_id)
+        del(self.players[msg.unique_id])
 
     def handle_team_switch_message(self, msg):
         raise NotImplementedError
@@ -70,7 +75,7 @@ class Launcher:
 
     def handle_loadout_request_message(self, msg):
         if msg.unique_id not in self.players:
-            raise ValueError('launcher: Unable to find player %08X\'s loadouts' % msg.unique_id)
+            raise ValueError('launcher: Unable to find player 0x%08X\'s loadouts' % msg.unique_id)
         msg = Launcher2GameLoadoutMessage(self.players[msg.unique_id][msg.class_id][msg.loadout_number])
         self.game_controller_queue.put(msg)
 

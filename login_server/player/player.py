@@ -51,4 +51,4 @@ class Player:
         self.login_server.client_queues[self.client_id].put((data, self.last_received_seq))
 
     def __repr__(self):
-        return '%s, %s:%s, %08X:"%s"' % (self.client_id, self.ip, self.port, self.unique_id, self.display_name)
+        return '%s, %s:%s, 0x%08X:"%s"' % (self.client_id, self.ip, self.port, self.unique_id, self.display_name)

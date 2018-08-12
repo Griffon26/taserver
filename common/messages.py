@@ -26,6 +26,7 @@ import struct
 
 _MSGID_LOGIN2LAUNCHER_NEXTMAP = 0x1000
 _MSGID_LOGIN2LAUNCHER_SETPLAYERLOADOUTS = 0x1001
+_MSGID_LOGIN2LAUNCHER_REMOVEPLAYERLOADOUTS = 0x1002
 
 _MSGID_LAUNCHER2LOGIN_SERVERINFO = 0x2000
 _MSGID_LAUNCHER2LOGIN_MAPINFO = 0x2001
@@ -65,6 +66,13 @@ class Login2LauncherSetPlayerLoadoutsMessage(Message):
     def __init__(self, unique_id, loadouts):
         self.unique_id = unique_id
         self.loadouts = loadouts
+
+
+class Login2LauncherRemovePlayerLoadoutsMessage(Message):
+    msg_id = _MSGID_LOGIN2LAUNCHER_SETPLAYERLOADOUTS
+
+    def __init__(self, unique_id):
+        self.unique_id = unique_id
 
 
 class Launcher2LoginServerInfoMessage(Message):
