@@ -522,7 +522,7 @@ class m0347(fourbytes):
 
 class m0348(fourbytes):
     def __init__(self):
-        super(m0348, self).__init__(0x0348, 0x0023a039)
+        super(m0348, self).__init__(0x0348, 0x00000000)
 
 
 class m035a(fourbytes):
@@ -1255,7 +1255,8 @@ class a003d(enumblockarray):
             m068b(),
             m0681()]
 
-    def setplayer(self, name, tag):
+    def set_player(self, player_id, name, tag):
+        self.findbytype(m0348).set(player_id)
         self.findbytype(m034a).set(name)
         self.findbytype(m06de).set(tag)
         return self

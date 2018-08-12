@@ -21,7 +21,6 @@
 import random
 import string
 
-from .accounts import AccountInfo
 from .datatypes import *
 from .player.player import Player
 from .player.state.unauthenticated_state import UnauthenticatedState
@@ -89,7 +88,7 @@ class Server:
         availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
         authcode = ''.join([random.choice(availablechars) for i in range(8)])
         print('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
-        self.accounts[msg.login_name] = AccountInfo(msg.login_name, authcode)
+        self.accounts.add_account(msg.login_name, authcode)
         self.accounts.save()
         self.authcode_queue.put((msg.login_name, authcode))
 
@@ -106,7 +105,12 @@ class Server:
             player.send(data)
 
     def handle_client_connected_message(self, msg):
-        player = Player(msg.clientid, msg.clientaddress, msg.clientport, login_server=self)
+        offset_for_temp_ids = 0x10000000
+        used_slots = {player.slot for player in self.players.items()}
+        free_slot = next(i for i, e in enumerate(sorted(used_slots) + [None], start = 1) if i != e)
+        unique_id = free_slot + offset_for_temp_ids
+
+        player = Player(msg.clientid, unique_id, msg.clientaddress, msg.clientport, login_server=self)
         player.set_state(UnauthenticatedState)
         self.players[msg.clientid] = player
 

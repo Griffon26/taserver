@@ -21,8 +21,9 @@
 from .loadout import Loadout
 
 class Player:
-    def __init__(self, id, ip, port, login_server):
-        self.id = id
+    def __init__(self, player_id, unique_id, ip, port, login_server):
+        self.player_id = player_id
+        self.unique_id = unique_id
         self.login_name = None
         self.display_name = None
         self.password_hash = None
@@ -30,7 +31,7 @@ class Player:
         self.ip = ip
         self.port = port
         self.game_server = None
-        self.authenticated = False
+        self.registered = False
         self.last_received_seq = 0
         self.vote = None
         self.state = None
@@ -47,7 +48,7 @@ class Player:
         self.state.handle_request(request)
 
     def send(self, data):
-        self.login_server.client_queues[self.id].put((data, self.last_received_seq))
+        self.login_server.client_queues[self.player_id].put((data, self.last_received_seq))
 
     def __repr__(self):
-        return '%s, %s:%s, "%s"' % (self.id, self.ip, self.port, self.display_name)
+        return '%s, %s:%s, %08X:"%s"' % (self.player_id, self.ip, self.port, self.unique_id, self.display_name)

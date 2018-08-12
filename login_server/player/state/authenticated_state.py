@@ -149,7 +149,7 @@ class AuthenticatedState(PlayerState):
             self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
             self.player.login_server.accounts[self.player.login_name].authcode = None
             self.player.login_server.accounts.save()
-            self.player.authenticated = True
+            self.player.registered = True
         else:
             invalid_code_msg = a0175()
             invalid_code_msg.findbytype(m02fc).set(0x00019646)  # message type

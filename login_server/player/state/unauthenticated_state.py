@@ -42,15 +42,16 @@ class UnauthenticatedState(PlayerState):
         else:  # actual login
             self.player.login_name = request.findbytype(m0494).value
             self.player.password_hash = request.findbytype(m0056).content
-            if (self.player.login_name in self.player.login_server.accounts and
-                self.player.password_hash == self.player.login_server.accounts[self.player.login_name].password_hash):
+            accounts = self.player.login_server.accounts
+            if (self.player.login_name in accounts and
+                self.player.password_hash == accounts[self.player.login_name].password_hash):
+                self.player.unique_id = accounts[self.player.login_name].unique_id
+                self.player.registered = True
 
-                self.player.authenticated = True
-
-            name_prefix = '' if self.player.authenticated else 'unverif-'
+            name_prefix = '' if self.player.registered else 'unverif-'
             self.player.display_name = name_prefix + self.player.login_name
             self.player.send([
-                a003d().setplayer(self.player.display_name, ''),
+                a003d().set_player(self.player.unique_id, self.player.display_name, ''),
                 m0662(0x8898, 0xdaff),
                 m0633(),
                 m063e(),
