@@ -66,9 +66,9 @@ class PlayerState:
         pass
 
     def on_enter(self):
-        print("%s is entering state %s" % (self.player, self))
+        print("%s is entering state %s" % (self.player, type(self).__name__))
 
     def on_exit(self):
-        print("%s is exiting state %s" % (self.player, self))
+        print("%s is exiting state %s" % (self.player, type(self).__name__))
 
 

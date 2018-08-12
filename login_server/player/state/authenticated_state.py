@@ -20,7 +20,6 @@
 #
 
 from ...datatypes import *
-from ...firewall import modify_gameserver_whitelist, modify_loginserver_blacklist
 from .player_state import PlayerState, handles
 
 
@@ -93,22 +92,15 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a00b2)
     def handle_server_join_second_step(self, request):
+        # Import here to avoid a circular import dependency
+        from .on_game_server_state import OnGameServerState
+
         serverid2 = request.findbytype(m02c4).value
         game_server = self.player.login_server.find_server_by_id2(serverid2)
         self.player.send(a00b0().setlength(10))
         self.player.send(a0035().setserverdata(game_server))
 
-        modify_gameserver_whitelist('add', self.player, self.player.game_server)
-        self.player.game_server = game_server
-
-        # todo: add joined server state and enter it
-
-    @handles(packet=a00b3)
-    def handle_server_disconnect(self, request):  # server disconnect
-        # TODO: check on the real server if there's a response to this msg
-        # serverid2 = request.findbytype(m02c4).value
-        modify_gameserver_whitelist('remove', self.player, self.player.game_server)
-        self.player.game_server = None
+        self.player.set_state(OnGameServerState, game_server)
 
     @handles(packet=a0070)
     def handle_chat(self, request):
@@ -156,83 +148,6 @@ class AuthenticatedState(PlayerState):
             invalid_code_msg.findbytype(m0669).set(authcode)
             self.player.send(invalid_code_msg)
 
-    @handles(packet=a018c)
-    def handle_votekick(self, request):
-        response = request.findbytype(m0592)
-
-        if response is None:  # votekick initiation
-            other_player = self.player.login_server.find_player_by(display_name=request.findbytype(m034a).value)
-
-            if (other_player and
-                    self.player.game_server and
-                    other_player.game_server and
-                    self.player.game_server == other_player.game_server and
-                    self.player.game_server.playerbeingkicked is None):
-
-                # Start a new vote
-                reply = a018c()
-                reply.content = [
-                    m02c4().set(self.player.game_server.serverid2),
-                    m034a().set(self.player.display_name),
-                    m0348().set(self.player.id),
-                    m02fc().set(0x0001942F),
-                    m0442(),
-                    m0704().set(other_player.id),
-                    m0705().set(other_player.display_name)
-                ]
-                self.player.login_server.send_all_on_server(reply, self.player.game_server)
-
-                for player in self.player.login_server.players.values():
-                    player.vote = None
-                self.player.game_server.playerbeingkicked = other_player
-
-        else:  # votekick response
-            if (self.player.game_server and
-                    self.player.game_server.playerbeingkicked is not None):
-                current_server = self.player.game_server
-
-                self.player.vote = (response.value == 1)
-
-                votes = [p.vote for p in self.player.login_server.players.values() if p.vote is not None]
-                yes_votes = [v for v in votes if v]
-
-                if len(votes) >= 1:
-                    playertokick = current_server.playerbeingkicked
-                    kick = len(yes_votes) >= 1
-
-                    reply = a018c()
-                    reply.content = [
-                        m0348().set(playertokick.id),
-                        m034a().set(playertokick.display_name)
-                    ]
-
-                    if kick:
-                        reply.content.extend([
-                            m02fc().set(0x00019430),
-                            m0442().set(1)
-                        ])
-
-                    else:
-                        reply.content.extend([
-                            m02fc().set(0x00019431),
-                            m0442().set(0)
-                        ])
-
-                        self.player.login_server.send_all_on_server(reply, current_server)
-
-                    if kick:
-                        # TODO: figure out if a real votekick also causes an
-                        # inconsistency between the menu you see and the one
-                        # you're really in
-                        for msg in [a00b0(), a0035().setmainmenu(), a006f()]:
-                            playertokick.send(msg)
-                        playertokick.game_server = None
-                        modify_gameserver_whitelist('remove', playertokick, current_server)
-                        modify_loginserver_blacklist('add', playertokick)
-
-                    current_server.playerbeingkicked = None
-
-        # TODO: implement removal of kickvote on timeout
 
     @handles(packet=a006d)
     def handle_menuchange(self, request):
