@@ -1255,8 +1255,8 @@ class a003d(enumblockarray):
             m068b(),
             m0681()]
 
-    def set_player(self, player_id, name, tag):
-        self.findbytype(m0348).set(player_id)
+    def set_player(self, unique_id, name, tag):
+        self.findbytype(m0348).set(unique_id)
         self.findbytype(m034a).set(name)
         self.findbytype(m06de).set(tag)
         return self

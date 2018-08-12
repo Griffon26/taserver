@@ -36,6 +36,7 @@ _MSGID_LAUNCHER2LOGIN_MATCHTIME = 0x2005
 
 _MSGID_GAME2LAUNCHER_TEAMSWITCH = 0x3000
 _MSGID_GAME2LAUNCHER_MATCHTIME = 0x3001
+_MSGID_GAME2LAUNCHER_LOADOUTREQUEST = 0x3002
 
 _MSGID_LAUNCHER2GAME_LOADOUT = 0x4000
 
@@ -53,6 +54,7 @@ class Message:
         members = json.loads(data[2:])
         return cls(**members)
 
+
 class Login2LauncherNextMapMessage(Message):
     msg_id = _MSGID_LOGIN2LAUNCHER_NEXTMAP
 
@@ -60,9 +62,10 @@ class Login2LauncherNextMapMessage(Message):
 class Login2LauncherSetPlayerLoadoutsMessage(Message):
     msg_id = _MSGID_LOGIN2LAUNCHER_SETPLAYERLOADOUTS
 
-    def __init__(self, player_id, loadouts):
-        self.player_id = player_id
+    def __init__(self, unique_id, loadouts):
+        self.unique_id = unique_id
         self.loadouts = loadouts
+
 
 class Launcher2LoginServerInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SERVERINFO
@@ -71,6 +74,7 @@ class Launcher2LoginServerInfoMessage(Message):
         self.port = port
         self.description = description
         self.motd = motd
+
 
 class Launcher2LoginMapInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MAPINFO
@@ -100,8 +104,20 @@ class Game2LauncherMatchTimeMessage(Message):
     msg_id = _MSGID_GAME2LAUNCHER_MATCHTIME
 
 
+class Game2LauncherLoadoutRequest(Message):
+    msg_id = _MSGID_GAME2LAUNCHER_LOADOUTREQUEST
+
+    def __init__(self, player_unique_id, class_id, loadout_number):
+        self.player_unique_id = player_unique_id
+        self.class_id = class_id
+        self.loadout_number = loadout_number
+
+
 class Launcher2GameLoadoutMessage(Message):
     msg_id = _MSGID_LAUNCHER2GAME_LOADOUT
+
+    def __init__(self, loadout):
+        self.loadout = loadout
 
 
 _message_classes = [

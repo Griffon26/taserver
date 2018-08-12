@@ -18,10 +18,9 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import gevent
-
 from common.messages import *
 from .launchermessages import LoginServerDisconnectedMessage
+
 
 class Launcher:
     def __init__(self, game_server_config, incoming_queue, login_server_queue, game_controller_queue):
@@ -37,6 +36,7 @@ class Launcher:
             Login2LauncherSetPlayerLoadoutsMessage : self.handle_set_player_loadouts_message,
             Game2LauncherTeamSwitchMessage : self.handle_team_switch_message,
             Game2LauncherMatchTimeMessage : self.handle_match_time_message,
+            Game2LauncherLoadoutRequest : self.handle_loadout_request_message,
         }
 
     def run(self):
@@ -59,14 +59,20 @@ class Launcher:
 
     def handle_set_player_loadouts_message(self, msg):
         # TODO: add a message to remove player-related data when players leave the server
-        print('launcher: loadout changed for player %s' % msg.player_id)
-        self.players[msg.player_id] = msg.loadouts
+        print('launcher: loadout changed for player %08X' % msg.unique_id)
+        self.players[msg.unique_id] = msg.loadouts
 
     def handle_team_switch_message(self, msg):
         raise NotImplementedError
 
     def handle_match_time_message(self, msg):
         raise NotImplementedError
+
+    def handle_loadout_request_message(self, msg):
+        if msg.unique_id not in self.players:
+            raise ValueError('launcher: Unable to find player %08X\'s loadouts' % msg.unique_id)
+        msg = Launcher2GameLoadoutMessage(self.players[msg.unique_id][msg.class_id][msg.loadout_number])
+        self.game_controller_queue.put(msg)
 
 
 def handle_launcher(game_server_config, incoming_queue, login_server_queue, game_controller_queue):
