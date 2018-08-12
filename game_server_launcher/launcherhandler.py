@@ -59,7 +59,6 @@ class Launcher:
         raise NotImplementedError
 
     def handle_set_player_loadouts_message(self, msg):
-        # TODO: add a message to remove player-related data when players leave the server
         print('launcher: loadouts changed for player 0x%08X' % msg.unique_id)
         self.players[msg.unique_id] = msg.loadouts
 

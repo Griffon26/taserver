@@ -41,9 +41,6 @@ class ServerInfo:
         self.joinable = True
 
     def set_player_loadouts(self, player):
-        # TODO: Instead of using the player ID determined from the greenlet, use a generated
-        # player ID that is also communicated to the client through enumfield m0348. At the
-        # moment though, all those IDs are coming from
         msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id, player.loadouts.loadout_dict)
         self.queue.put(msg)
 
