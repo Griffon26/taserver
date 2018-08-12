@@ -29,11 +29,12 @@ class Launcher:
         self.incoming_queue = incoming_queue
         self.login_server_queue = login_server_queue
         self.game_controller_queue = game_controller_queue
+        self.players = {}
 
         self.message_handlers = {
             LoginServerDisconnectedMessage : self.handle_login_server_disconnected,
             Login2LauncherNextMapMessage : self.handle_next_map_message,
-            Login2LauncherLoadoutChangeMessage : self.handle_loadout_change_message,
+            Login2LauncherSetPlayerLoadoutsMessage : self.handle_set_player_loadouts_message,
             Game2LauncherTeamSwitchMessage : self.handle_team_switch_message,
             Game2LauncherMatchTimeMessage : self.handle_match_time_message,
         }
@@ -56,8 +57,10 @@ class Launcher:
     def handle_next_map_message(self, msg):
         raise NotImplementedError
 
-    def handle_loadout_change_message(self, msg):
-        raise NotImplementedError
+    def handle_set_player_loadouts_message(self, msg):
+        # TODO: add a message to remove player-related data when players leave the server
+        print('launcher: loadout changed for player %s' % msg.player_id)
+        self.players[msg.player_id] = msg.loadouts
 
     def handle_team_switch_message(self, msg):
         raise NotImplementedError

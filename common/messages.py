@@ -25,7 +25,7 @@ import struct
 # backward compatibility
 
 _MSGID_LOGIN2LAUNCHER_NEXTMAP = 0x1000
-_MSGID_LOGIN2LAUNCHER_LOADOUTCHANGE = 0x1001
+_MSGID_LOGIN2LAUNCHER_SETPLAYERLOADOUTS = 0x1001
 
 _MSGID_LAUNCHER2LOGIN_SERVERINFO = 0x2000
 _MSGID_LAUNCHER2LOGIN_MAPINFO = 0x2001
@@ -53,13 +53,16 @@ class Message:
         members = json.loads(data[2:])
         return cls(**members)
 
-class Login2LauncherNextMapMessage:
+class Login2LauncherNextMapMessage(Message):
     msg_id = _MSGID_LOGIN2LAUNCHER_NEXTMAP
 
 
-class Login2LauncherLoadoutChangeMessage:
-    msg_id = _MSGID_LOGIN2LAUNCHER_LOADOUTCHANGE
+class Login2LauncherSetPlayerLoadoutsMessage(Message):
+    msg_id = _MSGID_LOGIN2LAUNCHER_SETPLAYERLOADOUTS
 
+    def __init__(self, player_id, loadouts):
+        self.player_id = player_id
+        self.loadouts = loadouts
 
 class Launcher2LoginServerInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SERVERINFO
@@ -69,41 +72,41 @@ class Launcher2LoginServerInfoMessage(Message):
         self.description = description
         self.motd = motd
 
-class Launcher2LoginMapInfoMessage:
+class Launcher2LoginMapInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MAPINFO
 
 
-class Launcher2LoginTeamInfoMessage:
+class Launcher2LoginTeamInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_TEAMINFO
 
 
-class Launcher2LoginMatchEndMessage:
+class Launcher2LoginMatchEndMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MATCHEND
 
 
-class Launcher2LoginScoreInfoMessage:
+class Launcher2LoginScoreInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SCOREINFO
 
 
-class Launcher2LoginMatchTimeMessage:
+class Launcher2LoginMatchTimeMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MATCHTIME
 
 
-class Game2LauncherTeamSwitchMessage:
+class Game2LauncherTeamSwitchMessage(Message):
     msg_id = _MSGID_GAME2LAUNCHER_TEAMSWITCH
 
 
-class Game2LauncherMatchTimeMessage:
+class Game2LauncherMatchTimeMessage(Message):
     msg_id = _MSGID_GAME2LAUNCHER_MATCHTIME
 
 
-class Launcher2GameLoadoutMessage:
+class Launcher2GameLoadoutMessage(Message):
     msg_id = _MSGID_LAUNCHER2GAME_LOADOUT
 
 
 _message_classes = [
     Login2LauncherNextMapMessage,
-    Login2LauncherLoadoutChangeMessage,
+    Login2LauncherSetPlayerLoadoutsMessage,
 
     Launcher2LoginServerInfoMessage,
     Launcher2LoginMapInfoMessage,

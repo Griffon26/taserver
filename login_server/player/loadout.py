@@ -91,7 +91,7 @@ class Loadout:
 
         max_loadouts = 9
 
-        self.loadout = {
+        self.loadout_dict = {
             LIGHT_CLASS: {i: dict(default_light_loadout) for i in range(max_loadouts)},
             MEDIUM_CLASS: {i: dict(default_medium_loadout) for i in range(max_loadouts)},
             HEAVY_CLASS: {i: dict(default_heavy_loadout) for i in range(max_loadouts)}
@@ -102,4 +102,4 @@ class Loadout:
 
     def modify(self, loadout_id, slot, equipment):
         class_id, loadout_index = self.loadout_id2key[loadout_id]
-        self.loadout[class_id][loadout_index][slot] = equipment
+        self.loadout_dict[class_id][loadout_index][slot] = equipment

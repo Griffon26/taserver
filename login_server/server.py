@@ -122,7 +122,7 @@ class Server:
 
     def handle_game_server_connected_message(self, msg):
         print('server: added game server %s' % msg.game_server_id)
-        self.game_servers[msg.game_server_id] = ServerInfo(1, 2, msg.game_server_ip)
+        self.game_servers[msg.game_server_id] = ServerInfo(1, 2, msg.game_server_ip, msg.game_server_queue)
 
     def handle_game_server_disconnected_message(self, msg):
         server = self.game_servers[msg.game_server_id]

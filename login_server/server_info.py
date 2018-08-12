@@ -18,9 +18,11 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from common.messages import Login2LauncherSetPlayerLoadoutsMessage
+
 
 class ServerInfo:
-    def __init__(self, first_id, second_id, ip):
+    def __init__(self, first_id, second_id, ip, queue):
         self.serverid1 = first_id
         self.serverid2 = second_id
         self.ip = ip
@@ -29,9 +31,18 @@ class ServerInfo:
         self.motd = None
         self.playerbeingkicked = None
         self.joinable = False
+        self.queue = queue
 
     def set_info(self, port, description, motd):
         self.port = port
         self.description = description
         self.motd = motd
         self.joinable = True
+
+    def player_loadouts_changed(self, player):
+        # TODO: Instead of using the player ID determined from the greenlet, use a generated
+        # player ID that is also communicated to the client through enumfield m0348. At the
+        # moment though, all those IDs are coming from
+        msg = Login2LauncherSetPlayerLoadoutsMessage(player.id, player.loadout.loadout_dict)
+        self.queue.put(msg)
+

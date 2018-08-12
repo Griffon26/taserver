@@ -53,7 +53,7 @@ def handle_server(server_queue, client_queues, authcode_queue, accounts, configu
 def handle_game_server_launcher(server_queue, game_server_queue, socket, address):
     myid = id(gevent.getcurrent())
     print('gameserver(%s): connected from %s:%s' % (myid, address[0], address[1]))
-    reader = GameServerLauncherReader(socket, myid, address, server_queue)
+    reader = GameServerLauncherReader(socket, myid, address, server_queue, game_server_queue)
     gevent.spawn(reader.run)
 
     writer = GameServerLauncherWriter(socket, myid, game_server_queue)

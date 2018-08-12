@@ -46,10 +46,11 @@ class ClientDisconnectedMessage():
 
 
 class GameServerConnectedMessage():
-    def __init__(self, game_server_id, game_server_ip, game_server_port):
+    def __init__(self, game_server_id, game_server_ip, game_server_port, game_server_queue):
         self.game_server_id = game_server_id
         self.game_server_ip = game_server_ip
         self.game_server_port = game_server_port
+        self.game_server_queue = game_server_queue
 
 
 class GameServerDisconnectedMessage():

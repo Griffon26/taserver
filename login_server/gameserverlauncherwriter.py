@@ -46,7 +46,8 @@ class GameServerLauncherWriter:
                 self.message_writer.close()
                 break
 
-            self.message_writer.send(message)
+            message_bytes = message.to_bytes()
+            self.message_writer.send(message_bytes)
 
         print('gameserverlauncher(%s): writer exiting gracefully' % self.game_server_id)
 

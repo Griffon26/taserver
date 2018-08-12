@@ -26,7 +26,7 @@ from common.messages import parse_message
 
 
 class GameServerLauncherReader:
-    def __init__(self, socket, game_server_id, game_server_address, server_queue):
+    def __init__(self, socket, game_server_id, game_server_address, server_queue, game_server_queue):
         self.game_server_id = game_server_id
         self.tcp_reader = TcpMessageReader(socket)
         self.server_queue = server_queue
@@ -34,7 +34,7 @@ class GameServerLauncherReader:
         ip, port = game_server_address
         server_ip = IPv4Address(ip)
 
-        self.server_queue.put(GameServerConnectedMessage(self.game_server_id, server_ip, port))
+        self.server_queue.put(GameServerConnectedMessage(self.game_server_id, server_ip, port, game_server_queue))
 
     def run(self):
         try:
