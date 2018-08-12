@@ -18,7 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from .loadout import Loadout
+from .loadouts import Loadouts
 
 class Player:
     def __init__(self, client_id, unique_id, ip, port, login_server):
@@ -36,7 +36,7 @@ class Player:
         self.vote = None
         self.state = None
         self.login_server = login_server
-        self.loadout = Loadout()
+        self.loadouts = Loadouts()
 
     def set_state(self, state_class, *args, **kwargs):
         if self.state:

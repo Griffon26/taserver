@@ -35,9 +35,11 @@ class OnGameServerState(AuthenticatedState):
         print("%s is entering state %s" % (self.player, type(self).__name__))
         modify_gameserver_whitelist('add', self.player, self.game_server)
         self.player.game_server = self.game_server
+        self.player.game_server.set_player_loadouts(self.player)
 
     def on_exit(self):
         print("%s is exiting state %s" % (self.player, type(self).__name__))
+        self.player.game_server.remove_player_loadouts(self.player)
         self.player.game_server = None
         modify_gameserver_whitelist('remove', self.player, self.game_server)
 

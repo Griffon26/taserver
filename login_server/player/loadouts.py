@@ -41,8 +41,7 @@ EQUIPMENT_LIGHT_VOICE = 8666
 EQUIPMENT_LIGHT_GRENADE_LAUNCHER = 8761
 
 
-
-class Loadout:
+class Loadouts:
     loadout_id2key = {
         0x02990EE4: (LIGHT_CLASS, 0),
         0x02990EE5: (LIGHT_CLASS, 1),

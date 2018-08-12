@@ -106,9 +106,8 @@ class Server:
 
     def handle_client_connected_message(self, msg):
         offset_for_temp_ids = 0x10000000
-        used_slots = {player.slot for player in self.players.items()}
-        free_slot = next(i for i, e in enumerate(sorted(used_slots) + [None], start = 1) if i != e)
-        unique_id = free_slot + offset_for_temp_ids
+        used_temp_ids = {player.unique_id for player in self.players.values() if player.unique_id >= offset_for_temp_ids}
+        unique_id = next(i for i, e in enumerate(sorted(used_temp_ids) + [None], start = offset_for_temp_ids) if i != e)
 
         player = Player(msg.clientid, unique_id, msg.clientaddress, msg.clientport, login_server=self)
         player.set_state(UnauthenticatedState)

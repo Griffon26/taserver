@@ -18,7 +18,8 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from common.messages import Login2LauncherSetPlayerLoadoutsMessage
+from common.messages import Login2LauncherSetPlayerLoadoutsMessage, \
+                            Login2LauncherRemovePlayerLoadoutsMessage
 
 
 class ServerInfo:
@@ -39,10 +40,13 @@ class ServerInfo:
         self.motd = motd
         self.joinable = True
 
-    def player_loadouts_changed(self, player):
+    def set_player_loadouts(self, player):
         # TODO: Instead of using the player ID determined from the greenlet, use a generated
         # player ID that is also communicated to the client through enumfield m0348. At the
         # moment though, all those IDs are coming from
-        msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id, player.loadout.loadout_dict)
+        msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id, player.loadouts.loadout_dict)
         self.queue.put(msg)
 
+    def remove_player_loadouts(self, player):
+        msg = Login2LauncherRemovePlayerLoadoutsMessage(player.unique_id)
+        self.queue.put(msg)

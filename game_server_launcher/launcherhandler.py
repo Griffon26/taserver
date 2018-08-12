@@ -60,7 +60,7 @@ class Launcher:
 
     def handle_set_player_loadouts_message(self, msg):
         # TODO: add a message to remove player-related data when players leave the server
-        print('launcher: loadout changed for player 0x%08X' % msg.unique_id)
+        print('launcher: loadouts changed for player 0x%08X' % msg.unique_id)
         self.players[msg.unique_id] = msg.loadouts
 
     def handle_remove_player_loadouts_message(self, msg):

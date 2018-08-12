@@ -155,10 +155,10 @@ class AuthenticatedState(PlayerState):
         for arr in request.findbytype(m0144).arrays:
             menu_item = findbytype(arr, m0661).value
             field = findbytype(arr, m0369).value
-            value = int(findbytype(arr, m0261).value)
-            if self.player.loadout.is_loadout_menu_item(menu_item):
-                self.player.loadout.modify(menu_item, field, value)
+            value = findbytype(arr, m0261).value
+            if self.player.loadouts.is_loadout_menu_item(menu_item):
+                self.player.loadouts.modify(menu_item, field, int(value))
                 loadout_changed = True
 
         if self.player.game_server and loadout_changed:
-            self.player.game_server.player_loadouts_changed(self.player)
+            self.player.game_server.set_player_loadouts(self.player)

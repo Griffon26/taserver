@@ -69,7 +69,7 @@ class Login2LauncherSetPlayerLoadoutsMessage(Message):
 
 
 class Login2LauncherRemovePlayerLoadoutsMessage(Message):
-    msg_id = _MSGID_LOGIN2LAUNCHER_SETPLAYERLOADOUTS
+    msg_id = _MSGID_LOGIN2LAUNCHER_REMOVEPLAYERLOADOUTS
 
     def __init__(self, unique_id):
         self.unique_id = unique_id
@@ -131,6 +131,7 @@ class Launcher2GameLoadoutMessage(Message):
 _message_classes = [
     Login2LauncherNextMapMessage,
     Login2LauncherSetPlayerLoadoutsMessage,
+    Login2LauncherRemovePlayerLoadoutsMessage,
 
     Launcher2LoginServerInfoMessage,
     Launcher2LoginMapInfoMessage,
@@ -149,5 +150,7 @@ _message_map = { msg_class.msg_id : msg_class for msg_class in _message_classes 
 
 def parse_message(message_bytes):
     msg_id = struct.unpack('<H', message_bytes[0:2])[0]
+    if msg_id not in _message_map:
+        raise RuntimeError('Invalid message type received: id 0x%04X was not found in _message_map' % msg_id)
     msg = _message_map[msg_id].from_bytes(message_bytes)
     return msg
