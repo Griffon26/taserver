@@ -32,12 +32,16 @@ SLOT_BELT = 1089
 SLOT_SKIN = 1093
 SLOT_VOICE = 1094
 
+EQUIPMENT_SPINFUSOR = 7401
 EQUIPMENT_LIGHT_SPINFUSOR = 7422
 EQUIPMENT_LIGHT_ASSAULT_RIFLE = 7438
+EQUIPMENT_HEAVY_SPINFUSOR = 7448
 EQUIPMENT_THRUST_PACK = 7822
 EQUIPMENT_IMPACT_NITRON = 7387
 EQUIPMENT_PATHFINDER_SKIN = 7834
 EQUIPMENT_LIGHT_VOICE = 8666
+EQUIPMENT_MEDIUM_VOICE = 8667
+EQUIPMENT_HEAVY_VOICE = 8668
 EQUIPMENT_LIGHT_GRENADE_LAUNCHER = 8761
 
 
@@ -73,6 +77,7 @@ class Loadouts:
         0x02990EFD: (MEDIUM_CLASS, 7),
         0x02990EFE: (MEDIUM_CLASS, 8),
     }
+    loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
     def __init__(self):
         default_light_loadout = {
@@ -85,8 +90,25 @@ class Loadouts:
             SLOT_VOICE: EQUIPMENT_LIGHT_VOICE
         }
 
-        default_medium_loadout = default_light_loadout
-        default_heavy_loadout = default_light_loadout
+        default_medium_loadout = {
+            SLOT_PRIMARY_WEAPON: EQUIPMENT_SPINFUSOR,
+            SLOT_SECONDARY_WEAPON: EQUIPMENT_SPINFUSOR,
+            SLOT_TERTIARY_WEAPON: EQUIPMENT_SPINFUSOR,
+            SLOT_PACK: EQUIPMENT_THRUST_PACK,
+            SLOT_BELT: EQUIPMENT_IMPACT_NITRON,
+            SLOT_SKIN: EQUIPMENT_PATHFINDER_SKIN,
+            SLOT_VOICE: EQUIPMENT_MEDIUM_VOICE
+        }
+
+        default_heavy_loadout = {
+            SLOT_PRIMARY_WEAPON: EQUIPMENT_HEAVY_SPINFUSOR,
+            SLOT_SECONDARY_WEAPON: EQUIPMENT_HEAVY_SPINFUSOR,
+            SLOT_TERTIARY_WEAPON: EQUIPMENT_HEAVY_SPINFUSOR,
+            SLOT_PACK: EQUIPMENT_THRUST_PACK,
+            SLOT_BELT: EQUIPMENT_IMPACT_NITRON,
+            SLOT_SKIN: EQUIPMENT_PATHFINDER_SKIN,
+            SLOT_VOICE: EQUIPMENT_HEAVY_VOICE
+        }
 
         max_loadouts = 9
 

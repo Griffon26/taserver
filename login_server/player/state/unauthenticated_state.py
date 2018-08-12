@@ -51,8 +51,8 @@ class UnauthenticatedState(PlayerState):
             name_prefix = '' if self.player.registered else 'unverif-'
             self.player.display_name = name_prefix + self.player.login_name
             self.player.send([
-                a003d().set_player(self.player.unique_id, self.player.display_name, ''),
-                m0662(0x8898, 0xdaff),
+                a003d().set_player(self.player.unique_id, self.player.display_name, '', self.player.loadouts),
+                m0662().setoriginalbytes(0x8898, 0xdaff),
                 m0633(),
                 m063e(),
                 m067e(),
