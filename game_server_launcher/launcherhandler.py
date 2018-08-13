@@ -19,7 +19,7 @@
 #
 
 from common.messages import *
-from .launchermessages import LoginServerDisconnectedMessage
+from .launchermessages import LoginServerDisconnectedMessage, GameControllerDisconnectedMessage
 
 
 class Launcher:
@@ -32,6 +32,7 @@ class Launcher:
 
         self.message_handlers = {
             LoginServerDisconnectedMessage : self.handle_login_server_disconnected,
+            GameControllerDisconnectedMessage : self.handle_game_controller_disconnected,
             Login2LauncherNextMapMessage : self.handle_next_map_message,
             Login2LauncherSetPlayerLoadoutsMessage : self.handle_set_player_loadouts_message,
             Login2LauncherRemovePlayerLoadoutsMessage : self.handle_remove_player_loadouts_message,
@@ -54,6 +55,9 @@ class Launcher:
 
     def handle_login_server_disconnected(self, msg):
         self.login_server_queue.put(msg)
+
+    def handle_game_controller_disconnected(self, msg):
+        self.game_controller_queue.put(msg)
 
     def handle_next_map_message(self, msg):
         raise NotImplementedError

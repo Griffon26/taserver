@@ -18,5 +18,10 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+
 class LoginServerDisconnectedMessage:
+    pass
+
+
+class GameControllerDisconnectedMessage:
     pass

@@ -44,7 +44,7 @@ class LoginServerReader():
             print('loginserver(%s): disconnected' % self.my_id)
 
         self.incoming_queue.put(LoginServerDisconnectedMessage())
-        print('loginserver(%s): signalled launcher; login server reader exiting' % self.my_id)
+        print('loginserver(%s): signalled launcher; reader exiting' % self.my_id)
 
 
 class LoginServerWriter():
@@ -57,10 +57,17 @@ class LoginServerWriter():
         while True:
             msg = self.outgoing_queue.get()
             if not isinstance(msg, LoginServerDisconnectedMessage):
-                self.tcp_writer.send(msg.to_bytes())
+                try:
+                    self.tcp_writer.send(msg.to_bytes())
+                except ConnectionResetError:
+                    # Ignore a closed connection here. The reader will notice
+                    # it and send us the DisconnectedMessage to tell us that
+                    # we can close the socket and terminate
+                    pass
             else:
                 break
 
+        self.tcp_writer.close()
         print('loginserver(%s): writer exiting gracefully' % self.my_id)
 
 
