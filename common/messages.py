@@ -142,6 +142,7 @@ _message_classes = [
 
     Game2LauncherTeamSwitchMessage,
     Game2LauncherMatchTimeMessage,
+    Game2LauncherLoadoutRequest,
 
     Launcher2GameLoadoutMessage,
 ]

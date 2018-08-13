@@ -73,9 +73,19 @@ class Launcher:
         raise NotImplementedError
 
     def handle_loadout_request_message(self, msg):
-        if msg.unique_id not in self.players:
-            raise ValueError('launcher: Unable to find player 0x%08X\'s loadouts' % msg.unique_id)
-        msg = Launcher2GameLoadoutMessage(self.players[msg.unique_id][msg.class_id][msg.loadout_number])
+        if msg.player_unique_id not in self.players:
+            raise ValueError('launcher: Unable to find player 0x%08X\'s loadouts' % msg.player_unique_id)
+
+        # Class and loadout keys are strings because they came in as json.
+        # There's not much point in converting all keys in the loadouts
+        # dictionary from strings back to ints if we are just going to
+        # send it out as json again later.
+        player_key = msg.player_unique_id
+        class_key = str(msg.class_id)
+        loadout_key = str(msg.loadout_number)
+
+        msg = Launcher2GameLoadoutMessage(self.players[player_key][class_key][loadout_key])
+
         self.game_controller_queue.put(msg)
 
 

@@ -23,28 +23,33 @@ gevent.monkey.patch_socket()
 
 from gevent.server import StreamServer
 
+from common.tcpmessage import TcpMessageReader, TcpMessageWriter
+from common.messages import parse_message
 
-class GameControllerReader():
+
+class GameControllerReader:
     def __init__(self, sock, incoming_queue):
-        self.sock = sock
+        self.tcp_reader = TcpMessageReader(sock)
         self.incoming_queue = incoming_queue
 
     def run(self):
         while True:
-            print('GameControllerReader tick')
-            gevent.sleep(5)
+            msg_bytes = self.tcp_reader.receive()
+            self.incoming_queue.put(parse_message(msg_bytes))
 
-class GameControllerWriter():
+
+class GameControllerWriter:
     def __init__(self, sock, outgoing_queue):
-        self.sock = sock
+        self.tcp_writer = TcpMessageWriter(sock)
         self.outgoing_queue = outgoing_queue
 
     def run(self):
         while True:
-            print('GameControllerWriter tick')
-            gevent.sleep(5)
+            msg = self.outgoing_queue.get()
+            self.tcp_writer.send(msg.to_bytes())
 
-class GameControllerHandler():
+
+class GameControllerHandler:
     def __init__(self, config, incoming_queue, outgoing_queue):
         self.port = int(config['port'])
         self.incoming_queue = incoming_queue
