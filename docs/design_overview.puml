@@ -1,0 +1,23 @@
+@startuml
+
+skinparam defaultTextAlignment center
+
+node "Login server host" {
+  rectangle "taserver login server" as talogin
+}
+node "Player's computer" {
+  rectangle "TribesAscend.exe\n(game client)" as taclient
+}
+node "Game server host" {
+  rectangle "taserver game launcher" as talauncher
+  rectangle "TribesAscend.exe\n(dedicated server)" as taserver {
+    rectangle "taserver/TAmods game controller" as tacontroller
+  }
+}
+
+taclient --> talogin
+taclient --> taserver
+talogin <-- talauncher
+talauncher <-- tacontroller
+
+@enduml
