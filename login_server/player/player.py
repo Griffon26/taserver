@@ -36,6 +36,7 @@ class Player:
         self.vote = None
         self.state = None
         self.login_server = login_server
+        self.game_server = None
         self.loadouts = Loadouts()
 
     def set_state(self, state_class, *args, **kwargs):

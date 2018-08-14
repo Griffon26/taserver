@@ -18,18 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import struct
-
 from common.tcpmessage import TcpMessageWriter
-
-
-def packetize(bytestream):
-    while len(bytestream) > 0:
-        chunk_size = min(len(bytestream), 1450)
-        size_to_send = 0 if chunk_size == 1450 else chunk_size
-        packet = struct.pack('<H', size_to_send) + bytestream[:chunk_size]
-        yield packet
-        bytestream = bytestream[chunk_size:]
 
 
 class GameServerLauncherWriter:

@@ -79,7 +79,6 @@ def main():
     args = parser.parse_args()
     
     client_queues = {}
-    game_server_queues = {}
     server_queue = gevent.queue.Queue()
     authcode_queue = gevent.queue.Queue()
     dump_queue = gevent.queue.Queue() if args.dump else None
@@ -97,7 +96,6 @@ def main():
 
     def handle_game_server_launcher_wrapper(socket, address):
         game_server_queue = gevent.queue.Queue()
-        game_server_queues[id(gevent.getcurrent())] = game_server_queue
         handle_game_server_launcher(server_queue, game_server_queue, socket, address)
 
     login_server = StreamServer(('0.0.0.0', 9000), handle_client_wrapper)
