@@ -32,7 +32,7 @@ class LoginServerWriter(TcpMessageConnectionWriter):
         return msg.to_bytes()
 
 
-class LoginServer(ClientInstance):
+class LoginServer(Peer):
     pass
 
 

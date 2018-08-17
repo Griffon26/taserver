@@ -32,7 +32,7 @@ class GameControllerWriter(TcpMessageConnectionWriter):
         return msg.to_bytes()
 
 
-class GameController(ClientInstance):
+class GameController(Peer):
     pass
 
 

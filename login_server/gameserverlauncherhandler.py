@@ -36,7 +36,7 @@ class GameServerLauncherWriter(TcpMessageConnectionWriter):
         return msg.to_bytes()
 
 
-class GameServer(ClientInstance):
+class GameServer(Peer):
     def __init__(self, ip):
         super().__init__()
         self.serverid1 = None

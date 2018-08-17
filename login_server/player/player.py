@@ -19,10 +19,10 @@
 #
 
 from .loadouts import Loadouts
-from common.connectionhandler import ClientInstance
+from common.connectionhandler import Peer
 
 
-class Player(ClientInstance):
+class Player(Peer):
     def __init__(self, address):
         super().__init__()
         self.unique_id = None

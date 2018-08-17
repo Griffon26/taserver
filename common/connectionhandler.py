@@ -120,7 +120,7 @@ class TcpMessageConnectionWriter(ConnectionWriter):
         return self.tcp_writer.send(msg_bytes)
 
 
-class ClientInstance:
+class Peer:
     def __init__(self):
         self.task_name = None
         self.task_id = None
@@ -154,18 +154,18 @@ class ConnectionHandler:
 
         reader, writer, peer = self.create_connection_instances(sock, address)
 
-        if not isinstance(peer, ClientInstance) or \
-            not isinstance(reader, ConnectionReader) or \
-            not isinstance(writer, ConnectionWriter):
+        if not isinstance(peer, Peer) or \
+           not isinstance(reader, ConnectionReader) or \
+           not isinstance(writer, ConnectionWriter):
             raise TypeError('create_connection_instances should return a 3-tuple of instances of subclasses '
-                            'of ConnectionReader, ConnectionWriter and ClientInstance respectively')
+                            'of ConnectionReader, ConnectionWriter and Peer respectively')
 
-        if type(peer) is ClientInstance:
-            raise TypeError('You should create an instance of a specific subclass of ClientInstance in '
-                            'create_connection_instances not an instance of ClientInstance itself, '
-                            'because the instance will be sent as part of Connected/Disconnected '
-                            'messages and the type is the only way to distinguish between messages '
-                            'from different IncomingConnectionHandlers.')
+        if type(peer) is Peer:
+            raise TypeError('You should create an instance of a specific subclass of Peer in '
+                            'create_connection_instances not an instance of Peer itself, because '
+                            'the instance will be sent as part of Connected/Disconnected messages '
+                            'and the type is the only way to distinguish between messages from '
+                            'different ConnectionHandlers.')
 
         outgoing_queue = gevent.queue.Queue()
 
