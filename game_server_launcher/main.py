@@ -27,14 +27,13 @@ import os
 from .gameserverhandler import run_game_server
 from .loginserverhandler import handle_login_server
 from .gamecontrollerhandler import handle_game_controller
-from .launcherhandler import handle_launcher
+from .launcher import handle_launcher
 from common import messages
 
 INI_PATH = os.path.join('data', 'gameserverlauncher.ini')
 
 
 def main():
-    game_controller_queue = gevent.queue.Queue()
     login_server_queue = gevent.queue.Queue()
     incoming_queue = gevent.queue.Queue()
 
@@ -42,13 +41,14 @@ def main():
     with open(INI_PATH) as f:
         config.read_file(f)
 
+    tasks = []
     try:
         while True:
             tasks = [
                 gevent.spawn(run_game_server, config['gameserver']),
-                gevent.spawn(handle_login_server, config['loginserver'], incoming_queue, login_server_queue),
-                gevent.spawn(handle_game_controller, config['gamecontrollerhandler'], incoming_queue, game_controller_queue),
-                gevent.spawn(handle_launcher, config['gameserver'], incoming_queue, login_server_queue, game_controller_queue)
+                gevent.spawn(handle_login_server, config['loginserver'], incoming_queue),
+                gevent.spawn(handle_game_controller, config['gamecontrollerhandler'], incoming_queue),
+                gevent.spawn(handle_launcher, config['gameserver'], incoming_queue)
             ]
 
             # Wait for any of the tasks to terminate

@@ -19,20 +19,21 @@
 #
 
 from common.messages import *
-from .launchermessages import LoginServerDisconnectedMessage, GameControllerDisconnectedMessage
-
+from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
+from .gamecontrollerhandler import GameController
+from .loginserverhandler import LoginServer
 
 class Launcher:
-    def __init__(self, game_server_config, incoming_queue, login_server_queue, game_controller_queue):
+    def __init__(self, game_server_config, incoming_queue):
         self.game_server_config = game_server_config
         self.incoming_queue = incoming_queue
-        self.login_server_queue = login_server_queue
-        self.game_controller_queue = game_controller_queue
         self.players = {}
+        self.game_controller = None
+        self.login_server = None
 
         self.message_handlers = {
-            LoginServerDisconnectedMessage : self.handle_login_server_disconnected,
-            GameControllerDisconnectedMessage : self.handle_game_controller_disconnected,
+            PeerConnectedMessage : self.handle_peer_connected,
+            PeerDisconnectedMessage : self.handle_peer_disconnected,
             Login2LauncherNextMapMessage : self.handle_next_map_message,
             Login2LauncherSetPlayerLoadoutsMessage : self.handle_set_player_loadouts_message,
             Login2LauncherRemovePlayerLoadoutsMessage : self.handle_remove_player_loadouts_message,
@@ -42,22 +43,43 @@ class Launcher:
         }
 
     def run(self):
-
-        msg = Launcher2LoginServerInfoMessage(int(self.game_server_config['port']),
-                                              self.game_server_config['description'],
-                                              self.game_server_config['motd'])
-        self.login_server_queue.put(msg)
-
         while True:
             for message in self.incoming_queue:
                 handler = self.message_handlers[type(message)]
                 handler(message)
 
-    def handle_login_server_disconnected(self, msg):
-        self.login_server_queue.put(msg)
+    def handle_peer_connected(self, msg):
+        if isinstance(msg.peer, GameController):
+            if self.game_controller is not None:
+                raise RuntimeError('There should only be one game controller at a time')
+            self.game_controller = msg.peer
 
-    def handle_game_controller_disconnected(self, msg):
-        self.game_controller_queue.put(msg)
+        elif isinstance(msg.peer, LoginServer):
+            if self.login_server is not None:
+                raise RuntimeError('There should only be a connection to one login server at a time')
+            self.login_server = msg.peer
+
+            msg = Launcher2LoginServerInfoMessage(int(self.game_server_config['port']),
+                                                  self.game_server_config['description'],
+                                                  self.game_server_config['motd'])
+            self.login_server.send(msg)
+
+        else:
+            assert False, "Invalid connection message received"
+
+    def handle_peer_disconnected(self, msg):
+        if isinstance(msg.peer, GameController):
+            if self.game_controller is None:
+                raise RuntimeError('How can a game controller disconnect if it\'s not there?')
+            self.game_controller.disconnect()
+            self.game_controller = None
+        elif isinstance(msg.peer, LoginServer):
+            if self.login_server is None:
+                raise RuntimeError('How can a login server disconnect if it\'s not there?')
+            self.login_server.disconnect()
+            self.login_server = None
+        else:
+            assert False, "Invalid disconnection message received"
 
     def handle_next_map_message(self, msg):
         raise NotImplementedError
@@ -78,7 +100,8 @@ class Launcher:
 
     def handle_loadout_request_message(self, msg):
         if msg.player_unique_id not in self.players:
-            raise ValueError('launcher: Unable to find player 0x%08X\'s loadouts' % msg.player_unique_id)
+            print('launcher: Unable to find player 0x%08X\'s loadouts. Ignoring request.' % msg.player_unique_id)
+            return
 
         # Class and loadout keys are strings because they came in as json.
         # There's not much point in converting all keys in the loadouts
@@ -89,10 +112,9 @@ class Launcher:
         loadout_key = str(msg.loadout_number)
 
         msg = Launcher2GameLoadoutMessage(self.players[player_key][class_key][loadout_key])
+        self.game_controller.send(msg)
 
-        self.game_controller_queue.put(msg)
 
-
-def handle_launcher(game_server_config, incoming_queue, login_server_queue, game_controller_queue):
-    launcher = Launcher(game_server_config, incoming_queue, login_server_queue, game_controller_queue)
+def handle_launcher(game_server_config, incoming_queue):
+    launcher = Launcher(game_server_config, incoming_queue)
     launcher.run()

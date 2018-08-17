@@ -25,13 +25,11 @@ from gevent.server import StreamServer
 
 from .accounts import Accounts
 from .authcodehandler import AuthCodeHandler
-from .clientreader import ClientReader
-from .clientwriter import ClientWriter
 from .configuration import Configuration
-from .gameserverlauncherreader import GameServerLauncherReader
-from .gameserverlauncherwriter import GameServerLauncherWriter
+from .gameserverlauncherhandler import handle_game_server_launcher
+from .gameclienthandler import handle_game_client
 from .hexdumper import HexDumper, dumpfilename
-from .server import Server
+from .loginserver import LoginServer
 
 
 def handle_dump(dumpqueue):
@@ -46,29 +44,8 @@ def handle_authcodes(server_queue, authcode_queue):
 
 
 def handle_server(server_queue, client_queues, authcode_queue, accounts, configuration):
-    server = Server(server_queue, client_queues, authcode_queue, accounts, configuration)
+    server = LoginServer(server_queue, client_queues, authcode_queue, accounts, configuration)
     server.run()
-
-
-def handle_game_server_launcher(server_queue, game_server_queue, socket, address):
-    myid = id(gevent.getcurrent())
-    print('gameserver(%s): connected from %s:%s' % (myid, address[0], address[1]))
-    reader = GameServerLauncherReader(socket, myid, address, server_queue, game_server_queue)
-    gevent.spawn(reader.run)
-
-    writer = GameServerLauncherWriter(socket, myid, game_server_queue)
-    writer.run()
-    
-
-def handle_client(server_queue, client_queue, socket, address, dump_queue):
-    myid = id(gevent.getcurrent())
-    print('client(%s): connected from %s:%s' % (myid, address[0], address[1]))
-    reader = ClientReader(socket, myid, address, server_queue, dump_queue)
-    gevent.spawn(reader.run)
-
-    writer = ClientWriter(socket, myid, client_queue, dump_queue)
-    writer.run()
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -85,24 +62,23 @@ def main():
 
     accounts = Accounts('data/accountdatabase.json')
     configuration = Configuration()
-    gevent.spawn(handle_server, server_queue, client_queues, authcode_queue, accounts, configuration)
-    gevent.spawn(handle_dump, dump_queue)
-    gevent.spawn(handle_authcodes, server_queue, authcode_queue)
 
-    def handle_client_wrapper(socket, address):
-        client_queue = gevent.queue.Queue()
-        client_queues[id(gevent.getcurrent())] = client_queue
-        handle_client(server_queue, client_queue, socket, address, dump_queue)
+    tasks = [
+        gevent.spawn(handle_server, server_queue, client_queues, authcode_queue, accounts, configuration),
+        gevent.spawn(handle_dump, dump_queue),
+        gevent.spawn(handle_authcodes, server_queue, authcode_queue),
+        gevent.spawn(handle_game_client, server_queue, dump_queue),
+        gevent.spawn(handle_game_server_launcher, server_queue)
+    ]
 
-    def handle_game_server_launcher_wrapper(socket, address):
-        game_server_queue = gevent.queue.Queue()
-        handle_game_server_launcher(server_queue, game_server_queue, socket, address)
-
-    login_server = StreamServer(('0.0.0.0', 9000), handle_client_wrapper)
-    game_server_handler = StreamServer(('0.0.0.0', 9001), handle_game_server_launcher_wrapper)
-
-    game_server_handler.start()
     try:
-        login_server.serve_forever()
+        # Wait for any of the tasks to terminate
+        finished_greenlets = gevent.joinall(tasks, count=1)
+
+        print('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
+        print('Killing everything and waiting 5 seconds before restarting...')
+        gevent.killall(tasks)
+        gevent.sleep(5)
+
     except KeyboardInterrupt:
         accounts.save()

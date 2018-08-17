@@ -18,21 +18,35 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from common.messages import Login2LauncherSetPlayerLoadoutsMessage, \
+from ipaddress import IPv4Address
+
+from common.connectionhandler import *
+from common.messages import parse_message, \
+                            Login2LauncherSetPlayerLoadoutsMessage, \
                             Login2LauncherRemovePlayerLoadoutsMessage
 
 
-class ServerInfo:
-    def __init__(self, first_id, second_id, ip, queue):
-        self.serverid1 = first_id
-        self.serverid2 = second_id
+class GameServerLauncherReader(TcpMessageConnectionReader):
+    def decode(self, msg_bytes):
+        return parse_message(msg_bytes)
+
+
+class GameServerLauncherWriter(TcpMessageConnectionWriter):
+    def encode(self, msg):
+        return msg.to_bytes()
+
+
+class GameServer(ClientInstance):
+    def __init__(self, ip):
+        super().__init__()
+        self.serverid1 = None
+        self.serverid2 = None
         self.ip = ip
         self.port = None
         self.description = None
         self.motd = None
         self.playerbeingkicked = None
         self.joinable = False
-        self.queue = queue
 
     def set_info(self, port, description, motd):
         self.port = port
@@ -42,8 +56,27 @@ class ServerInfo:
 
     def set_player_loadouts(self, player):
         msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id, player.loadouts.loadout_dict)
-        self.queue.put(msg)
+        self.send(msg)
 
     def remove_player_loadouts(self, player):
         msg = Login2LauncherRemovePlayerLoadoutsMessage(player.unique_id)
-        self.queue.put(msg)
+        self.send(msg)
+
+
+class GameServerLauncherHandler(IncomingConnectionHandler):
+    def __init__(self, incoming_queue):
+        super().__init__('gameserverlauncher',
+                         '0.0.0.0',
+                         9001,
+                         incoming_queue)
+
+    def create_connection_instances(self, sock, address):
+        reader = GameServerLauncherReader(sock)
+        writer = GameServerLauncherWriter(sock)
+        peer = GameServer(IPv4Address(address[0]))
+        return reader, writer, peer
+
+
+def handle_game_server_launcher(incoming_queue):
+    game_controller_handler = GameServerLauncherHandler(incoming_queue)
+    game_controller_handler.run()

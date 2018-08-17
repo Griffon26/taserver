@@ -19,27 +19,32 @@
 #
 
 from .loadouts import Loadouts
+from common.connectionhandler import ClientInstance
 
-class Player:
-    def __init__(self, client_id, unique_id, ip, port, login_server):
-        self.client_id = client_id
-        self.unique_id = unique_id
+
+class Player(ClientInstance):
+    def __init__(self, address):
+        super().__init__()
+        self.unique_id = None
         self.login_name = None
         self.display_name = None
         self.password_hash = None
         self.tag = ''
-        self.ip = ip
-        self.port = port
+        self.ip = address[0]
+        self.port = address[1]
         self.game_server = None
         self.registered = False
         self.last_received_seq = 0
         self.vote = None
         self.state = None
-        self.login_server = login_server
+        self.login_server = None
         self.game_server = None
         self.loadouts = Loadouts()
 
     def set_state(self, state_class, *args, **kwargs):
+        assert(self.unique_id is not None)
+        assert(self.login_server is not None)
+
         if self.state:
             self.state.on_exit()
         self.state = state_class(self, *args, **kwargs)
@@ -49,7 +54,8 @@ class Player:
         self.state.handle_request(request)
 
     def send(self, data):
-        self.login_server.client_queues[self.client_id].put((data, self.last_received_seq))
+        super().send((data, self.last_received_seq))
 
     def __repr__(self):
-        return '%s, %s:%s, 0x%08X:"%s"' % (self.client_id, self.ip, self.port, self.unique_id, self.display_name)
+        return '%s(%s, %s:%s, 0x%08X:"%s")' % (self.task_name, self.task_id,
+                                               self.ip, self.port, self.unique_id, self.display_name)

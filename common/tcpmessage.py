@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import io
 import struct
 
 
@@ -65,10 +66,14 @@ class TcpMessageWriter:
         size = len(data)
         if size == 0:
             raise ValueError('TcpMessageWriter: Sending empty messages is not allowed')
-        if size > self.max_message_size:
-            raise ValueError('TcpMessageWriter: Can only send messages up to %d bytes in size' % self.max_message_size)
-        size_bytes = struct.pack('<H', size)
-        self.socket.sendall(size_bytes + data)
+        output_buffer = io.BytesIO()
+        while size > 0:
+            output_buffer.write(struct.pack('<H', size if size < self.max_message_size else 0))
+            output_buffer.write(data[:self.max_message_size])
+            data = data[self.max_message_size:]
+            size = len(data)
+
+        self.socket.sendall(output_buffer.getvalue())
 
     def close(self):
         self.socket.close()

@@ -27,22 +27,9 @@ class ParseError(Exception):
 
 
 class ClientMessage():
-    def __init__(self, clientid, clientseq, requests):
-        self.clientid = clientid
+    def __init__(self, clientseq, requests):
         self.clientseq = clientseq
         self.requests = requests
-
-
-class ClientConnectedMessage():
-    def __init__(self, clientid, clientaddress, clientport):
-        self.clientid = clientid
-        self.clientaddress = clientaddress
-        self.clientport = clientport
-
-
-class ClientDisconnectedMessage():
-    def __init__(self, clientid):
-        self.clientid = clientid
 
 
 class GameServerConnectedMessage():

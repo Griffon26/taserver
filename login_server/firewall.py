@@ -26,14 +26,12 @@ modify_firewall_script = os.path.join('scripts','modifyfirewall.py')
 def modify_gameserver_whitelist(add_or_remove, player, server):
     if add_or_remove not in ('add', 'remove'):
         raise RuntimeError('Invalid argument provided')
-    ipstring = '%d.%d.%d.%d' % player.ip
     sp.call('%s whitelist %s %s' %
-            (modify_firewall_script, add_or_remove, ipstring), shell=True)
+            (modify_firewall_script, add_or_remove, player.ip), shell=True)
 
 
 def modify_loginserver_blacklist(add_or_remove, player):
     if add_or_remove not in ('add', 'remove'):
         raise RuntimeError('Invalid argument provided')
-    ipstring = '%d.%d.%d.%d' % player.ip
     sp.call('%s blacklist %s %s' %
-            (modify_firewall_script, add_or_remove, ipstring), shell=True)
+            (modify_firewall_script, add_or_remove, player.ip), shell=True)

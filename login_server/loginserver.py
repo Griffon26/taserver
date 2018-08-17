@@ -22,14 +22,21 @@ import random
 import string
 
 from .datatypes import *
+from .gameserverlauncherhandler import GameServer
 from .player.player import Player
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
-from .server_info import ServerInfo
 from common.messages import *
+from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 
 
-class Server:
+def first_unused_number_above(numbers, minimum):
+    used_numbers = (n for n in numbers if n >= minimum)
+    first_number_above = next(i for i, e in enumerate(sorted(used_numbers) + [None], start=minimum) if i != e)
+    return first_number_above
+
+
+class LoginServer:
     def __init__(self, server_queue, client_queues, authcode_queue, accounts, configuration):
         self.server_queue = server_queue
         self.client_queues = client_queues
@@ -41,11 +48,9 @@ class Server:
         self.accounts = accounts
         self.message_handlers = {
             AuthCodeRequestMessage: self.handle_authcode_request_message,
-            ClientConnectedMessage: self.handle_client_connected_message,
-            ClientDisconnectedMessage: self.handle_client_disconnected_message,
+            PeerConnectedMessage: self.handle_client_connected_message,
+            PeerDisconnectedMessage: self.handle_client_disconnected_message,
             ClientMessage: self.handle_client_message,
-            GameServerConnectedMessage: self.handle_game_server_connected_message,
-            GameServerDisconnectedMessage: self.handle_game_server_disconnected_message,
             Launcher2LoginServerInfoMessage: self.handle_server_info_message,
         }
 
@@ -92,52 +97,62 @@ class Server:
         self.accounts.save()
         self.authcode_queue.put((msg.login_name, authcode))
 
-    def handle_client_disconnected_message(self, msg):
-        print('server: client(%s)\'s reader quit; stopping writer' % msg.clientid)
-        self.client_queues[msg.clientid].put((None, None))
-        del (self.client_queues[msg.clientid])
-
-        # Remove and don't complain if it wasn't there yet
-        self.players.pop(msg.clientid, None)
-
     def send_all_on_server(self, data, game_server):
         for player in self.find_players_by(game_server=game_server):
             player.send(data)
 
     def handle_client_connected_message(self, msg):
-        offset_for_temp_ids = 0x10000000
-        used_temp_ids = {player.unique_id for player in self.players.values() if player.unique_id >= offset_for_temp_ids}
-        unique_id = next(i for i, e in enumerate(sorted(used_temp_ids) + [None], start = offset_for_temp_ids) if i != e)
+        if isinstance(msg.peer, Player):
+            unique_id = first_unused_number_above(self.players.keys(), 0x10000000)
 
-        player = Player(msg.clientid, unique_id, msg.clientaddress, msg.clientport, login_server=self)
-        player.set_state(UnauthenticatedState)
-        self.players[msg.clientid] = player
+            player = msg.peer
+            player.unique_id = unique_id
+            player.login_server = self
+            player.set_state(UnauthenticatedState)
+            self.players[unique_id] = player
+        elif isinstance(msg.peer, GameServer):
+            serverid1 = first_unused_number_above(self.game_servers.keys(), 1)
+
+            game_server = msg.peer
+            game_server.serverid1 = serverid1
+            game_server.serverid2 = serverid1 + 0x10000000
+            self.game_servers[serverid1] = game_server
+
+            print('server: added game server %s' % game_server.ip)
+        else:
+            assert False, "Invalid connection message received"
+
+    def handle_client_disconnected_message(self, msg):
+        if isinstance(msg.peer, Player):
+            player = msg.peer
+            player.disconnect()
+            del(self.players[player.unique_id])
+
+        elif isinstance(msg.peer, GameServer):
+            game_server = msg.peer
+            print('server: removed game server %s (%s:%s)' % (game_server.serverid1,
+                                                              game_server.ip,
+                                                              game_server.port))
+            game_server.disconnect()
+            del (self.game_servers[game_server.serverid1])
+
+        else:
+            assert False, "Invalid disconnection message received"
 
     def handle_client_message(self, msg):
-        current_player = self.players[msg.clientid]
+        current_player = msg.peer
         current_player.last_received_seq = msg.clientseq
 
         requests = '\n'.join(['  %04X' % req.ident for req in msg.requests])
-        print('server: client(%s) sent:\n%s' % (current_player, requests))
+        print('server: %s sent:\n%s' % (current_player, requests))
 
         for request in msg.requests:
             current_player.handle_request(request)
 
-    def handle_game_server_connected_message(self, msg):
-        print('server: added game server %s' % msg.game_server_id)
-        self.game_servers[msg.game_server_id] = ServerInfo(1, 2, msg.game_server_ip, msg.game_server_queue)
-
-    def handle_game_server_disconnected_message(self, msg):
-        server = self.game_servers[msg.game_server_id]
-        print('server: removed game server %s (%s:%s)' % (msg.game_server_id,
-                                                          server.ip,
-                                                          server.port))
-        del(self.game_servers[msg.game_server_id])
-
     def handle_server_info_message(self, msg):
-        server = self.game_servers[msg.game_server_id]
-        server.set_info(msg.port, msg.description, msg.motd)
-        print('server: server info received for server %s (%s:%s)' % (msg.game_server_id,
-                                                                      server.ip,
-                                                                      server.port))
+        game_server = msg.peer
+        game_server.set_info(msg.port, msg.description, msg.motd)
+        print('server: server info received for server %s (%s:%s)' % (game_server.serverid1,
+                                                                      game_server.ip,
+                                                                      game_server.port))
 
