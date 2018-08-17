@@ -21,7 +21,6 @@
 import argparse
 import gevent
 import gevent.queue
-from gevent.server import StreamServer
 
 from .accounts import Accounts
 from .authcodehandler import AuthCodeHandler

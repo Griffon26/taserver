@@ -23,6 +23,7 @@ from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessa
 from .gamecontrollerhandler import GameController
 from .loginserverhandler import LoginServer
 
+
 class Launcher:
     def __init__(self, game_server_config, incoming_queue):
         self.game_server_config = game_server_config

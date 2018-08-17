@@ -21,6 +21,7 @@
 import base64
 import json
 
+
 class AccountInfo():
     def __init__(self, unique_id, login_name, authcode=None, password_hash=None):
         self.unique_id = unique_id

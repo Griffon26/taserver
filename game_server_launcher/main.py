@@ -21,20 +21,17 @@
 import configparser
 import gevent
 import gevent.queue
-from gevent.server import StreamServer
 import os
 
 from .gameserverhandler import run_game_server
 from .loginserverhandler import handle_login_server
 from .gamecontrollerhandler import handle_game_controller
 from .launcher import handle_launcher
-from common import messages
 
 INI_PATH = os.path.join('data', 'gameserverlauncher.ini')
 
 
 def main():
-    login_server_queue = gevent.queue.Queue()
     incoming_queue = gevent.queue.Queue()
 
     config = configparser.ConfigParser()

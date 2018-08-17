@@ -23,6 +23,7 @@ import gevent.subprocess as sp
 
 modify_firewall_script = os.path.join('scripts','modifyfirewall.py')
 
+
 def modify_gameserver_whitelist(add_or_remove, player, server):
     if add_or_remove not in ('add', 'remove'):
         raise RuntimeError('Invalid argument provided')

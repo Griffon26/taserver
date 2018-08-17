@@ -18,9 +18,6 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from gevent import socket
-from ipaddress import IPv4Address
-
 from common.connectionhandler import *
 from common.messages import parse_message
 
