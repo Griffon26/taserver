@@ -12,7 +12,7 @@ The following diagram shows how code based on the connection handler
 module can work together with this central task for processing messages
 from a remote host.
 
-![PlantUML model](http://www.plantuml.com/plantuml/png/5Sqn3i8m34RXdLF01MA9WO6f6yUeWkCsaPBVbUt0zIdJDxpXBHxPOev-kJLmdqMkDUBm9v7bRzfRrFcUBiQA44HY7VIojcsA-uCYd-aZHYDxd1HbfoBUTgoiW70qnLepIXTBnt-q2Chf3m00)  
+![PlantUML model](http://www.plantuml.com/plantuml/png/5Sqn3i8m34RXdLF01MA9WO6f6yUeWkCsaPBVbUt0zIdJDxpXBHxPOev-kJLmdqMczMkDEFn9PFcRzXPrlgUBiI84aLW7lQnjc-B-eCXd-eZHo1udHTcfYBSTAoiW74snrepInTBnVos2Sle3)  
 
 ### The ConnectionHandler class
 
