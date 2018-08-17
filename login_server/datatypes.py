@@ -1038,8 +1038,8 @@ class m0138(arrayofenumblockarrays):
     def __init__(self):
         super(m0138, self).__init__(0x0138)
 
-    # def write(self, stream):
-    #    stream.write(_originalbytes(0x103, 0x4f49))
+    def write(self, stream):
+        stream.write(_originalbytes(0x103, 0x4f49))
 
 
 class m0144(arrayofenumblockarrays):
