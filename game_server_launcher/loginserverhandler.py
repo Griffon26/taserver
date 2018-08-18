@@ -40,7 +40,7 @@ class LoginServerHandler(OutgoingConnectionHandler):
     def __init__(self, config, incoming_queue):
         super().__init__('loginserver',
                          socket.gethostbyname(config['host']),
-                         config['port'],
+                         int(config['port']),
                          incoming_queue)
 
     def create_connection_instances(self, sock, address):
