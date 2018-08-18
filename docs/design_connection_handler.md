@@ -37,7 +37,7 @@ Handling a new type of connection requires creating subclasses of:
 
 If you subclass from `ConnectionWriter` you will have to implement 
 the `encode` and `send` methods. If you use `TcpMessageConnectionWriter`
-you only need to implement `encode` and `send` will send the message
+you only need to implement `encode`. `send` will send the message
 bytes in chunks of the `max_message_size`, each preceded by a 16-bit short
 indicating length (0 when equal to `max_message_size`). This simple 
 packet structure will probably suffice for most connections.
