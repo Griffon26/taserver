@@ -162,25 +162,22 @@ class Game2LauncherLoadoutRequest(Message):
 
 
 # Example json: { 'player_unique_id' : 123,
-#                 'loadout' : { '1683' : { '0' : { '1086' : 7401,
-#                                                  '1087' : 7422,
-#                                                  ...
-#                                                },
-#                                          '1' : { ...
-#                                                },
-#                                          ...
-#                                        },
-#                               '1693' : { ...
-#                                        },
-#                               '1692' : { ...
-#                                        }
-#                             }
-#               }
-#
+#                 'loadout' : { '1086' : 7401,
+#                               '1087' : 7401,
+#                               '1765' : 7401,
+#                               '1088' : 7832,
+#                               '1089' : 7434,
+#                               '1093' : 7834,
+#                               '1094' : 8667 } }
 # Where:
-#   1683, 1693, 1692 = LIGHT_CLASS, MEDIUM_CLASS, HEAVY_CLASS
-#   1086, ... = SLOT_PRIMARY_WEAPON, ...
-#   7401, 7422, ... = EQUIPMENT_SPINFUSOR, EQUIPMENT_LIGHT_SPINFUSOR, ...
+#   1086 = SLOT_PRIMARY_WEAPON
+#   1087 = SLOT_SECONDARY_WEAPON
+#   1765 = SLOT_TERTIARY_WEAPON
+#   1088 = SLOT_PACK
+#   1089 = SLOT_BELT
+#   1093 = SLOT_SKIN
+#   1094 = SLOT_VOICE
+#   7401, ... = EQUIPMENT_SPINFUSOR, ...
 class Launcher2GameLoadoutMessage(Message):
     msg_id = _MSGID_LAUNCHER2GAME_LOADOUT
 
