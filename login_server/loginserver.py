@@ -56,6 +56,7 @@ class LoginServer:
         }
 
     def run(self):
+        print('server: login server started')
         while True:
             for message in self.server_queue:
                 handler = self.message_handlers[type(message)]
