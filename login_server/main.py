@@ -75,6 +75,8 @@ def main():
         finished_greenlets = gevent.joinall(tasks, count=1)
 
         print('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
+        print('Giving the dump greenlet some time to finish writing to disk...')
+        gevent.sleep(2)
         print('Killing everything and waiting 5 seconds before restarting...')
         gevent.killall(tasks)
         gevent.sleep(5)

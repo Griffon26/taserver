@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import gevent
 import random
 import string
 
@@ -55,6 +56,7 @@ class LoginServer:
         }
 
     def run(self):
+        gevent.getcurrent().name = 'login_server'
         while True:
             for message in self.server_queue:
                 handler = self.message_handlers[type(message)]
