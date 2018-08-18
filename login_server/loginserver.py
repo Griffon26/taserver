@@ -54,7 +54,7 @@ class LoginServer:
             ClientMessage: self.handle_client_message,
             Launcher2LoginServerInfoMessage: self.handle_server_info_message,
             Launcher2LoginMapInfoMessage: None,
-            Launcher2LoginTeamInfoMessage: None,
+            Launcher2LoginTeamInfoMessage: self.handle_team_info_message,
             Launcher2LoginScoreInfoMessage: None,
             Launcher2LoginMatchTimeMessage: self.handle_match_time_message,
             Launcher2LoginMatchEndMessage: None,
@@ -106,6 +106,10 @@ class LoginServer:
 
     def send_all_on_server(self, data, game_server):
         for player in self.find_players_by(game_server=game_server):
+            player.send(data)
+
+    def send_all_on_server_and_team(self, data, game_server, team):
+        for player in self.find_players_by(game_server=game_server, team=team):
             player.send(data)
 
     def handle_client_connected_message(self, msg):
@@ -170,3 +174,14 @@ class LoginServer:
                msg.seconds_remaining,
                msg.counting))
         game_server.set_match_time(msg.seconds_remaining, msg.counting)
+
+    def handle_team_info_message(self, msg):
+        game_server = msg.peer
+        for player_id, team_id in msg.player_to_team_id.items():
+            player_id = int(player_id)
+            if player_id in self.players and self.players[player_id].game_server is game_server:
+                self.players[player_id].team = team_id
+            else:
+                print('server: warning: received an invalid message from server %s about player 0x%08X '
+                      'while that player is not on that server'%
+                      (game_server.serverid1, player_id))

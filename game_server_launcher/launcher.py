@@ -101,7 +101,7 @@ class Launcher:
 
     def handle_team_info_message(self, msg):
         for player_id, team_id in msg.player_to_team_id.items():
-            assert(player_id in self.players)
+            assert(int(player_id) in self.players)
 
         msg = Launcher2LoginTeamInfoMessage(msg.player_to_team_id)
         self.login_server.send(msg)

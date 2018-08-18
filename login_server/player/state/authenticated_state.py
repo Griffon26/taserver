@@ -107,11 +107,13 @@ class AuthenticatedState(PlayerState):
         message_type = request.findbytype(m009e).value
 
         if message_type == 3:  # team
-            reply = a0070()
-            reply.findbytype(m009e).set(3)
-            reply.findbytype(m02e6).set('Unfortunately team messages are not yet supported. Use VGS for now.')
-            reply.findbytype(m02fe).set('taserver')
-            self.player.send(reply)
+            request.content.append(m02fe().set(self.player.display_name))
+            request.content.append(m06de().set(self.player.tag))
+
+            if self.player.game_server and self.player.team is not None:
+                self.player.login_server.send_all_on_server_and_team(request,
+                                                                     self.player.game_server,
+                                                                     self.player.team)
 
         elif message_type == 6:  # private
             addressed_player_name = request.findbytype(m034a).value
