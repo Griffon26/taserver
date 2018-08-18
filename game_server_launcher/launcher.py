@@ -120,7 +120,9 @@ class Launcher:
         class_key = str(msg.class_id)
         loadout_key = str(msg.loadout_number)
 
-        msg = Launcher2GameLoadoutMessage(msg.player_unique_id, self.players[player_key][class_key][loadout_key])
+        msg = Launcher2GameLoadoutMessage(msg.player_unique_id,
+                                          msg.class_id,
+                                          self.players[player_key][class_key][loadout_key])
         self.game_controller.send(msg)
 
 

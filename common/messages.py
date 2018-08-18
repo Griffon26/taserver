@@ -162,6 +162,7 @@ class Game2LauncherLoadoutRequest(Message):
 
 
 # Example json: { 'player_unique_id' : 123,
+#                 'class_id' : 1683,
 #                 'loadout' : { '1086' : 7401,
 #                               '1087' : 7401,
 #                               '1765' : 7401,
@@ -170,19 +171,25 @@ class Game2LauncherLoadoutRequest(Message):
 #                               '1093' : 7834,
 #                               '1094' : 8667 } }
 # Where:
-#   1086 = SLOT_PRIMARY_WEAPON
-#   1087 = SLOT_SECONDARY_WEAPON
-#   1765 = SLOT_TERTIARY_WEAPON
-#   1088 = SLOT_PACK
-#   1089 = SLOT_BELT
-#   1093 = SLOT_SKIN
-#   1094 = SLOT_VOICE
-#   7401, ... = EQUIPMENT_SPINFUSOR, ...
+#   'class_id':
+#       1683 = LIGHT_CLASS
+#       1693 = MEDIUM_CLASS
+#       1692 = HEAVY_CLASS
+#   'loadout':
+#       1086 = SLOT_PRIMARY_WEAPON
+#       1087 = SLOT_SECONDARY_WEAPON
+#       1765 = SLOT_TERTIARY_WEAPON
+#       1088 = SLOT_PACK
+#       1089 = SLOT_BELT
+#       1093 = SLOT_SKIN
+#       1094 = SLOT_VOICE
+#       7401, ... = EQUIPMENT_SPINFUSOR, ...
 class Launcher2GameLoadoutMessage(Message):
     msg_id = _MSGID_LAUNCHER2GAME_LOADOUT
 
-    def __init__(self, player_unique_id, loadout):
+    def __init__(self, player_unique_id, class_id, loadout):
         self.player_unique_id = player_unique_id
+        self.class_id = class_id
         self.loadout = loadout
 
 
