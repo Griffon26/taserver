@@ -112,6 +112,7 @@ class fourbytes():
         self.value = value
 
     def set(self, value):
+        assert(0 <= value <= 0xFFFFFFFF)
         self.value = value
         return self
 
@@ -980,7 +981,7 @@ class m00e9(arrayofenumblockarrays):
 
     def setservers(self, servers):
         self.arrays = []
-        for server in servers.values():
+        for server in servers:
             if not server.joinable:
                 continue
 
@@ -1018,7 +1019,7 @@ class m00e9(arrayofenumblockarrays):
                 m02b2().set(0x000005A7),
                 m02b5(),
                 m0347().set(0x00000018),
-                m02f4(),
+                m02f4().set(server.get_time_remaining()),
                 m0035(),
                 m0197(),
                 m0246().set(127, 0, 0, 1, 1234)

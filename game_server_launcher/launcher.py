@@ -18,6 +18,8 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import gevent
+
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from .gamecontrollerhandler import GameController
@@ -26,6 +28,8 @@ from .loginserverhandler import LoginServer
 
 class Launcher:
     def __init__(self, game_server_config, incoming_queue):
+        gevent.getcurrent().name = 'launcher'
+
         self.game_server_config = game_server_config
         self.incoming_queue = incoming_queue
         self.players = {}
@@ -96,16 +100,23 @@ class Launcher:
         del(self.players[msg.unique_id])
 
     def handle_team_info_message(self, msg):
-        raise NotImplementedError
+        for player_id, team_id in msg.player_to_team_id.items():
+            assert(player_id in self.players)
+
+        msg = Launcher2LoginTeamInfoMessage(msg.player_to_team_id)
+        self.login_server.send(msg)
 
     def handle_score_info_message(self, msg):
-        raise NotImplementedError
+        msg = Launcher2LoginScoreInfoMessage(msg.be_score, msg.ds_score)
+        self.login_server.send(msg)
 
     def handle_match_time_message(self, msg):
-        raise NotImplementedError
+        msg = Launcher2LoginMatchTimeMessage(msg.seconds_remaining, msg.counting)
+        self.login_server.send(msg)
 
     def handle_match_end_message(self, msg):
-        raise NotImplementedError
+        msg = Launcher2LoginMatchEndMessage()
+        self.login_server.send(msg)
 
     def handle_loadout_request_message(self, msg):
         if msg.player_unique_id not in self.players:

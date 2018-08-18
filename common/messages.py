@@ -100,9 +100,17 @@ class Launcher2LoginTeamInfoMessage(Message):
 class Launcher2LoginScoreInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SCOREINFO
 
+    def __init__(self, be_score, ds_score):
+        self.be_score = be_score
+        self.ds_score = ds_score
+
 
 class Launcher2LoginMatchTimeMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MATCHTIME
+
+    def __init__(self, seconds_remaining: int, counting: bool):
+        self.seconds_remaining = seconds_remaining
+        self.counting = counting
 
 
 class Launcher2LoginMatchEndMessage(Message):

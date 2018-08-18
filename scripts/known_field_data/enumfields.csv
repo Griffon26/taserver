@@ -105,7 +105,7 @@
 0x0600,TwoBytes,
 0x006E,ThreeBytes,
 0x0019,FourBytes,
-0x0035,FourBytes,
+0x0035,FourBytes,blood eagle score
 0x006D,FourBytes,
 0x0073,FourBytes,
 0x008B,FourBytes,
@@ -118,7 +118,7 @@
 0x00C3,FourBytes,
 0x00C6,FourBytes,
 0x00D4,FourBytes,
-0x0197,FourBytes,
+0x0197,FourBytes,diamond sword score
 0x01A3,FourBytes,
 0x01C0,FourBytes,
 0x01C1,FourBytes,
@@ -164,7 +164,7 @@
 0x02EC,FourBytes,
 0x02ED,FourBytes,
 0x02EF,FourBytes,
-0x02F4,FourBytes,
+0x02F4,FourBytes,remaining time in seconds
 0x02FC,FourBytes,std message id
 0x02FF,FourBytes,
 0x0319,FourBytes,

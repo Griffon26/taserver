@@ -33,7 +33,7 @@ class AuthenticatedState(PlayerState):
         if request.findbytype(m0228).value == 1:
             self.player.send(originalfragment(0x1EEB3, 0x20A10))  # 00d5 (map list)
         else:
-            self.player.send(a00d5().setservers(self.player.login_server.game_servers))  # 00d5 (server list)
+            self.player.send(a00d5().setservers(self.player.login_server.game_servers.values()))  # 00d5 (server list)
 
     @handles(packet=a0014)
     def handle_a0014(self, request):
@@ -162,3 +162,15 @@ class AuthenticatedState(PlayerState):
 
         if self.player.game_server and loadout_changed:
             self.player.game_server.set_player_loadouts(self.player)
+
+    @handles(packet=a01c6)
+    def handle_request_for_server_info(self, request):
+        serverid1 = request.findbytype(m02c7).value
+        game_server = self.player.login_server.find_server_by_id1(serverid1)
+        reply = a01c6()
+        reply.content = [
+            m02c7().set(serverid1),
+            m0228().set(0x00000002),
+            m00e9().setservers([game_server])
+        ]
+        self.player.send(reply)

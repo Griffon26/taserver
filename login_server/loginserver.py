@@ -53,6 +53,11 @@ class LoginServer:
             PeerDisconnectedMessage: self.handle_client_disconnected_message,
             ClientMessage: self.handle_client_message,
             Launcher2LoginServerInfoMessage: self.handle_server_info_message,
+            Launcher2LoginMapInfoMessage: None,
+            Launcher2LoginTeamInfoMessage: None,
+            Launcher2LoginScoreInfoMessage: None,
+            Launcher2LoginMatchTimeMessage: self.handle_match_time_message,
+            Launcher2LoginMatchEndMessage: None,
         }
 
     def run(self):
@@ -158,3 +163,10 @@ class LoginServer:
                                                                       game_server.ip,
                                                                       game_server.port))
 
+    def handle_match_time_message(self, msg):
+        game_server = msg.peer
+        print('server: received match time for server %s: %s seconds remaining (counting = %s)' %
+              (game_server.serverid1,
+               msg.seconds_remaining,
+               msg.counting))
+        game_server.set_match_time(msg.seconds_remaining, msg.counting)

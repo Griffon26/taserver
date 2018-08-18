@@ -19,6 +19,7 @@
 #
 
 from ipaddress import IPv4Address
+import time
 
 from common.connectionhandler import *
 from common.messages import parse_message, \
@@ -47,12 +48,29 @@ class GameServer(Peer):
         self.motd = None
         self.playerbeingkicked = None
         self.joinable = False
+        self.match_end_time = None
+        self.match_time_counting = False
 
     def set_info(self, port, description, motd):
         self.port = port
         self.description = description
         self.motd = motd
         self.joinable = True
+
+    def set_match_time(self, seconds_remaining, counting):
+        self.match_end_time = int(time.time() + seconds_remaining)
+        self.match_time_counting = counting
+
+    def get_time_remaining(self):
+        if self.match_end_time is not None:
+            time_remaining = int(self.match_end_time - time.time())
+        else:
+            time_remaining = 0
+
+        if time_remaining < 0:
+            time_remaining = 0
+
+        return time_remaining
 
     def set_player_loadouts(self, player):
         msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id, player.loadouts.loadout_dict)

@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import gevent
 import gevent.monkey
 gevent.monkey.patch_subprocess()
 
@@ -26,6 +27,7 @@ import subprocess as sp
 
 
 def run_game_server(game_server_config):
+    gevent.getcurrent().name = 'gameserver'
 
     working_dir = game_server_config['dir']
     args = game_server_config['args'].split()
