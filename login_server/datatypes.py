@@ -20,7 +20,7 @@
 
 import struct
 from ipaddress import IPv4Address
-
+from .player.player import TEAM_BLOODEAGLE, TEAM_DIAMONDSWORD, TEAM_SPEC
 
 class ParseError(Exception):
     pass
@@ -112,7 +112,7 @@ class fourbytes():
         self.value = value
 
     def set(self, value):
-        assert(0 <= value <= 0xFFFFFFFF)
+        assert 0 <= value <= 0xFFFFFFFF
         self.value = value
         return self
 
@@ -1001,7 +1001,7 @@ class m00e9(arrayofenumblockarrays):
                 m01a6(),
                 m06f1(),
                 m0703(),
-                m0343(),
+                m0343().set(len(server.player_ids)),
                 m0344(),
                 m0259(),
                 m03fd(),
@@ -1026,6 +1026,13 @@ class m00e9(arrayofenumblockarrays):
             ])
         return self
 
+    def setplayers(self, players):
+        assert len(self.arrays) == 1, 'Can only set players for an m00e9 message that contains a single server'
+        self.arrays[0].append(
+            m0132().setplayers(players)
+        )
+        return self
+
 
 class m00fe(arrayofenumblockarrays):
     def __init__(self):
@@ -1033,6 +1040,38 @@ class m00fe(arrayofenumblockarrays):
 
     def write(self, stream):
         stream.write(_originalbytes(0x8519, 0x873d))
+
+
+class m0132(arrayofenumblockarrays):
+    def __init__(self):
+        super(m0132, self).__init__(0x0132)
+
+    def setplayers(self, players):
+        player_team_to_datatype_team = {
+            None: 1,
+            TEAM_SPEC: 1,
+            TEAM_BLOODEAGLE: 1,
+            TEAM_DIAMONDSWORD: 2
+        }
+
+        self.arrays = []
+        for player in players:
+            self.arrays.append([
+                m0348().set(player.unique_id),
+                m034a().set(player.display_name),
+                m042a(),
+                m0558(),
+                m0363(),
+                m0615(),
+                m0452().set(player_team_to_datatype_team[player.team]),
+                m0225(),
+                m0296(),
+                m06ee(),
+                m042e(),
+                m042f(),
+                m03f5()
+            ])
+        return self
 
 
 class m0138(arrayofenumblockarrays):

@@ -25,6 +25,7 @@ TEAM_BLOODEAGLE = 0
 TEAM_DIAMONDSWORD = 1
 TEAM_SPEC = 255
 
+
 class Player(Peer):
     def __init__(self, address):
         super().__init__()
@@ -46,8 +47,8 @@ class Player(Peer):
         self.team = None
 
     def set_state(self, state_class, *args, **kwargs):
-        assert(self.unique_id is not None)
-        assert(self.login_server is not None)
+        assert self.unique_id is not None
+        assert self.login_server is not None
 
         if self.state:
             self.state.on_exit()

@@ -29,6 +29,7 @@ from common.messages import parse_message, \
 
 class GameServerLauncherReader(TcpMessageConnectionReader):
     def decode(self, msg_bytes):
+        # TODO: add validation
         return parse_message(msg_bytes)
 
 
@@ -50,6 +51,7 @@ class GameServer(Peer):
         self.joinable = False
         self.match_end_time = None
         self.match_time_counting = False
+        self.player_ids = set()
 
     def set_info(self, port, description, motd):
         self.port = port
@@ -75,10 +77,12 @@ class GameServer(Peer):
     def set_player_loadouts(self, player):
         msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id, player.loadouts.loadout_dict)
         self.send(msg)
+        self.player_ids.add(player.unique_id)
 
     def remove_player_loadouts(self, player):
         msg = Login2LauncherRemovePlayerLoadoutsMessage(player.unique_id)
         self.send(msg)
+        self.player_ids.remove(player.unique_id)
 
 
 class GameServerLauncherHandler(IncomingConnectionHandler):

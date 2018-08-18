@@ -150,7 +150,6 @@ class AuthenticatedState(PlayerState):
             invalid_code_msg.findbytype(m0669).set(authcode)
             self.player.send(invalid_code_msg)
 
-
     @handles(packet=a006d)
     def handle_menuchange(self, request):
         loadout_changed = False
@@ -169,10 +168,11 @@ class AuthenticatedState(PlayerState):
     def handle_request_for_server_info(self, request):
         serverid1 = request.findbytype(m02c7).value
         game_server = self.player.login_server.find_server_by_id1(serverid1)
+        players = self.player.login_server.find_players_by(game_server = game_server)
         reply = a01c6()
         reply.content = [
             m02c7().set(serverid1),
             m0228().set(0x00000002),
-            m00e9().setservers([game_server])
+            m00e9().setservers([game_server]).setplayers(players)
         ]
         self.player.send(reply)
