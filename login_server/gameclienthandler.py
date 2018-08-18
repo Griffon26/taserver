@@ -47,20 +47,14 @@ def parseseqack(infile):
 
 
 class PacketReader:
-    def __init__(self, receive_func, dump_queue):
+    def __init__(self, receive_func):
         self.buffer = bytes()
         self.receive_func = receive_func
-        self.dumpqueue = dump_queue
 
     def prepare(self, length):
         ''' Makes sure that at least length bytes are available in self.buffer '''
         while len(self.buffer) < length:
             message_data = self.receive_func()
-            # print('Received:')
-            # hexdump(packetbodybytes)
-            if self.dumpqueue:
-                packetsize = len(message_data)
-                self.dumpqueue.put(('client', struct.pack('<H', packetsize) + message_data))
             self.buffer += message_data
 
     def read(self, length):
@@ -108,8 +102,8 @@ class StreamParser:
 
 class GameClientReader(TcpMessageConnectionReader):
     def __init__(self, sock, dump_queue):
-        super().__init__(sock, max_message_size = 1450)
-        packet_reader = PacketReader(super().receive, dump_queue)
+        super().__init__(sock, max_message_size = 1450, dump_queue = dump_queue)
+        packet_reader = PacketReader(super().receive)
         self.stream_parser = StreamParser(packet_reader)
 
     def receive(self):
@@ -122,8 +116,7 @@ class GameClientReader(TcpMessageConnectionReader):
 
 class GameClientWriter(TcpMessageConnectionWriter):
     def __init__(self, sock, dump_queue):
-        super().__init__(sock, max_message_size = 1450)
-        self.dump_queue = dump_queue
+        super().__init__(sock, max_message_size = 1450, dump_queue = dump_queue)
         self.seq = None
 
     def encode(self, msg_tuple):

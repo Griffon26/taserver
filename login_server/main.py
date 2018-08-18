@@ -89,4 +89,5 @@ def main():
         gevent.sleep(5)
 
     except KeyboardInterrupt:
+        gevent.killall(tasks)
         accounts.save()

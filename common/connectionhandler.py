@@ -69,9 +69,9 @@ class ConnectionReader:
 
 
 class TcpMessageConnectionReader(ConnectionReader):
-    def __init__(self, sock, max_message_size = 0xFFFF):
+    def __init__(self, sock, max_message_size = 0xFFFF, dump_queue = None):
         super().__init__(sock)
-        self.tcp_reader = TcpMessageReader(sock, max_message_size = max_message_size)
+        self.tcp_reader = TcpMessageReader(sock, max_message_size = max_message_size, dump_queue = dump_queue)
 
     def receive(self):
         return self.tcp_reader.receive()
@@ -112,9 +112,9 @@ class ConnectionWriter:
 
 
 class TcpMessageConnectionWriter(ConnectionWriter):
-    def __init__(self, sock, max_message_size = 0xFFFF):
+    def __init__(self, sock, max_message_size = 0xFFFF, dump_queue = None):
         super().__init__(sock)
-        self.tcp_writer = TcpMessageWriter(sock, max_message_size = max_message_size)
+        self.tcp_writer = TcpMessageWriter(sock, max_message_size = max_message_size, dump_queue = dump_queue)
 
     def send(self, msg_bytes):
         return self.tcp_writer.send(msg_bytes)

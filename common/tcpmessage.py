@@ -23,9 +23,10 @@ import struct
 
 
 class TcpMessageReader:
-    def __init__(self, socket, max_message_size = 0xFFFF):
+    def __init__(self, socket, max_message_size = 0xFFFF, dump_queue = None):
         self.socket = socket
         self.max_message_size = max_message_size
+        self.dump_queue = dump_queue
         if self.max_message_size > 0xFFFF:
             raise ValueError('max_message_size is not allowed to be greater than 0xFFFF')
 
@@ -49,6 +50,8 @@ class TcpMessageReader:
             raise RuntimeError('Received a packet size that is larger than the TcpMessageReader was created for')
 
         packet_body_bytes = self._recvall(packet_size)
+        if self.dump_queue:
+            self.dump_queue.put(('tcpreader', packet_size_bytes + packet_body_bytes))
         if len(packet_body_bytes) != packet_size:
             raise RuntimeError('Received %d bytes, but expected %d. What happened?' %
                                (len(packet_body_bytes), packet_size))
@@ -56,9 +59,10 @@ class TcpMessageReader:
 
 
 class TcpMessageWriter:
-    def __init__(self, socket, max_message_size = 0xFFFF):
+    def __init__(self, socket, max_message_size = 0xFFFF, dump_queue = None):
         self.socket = socket
         self.max_message_size = max_message_size
+        self.dump_queue = dump_queue
         if self.max_message_size > 0xFFFF:
             raise ValueError('max_message_size is not allowed to be greater than 0xFFFF')
 
@@ -73,6 +77,8 @@ class TcpMessageWriter:
             data = data[self.max_message_size:]
             size = len(data)
 
+        if self.dump_queue:
+            self.dump_queue.put(('tcpwriter', output_buffer.getvalue()))
         self.socket.sendall(output_buffer.getvalue())
 
     def close(self):

@@ -31,10 +31,10 @@ class HexDumper:
         with open(dumpfilename, 'wt') as dump_file:
             while True:
                 source, packet_bytes = self.dump_queue.get()
-                indent = '    ' if source == 'server' else ''
+                indent = '    ' if source == 'tcpwriter' else ''
                 byte_list = ['%02X' % b for b in packet_bytes]
 
-                if source == 'server':
+                if source == 'tcpwriter':
                     overall_offset = self.server_offset
                 else:
                     overall_offset = self.client_offset
@@ -52,7 +52,7 @@ class HexDumper:
                 hex_block_offset += len(byte_list[hex_block_offset:])
                 overall_offset += hex_block_offset
 
-                if source == 'server':
+                if source == 'tcpwriter':
                     self.server_offset = overall_offset
                 else:
                     self.client_offset = overall_offset
