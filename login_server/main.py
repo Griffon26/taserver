@@ -32,6 +32,7 @@ from .loginserver import LoginServer
 
 
 def handle_dump(dumpqueue):
+    gevent.getcurrent().name = 'hexdumper'
     if dumpqueue:
         hex_dumper = HexDumper(dumpqueue)
         hex_dumper.run()
@@ -45,6 +46,7 @@ def handle_authcodes(server_queue, authcode_queue):
 def handle_server(server_queue, client_queues, authcode_queue, accounts, configuration):
     server = LoginServer(server_queue, client_queues, authcode_queue, accounts, configuration)
     server.run()
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -64,19 +66,24 @@ def main():
 
     tasks = [
         gevent.spawn(handle_server, server_queue, client_queues, authcode_queue, accounts, configuration),
-        gevent.spawn(handle_dump, dump_queue),
         gevent.spawn(handle_authcodes, server_queue, authcode_queue),
         gevent.spawn(handle_game_client, server_queue, dump_queue),
         gevent.spawn(handle_game_server_launcher, server_queue)
     ]
+
+    if dump_queue:
+        tasks.append(gevent.spawn(handle_dump, dump_queue))
 
     try:
         # Wait for any of the tasks to terminate
         finished_greenlets = gevent.joinall(tasks, count=1)
 
         print('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
-        print('Giving the dump greenlet some time to finish writing to disk...')
-        gevent.sleep(2)
+
+        if dump_queue:
+            print('Giving the dump greenlet some time to finish writing to disk...')
+            gevent.sleep(2)
+
         print('Killing everything and waiting 5 seconds before restarting...')
         gevent.killall(tasks)
         gevent.sleep(5)

@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import gevent
 from gevent import socket
 import struct
 
@@ -32,6 +33,7 @@ class AuthCodeHandler:
         self.authcode_queue = authcode_queue
 
     def run(self):
+        gevent.getcurrent().name = 'authcodes'
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind(authcode_address)
         while True:
