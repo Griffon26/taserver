@@ -38,8 +38,10 @@ class Launcher:
             Login2LauncherNextMapMessage : self.handle_next_map_message,
             Login2LauncherSetPlayerLoadoutsMessage : self.handle_set_player_loadouts_message,
             Login2LauncherRemovePlayerLoadoutsMessage : self.handle_remove_player_loadouts_message,
-            Game2LauncherTeamSwitchMessage : self.handle_team_switch_message,
+            Game2LauncherTeamInfoMessage : self.handle_team_info_message,
+            Game2LauncherScoreInfoMessage : self.handle_score_info_message,
             Game2LauncherMatchTimeMessage : self.handle_match_time_message,
+            Game2LauncherMatchEndMessage : self.handle_match_end_message,
             Game2LauncherLoadoutRequest : self.handle_loadout_request_message,
         }
 
@@ -93,10 +95,16 @@ class Launcher:
         print('launcher: loadouts removed for player 0x%08X' % msg.unique_id)
         del(self.players[msg.unique_id])
 
-    def handle_team_switch_message(self, msg):
+    def handle_team_info_message(self, msg):
+        raise NotImplementedError
+
+    def handle_score_info_message(self, msg):
         raise NotImplementedError
 
     def handle_match_time_message(self, msg):
+        raise NotImplementedError
+
+    def handle_match_end_message(self, msg):
         raise NotImplementedError
 
     def handle_loadout_request_message(self, msg):
@@ -112,7 +120,7 @@ class Launcher:
         class_key = str(msg.class_id)
         loadout_key = str(msg.loadout_number)
 
-        msg = Launcher2GameLoadoutMessage(self.players[player_key][class_key][loadout_key])
+        msg = Launcher2GameLoadoutMessage(msg.player_unique_id, self.players[player_key][class_key][loadout_key])
         self.game_controller.send(msg)
 
 

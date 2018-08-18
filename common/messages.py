@@ -31,13 +31,15 @@ _MSGID_LOGIN2LAUNCHER_REMOVEPLAYERLOADOUTS = 0x1002
 _MSGID_LAUNCHER2LOGIN_SERVERINFO = 0x2000
 _MSGID_LAUNCHER2LOGIN_MAPINFO = 0x2001
 _MSGID_LAUNCHER2LOGIN_TEAMINFO = 0x2002
-_MSGID_LAUNCHER2LOGIN_MATCHEND = 0x2003
-_MSGID_LAUNCHER2LOGIN_SCOREINFO = 0x2004
-_MSGID_LAUNCHER2LOGIN_MATCHTIME = 0x2005
+_MSGID_LAUNCHER2LOGIN_SCOREINFO = 0x2003
+_MSGID_LAUNCHER2LOGIN_MATCHTIME = 0x2004
+_MSGID_LAUNCHER2LOGIN_MATCHEND = 0x2005
 
-_MSGID_GAME2LAUNCHER_TEAMSWITCH = 0x3000
-_MSGID_GAME2LAUNCHER_MATCHTIME = 0x3001
-_MSGID_GAME2LAUNCHER_LOADOUTREQUEST = 0x3002
+_MSGID_GAME2LAUNCHER_TEAMINFO = 0x3001
+_MSGID_GAME2LAUNCHER_SCOREINFO = 0x3002
+_MSGID_GAME2LAUNCHER_MATCHTIME = 0x3003
+_MSGID_GAME2LAUNCHER_MATCHEND = 0x3004
+_MSGID_GAME2LAUNCHER_LOADOUTREQUEST = 0x3005
 
 _MSGID_LAUNCHER2GAME_LOADOUT = 0x4000
 
@@ -91,9 +93,8 @@ class Launcher2LoginMapInfoMessage(Message):
 class Launcher2LoginTeamInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_TEAMINFO
 
-
-class Launcher2LoginMatchEndMessage(Message):
-    msg_id = _MSGID_LAUNCHER2LOGIN_MATCHEND
+    def __init__(self, player_to_team_id):
+        self.player_to_team_id = player_to_team_id
 
 
 class Launcher2LoginScoreInfoMessage(Message):
@@ -104,14 +105,53 @@ class Launcher2LoginMatchTimeMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MATCHTIME
 
 
-class Game2LauncherTeamSwitchMessage(Message):
-    msg_id = _MSGID_GAME2LAUNCHER_TEAMSWITCH
+class Launcher2LoginMatchEndMessage(Message):
+    msg_id = _MSGID_LAUNCHER2LOGIN_MATCHEND
+
+    def __init__(self):
+        pass
 
 
+# Example json: { 'player_to_team_id' : { '123' : 0, '234' : 1, '321' : 255 } }
+# Where: 0 = BE, 1 = DS, 255 = spec and the other values are player's unique_id
+class Game2LauncherTeamInfoMessage(Message):
+    msg_id = _MSGID_GAME2LAUNCHER_TEAMINFO
+
+    def __init__(self, player_to_team_id):
+        self.player_to_team_id = player_to_team_id
+
+
+# Example json: { 'be_score' : 1, 'ds_score' : 5 }
+class Game2LauncherScoreInfoMessage(Message):
+    msg_id = _MSGID_GAME2LAUNCHER_SCOREINFO
+
+    def __init__(self, be_score, ds_score):
+        self.be_score = be_score
+        self.ds_score = ds_score
+
+
+# Example json: { 'seconds_remaining' : 60, 'counting' : true }
+# Where 'counting' indicates if the time is counting down or the countdown is frozen
 class Game2LauncherMatchTimeMessage(Message):
     msg_id = _MSGID_GAME2LAUNCHER_MATCHTIME
 
+    def __init__(self, seconds_remaining: int, counting: bool):
+        self.seconds_remaining = seconds_remaining
+        self.counting = counting
 
+
+# Example json: {}
+class Game2LauncherMatchEndMessage(Message):
+    msg_id = _MSGID_GAME2LAUNCHER_MATCHEND
+
+    def __init__(self):
+        pass
+
+
+# Example json: { 'player_unique_id' : 123, 'class_id' : 1683, 'loadout_number' : 0 }
+# Where:
+#   'class_id' 1683 = LIGHT_CLASS, 1693 = MEDIUM_CLASS, 1692 = HEAVY_CLASS
+#   'loadout_number' is in the range [0, 8]
 class Game2LauncherLoadoutRequest(Message):
     msg_id = _MSGID_GAME2LAUNCHER_LOADOUTREQUEST
 
@@ -121,10 +161,31 @@ class Game2LauncherLoadoutRequest(Message):
         self.loadout_number = loadout_number
 
 
+# Example json: { 'player_unique_id' : 123,
+#                 'loadout' : { '1683' : { '0' : { '1086' : 7401,
+#                                                  '1087' : 7422,
+#                                                  ...
+#                                                },
+#                                          '1' : { ...
+#                                                },
+#                                          ...
+#                                        },
+#                               '1693' : { ...
+#                                        },
+#                               '1692' : { ...
+#                                        }
+#                             }
+#               }
+#
+# Where:
+#   1683, 1693, 1692 = LIGHT_CLASS, MEDIUM_CLASS, HEAVY_CLASS
+#   1086, ... = SLOT_PRIMARY_WEAPON, ...
+#   7401, 7422, ... = EQUIPMENT_SPINFUSOR, EQUIPMENT_LIGHT_SPINFUSOR, ...
 class Launcher2GameLoadoutMessage(Message):
     msg_id = _MSGID_LAUNCHER2GAME_LOADOUT
 
-    def __init__(self, loadout):
+    def __init__(self, player_unique_id, loadout):
+        self.player_unique_id = player_unique_id
         self.loadout = loadout
 
 
@@ -136,18 +197,21 @@ _message_classes = [
     Launcher2LoginServerInfoMessage,
     Launcher2LoginMapInfoMessage,
     Launcher2LoginTeamInfoMessage,
-    Launcher2LoginMatchEndMessage,
     Launcher2LoginScoreInfoMessage,
     Launcher2LoginMatchTimeMessage,
+    Launcher2LoginMatchEndMessage,
 
-    Game2LauncherTeamSwitchMessage,
+    Game2LauncherTeamInfoMessage,
+    Game2LauncherScoreInfoMessage,
     Game2LauncherMatchTimeMessage,
+    Game2LauncherMatchEndMessage,
     Game2LauncherLoadoutRequest,
 
     Launcher2GameLoadoutMessage,
 ]
 
 _message_map = { msg_class.msg_id : msg_class for msg_class in _message_classes }
+
 
 def parse_message(message_bytes):
     msg_id = struct.unpack('<H', message_bytes[0:2])[0]
