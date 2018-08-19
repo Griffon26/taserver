@@ -35,7 +35,7 @@ def run_game_server(game_server_config):
     try:
         working_dir = game_server_config['dir']
         args = game_server_config['args'].split()
-        dll_to_inject = game_server_config['controller_dll']
+        dll_to_inject = game_server_config.get('controller_dll', None)
     except KeyError as e:
         raise ConfigurationError("%s is a required configuration item under [gameserver]" % str(e))
 
@@ -47,22 +47,26 @@ def run_game_server(game_server_config):
     if not os.path.exists(exe_path):
         raise ConfigurationError(
             "Invalid 'dir' specified under [gameserver]: the specified directory does not contain a TribesAscend.exe")
-    if not os.path.isabs(dll_to_inject):
-        raise ConfigurationError(
-            "Invalid 'controller_dll' specified under [gameserver]: an absolute path is required")
-    if not os.path.exists(dll_to_inject):
-        raise ConfigurationError(
-            "Invalid 'controller_dll' specified under [gameserver]: the specified file does not exist")
+
+    if dll_to_inject:
+        if not os.path.isabs(dll_to_inject):
+            raise ConfigurationError(
+                "Invalid 'controller_dll' specified under [gameserver]: an absolute path is required")
+        if not os.path.exists(dll_to_inject):
+            raise ConfigurationError(
+                "Invalid 'controller_dll' specified under [gameserver]: the specified file does not exist. "
+                "Either remove the key from the ini file to work without a controller or correct the specified location.")
 
     while True:
         print('gameserver: Starting a new TribesAscend server...')
         process = sp.Popen([exe_path, *args], cwd=working_dir)
         try:
             print('gameserver: Started process with pid: ', process.pid)
-            gevent.sleep(10)
-            print('gameserver: Injection started...')
-            inject(process.pid, dll_to_inject)
-            print('gameserver: Injection done.')
+            if dll_to_inject:
+                gevent.sleep(10)
+                print('gameserver: Injection started...')
+                inject(process.pid, dll_to_inject)
+                print('gameserver: Injection done.')
             process.wait()
         finally:
             process.terminate()
