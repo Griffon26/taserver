@@ -18,7 +18,6 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import gevent
 import random
 import string
 
@@ -55,7 +54,7 @@ class LoginServer:
             Launcher2LoginServerInfoMessage: self.handle_server_info_message,
             Launcher2LoginMapInfoMessage: None,
             Launcher2LoginTeamInfoMessage: self.handle_team_info_message,
-            Launcher2LoginScoreInfoMessage: None,
+            Launcher2LoginScoreInfoMessage: self.handle_score_info_message,
             Launcher2LoginMatchTimeMessage: self.handle_match_time_message,
             Launcher2LoginMatchEndMessage: None,
         }
@@ -185,3 +184,8 @@ class LoginServer:
                 print('server: warning: received an invalid message from server %s about player 0x%08X '
                       'while that player is not on that server'%
                       (game_server.serverid1, player_id))
+
+    def handle_score_info_message(self, msg):
+        game_server = msg.peer
+        game_server.be_score = msg.be_score
+        game_server.ds_score = msg.ds_score

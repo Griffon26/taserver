@@ -321,7 +321,7 @@ class m0019(fourbytes):
 
 class m0035(fourbytes):
     def __init__(self):
-        super(m0035, self).__init__(0x0035, 0x00000004)
+        super(m0035, self).__init__(0x0035, 0x00000000)
 
 
 class m008d(fourbytes):
@@ -351,7 +351,7 @@ class m00d4(fourbytes):
 
 class m0197(fourbytes):
     def __init__(self):
-        super(m0197, self).__init__(0x0197, 0x00000003)
+        super(m0197, self).__init__(0x0197, 0x00000000)
 
 
 class m01a3(fourbytes):
@@ -1020,8 +1020,8 @@ class m00e9(arrayofenumblockarrays):
                 m02b5(),
                 m0347().set(0x00000018),
                 m02f4().set(server.get_time_remaining()),
-                m0035(),
-                m0197(),
+                m0035().set(server.be_score),
+                m0197().set(server.ds_score),
                 m0246().set(127, 0, 0, 1, 1234)
             ])
         return self
