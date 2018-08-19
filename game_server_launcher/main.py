@@ -23,7 +23,7 @@ import gevent
 import gevent.queue
 import os
 
-from .gameserverhandler import run_game_server
+from .gameserverhandler import run_game_server, ConfigurationError
 from .loginserverhandler import handle_login_server
 from .gamecontrollerhandler import handle_game_controller
 from .launcher import handle_launcher
@@ -38,9 +38,11 @@ def main():
     with open(INI_PATH) as f:
         config.read_file(f)
 
+    restart = True
+    restart_delay = 10
     tasks = []
     try:
-        while True:
+        while restart:
             tasks = [
                 gevent.spawn(run_game_server, config['gameserver']),
                 gevent.spawn(handle_login_server, config['loginserver'], incoming_queue),
@@ -52,9 +54,19 @@ def main():
             finished_greenlets = gevent.joinall(tasks, count = 1)
 
             print('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
-            print('Killing everything and waiting 5 seconds before restarting...')
+
+            configuration_errors = ['  %s' % g.exception for g in finished_greenlets if isinstance(g.exception, ConfigurationError)]
+            if configuration_errors:
+                print('\n-------------------------------------------\n')
+                print('Found errors in configuration files:')
+                print('\n'.join(configuration_errors))
+                print('\n-------------------------------------------\n')
+                restart = False
+
+            print('Killing everything and waiting %s seconds before %s...' %
+                  (restart_delay, ('restarting' if restart else 'exiting')))
             gevent.killall(tasks)
-            gevent.sleep(5)
+            gevent.sleep(restart_delay)
 
     except KeyboardInterrupt:
         gevent.killall(tasks)
