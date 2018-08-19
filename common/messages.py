@@ -42,6 +42,7 @@ _MSGID_GAME2LAUNCHER_MATCHEND = 0x3004
 _MSGID_GAME2LAUNCHER_LOADOUTREQUEST = 0x3005
 
 _MSGID_LAUNCHER2GAME_LOADOUT = 0x4000
+_MSGID_LAUNCHER2GAME_NEXTMAP = 0x4001
 
 
 class Message:
@@ -199,6 +200,14 @@ class Launcher2GameLoadoutMessage(Message):
         self.player_unique_id = player_unique_id
         self.class_id = class_id
         self.loadout = loadout
+
+
+# Example json: {}
+class Launcher2GameNextMapMessage(Message):
+    msg_id = _MSGID_LAUNCHER2GAME_NEXTMAP
+
+    def __init__(self):
+        pass
 
 
 _message_classes = [

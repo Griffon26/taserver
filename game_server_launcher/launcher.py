@@ -89,7 +89,7 @@ class Launcher:
             assert False, "Invalid disconnection message received"
 
     def handle_next_map_message(self, msg):
-        raise NotImplementedError
+        self.game_controller.send(Launcher2GameNextMapMessage())
 
     def handle_set_player_loadouts_message(self, msg):
         print('launcher: loadouts changed for player 0x%08X' % msg.unique_id)

@@ -18,22 +18,19 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import gevent
 import random
 import string
 
+from common.messages import *
+from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from .datatypes import *
 from .gameserver import GameServer
+from .pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
 from .player.player import Player
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
-from common.messages import *
-from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
-
-
-def first_unused_number_above(numbers, minimum):
-    used_numbers = (n for n in numbers if n >= minimum)
-    first_number_above = next(i for i, e in enumerate(sorted(used_numbers) + [None], start=minimum) if i != e)
-    return first_number_above
+from .utils import first_unused_number_above
 
 
 class LoginServer:
@@ -48,6 +45,7 @@ class LoginServer:
         self.accounts = accounts
         self.message_handlers = {
             AuthCodeRequestMessage: self.handle_authcode_request_message,
+            ExecuteCallbackMessage: self.handle_execute_callback_message,
             PeerConnectedMessage: self.handle_client_connected_message,
             PeerDisconnectedMessage: self.handle_client_disconnected_message,
             ClientMessage: self.handle_client_message,
@@ -56,10 +54,12 @@ class LoginServer:
             Launcher2LoginTeamInfoMessage: self.handle_team_info_message,
             Launcher2LoginScoreInfoMessage: self.handle_score_info_message,
             Launcher2LoginMatchTimeMessage: self.handle_match_time_message,
-            Launcher2LoginMatchEndMessage: None,
+            Launcher2LoginMatchEndMessage: self.handle_match_end_message,
         }
+        self.pending_callbacks = PendingCallbacks(server_queue)
 
     def run(self):
+        gevent.getcurrent().name = 'loginserver'
         print('server: login server started')
         while True:
             for message in self.server_queue:
@@ -103,6 +103,10 @@ class LoginServer:
         self.accounts.save()
         self.authcode_queue.put((msg.login_name, authcode))
 
+    def handle_execute_callback_message(self, msg):
+        callback_id = msg.callback_id
+        self.pending_callbacks.execute(callback_id)
+
     def send_all_on_server(self, data, game_server):
         for player in self.find_players_by(game_server=game_server):
             player.send(data)
@@ -136,6 +140,7 @@ class LoginServer:
         if isinstance(msg.peer, Player):
             player = msg.peer
             player.disconnect()
+            self.pending_callbacks.remove_receiver(player)
             del(self.players[player.unique_id])
 
         elif isinstance(msg.peer, GameServer):
@@ -144,6 +149,7 @@ class LoginServer:
                                                               game_server.ip,
                                                               game_server.port))
             game_server.disconnect()
+            self.pending_callbacks.remove_receiver(game_server)
             del (self.game_servers[game_server.serverid1])
 
         else:
@@ -166,14 +172,6 @@ class LoginServer:
                                                                       game_server.ip,
                                                                       game_server.port))
 
-    def handle_match_time_message(self, msg):
-        game_server = msg.peer
-        print('server: received match time for server %s: %s seconds remaining (counting = %s)' %
-              (game_server.serverid1,
-               msg.seconds_remaining,
-               msg.counting))
-        game_server.set_match_time(msg.seconds_remaining, msg.counting)
-
     def handle_team_info_message(self, msg):
         game_server = msg.peer
         for player_id, team_id in msg.player_to_team_id.items():
@@ -189,3 +187,16 @@ class LoginServer:
         game_server = msg.peer
         game_server.be_score = msg.be_score
         game_server.ds_score = msg.ds_score
+
+    def handle_match_time_message(self, msg):
+        game_server = msg.peer
+        print('server: received match time for server %s: %s seconds remaining (counting = %s)' %
+              (game_server.serverid1,
+               msg.seconds_remaining,
+               msg.counting))
+        game_server.set_match_time(msg.seconds_remaining, msg.counting)
+
+    def handle_match_end_message(self, msg):
+        game_server = msg.peer
+        print('server: match ended on server %s. Starting next map in 5 seconds.' % game_server.serverid1)
+        self.pending_callbacks.add(game_server, 5, game_server.start_next_map)

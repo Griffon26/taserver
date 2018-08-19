@@ -21,7 +21,9 @@
 import time
 
 from common.connectionhandler import Peer
-from common.messages import Login2LauncherSetPlayerLoadoutsMessage, Login2LauncherRemovePlayerLoadoutsMessage
+from common.messages import Login2LauncherNextMapMessage, \
+                            Login2LauncherSetPlayerLoadoutsMessage, \
+                            Login2LauncherRemovePlayerLoadoutsMessage
 
 
 class GameServer(Peer):
@@ -72,3 +74,8 @@ class GameServer(Peer):
         msg = Login2LauncherRemovePlayerLoadoutsMessage(player.unique_id)
         self.send(msg)
         self.player_ids.remove(player.unique_id)
+
+    def start_next_map(self):
+        self.be_score = 0
+        self.ds_score = 0
+        self.send(Login2LauncherNextMapMessage())
