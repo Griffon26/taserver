@@ -23,7 +23,7 @@ import random
 import string
 
 from .datatypes import *
-from .gameserverlauncherhandler import GameServer
+from .gameserver import GameServer
 from .player.player import Player
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
