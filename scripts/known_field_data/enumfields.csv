@@ -19,6 +19,7 @@
 0x00D5,EnumBlockArray,
 0x00EC,EnumBlockArray,/report command
 0x00FB,EnumBlockArray,
+0x010F,EnumBlockArray,something to do with match end
 0x011C,EnumBlockArray,
 0x011B,EnumBlockArray,player online/join notification
 0x0145,EnumBlockArray,
@@ -30,6 +31,7 @@
 0x018B,EnumBlockArray,
 0x018C,EnumBlockArray,/votekick command
 0x0197,EnumBlockArray,
+0x019A,EnumBlockArray,something to do with match end
 0x01B5,EnumBlockArray,watch now menu content
 0x01BC,EnumBlockArray,
 0x01C6,EnumBlockArray,
