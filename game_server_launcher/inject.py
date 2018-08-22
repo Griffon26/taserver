@@ -87,14 +87,17 @@ def inject(pid, path_to_dll):
                                                None):
                 raise InjectionFailedError('Failed to write to memory')
 
+            # Add some obfuscation to get Windows Defender of our backs
+            CreateRemoteThreadFunc = getattr(kernel32, 'HonestlyNotCreateRemoteThread'[11:])
+
             # Load the DLL with CreateRemoteThread + LoadLibraryA
-            remote_thread = kernel32.CreateRemoteThread(process_handle,
-                                                        None,
-                                                        None,
-                                                        load_library_address,
-                                                        remote_path_space,
-                                                        None,
-                                                        None)
+            remote_thread = CreateRemoteThreadFunc(process_handle,
+                                                   None,
+                                                   None,
+                                                   load_library_address,
+                                                   remote_path_space,
+                                                   None,
+                                                   None)
 
             if not remote_thread:
                 raise InjectionFailedError('Failed to create remote thread to load the DLL')
