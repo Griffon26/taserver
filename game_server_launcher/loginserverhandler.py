@@ -20,7 +20,7 @@
 
 from common.connectionhandler import *
 from common.messages import parse_message
-
+from ipaddress import IPv4Address
 
 class LoginServerReader(TcpMessageConnectionReader):
     def decode(self, msg_bytes):
@@ -33,7 +33,10 @@ class LoginServerWriter(TcpMessageConnectionWriter):
 
 
 class LoginServer(Peer):
-    pass
+    def __init__(self, ip, port):
+        super().__init__()
+        self.ip = ip
+        self.port = port
 
 
 class LoginServerHandler(OutgoingConnectionHandler):
@@ -46,7 +49,7 @@ class LoginServerHandler(OutgoingConnectionHandler):
     def create_connection_instances(self, sock, address):
         reader = LoginServerReader(sock)
         writer = LoginServerWriter(sock)
-        peer = LoginServer()
+        peer = LoginServer(IPv4Address(address[0]), int(address[1]))
         return reader, writer, peer
 
 

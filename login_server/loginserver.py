@@ -18,12 +18,14 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from distutils.version import StrictVersion
 import gevent
 import random
 import string
 
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
+from common.versions import launcher2loginserver_protocol_version
 from .datatypes import *
 from .gameserver import GameServer
 from .pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
@@ -49,6 +51,7 @@ class LoginServer:
             PeerConnectedMessage: self.handle_client_connected_message,
             PeerDisconnectedMessage: self.handle_client_disconnected_message,
             ClientMessage: self.handle_client_message,
+            Launcher2LoginProtocolVersionMessage: self.handle_launcher_protocol_version_message,
             Launcher2LoginServerInfoMessage: self.handle_server_info_message,
             Launcher2LoginMapInfoMessage: None,
             Launcher2LoginTeamInfoMessage: self.handle_team_info_message,
@@ -132,7 +135,7 @@ class LoginServer:
             game_server.serverid2 = serverid1 + 0x10000000
             self.game_servers[serverid1] = game_server
 
-            print('server: added game server %s' % game_server.ip)
+            print('server: added game server %s (%s)' % (serverid1, game_server.ip))
         else:
             assert False, "Invalid connection message received"
 
@@ -164,6 +167,14 @@ class LoginServer:
 
         for request in msg.requests:
             current_player.handle_request(request)
+
+    def handle_launcher_protocol_version_message(self, msg):
+        launcher_version = StrictVersion(msg.version)
+        my_version = launcher2loginserver_protocol_version
+
+        if my_version.version[0] != launcher_version.version[0]:
+            msg.peer.send(Login2LauncherProtocolVersionMessage(str(my_version)))
+            msg.peer.disconnect()
 
     def handle_server_info_message(self, msg):
         game_server = msg.peer

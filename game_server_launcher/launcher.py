@@ -22,9 +22,12 @@ import gevent
 
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
+from common.versions import launcher2loginserver_protocol_version
 from .gamecontrollerhandler import GameController
 from .loginserverhandler import LoginServer
 
+class IncompatibleVersionError(Exception):
+    pass
 
 class Launcher:
     def __init__(self, game_server_config, incoming_queue):
@@ -37,16 +40,17 @@ class Launcher:
         self.login_server = None
 
         self.message_handlers = {
-            PeerConnectedMessage : self.handle_peer_connected,
-            PeerDisconnectedMessage : self.handle_peer_disconnected,
-            Login2LauncherNextMapMessage : self.handle_next_map_message,
-            Login2LauncherSetPlayerLoadoutsMessage : self.handle_set_player_loadouts_message,
-            Login2LauncherRemovePlayerLoadoutsMessage : self.handle_remove_player_loadouts_message,
-            Game2LauncherTeamInfoMessage : self.handle_team_info_message,
-            Game2LauncherScoreInfoMessage : self.handle_score_info_message,
-            Game2LauncherMatchTimeMessage : self.handle_match_time_message,
-            Game2LauncherMatchEndMessage : self.handle_match_end_message,
-            Game2LauncherLoadoutRequest : self.handle_loadout_request_message,
+            PeerConnectedMessage: self.handle_peer_connected,
+            PeerDisconnectedMessage: self.handle_peer_disconnected,
+            Login2LauncherProtocolVersionMessage: self.handle_login_server_protocol_version_message,
+            Login2LauncherNextMapMessage: self.handle_next_map_message,
+            Login2LauncherSetPlayerLoadoutsMessage: self.handle_set_player_loadouts_message,
+            Login2LauncherRemovePlayerLoadoutsMessage: self.handle_remove_player_loadouts_message,
+            Game2LauncherTeamInfoMessage: self.handle_team_info_message,
+            Game2LauncherScoreInfoMessage: self.handle_score_info_message,
+            Game2LauncherMatchTimeMessage: self.handle_match_time_message,
+            Game2LauncherMatchEndMessage: self.handle_match_end_message,
+            Game2LauncherLoadoutRequest: self.handle_loadout_request_message,
         }
 
     def run(self):
@@ -65,6 +69,9 @@ class Launcher:
             if self.login_server is not None:
                 raise RuntimeError('There should only be a connection to one login server at a time')
             self.login_server = msg.peer
+
+            msg = Launcher2LoginProtocolVersionMessage(str(launcher2loginserver_protocol_version))
+            self.login_server.send(msg)
 
             msg = Launcher2LoginServerInfoMessage(int(self.game_server_config['port']),
                                                   self.game_server_config['description'],
@@ -87,6 +94,16 @@ class Launcher:
             self.login_server = None
         else:
             assert False, "Invalid disconnection message received"
+
+    def handle_login_server_protocol_version_message(self, msg):
+        # The only time we get a message with the login server's protocol version
+        # is when the version that we sent is incompatible with it.
+        raise IncompatibleVersionError('The protocol version that this game server launcher supports (%s) is '
+                                       'incompatible with the version supported by the login server at %s:%d (%s)' %
+                                       (launcher2loginserver_protocol_version,
+                                        self.login_server.ip,
+                                        self.login_server.port,
+                                        msg.version))
 
     def handle_next_map_message(self, msg):
         self.game_controller.send(Launcher2GameNextMapMessage())

@@ -26,7 +26,7 @@ import os
 from .gameserverhandler import run_game_server, ConfigurationError
 from .loginserverhandler import handle_login_server
 from .gamecontrollerhandler import handle_game_controller
-from .launcher import handle_launcher
+from .launcher import handle_launcher, IncompatibleVersionError
 
 INI_PATH = os.path.join('data', 'gameserverlauncher.ini')
 
@@ -55,11 +55,21 @@ def main():
 
             print('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
 
-            configuration_errors = ['  %s' % g.exception for g in finished_greenlets if isinstance(g.exception, ConfigurationError)]
+            configuration_errors = ['  %s' % g.exception for g in finished_greenlets
+                                    if isinstance(g.exception, ConfigurationError)]
             if configuration_errors:
                 print('\n-------------------------------------------\n')
                 print('Found errors in configuration files:')
                 print('\n'.join(configuration_errors))
+                print('\n-------------------------------------------\n')
+                restart = False
+
+            incompatible_version_errors = ['  %s' % g.exception for g in finished_greenlets
+                                           if isinstance(g.exception, IncompatibleVersionError)]
+            if incompatible_version_errors:
+                print('\n-------------------------------------------\n')
+                print('A version incompatibility was found:')
+                print('\n'.join(incompatible_version_errors))
                 print('\n-------------------------------------------\n')
                 restart = False
 

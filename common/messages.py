@@ -27,6 +27,7 @@ import struct
 _MSGID_LOGIN2LAUNCHER_NEXTMAP = 0x1000
 _MSGID_LOGIN2LAUNCHER_SETPLAYERLOADOUTS = 0x1001
 _MSGID_LOGIN2LAUNCHER_REMOVEPLAYERLOADOUTS = 0x1002
+_MSGID_LOGIN2LAUNCHER_PROTOCOL_VERSION = 0x1003
 
 _MSGID_LAUNCHER2LOGIN_SERVERINFO = 0x2000
 _MSGID_LAUNCHER2LOGIN_MAPINFO = 0x2001
@@ -34,7 +35,9 @@ _MSGID_LAUNCHER2LOGIN_TEAMINFO = 0x2002
 _MSGID_LAUNCHER2LOGIN_SCOREINFO = 0x2003
 _MSGID_LAUNCHER2LOGIN_MATCHTIME = 0x2004
 _MSGID_LAUNCHER2LOGIN_MATCHEND = 0x2005
+_MSGID_LAUNCHER2LOGIN_PROTOCOL_VERSION = 0x2006
 
+_MSGID_GAME2LAUNCHER_PROTOCOL_VERSION = 0x3000
 _MSGID_GAME2LAUNCHER_TEAMINFO = 0x3001
 _MSGID_GAME2LAUNCHER_SCOREINFO = 0x3002
 _MSGID_GAME2LAUNCHER_MATCHTIME = 0x3003
@@ -78,10 +81,18 @@ class Login2LauncherRemovePlayerLoadoutsMessage(Message):
         self.unique_id = unique_id
 
 
+# Example json: { 'version' : '0.1.0' }
+class Login2LauncherProtocolVersionMessage(Message):
+    msg_id = _MSGID_LOGIN2LAUNCHER_PROTOCOL_VERSION
+
+    def __init__(self, version: str):
+        self.version = version
+
+
 class Launcher2LoginServerInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SERVERINFO
 
-    def __init__(self, port, description, motd):
+    def __init__(self, port: int, description: str, motd: str):
         self.port = port
         self.description = description
         self.motd = motd
@@ -119,6 +130,22 @@ class Launcher2LoginMatchEndMessage(Message):
 
     def __init__(self):
         pass
+
+
+# Example json: { 'version' : '0.1.0' }
+class Launcher2LoginProtocolVersionMessage(Message):
+    msg_id = _MSGID_LAUNCHER2LOGIN_PROTOCOL_VERSION
+
+    def __init__(self, version: str):
+        self.version = version
+
+
+# Example json: { 'version' : '0.1.0' }
+class Game2LauncherProtocolVersionMessage(Message):
+    msg_id = _MSGID_GAME2LAUNCHER_PROTOCOL_VERSION
+
+    def __init__(self, version: str):
+        self.version = version
 
 
 # Example json: { 'player_to_team_id' : { '123' : 0, '234' : 1, '321' : 255 } }
@@ -211,6 +238,8 @@ class Launcher2GameNextMapMessage(Message):
 
 
 _message_classes = [
+
+    Login2LauncherProtocolVersionMessage,
     Login2LauncherNextMapMessage,
     Login2LauncherSetPlayerLoadoutsMessage,
     Login2LauncherRemovePlayerLoadoutsMessage,
@@ -221,7 +250,9 @@ _message_classes = [
     Launcher2LoginScoreInfoMessage,
     Launcher2LoginMatchTimeMessage,
     Launcher2LoginMatchEndMessage,
+    Launcher2LoginProtocolVersionMessage,
 
+    Game2LauncherProtocolVersionMessage,
     Game2LauncherTeamInfoMessage,
     Game2LauncherScoreInfoMessage,
     Game2LauncherMatchTimeMessage,
