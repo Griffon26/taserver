@@ -61,43 +61,34 @@ def inject(pid, path_to_dll):
         if not process_handle:
             raise InjectionFailedError('Unable to get process handle')
 
-        with closing_handle(kernel32.GetModuleHandleW('kernel32.dll')) as kernel32_handle:
-            if not kernel32_handle:
-                raise InjectionFailedError('Unable to get module handle of kernel32 library')
+        # Allocate memory in the process for the DLL path, and then write it there
+        path_to_dll_bytes = path_to_dll.encode('ascii') + b'\0'
+        remote_path_space = kernel32.VirtualAllocEx(process_handle,
+                                                    None,
+                                                    len(path_to_dll_bytes),
+                                                    MEM_RESERVE | MEM_COMMIT,
+                                                    PAGE_READWRITE)
+        if not remote_path_space:
+            raise InjectionFailedError('Unable to allocate space in remote process')
 
-            load_library_address = kernel32.GetProcAddress(kernel32_handle, 'LoadLibraryA'.encode('ascii'))
+        if not kernel32.WriteProcessMemory(process_handle,
+                                           remote_path_space,
+                                           path_to_dll_bytes,
+                                           len(path_to_dll_bytes),
+                                           None):
+            raise InjectionFailedError('Failed to write to memory')
 
-            if not load_library_address:
-                raise InjectionFailedError('Unable to get address of LoadLibrary function')
+        # Add some obfuscation to get Windows Defender off our backs
+        CreateRemoteThreadFunc = getattr(kernel32, 'HonestlyNotCreateRemoteThread'[11:])
 
-            # Allocate memory in the process for the DLL path, and then write it there
-            path_to_dll_bytes = path_to_dll.encode('ascii') + b'\0'
-            remote_path_space = kernel32.VirtualAllocEx(process_handle,
-                                                        None,
-                                                        len(path_to_dll_bytes),
-                                                        MEM_RESERVE | MEM_COMMIT,
-                                                        PAGE_READWRITE)
-            if not remote_path_space:
-                raise InjectionFailedError('Unable to allocate space in remote process')
-
-            if not kernel32.WriteProcessMemory(process_handle,
+        # Load the DLL with CreateRemoteThread + LoadLibraryA
+        remote_thread = CreateRemoteThreadFunc(process_handle,
+                                               None,
+                                               None,
+                                               c_void_p.from_buffer(kernel32.LoadLibraryA),
                                                remote_path_space,
-                                               path_to_dll_bytes,
-                                               len(path_to_dll_bytes),
-                                               None):
-                raise InjectionFailedError('Failed to write to memory')
+                                               None,
+                                               None)
 
-            # Add some obfuscation to get Windows Defender of our backs
-            CreateRemoteThreadFunc = getattr(kernel32, 'HonestlyNotCreateRemoteThread'[11:])
-
-            # Load the DLL with CreateRemoteThread + LoadLibraryA
-            remote_thread = CreateRemoteThreadFunc(process_handle,
-                                                   None,
-                                                   None,
-                                                   load_library_address,
-                                                   remote_path_space,
-                                                   None,
-                                                   None)
-
-            if not remote_thread:
-                raise InjectionFailedError('Failed to create remote thread to load the DLL')
+        if not remote_thread:
+            raise InjectionFailedError('Failed to create remote thread to load the DLL')
