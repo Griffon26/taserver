@@ -18,11 +18,12 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from distutils.version import StrictVersion
 import gevent
 
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
-from common.versions import launcher2loginserver_protocol_version
+from common import versions
 from .gamecontrollerhandler import GameController
 from .loginserverhandler import LoginServer
 
@@ -46,6 +47,7 @@ class Launcher:
             Login2LauncherNextMapMessage: self.handle_next_map_message,
             Login2LauncherSetPlayerLoadoutsMessage: self.handle_set_player_loadouts_message,
             Login2LauncherRemovePlayerLoadoutsMessage: self.handle_remove_player_loadouts_message,
+            Game2LauncherProtocolVersionMessage: self.handle_game_controller_protocol_version_message,
             Game2LauncherTeamInfoMessage: self.handle_team_info_message,
             Game2LauncherScoreInfoMessage: self.handle_score_info_message,
             Game2LauncherMatchTimeMessage: self.handle_match_time_message,
@@ -70,7 +72,7 @@ class Launcher:
                 raise RuntimeError('There should only be a connection to one login server at a time')
             self.login_server = msg.peer
 
-            msg = Launcher2LoginProtocolVersionMessage(str(launcher2loginserver_protocol_version))
+            msg = Launcher2LoginProtocolVersionMessage(str(versions.launcher2loginserver_protocol_version))
             self.login_server.send(msg)
 
             msg = Launcher2LoginServerInfoMessage(int(self.game_server_config['port']),
@@ -100,10 +102,10 @@ class Launcher:
         # is when the version that we sent is incompatible with it.
         raise IncompatibleVersionError('The protocol version that this game server launcher supports (%s) is '
                                        'incompatible with the version supported by the login server at %s:%d (%s)' %
-                                       (launcher2loginserver_protocol_version,
+                                       (versions.launcher2loginserver_protocol_version,
                                         self.login_server.ip,
                                         self.login_server.port,
-                                        msg.version))
+                                        StrictVersion(msg.version)))
 
     def handle_next_map_message(self, msg):
         self.game_controller.send(Launcher2GameNextMapMessage())
@@ -115,6 +117,16 @@ class Launcher:
     def handle_remove_player_loadouts_message(self, msg):
         print('launcher: loadouts removed for player 0x%08X' % msg.unique_id)
         del(self.players[msg.unique_id])
+
+    def handle_game_controller_protocol_version_message(self, msg):
+        controller_version = StrictVersion(msg.version)
+        my_version = versions.launcher2controller_protocol_version
+
+        if controller_version.version[0] != my_version.version[0]:
+            raise IncompatibleVersionError('The protocol version of the game controller DLL (%s) is incompatible '
+                                           'with the version supported by this game server launcher (%s)' %
+                                           (controller_version,
+                                            my_version))
 
     def handle_team_info_message(self, msg):
         for player_id, team_id in msg.player_to_team_id.items():

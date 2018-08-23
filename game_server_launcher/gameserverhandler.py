@@ -64,7 +64,7 @@ def run_game_server(game_server_config):
             print('gameserver: Started process with pid: ', process.pid)
             if dll_to_inject:
                 gevent.sleep(10)
-                print('gameserver: Injection started...')
+                print('gameserver: Injecting game controller DLL into game server...')
                 inject(process.pid, dll_to_inject)
                 print('gameserver: Injection done.')
             process.wait()
