@@ -18,7 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from pprint import pprint
+import json
 
 LIGHT_CLASS = 1683
 MEDIUM_CLASS = 1693
@@ -80,6 +80,9 @@ class Loadouts:
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
     def __init__(self):
+        self.loadout_dict = self.defaults()
+
+    def defaults(self):
         default_light_loadout = {
             SLOT_PRIMARY_WEAPON: EQUIPMENT_LIGHT_SPINFUSOR,
             SLOT_SECONDARY_WEAPON: EQUIPMENT_LIGHT_SPINFUSOR,
@@ -112,11 +115,13 @@ class Loadouts:
 
         max_loadouts = 9
 
-        self.loadout_dict = {
+        default_loadouts = {
             LIGHT_CLASS: {i: dict(default_light_loadout) for i in range(max_loadouts)},
             MEDIUM_CLASS: {i: dict(default_medium_loadout) for i in range(max_loadouts)},
             HEAVY_CLASS: {i: dict(default_heavy_loadout) for i in range(max_loadouts)}
         }
+
+        return default_loadouts
 
     def is_loadout_menu_item(self, value):
         return value in self.loadout_id2key
@@ -124,3 +129,21 @@ class Loadouts:
     def modify(self, loadout_id, slot, equipment):
         class_id, loadout_index = self.loadout_id2key[loadout_id]
         self.loadout_dict[class_id][loadout_index][slot] = equipment
+
+    def load(self, filename):
+        def json_keys_to_int(x):
+            if isinstance(x, dict):
+                return {int(k): v for k, v in x.items()}
+
+        try:
+            with open(filename, 'rt') as infile:
+                self.loadout_dict = json.load(infile, object_hook=json_keys_to_int)
+        except OSError:
+            self.loadout_dict = self.defaults()
+
+        print(self.loadout_dict)
+
+    def save(self, filename):
+        with open(filename, 'wt') as outfile:
+            json.dump(self.loadout_dict, outfile, indent=4, sort_keys=True)
+

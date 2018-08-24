@@ -28,6 +28,10 @@ class AuthenticatedState(PlayerState):
     def handle_a0033(self, request):
         self.player.send(a0033())
 
+    def on_exit(self):
+        print("%s is exiting state %s" % (self.player, type(self).__name__))
+        self.player.save()
+
     @handles(packet=a00d5)
     def handle_a00d5(self, request):
         if request.findbytype(m0228).value == 1:
@@ -143,7 +147,6 @@ class AuthenticatedState(PlayerState):
             self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
             self.player.login_server.accounts[self.player.login_name].authcode = None
             self.player.login_server.accounts.save()
-            self.player.registered = True
         else:
             invalid_code_msg = a0175()
             invalid_code_msg.findbytype(m02fc).set(0x00019646)  # message type

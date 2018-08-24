@@ -27,6 +27,9 @@ TEAM_SPEC = 255
 
 
 class Player(Peer):
+
+    loadout_file_path = 'data/players/%s_loadouts.json'
+
     def __init__(self, address):
         super().__init__()
         self.unique_id = None
@@ -52,8 +55,18 @@ class Player(Peer):
 
         if self.state:
             self.state.on_exit()
-        self.state = state_class(self, *args, **kwargs)
-        self.state.on_enter()
+
+        if state_class:
+            self.state = state_class(self, *args, **kwargs)
+            self.state.on_enter()
+
+    def load(self):
+        if self.registered:
+            self.loadouts.load(self.loadout_file_path % self.login_name)
+
+    def save(self):
+        if self.registered:
+            self.loadouts.save(self.loadout_file_path % self.login_name)
 
     def handle_request(self, request):
         self.state.handle_request(request)

@@ -98,6 +98,14 @@ class LoginServer:
 
         return matching_players
 
+    def change_player_unique_id(self, old_id, new_id):
+        assert old_id in self.players
+        assert new_id not in self.players
+
+        player = self.players.pop(old_id)
+        player.unique_id = new_id
+        self.players[new_id] = player
+
     def handle_authcode_request_message(self, msg):
         availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
         authcode = ''.join([random.choice(availablechars) for i in range(8)])
@@ -144,6 +152,7 @@ class LoginServer:
             player = msg.peer
             player.disconnect()
             self.pending_callbacks.remove_receiver(player)
+            player.set_state(None)
             del(self.players[player.unique_id])
 
         elif isinstance(msg.peer, GameServer):
