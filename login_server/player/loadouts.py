@@ -141,8 +141,6 @@ class Loadouts:
         except OSError:
             self.loadout_dict = self.defaults()
 
-        print(self.loadout_dict)
-
     def save(self, filename):
         with open(filename, 'wt') as outfile:
             json.dump(self.loadout_dict, outfile, indent=4, sort_keys=True)

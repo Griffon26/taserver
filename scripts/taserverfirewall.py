@@ -80,7 +80,7 @@ def createinitialrules():
         'add',
         'rule',
         'name="TAserverfirewall"',
-        'protocol=udp',
+        'protocol=tcp',
         'dir=in',
         'enable=yes',
         'profile=any',
