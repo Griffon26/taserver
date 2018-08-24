@@ -1001,7 +1001,7 @@ class m00e9(arrayofenumblockarrays):
                 m01a6(),
                 m06f1(),
                 m0703(),
-                m0343().set(len(server.player_ids)),
+                m0343().set(len(server.players)),
                 m0344(),
                 m0259(),
                 m03fd(),

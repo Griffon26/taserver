@@ -21,11 +21,14 @@
 import time
 
 from common.connectionhandler import Peer
+from common.firewall import modify_firewall
 from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherSetPlayerLoadoutsMessage, \
                             Login2LauncherRemovePlayerLoadoutsMessage, \
                             Login2LauncherAddPlayer, \
                             Login2LauncherRemovePlayer
+from .datatypes import *
+from .player.state.unauthenticated_state import UnauthenticatedState
 
 
 class GameServer(Peer):
@@ -39,8 +42,8 @@ class GameServer(Peer):
         self.motd = None
 
         self.joinable = False
-        self.player_ids = set()
-        self.playerbeingkicked = None
+        self.players = {}
+        self.player_being_kicked = None
         self.match_end_time = None
         self.match_time_counting = False
         self.be_score = 0
@@ -68,24 +71,28 @@ class GameServer(Peer):
         return time_remaining
 
     def add_player(self, player):
-        assert player.unique_id not in self.player_ids
-        self.player_ids.add(player.unique_id)
+        assert player.unique_id not in self.players
+        self.players[player.unique_id] = player
         msg = Login2LauncherAddPlayer(player.unique_id, player.ip)
         self.send(msg)
 
     def remove_player(self, player):
-        assert player.unique_id in self.player_ids
-        self.player_ids.remove(player.unique_id)
+        assert player.unique_id in self.players
+        del self.players[player.unique_id]
         msg = Login2LauncherRemovePlayer(player.unique_id, player.ip)
         self.send(msg)
 
+    def send_all_players(self, data):
+        for player in self.players.values():
+            player.send(data)
+
     def set_player_loadouts(self, player):
-        assert player.unique_id in self.player_ids
+        assert player.unique_id in self.players
         msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id, player.loadouts.loadout_dict)
         self.send(msg)
 
     def remove_player_loadouts(self, player):
-        assert player.unique_id in self.player_ids
+        assert player.unique_id in self.players
         msg = Login2LauncherRemovePlayerLoadoutsMessage(player.unique_id)
         self.send(msg)
 
@@ -93,3 +100,65 @@ class GameServer(Peer):
         self.be_score = 0
         self.ds_score = 0
         self.send(Login2LauncherNextMapMessage())
+
+    def start_votekick(self, kicker, kickee):
+        if kickee.unique_id in self.players and self.player_being_kicked is None:
+
+            # Start a new vote
+            reply = a018c()
+            reply.content = [
+                m02c4().set(self.serverid2),
+                m034a().set(kicker.display_name),
+                m0348().set(kicker.unique_id),
+                m02fc().set(0x0001942F),
+                m0442(),
+                m0704().set(kickee.unique_id),
+                m0705().set(kickee.display_name)
+            ]
+            self.send_all_players(reply)
+
+            for player in self.players.values():
+                player.vote = None
+
+            self.player_being_kicked = kickee
+
+    def check_votes(self):
+        if self.player_being_kicked is not None:
+            votes = [p.vote for p in self.players.values() if p.vote is not None]
+            yes_votes = [v for v in votes if v]
+
+            if len(votes) >= 1:
+                player_to_kick = self.player_being_kicked
+                kick = len(yes_votes) >= 1
+
+                reply = a018c()
+                reply.content = [
+                    m0348().set(player_to_kick.unique_id),
+                    m034a().set(player_to_kick.display_name)
+                ]
+
+                if kick:
+                    reply.content.extend([
+                        m02fc().set(0x00019430),
+                        m0442().set(1)
+                    ])
+
+                else:
+                    reply.content.extend([
+                        m02fc().set(0x00019431),
+                        m0442().set(0)
+                    ])
+
+                    self.send_all_players(reply)
+
+                if kick:
+                    # TODO: figure out if a real votekick also causes an
+                    # inconsistency between the menu you see and the one
+                    # you're really in
+                    for msg in [a00b0(), a0035().setmainmenu(), a006f()]:
+                        player_to_kick.send(msg)
+                    player_to_kick.set_state(UnauthenticatedState)
+                    modify_firewall('blacklist', 'add', player_to_kick.ip)
+
+                self.player_being_kicked = None
+
