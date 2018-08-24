@@ -56,6 +56,7 @@ def writeiplist(filename, iplist):
             f.write('%d.%d.%d.%d\n' % ip)
 '''
 
+
 def removeallrules():
     args = [
         'c:\\windows\\system32\\Netsh.exe',
@@ -115,7 +116,7 @@ def createinitialrules():
         print('Failed to add initial rule to firewall:\n%s' % e.output)
 
 
-def removerule(ip, port):
+def removerule(ip, port, protocol):
     args = [
         'c:\\windows\\system32\\Netsh.exe',
         'advfirewall',
@@ -123,7 +124,7 @@ def removerule(ip, port):
         'delete',
         'rule',
         'name="TAserverfirewall"',
-        'protocol=udp',
+        'protocol=%s' % protocol,
         'dir=in',
         'profile=any',
         'localport=%d' % port,
@@ -134,7 +135,8 @@ def removerule(ip, port):
     except sp.CalledProcessError as e:
         print('Failed to remove rule from firewall:\n%s' % e.output)
 
-def addrule(ip, port, allow_or_block):
+
+def addrule(ip, port, protocol, allow_or_block):
     if allow_or_block not in ('allow', 'block'):
         raise RuntimeError('Invalid argument provided: %s' % allow_or_block)
     args = [
@@ -144,7 +146,7 @@ def addrule(ip, port, allow_or_block):
         'add',
         'rule',
         'name="TAserverfirewall"',
-        'protocol=udp',
+        'protocol=%s' % protocol,
         'dir=in',
         'enable=yes',
         'profile=any',
@@ -156,6 +158,7 @@ def addrule(ip, port, allow_or_block):
         sp.check_output(args, text = True)
     except sp.CalledProcessError as e:
         print('Failed to add rule to firewall:\n%s' % e.output)
+
 
 def findtribesascendrules():
     args = [
@@ -190,7 +193,8 @@ def findtribesascendrules():
                 tarules.append(newrule)
 
     return tarules
-            
+
+
 def disablerulesforprogramname(programname):
     args = [
         'c:\\windows\\system32\\Netsh.exe',
@@ -211,17 +215,20 @@ def disablerulesforprogramname(programname):
     except sp.CalledProcessError as e:
         print('Failed to remove firewall rules for program %s. Output:\n%s' %
               (programname, e.output))
-    
+
+
 def handleserver(serverqueue):
     lists = {
         'whitelist' : {
             'ruletype' : 'allow',
             'port' : 7777,
+            'protocol' : 'udp',
             'IPs' : set(),
         },
         'blacklist' : {
             'ruletype' : 'block',
             'port' : 9000,
+            'protocol' : 'tcp',
             'IPs' : set()
         }
     }
@@ -240,17 +247,18 @@ def handleserver(serverqueue):
 
         if action == 'add':
             if ip not in thelist['IPs']:
-                print('add %sing firewall rule for %s to port %d' %
-                      (thelist['ruletype'], ip, thelist['port']))
+                print('add %sing firewall rule for %s to %s port %d' %
+                      (thelist['ruletype'], ip, thelist['protocol'], thelist['port']))
                 thelist['IPs'].add(ip)
-                addrule(ip, thelist['port'], thelist['ruletype'])
+                addrule(ip, thelist['port'], thelist['protocol'], thelist['ruletype'])
         else:
             if ip in thelist['IPs']:
-                print('remove %sing firewall rule for %s to port %d' %
-                      (thelist['ruletype'], ip, thelist['port']))
+                print('remove %sing firewall rule for %s to %s port %d' %
+                      (thelist['ruletype'], ip, thelist['protocol'], thelist['port']))
                 thelist['IPs'].remove(ip)
-                removerule(ip, thelist['port'])
-       
+                removerule(ip, thelist['port'], thelist['protocol'])
+
+
 def main(args):
     serverqueue = gevent.queue.Queue()
     
@@ -271,6 +279,7 @@ def main(args):
         server.serve_forever()
     except KeyboardInterrupt:
         removeallrules()
+
 
 if __name__ == '__main__':        
     parser = argparse.ArgumentParser()
