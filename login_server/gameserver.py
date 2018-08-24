@@ -86,6 +86,11 @@ class GameServer(Peer):
         for player in self.players.values():
             player.send(data)
 
+    def send_all_players_on_team(self, data, team):
+        for player in self.players.values():
+            if player.team == team:
+                player.send(data)
+
     def set_player_loadouts(self, player):
         assert player.unique_id in self.players
         msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id, player.loadouts.loadout_dict)

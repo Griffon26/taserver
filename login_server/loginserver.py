@@ -118,14 +118,6 @@ class LoginServer:
         callback_id = msg.callback_id
         self.pending_callbacks.execute(callback_id)
 
-    def send_all_on_server(self, data, game_server):
-        for player in self.find_players_by(game_server=game_server):
-            player.send(data)
-
-    def send_all_on_server_and_team(self, data, game_server, team):
-        for player in self.find_players_by(game_server=game_server, team=team):
-            player.send(data)
-
     def handle_client_connected_message(self, msg):
         if isinstance(msg.peer, Player):
             unique_id = first_unused_number_above(self.players.keys(), 0x10000000)

@@ -115,9 +115,8 @@ class AuthenticatedState(PlayerState):
             request.content.append(m06de().set(self.player.tag))
 
             if self.player.game_server and self.player.team is not None:
-                self.player.login_server.send_all_on_server_and_team(request,
-                                                                     self.player.game_server,
-                                                                     self.player.team)
+                self.player.game_server.send_all_players_on_team(request,
+                                                                 self.player.team)
 
         elif message_type == 6:  # private
             addressed_player_name = request.findbytype(m034a).value
@@ -136,7 +135,7 @@ class AuthenticatedState(PlayerState):
             request.content.append(m06de().set(self.player.tag))
 
             if self.player.game_server:
-                self.player.login_server.send_all_on_server(request, self.player.game_server)
+                self.player.game_server.send_all_players(request)
 
     @handles(packet=a0175)
     def handle_promotion_code_redemption(self, request):
