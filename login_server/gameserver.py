@@ -74,6 +74,7 @@ class GameServer(Peer):
     def add_player(self, player):
         assert player.unique_id not in self.players
         self.players[player.unique_id] = player
+        player.vote = None
         msg = Login2LauncherAddPlayer(player.unique_id, player.ip)
         self.send(msg)
 
@@ -131,16 +132,36 @@ class GameServer(Peer):
             self.login_server.pending_callbacks.add(self, 35, self.end_votekick)
 
     def end_votekick(self):
-        if self.player_being_kicked is not None:
-            self._do_kick(False)
+        if self.player_being_kicked:
+            eligible_voters, total_votes, yes_votes = self._tally_votes()
+            vote_passed = total_votes >= 4 and yes_votes / total_votes >= 0.5
+            print('server: votekick %s at timeout with %d/%d/%d (yes/no/abstain) with %d players' %
+                  ('passed' if vote_passed else 'failed',
+                   yes_votes,
+                   total_votes - yes_votes,
+                   eligible_voters - total_votes,
+                   len(self.players)))
+            self._do_kick(vote_passed)
 
     def check_votes(self):
-        if self.player_being_kicked is not None:
-            votes = [p.vote for p in self.players.values() if p.vote is not None]
-            yes_votes = [v for v in votes if v]
+        if self.player_being_kicked:
+            eligible_voters, total_votes, yes_votes = self._tally_votes()
 
-            if len(votes) >= 1:
-                self._do_kick(len(yes_votes) >= 1)
+            # If enough people vote yes, kick immediately. Otherwise wait for a majority at the timeout.
+            if yes_votes >= 8:
+                print('server: votekick passed immediately %d/%d/%d (yes/no/abstain) with %d players' %
+                      (yes_votes,
+                       total_votes - yes_votes,
+                       eligible_voters - total_votes,
+                       len(self.players)))
+                self._do_kick(True)
+
+    def _tally_votes(self):
+        eligible_voters_votes = {p.ip: p.vote for p in self.players.values()}
+        votes = {v for v in eligible_voters_votes.values() if v is not None}
+        yes_votes = [v for v in votes if v]
+
+        return len(eligible_voters_votes), len(votes), len(yes_votes)
 
     def _do_kick(self, votekick_passed):
         player_to_kick = self.player_being_kicked
