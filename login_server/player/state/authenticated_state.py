@@ -154,17 +154,21 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a006d)
     def handle_menuchange(self, request):
-        loadout_changed = False
-        for arr in request.findbytype(m0144).arrays:
-            menu_item = findbytype(arr, m0661).value
-            field = findbytype(arr, m0369).value
-            value = findbytype(arr, m0261).value
-            if self.player.loadouts.is_loadout_menu_item(menu_item):
-                self.player.loadouts.modify(menu_item, field, int(value))
-                loadout_changed = True
+        # Request to change the player's region
+        if len(request.content) == 1 and type(request.content[0]) is m0448:
+            pass
+        else:
+            loadout_changed = False
+            for arr in request.findbytype(m0144).arrays:
+                menu_item = findbytype(arr, m0661).value
+                field = findbytype(arr, m0369).value
+                value = findbytype(arr, m0261).value
+                if self.player.loadouts.is_loadout_menu_item(menu_item):
+                    self.player.loadouts.modify(menu_item, field, int(value))
+                    loadout_changed = True
 
-        if self.player.game_server and loadout_changed:
-            self.player.game_server.set_player_loadouts(self.player)
+            if self.player.game_server and loadout_changed:
+                self.player.game_server.set_player_loadouts(self.player)
 
     @handles(packet=a01c6)
     def handle_request_for_server_info(self, request):
