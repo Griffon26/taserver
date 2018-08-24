@@ -84,12 +84,10 @@ class LoginServer:
     def find_player_by(self, **kwargs):
         matching_players = self.find_players_by(**kwargs)
 
-        if len(matching_players) == 0:
-            raise ValueError("No player matched query")
-
         if len(matching_players) > 1:
             raise ValueError("More than one player matched query")
-        return matching_players[0]
+
+        return matching_players[0] if matching_players else None
 
     def find_players_by(self, **kwargs):
         matching_players = self.players.values()
@@ -133,6 +131,7 @@ class LoginServer:
             game_server = msg.peer
             game_server.serverid1 = serverid1
             game_server.serverid2 = serverid1 + 0x10000000
+            game_server.login_server = self
             self.game_servers[serverid1] = game_server
 
             print('server: added game server %s (%s)' % (serverid1, game_server.ip))

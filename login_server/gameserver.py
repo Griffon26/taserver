@@ -34,6 +34,7 @@ from .player.state.unauthenticated_state import UnauthenticatedState
 class GameServer(Peer):
     def __init__(self, ip):
         super().__init__()
+        self.login_server = None
         self.serverid1 = None
         self.serverid2 = None
         self.ip = ip
@@ -127,43 +128,51 @@ class GameServer(Peer):
 
             self.player_being_kicked = kickee
 
+            self.login_server.pending_callbacks.add(self, 35, self.end_votekick)
+
+    def end_votekick(self):
+        if self.player_being_kicked is not None:
+            self._do_kick(False)
+
     def check_votes(self):
         if self.player_being_kicked is not None:
             votes = [p.vote for p in self.players.values() if p.vote is not None]
             yes_votes = [v for v in votes if v]
 
             if len(votes) >= 1:
-                player_to_kick = self.player_being_kicked
-                kick = len(yes_votes) >= 1
+                self._do_kick(len(yes_votes) >= 1)
 
-                reply = a018c()
-                reply.content = [
-                    m0348().set(player_to_kick.unique_id),
-                    m034a().set(player_to_kick.display_name)
-                ]
+    def _do_kick(self, votekick_passed):
+        player_to_kick = self.player_being_kicked
 
-                if kick:
-                    reply.content.extend([
-                        m02fc().set(0x00019430),
-                        m0442().set(1)
-                    ])
+        reply = a018c()
+        reply.content = [
+            m0348().set(player_to_kick.unique_id),
+            m034a().set(player_to_kick.display_name)
+        ]
 
-                else:
-                    reply.content.extend([
-                        m02fc().set(0x00019431),
-                        m0442().set(0)
-                    ])
+        if votekick_passed:
+            reply.content.extend([
+                m02fc().set(0x00019430),
+                m0442().set(1)
+            ])
 
-                    self.send_all_players(reply)
+        else:
+            reply.content.extend([
+                m02fc().set(0x00019431),
+                m0442().set(0)
+            ])
 
-                if kick:
-                    # TODO: figure out if a real votekick also causes an
-                    # inconsistency between the menu you see and the one
-                    # you're really in
-                    for msg in [a00b0(), a0035().setmainmenu(), a006f()]:
-                        player_to_kick.send(msg)
-                    player_to_kick.set_state(UnauthenticatedState)
-                    modify_firewall('blacklist', 'add', player_to_kick.ip)
+            self.send_all_players(reply)
 
-                self.player_being_kicked = None
+        if votekick_passed:
+            # TODO: figure out if a real votekick also causes an
+            # inconsistency between the menu you see and the one
+            # you're really in
+            for msg in [a00b0(), a0035().setmainmenu(), a006f()]:
+                player_to_kick.send(msg)
+            player_to_kick.set_state(UnauthenticatedState)
+            modify_firewall('blacklist', 'add', player_to_kick.ip)
+
+        self.player_being_kicked = None
 
