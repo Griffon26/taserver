@@ -70,9 +70,12 @@ def removeallrules():
     print('Removing any previous TAserverfirewall rules')
     sp.call(args, stdout=sp.DEVNULL)
 
+
 def createinitialrules():
-    # The only initial rule we need is an allow rule for
-    # the login server
+    print('Adding initial set of TAserverfirewall rules')
+
+    # The only initial rules we need are a allow rules for
+    # the login server for both clients and game servers
     args = [
         'c:\\windows\\system32\\Netsh.exe',
         'advfirewall',
@@ -91,6 +94,26 @@ def createinitialrules():
         sp.check_output(args, text = True)
     except sp.CalledProcessError as e:
         print('Failed to add initial rule to firewall:\n%s' % e.output)
+
+    args = [
+        'c:\\windows\\system32\\Netsh.exe',
+        'advfirewall',
+        'firewall',
+        'add',
+        'rule',
+        'name="TAserverfirewall"',
+        'protocol=tcp',
+        'dir=in',
+        'enable=yes',
+        'profile=any',
+        'localport=9001',
+        'action=allow'
+    ]
+    try:
+        sp.check_output(args, text=True)
+    except sp.CalledProcessError as e:
+        print('Failed to add initial rule to firewall:\n%s' % e.output)
+
 
 def removerule(ip, port):
     args = [
