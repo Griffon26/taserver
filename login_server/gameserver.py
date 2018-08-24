@@ -195,5 +195,10 @@ class GameServer(Peer):
             player_to_kick.set_state(UnauthenticatedState)
             modify_firewall('blacklist', 'add', player_to_kick.ip)
 
+            def remove_blacklist_rule():
+                modify_firewall('blacklist', 'remove', player_to_kick.ip)
+
+            self.login_server.pending_callbacks.add(self.login_server, 8 * 3600, remove_blacklist_rule)
+
         self.player_being_kicked = None
 
