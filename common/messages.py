@@ -28,6 +28,8 @@ _MSGID_LOGIN2LAUNCHER_NEXTMAP = 0x1000
 _MSGID_LOGIN2LAUNCHER_SETPLAYERLOADOUTS = 0x1001
 _MSGID_LOGIN2LAUNCHER_REMOVEPLAYERLOADOUTS = 0x1002
 _MSGID_LOGIN2LAUNCHER_PROTOCOL_VERSION = 0x1003
+_MSGID_LOGIN2LAUNCHER_ADD_PLAYER = 0x1004
+_MSGID_LOGIN2LAUNCHER_REMOVE_PLAYER = 0x1005
 
 _MSGID_LAUNCHER2LOGIN_SERVERINFO = 0x2000
 _MSGID_LAUNCHER2LOGIN_MAPINFO = 0x2001
@@ -87,6 +89,24 @@ class Login2LauncherProtocolVersionMessage(Message):
 
     def __init__(self, version: str):
         self.version = version
+
+
+# Example json: { 'unique_id' : 123, 'ip' : '1.2.3.4' }
+class Login2LauncherAddPlayer(Message):
+    msg_id = _MSGID_LOGIN2LAUNCHER_ADD_PLAYER
+
+    def __init__(self, unique_id: int, ip: str):
+        self.unique_id = unique_id
+        self.ip = ip
+
+
+# Example json: { 'unique_id' : 123, 'ip' : '1.2.3.4' }
+class Login2LauncherRemovePlayer(Message):
+    msg_id = _MSGID_LOGIN2LAUNCHER_REMOVE_PLAYER
+
+    def __init__(self, unique_id: int, ip: str):
+        self.unique_id = unique_id
+        self.ip = ip
 
 
 class Launcher2LoginServerInfoMessage(Message):
@@ -191,7 +211,7 @@ class Game2LauncherMatchEndMessage(Message):
 class Game2LauncherLoadoutRequest(Message):
     msg_id = _MSGID_GAME2LAUNCHER_LOADOUTREQUEST
 
-    def __init__(self, player_unique_id, class_id, loadout_number):
+    def __init__(self, player_unique_id: int, class_id: int, loadout_number: int):
         self.player_unique_id = player_unique_id
         self.class_id = class_id
         self.loadout_number = loadout_number
@@ -243,6 +263,8 @@ _message_classes = [
     Login2LauncherNextMapMessage,
     Login2LauncherSetPlayerLoadoutsMessage,
     Login2LauncherRemovePlayerLoadoutsMessage,
+    Login2LauncherAddPlayer,
+    Login2LauncherRemovePlayer,
 
     Launcher2LoginServerInfoMessage,
     Launcher2LoginMapInfoMessage,

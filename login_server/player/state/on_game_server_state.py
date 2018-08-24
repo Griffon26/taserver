@@ -19,8 +19,9 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from common.firewall import modify_firewall
+from login_server.player.state.unauthenticated_state import UnauthenticatedState
 from ...datatypes import *
-from ...firewall import modify_gameserver_whitelist, modify_loginserver_blacklist
 from .player_state import handles
 from .authenticated_state import AuthenticatedState
 
@@ -33,17 +34,17 @@ class OnGameServerState(AuthenticatedState):
 
     def on_enter(self):
         print("%s is entering state %s" % (self.player, type(self).__name__))
-        modify_gameserver_whitelist('add', self.player, self.game_server)
         self.player.game_server = self.game_server
+        self.player.game_server.add_player(self.player)
         self.player.game_server.set_player_loadouts(self.player)
         self.player.team = None
 
     def on_exit(self):
         print("%s is exiting state %s" % (self.player, type(self).__name__))
         self.player.game_server.remove_player_loadouts(self.player)
+        self.player.game_server.remove_player(self.player)
         self.player.game_server = None
         self.player.team = None
-        modify_gameserver_whitelist('remove', self.player, self.game_server)
 
     @handles(packet=a00b3)
     def handle_server_disconnect(self, request):  # server disconnect
@@ -69,10 +70,10 @@ class OnGameServerState(AuthenticatedState):
                 reply.content = [
                     m02c4().set(self.player.game_server.serverid2),
                     m034a().set(self.player.display_name),
-                    m0348().set(self.player.id),
+                    m0348().set(self.player.unique_id),
                     m02fc().set(0x0001942F),
                     m0442(),
-                    m0704().set(other_player.id),
+                    m0704().set(other_player.unique_id),
                     m0705().set(other_player.display_name)
                 ]
                 self.player.login_server.send_all_on_server(reply, self.player.game_server)
@@ -97,7 +98,7 @@ class OnGameServerState(AuthenticatedState):
 
                     reply = a018c()
                     reply.content = [
-                        m0348().set(playertokick.id),
+                        m0348().set(playertokick.unique_id),
                         m034a().set(playertokick.display_name)
                     ]
 
@@ -121,9 +122,8 @@ class OnGameServerState(AuthenticatedState):
                         # you're really in
                         for msg in [a00b0(), a0035().setmainmenu(), a006f()]:
                             playertokick.send(msg)
-                        playertokick.game_server = None
-                        modify_gameserver_whitelist('remove', playertokick, current_server)
-                        modify_loginserver_blacklist('add', playertokick)
+                        playertokick.set_state(UnauthenticatedState)
+                        modify_firewall('blacklist', 'add', playertokick.ip)
 
                     current_server.playerbeingkicked = None
 

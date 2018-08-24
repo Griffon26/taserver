@@ -128,7 +128,7 @@ class AuthenticatedState(PlayerState):
 
                 self.player.send(request)
 
-                if self.player.id != addressed_player.id:
+                if self.player.unique_id != addressed_player.unique_id:
                     addressed_player.send(request)
 
         else:  # public

@@ -23,7 +23,9 @@ import time
 from common.connectionhandler import Peer
 from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherSetPlayerLoadoutsMessage, \
-                            Login2LauncherRemovePlayerLoadoutsMessage
+                            Login2LauncherRemovePlayerLoadoutsMessage, \
+                            Login2LauncherAddPlayer, \
+                            Login2LauncherRemovePlayer
 
 
 class GameServer(Peer):
@@ -65,15 +67,27 @@ class GameServer(Peer):
 
         return time_remaining
 
+    def add_player(self, player):
+        assert player.unique_id not in self.player_ids
+        self.player_ids.add(player.unique_id)
+        msg = Login2LauncherAddPlayer(player.unique_id, player.ip)
+        self.send(msg)
+
+    def remove_player(self, player):
+        assert player.unique_id in self.player_ids
+        self.player_ids.remove(player.unique_id)
+        msg = Login2LauncherRemovePlayer(player.unique_id, player.ip)
+        self.send(msg)
+
     def set_player_loadouts(self, player):
+        assert player.unique_id in self.player_ids
         msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id, player.loadouts.loadout_dict)
         self.send(msg)
-        self.player_ids.add(player.unique_id)
 
     def remove_player_loadouts(self, player):
+        assert player.unique_id in self.player_ids
         msg = Login2LauncherRemovePlayerLoadoutsMessage(player.unique_id)
         self.send(msg)
-        self.player_ids.remove(player.unique_id)
 
     def start_next_map(self):
         self.be_score = 0

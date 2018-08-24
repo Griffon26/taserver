@@ -21,14 +21,17 @@
 from distutils.version import StrictVersion
 import gevent
 
+from common.firewall import modify_firewall
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common import versions
 from .gamecontrollerhandler import GameController
 from .loginserverhandler import LoginServer
 
+
 class IncompatibleVersionError(Exception):
     pass
+
 
 class Launcher:
     def __init__(self, game_server_config, incoming_queue):
@@ -47,6 +50,8 @@ class Launcher:
             Login2LauncherNextMapMessage: self.handle_next_map_message,
             Login2LauncherSetPlayerLoadoutsMessage: self.handle_set_player_loadouts_message,
             Login2LauncherRemovePlayerLoadoutsMessage: self.handle_remove_player_loadouts_message,
+            Login2LauncherAddPlayer: self.handle_add_player_message,
+            Login2LauncherRemovePlayer: self.handle_remove_player_message,
             Game2LauncherProtocolVersionMessage: self.handle_game_controller_protocol_version_message,
             Game2LauncherTeamInfoMessage: self.handle_team_info_message,
             Game2LauncherScoreInfoMessage: self.handle_score_info_message,
@@ -117,6 +122,12 @@ class Launcher:
     def handle_remove_player_loadouts_message(self, msg):
         print('launcher: loadouts removed for player 0x%08X' % msg.unique_id)
         del(self.players[msg.unique_id])
+
+    def handle_add_player_message(self, msg):
+        modify_firewall('whitelist', 'add', msg.ip)
+
+    def handle_remove_player_message(self, msg):
+        modify_firewall('whitelist', 'remove', msg.ip)
 
     def handle_game_controller_protocol_version_message(self, msg):
         controller_version = StrictVersion(msg.version)
