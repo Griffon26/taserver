@@ -54,10 +54,10 @@ class UnauthenticatedState(PlayerState):
             self.player.load()
             self.player.send([
                 a003d().set_player(self.player.unique_id, self.player.display_name, '', self.player.loadouts),
-                m0662().setoriginalbytes(0x8898, 0xdaff),
-                m0633(),
-                m063e(),
-                m067e(),
+                m0662().set_original_bytes(0x8898, 0xdaff),
+                m0633().set_original_bytes(0xdaff, 0x19116),
+                m063e().set_original_bytes(0x19116, 0x1c6ee),
+                m067e().set_original_bytes(0x1c6ee, 0x1ec45),
                 m0442(),
                 m02fc(),
                 m0219(),
