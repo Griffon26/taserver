@@ -137,6 +137,136 @@ class AuthenticatedState(PlayerState):
             if self.player.game_server:
                 self.player.game_server.send_all_players(request)
 
+            message_text = request.findbytype(m02e6).value
+            if message_text == 'end':
+                msg = a019a()
+                msg.content = [
+                    m0348().set(self.player.unique_id),
+                    m063d().set(0x000000e6),
+                    m0637().set(0x000001b8),
+                    m00c3().set(0x00001388),
+                    m0608().set(0x00000001),
+                    m00b7().set(hexparse('53 98 BC AF 35 28 E5 40')),
+                    m068c().set(0x00000001)
+                ]
+                self.player.send(msg)
+
+                msg = a00fb().set([
+                    m00fe().set([[
+                        m0095().set(0x00ba8dc8),
+                        m0363().set(0x00000693),
+                        m00a2().set("101330"),
+                        m021f().set(0x00000000),
+                        m05dc().set(0x00000000),
+                        m0684().set(0x00004df5),
+                        m057d().set(0x00000000),
+                        m057e().set(hexparse('00 00 00 00 00 00 00 00')),
+                        m057f().set(0x000027a4),
+                        m0242().set(0x00000000),
+                        m00d4().set(0x00000000),
+                        m0502().set(0x00000000),
+                        m04cb().set(0x00000000),
+                        m0138(),
+                        m0596().set(0x00000000),
+                        m0597().set(0x00000000),
+                    ]]),
+                    m0348().set(self.player.unique_id)
+                ])
+                self.player.send(msg)
+
+                msg = a010f()
+                msg.content = [
+                    m0348().set(self.player.unique_id),
+                    m026d().set(0x00001ec5),
+                    m04d4().set(hexparse('d8 7a e8 af 35 28 e5 40')),
+                    m02a3().set(0x00000000),
+                    m0259().set(0x00000001),
+                    m006e().set(hexparse('01 00 79')),
+                    m01c9().set(0x00000000),
+                    m0138().set([[
+                        m0348().set(self.player.unique_id),
+                        m0263().set(0x010ce8fb),
+                        m02a3().set(0x00000000),
+                        m0259().set(0x00000001),
+                        m006e().set(hexparse('01 00 79')),
+                        m01c9().set(0x00000000),
+                        m04d4().set(hexparse('c5 a8 e1 af 35 28 e5 40')),
+                        m026d().set(0x00001ec5),
+                        m02ff().set(0x00019605),
+                        m0273().set(0x000027f4),
+                        m04fa().set(0x00001e8e),
+                        m061d().set(0x00000000),
+                        m01e8().set(0x00000000),
+                        m01f5().set(hexparse('00 00 00 00 00 00 00 00')),
+                        m0380().set(0x00000000),
+                        m0272().set(0x00000000),
+                        m0398().set(0x00000000),
+                    ]])
+                ]
+                self.player.send(msg)
+
+                msg = a0175().set([
+                    m0442().set(0x01),
+                    m02fc().set(0x00000000),
+                    m05cf().set(0x00000000),
+                    m02ab().set(0x000001f4),
+                    m04d9().set(0x00002156),
+                    m05cc().set(0x00000000),
+                    m035a().set(0x00000000),
+                    m0683().set(0x00000003)
+                ])
+                self.player.send(msg)
+
+                msg = a006d().set([
+                    m0632().set([[
+                        m0348().set(self.player.unique_id),
+                        m063d().set(0x00000003),
+                        m0637().set(0x0000000C),
+                        m00c3().set(0x0000001A),
+                        m0608().set(0x00000001)
+                    ]])
+                ])
+                self.player.send(msg)
+
+                msg = a006d().set([
+                    m04cb().set(0x0071b250),
+                    m05dc().set(0x004057af),
+                    m03ce().set(0x43998000),
+                    m00fe().set([[
+                        m0684().set(0x0051ecda),
+                        m0095().set(0x000a1fd5),
+                        m0363().set(0x00000693),
+                        m00a2().set("101330"),
+                        m021f().set(0x00000000),
+                        m05dc().set(0x00000000),
+                        m057d().set(0x00000000),
+                        m057e().set(hexparse('00 00 00 00 00 00 00 00')),
+                        m057f().set(0x000027a4),
+                        m0242().set(0x00000000),
+                        m00d4().set(0x00000000),
+                        m0502().set(0x00000000),
+                        m04cb().set(0x00000000),
+                        m0138(),
+                        m0596().set(0x00000000),
+                        m0597().set(0x00000000)
+                    ]]),
+                    m0632(),
+                    m0296().set(0x00000032)
+                ])
+                self.player.send(msg)
+
+                msg = a00b0().set([
+                    m035b().set("y"),
+                    m0348().set(self.player.unique_id),
+                    m042a().set(0x00000006),
+                    m0558().set(0x00000000),
+                    m02c7().set(0x0000d1c7),
+                    m0333().set(0x00000000),
+                    m02ff().set(0x00000000),
+                    m06ee().set(0x00000000)
+                ])
+                self.player.send(msg)
+
     @handles(packet=a0175)
     def handle_promotion_code_redemption(self, request):
         authcode = request.findbytype(m0669).value
