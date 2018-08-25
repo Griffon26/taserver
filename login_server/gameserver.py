@@ -29,6 +29,7 @@ from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherRemovePlayer
 from .datatypes import *
 from .player.state.unauthenticated_state import UnauthenticatedState
+from .player.state.authenticated_state import AuthenticatedState
 
 
 class GameServer(Peer):
@@ -49,6 +50,11 @@ class GameServer(Peer):
         self.match_time_counting = False
         self.be_score = 0
         self.ds_score = 0
+
+    def disconnect(self):
+        for player in self.players.values():
+            player.set_state(AuthenticatedState)
+        super().disconnect()
 
     def set_info(self, port, description, motd):
         self.port = port
