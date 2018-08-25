@@ -21,7 +21,7 @@
 from distutils.version import StrictVersion
 import gevent
 
-from common.firewall import modify_firewall
+from common.firewall import reset_firewall, modify_firewall
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common import versions
@@ -61,6 +61,7 @@ class Launcher:
         }
 
     def run(self):
+        reset_firewall('whitelist')
         while True:
             for message in self.incoming_queue:
                 handler = self.message_handlers[type(message)]

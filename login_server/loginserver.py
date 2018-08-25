@@ -23,6 +23,7 @@ import gevent
 import random
 import string
 
+from common.firewall import reset_firewall
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.versions import launcher2loginserver_protocol_version
@@ -64,6 +65,7 @@ class LoginServer:
     def run(self):
         gevent.getcurrent().name = 'loginserver'
         print('server: login server started')
+        reset_firewall('blacklist')
         while True:
             for message in self.server_queue:
                 handler = self.message_handlers[type(message)]

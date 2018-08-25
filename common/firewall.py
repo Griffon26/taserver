@@ -19,24 +19,18 @@
 #
 
 from gevent import socket
+import json
 
 from .tcpmessage import TcpMessageWriter
 
 server_address = ("127.0.0.1", 9801)
 
 
-def modify_firewall(list_type, action, ip):
+def _send_command(command):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.connect(server_address)
-
-            list_type = b'w' if list_type == 'whitelist' else b'b'
-            action = b'a' if action == 'add' else b'r'
-            ip_parts = bytes(int(ip_part) for ip_part in ip.split('.'))
-
-            data = list_type + action + ip_parts
-            assert len(data) == 6
-            TcpMessageWriter(sock).send(data)
+            TcpMessageWriter(sock).send(json.dumps(command).encode('utf8'))
 
     except ConnectionRefusedError:
         print('--------------------------------------------------------------\n'
@@ -44,3 +38,21 @@ def modify_firewall(list_type, action, ip):
               'the firewall rules.\n'
               'Did you forget to run start_taserver_firewall.py (as admin)?\n'
               '--------------------------------------------------------------')
+
+
+def reset_firewall(list_type):
+    command = {
+        'list' : list_type,
+        'action' : 'reset'
+    }
+    _send_command(command)
+
+
+def modify_firewall(list_type, action, ip):
+    command = {
+        'list' : list_type,
+        'action' : action,
+        'ip' : ip
+    }
+    _send_command(command)
+
