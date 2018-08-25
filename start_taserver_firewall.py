@@ -25,6 +25,8 @@ from gevent.server import StreamServer
 import gevent.subprocess as sp
 import re
 
+from common.tcpmessage import TcpMessageReader
+
 # Unused for now, but it'll need to move to the login server
 '''
 whitelistfilename = 'firewallwhitelist.txt'
@@ -217,7 +219,7 @@ def disablerulesforprogramname(programname):
               (programname, e.output))
 
 
-def handleserver(serverqueue):
+def handle_server(server_queue):
     lists = {
         'whitelist' : {
             'ruletype' : 'allow',
@@ -242,7 +244,7 @@ def handleserver(serverqueue):
     createinitialrules()
     
     while True:
-        listtype, action, ip = serverqueue.get()
+        listtype, action, ip = server_queue.get()
         thelist = lists[listtype]
 
         if action == 'add':
@@ -260,28 +262,27 @@ def handleserver(serverqueue):
 
 
 def main(args):
-    serverqueue = gevent.queue.Queue()
+    server_queue = gevent.queue.Queue()
     
-    gevent.spawn(handleserver, serverqueue)
+    gevent.spawn(handle_server, server_queue)
 
-    def handleclient(socket, address):
-        ipbytes = socket.recv(6)
-        socket.close()
-        if(len(ipbytes) == 6):
-            listtype = 'whitelist' if ipbytes[0] == ord('w') else 'blacklist'
-            action = 'add' if ipbytes[1] == ord('a') else 'remove'
-            serverqueue.put( (listtype,
-                              action,
-                              (ipbytes[2], ipbytes[3], ipbytes[4], ipbytes[5])) )
+    def handle_client(socket, address):
+        msg = TcpMessageReader(socket).receive()
+        assert len(msg) == 6
+        listtype = 'whitelist' if msg[0:1] == b'w' else 'blacklist'
+        action = 'add' if msg[1:2] == b'a' else 'remove'
+        server_queue.put((listtype,
+                          action,
+                          tuple(msg[2:6])))
 
-    server = StreamServer(('127.0.0.1', 9801), handleclient)
+    server = StreamServer(('127.0.0.1', 9801), handle_client)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         removeallrules()
 
 
-if __name__ == '__main__':        
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     main(args)

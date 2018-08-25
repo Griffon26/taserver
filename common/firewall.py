@@ -20,25 +20,27 @@
 
 from gevent import socket
 
+from .tcpmessage import TcpMessageWriter
+
 server_address = ("127.0.0.1", 9801)
 
 
 def modify_firewall(list_type, action, ip):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.connect(server_address)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.connect(server_address)
 
-        list_type = b'w' if list_type == 'whitelist' else b'b'
-        action = b'a' if action == 'add' else b'r'
-        ip_parts = bytes(int(ip_part) for ip_part in ip.split('.'))
+            list_type = b'w' if list_type == 'whitelist' else b'b'
+            action = b'a' if action == 'add' else b'r'
+            ip_parts = bytes(int(ip_part) for ip_part in ip.split('.'))
 
-        data = list_type + action + ip_parts
-        sock.sendall(data)
-        sock.close()
+            data = list_type + action + ip_parts
+            assert len(data) == 6
+            TcpMessageWriter(sock).send(data)
 
     except ConnectionRefusedError:
-        print('-------------------------------------------------------------\n'
-              'Warning: Failed to connect to taserverfirewall for modifying \n'
+        print('--------------------------------------------------------------\n'
+              'Warning: Failed to connect to taserver firewall for modifying \n'
               'the firewall rules.\n'
-              'Did you forget to start taserverfirewall.py?\n'
-              '-------------------------------------------------------------')
+              'Did you forget to run start_taserver_firewall.py (as admin)?\n'
+              '--------------------------------------------------------------')
