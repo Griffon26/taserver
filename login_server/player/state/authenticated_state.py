@@ -160,12 +160,25 @@ class AuthenticatedState(PlayerState):
         else:
             loadout_changed = False
             for arr in request.findbytype(m0144).arrays:
-                menu_item = findbytype(arr, m0661).value
-                field = findbytype(arr, m0369).value
-                value = findbytype(arr, m0261).value
-                if self.player.loadouts.is_loadout_menu_item(menu_item):
-                    self.player.loadouts.modify(menu_item, field, int(value))
-                    loadout_changed = True
+                setting = findbytype(arr, m0369).value
+                int_field = findbytype(arr, m0261)
+                string_field = findbytype(arr, m0437)
+
+                menu_area_field = findbytype(arr, m0661)
+
+                if menu_area_field:
+                    if self.player.loadouts.is_loadout_menu_item(menu_area_field.value):
+                        self.player.loadouts.modify(menu_area_field.value, setting, int(int_field.value))
+                        loadout_changed = True
+                    elif menu_area_field.value == MENU_AREA_SETTINGS:
+                        # Ignore user settings. They'll have to store them themselves
+                        pass
+                    else:
+                        value = int_field.value if int_field else string_field.value
+                        print('******* Setting %08X of menu area %s to value %s' % (setting, menu_area_field.value, value))
+                else:
+                    value = int_field.value if int_field else string_field.value
+                    print('******* Setting %08X to value %s' % (setting, value))
 
             if self.player.game_server and loadout_changed:
                 self.player.game_server.set_player_loadouts(self.player)

@@ -21,10 +21,6 @@
 from .loadouts import Loadouts
 from common.connectionhandler import Peer
 
-TEAM_BLOODEAGLE = 0
-TEAM_DIAMONDSWORD = 1
-TEAM_SPEC = 255
-
 
 class Player(Peer):
 
