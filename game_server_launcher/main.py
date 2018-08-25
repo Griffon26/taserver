@@ -32,7 +32,6 @@ INI_PATH = os.path.join('data', 'gameserverlauncher.ini')
 
 
 def main():
-    incoming_queue = gevent.queue.Queue()
 
     config = configparser.ConfigParser()
     with open(INI_PATH) as f:
@@ -43,6 +42,8 @@ def main():
     tasks = []
     try:
         while restart:
+            incoming_queue = gevent.queue.Queue()
+
             tasks = [
                 gevent.spawn(run_game_server, config['gameserver']),
                 gevent.spawn(handle_login_server, config['loginserver'], incoming_queue),
@@ -51,7 +52,7 @@ def main():
             ]
 
             # Wait for any of the tasks to terminate
-            finished_greenlets = gevent.joinall(tasks, count = 1)
+            finished_greenlets = gevent.joinall(tasks, count=1)
 
             print('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
 
@@ -73,9 +74,10 @@ def main():
                 print('\n-------------------------------------------\n')
                 restart = False
 
-            print('Killing everything and waiting %s seconds before %s...' %
-                  (restart_delay, ('restarting' if restart else 'exiting')))
+            print('Killing all tasks...')
             gevent.killall(tasks)
+            print('Waiting %s seconds before %s...' %
+                  (restart_delay, ('restarting' if restart else 'exiting')))
             gevent.sleep(restart_delay)
 
     except KeyboardInterrupt:

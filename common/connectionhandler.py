@@ -196,20 +196,16 @@ class OutgoingConnectionHandler(ConnectionHandler):
     def run(self, retry_time = None):
         task_id = id(gevent.getcurrent())
 
-        success = False
-        while not success:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        while True:
             try:
-                sock.connect((self.address, self.port))
-                success = True
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.connect((self.address, self.port))
+                    self._handle(sock, (str(self.address), self.port))
+                    break
             except ConnectionRefusedError:
-                sock.close()
                 if retry_time is not None:
                     print('%s(%s): remote end is refusing connections. Reconnecting in %d seconds...' %
                           (self.task_name, task_id, retry_time))
                     gevent.sleep(retry_time)
                 else:
                     break
-
-        if success:
-            self._handle(sock, (str(self.address), self.port))

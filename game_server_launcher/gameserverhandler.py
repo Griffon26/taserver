@@ -57,16 +57,15 @@ def run_game_server(game_server_config):
                 "Invalid 'controller_dll' specified under [gameserver]: the specified file does not exist. "
                 "Either remove the key from the ini file to work without a controller or correct the specified location.")
 
-    while True:
-        print('gameserver: Starting a new TribesAscend server...')
-        process = sp.Popen([exe_path, *args], cwd=working_dir)
-        try:
-            print('gameserver: Started process with pid: ', process.pid)
-            if dll_to_inject:
-                gevent.sleep(10)
-                print('gameserver: Injecting game controller DLL into game server...')
-                inject(process.pid, dll_to_inject)
-                print('gameserver: Injection done.')
-            process.wait()
-        finally:
-            process.terminate()
+    print('gameserver: Starting a new TribesAscend server...')
+    process = sp.Popen([exe_path, *args], cwd=working_dir)
+    try:
+        print('gameserver: Started process with pid: ', process.pid)
+        if dll_to_inject:
+            gevent.sleep(10)
+            print('gameserver: Injecting game controller DLL into game server...')
+            inject(process.pid, dll_to_inject)
+            print('gameserver: Injection done.')
+        process.wait()
+    finally:
+        process.terminate()

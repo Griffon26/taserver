@@ -22,6 +22,7 @@ from common.connectionhandler import *
 from common.messages import parse_message
 from ipaddress import IPv4Address
 
+
 class LoginServerReader(TcpMessageConnectionReader):
     def decode(self, msg_bytes):
         return parse_message(msg_bytes)
@@ -55,4 +56,4 @@ class LoginServerHandler(OutgoingConnectionHandler):
 
 def handle_login_server(login_server_config, incoming_queue):
     login_server_handler = LoginServerHandler(login_server_config, incoming_queue)
-    login_server_handler.run(retry_time = 10)
+    login_server_handler.run(retry_time=10)
