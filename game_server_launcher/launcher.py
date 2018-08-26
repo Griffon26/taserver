@@ -43,6 +43,11 @@ class Launcher:
         self.game_controller = None
         self.login_server = None
 
+        self.last_team_info_message = None
+        self.last_score_info_message = None
+        self.last_match_time_message = None
+        self.last_match_end_message = None
+
         self.message_handlers = {
             PeerConnectedMessage: self.handle_peer_connected,
             PeerDisconnectedMessage: self.handle_peer_disconnected,
@@ -85,6 +90,20 @@ class Launcher:
                                                   self.game_server_config['description'],
                                                   self.game_server_config['motd'])
             self.login_server.send(msg)
+
+            # Send the latest relevant information that was received while the login server was not connected
+            if self.last_team_info_message:
+                self.login_server.send(self.last_team_info_message)
+                self.last_team_info_message = None
+            if self.last_score_info_message:
+                self.login_server.send(self.last_score_info_message)
+                self.last_score_info_message = None
+            if self.last_match_time_message:
+                self.login_server.send(self.last_match_time_message)
+                self.last_match_time_message = None
+            if self.last_match_end_message:
+                self.login_server.send(self.last_match_end_message)
+                self.last_match_end_message = None
 
         else:
             assert False, "Invalid connection message received"
@@ -145,19 +164,31 @@ class Launcher:
             assert int(player_id) in self.players
 
         msg = Launcher2LoginTeamInfoMessage(msg.player_to_team_id)
-        self.login_server.send(msg)
+        if self.login_server:
+            self.login_server.send(msg)
+        else:
+            self.last_team_info_message = msg
 
     def handle_score_info_message(self, msg):
         msg = Launcher2LoginScoreInfoMessage(msg.be_score, msg.ds_score)
-        self.login_server.send(msg)
+        if self.login_server:
+            self.login_server.send(msg)
+        else:
+            self.last_score_info_message = msg
 
     def handle_match_time_message(self, msg):
         msg = Launcher2LoginMatchTimeMessage(msg.seconds_remaining, msg.counting)
-        self.login_server.send(msg)
+        if self.login_server:
+            self.login_server.send(msg)
+        else:
+            self.last_match_time_message = msg
 
     def handle_match_end_message(self, msg):
         msg = Launcher2LoginMatchEndMessage()
-        self.login_server.send(msg)
+        if self.login_server:
+            self.login_server.send(msg)
+        else:
+            self.last_match_end_message = msg
 
     def handle_loadout_request_message(self, msg):
         if msg.player_unique_id not in self.players:
