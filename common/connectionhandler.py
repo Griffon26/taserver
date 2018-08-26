@@ -44,6 +44,7 @@ class ConnectionReader:
         self.sock = sock
 
     def run(self):
+        gevent.getcurrent().name = self.task_name
         self.incoming_queue.put(PeerConnectedMessage(self.peer))
 
         try:
@@ -85,13 +86,14 @@ class ConnectionWriter:
         self.sock = sock
 
     def run(self):
+        gevent.getcurrent().name = self.task_name
         while True:
             msg = self.outgoing_queue.get()
             if not isinstance(msg, PeerDisconnectedMessage):
                 try:
                     msg_bytes = self.encode(msg)
                     self.send(msg_bytes)
-                except ConnectionResetError:
+                except (ConnectionResetError, ConnectionAbortedError):
                     # Ignore a closed connection here. The reader will notice
                     # it and send us the DisconnectedMessage to tell us that
                     # we can close the socket and terminate
@@ -149,6 +151,7 @@ class ConnectionHandler:
         raise NotImplementedError('create_connection_instances must be implemented in a subclass of IncomingConnectionHandler')
 
     def _handle(self, sock, address):
+        gevent.getcurrent().name = self.task_name
         task_id = id(gevent.getcurrent())
         print('%s(%s): connected' % (self.task_name, task_id))
 
