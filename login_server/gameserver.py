@@ -52,7 +52,7 @@ class GameServer(Peer):
         self.ds_score = 0
 
     def disconnect(self):
-        for player in self.players.values():
+        for player in list(self.players.values()):
             player.set_state(AuthenticatedState)
         super().disconnect()
 
