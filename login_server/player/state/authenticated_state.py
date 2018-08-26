@@ -20,6 +20,7 @@
 #
 
 from ...datatypes import *
+from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles
 
 
@@ -61,7 +62,7 @@ class AuthenticatedState(PlayerState):
         menu_fragments = {
             0x01de: originalfragment(0x38d17, 0x3d0fe),
             0x01ed: originalfragment(0x219d9, 0x2219e),
-            0x01f0: originalfragment(0x4758e, 0x54bbe),
+            0x01f0: originalfragment(0x4758e, 0x4ae15),
             0x01f1: originalfragment(0x54bc6, 0x54db0),
             0x01f2: originalfragment(0x55a2e, 0x57375),
             0x01f3: originalfragment(0x54db8, 0x55a26),
@@ -196,3 +197,38 @@ class AuthenticatedState(PlayerState):
             m00e9().setservers([game_server]).setplayers(players)
         ]
         self.player.send(reply)
+
+    @handles(packet=a011b)
+    def handle_edit_friend_list(self, request):
+        if self.player.registered:
+            add = request.findbytype(m0592).value
+            if add:
+                name = request.findbytype(m034a).value
+                # TODO: also make this work for registered players that are offline
+                other_player = self.player.login_server.find_player_by(login_name=name)
+
+                if other_player and other_player.registered:
+                    self.player.friends.add(other_player.unique_id, name)
+
+            else: # remove
+                unique_id = request.findbytype(m020d).value
+                self.player.friends.remove(unique_id)
+
+    @handles(packet=a011c)
+    def handle_request_for_friend_list(self, request):
+        assert request.content == []
+
+        if self.player.registered:
+
+            reply = a011c().set([
+                m0348().set(self.player.unique_id),
+                m0116().set([[
+                    m034a().set(friend['login_name']),
+                    m020d().set(friend_id),
+                    m0296(),
+                    m0591().set(FRIEND_STATE_VISIBLE),
+                    m0307()] for friend_id, friend in self.player.friends.friends_dict.items()]
+                )
+            ])
+
+            self.player.send(reply)

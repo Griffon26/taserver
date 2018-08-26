@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from .friends import Friends
 from .loadouts import Loadouts
 from common.connectionhandler import Peer
 
@@ -25,6 +26,7 @@ from common.connectionhandler import Peer
 class Player(Peer):
 
     loadout_file_path = 'data/players/%s_loadouts.json'
+    friends_file_path = 'data/players/%s_friends.json'
 
     def __init__(self, address):
         super().__init__()
@@ -43,6 +45,7 @@ class Player(Peer):
         self.login_server = None
         self.game_server = None
         self.loadouts = Loadouts()
+        self.friends = Friends()
         self.team = None
 
     def set_state(self, state_class, *args, **kwargs):
@@ -59,10 +62,12 @@ class Player(Peer):
     def load(self):
         if self.registered:
             self.loadouts.load(self.loadout_file_path % self.login_name)
+            self.friends.load(self.friends_file_path % self.login_name)
 
     def save(self):
         if self.registered:
             self.loadouts.save(self.loadout_file_path % self.login_name)
+            self.friends.save(self.friends_file_path % self.login_name)
 
     def handle_request(self, request):
         self.state.handle_request(request)
