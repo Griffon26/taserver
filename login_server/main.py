@@ -84,7 +84,7 @@ def main():
             print('Giving the dump greenlet some time to finish writing to disk...')
             gevent.sleep(2)
 
-        print('Killing everything and waiting 5 seconds before restarting...')
+        print('Killing everything and waiting 10 seconds before exiting...')
         gevent.killall(tasks)
         gevent.sleep(5)
 

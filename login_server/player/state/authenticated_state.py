@@ -168,7 +168,8 @@ class AuthenticatedState(PlayerState):
 
                 if menu_area_field:
                     if self.player.loadouts.is_loadout_menu_item(menu_area_field.value):
-                        self.player.loadouts.modify(menu_area_field.value, setting, int(int_field.value))
+                        equip_value = int(int_field.value) if int_field else string_field.value
+                        self.player.loadouts.modify(menu_area_field.value, setting, equip_value)
                         loadout_changed = True
                     elif menu_area_field.value == MENU_AREA_SETTINGS:
                         # Ignore user settings. They'll have to store them themselves

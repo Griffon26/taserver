@@ -2124,9 +2124,13 @@ class a003d(enumblockarray):
 
                 entry_array = []
                 for slot, equipment in loadout.items():
+                    if isinstance(equipment, str):
+                        equip_field = m0437().set(equipment)
+                    else:
+                        equip_field = m0261().set(str(equipment))
                     entry_array.append([
                         m0369().set(slot),
-                        m0261().set(str(equipment))
+                        equip_field
                     ])
                 entry_array.append([
                     m0369().set(0x00000442),

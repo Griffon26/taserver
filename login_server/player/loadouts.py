@@ -19,6 +19,7 @@
 #
 
 import json
+import string
 
 from ..datatypes import *
 
@@ -26,6 +27,7 @@ LIGHT_CLASS = 1683
 MEDIUM_CLASS = 1693
 HEAVY_CLASS = 1692
 
+SLOT_LOADOUT_NAME = 1341
 SLOT_PRIMARY_WEAPON = 1086
 SLOT_SECONDARY_WEAPON = 1087
 SLOT_TERTIARY_WEAPON = 1765
@@ -117,10 +119,15 @@ class Loadouts:
 
         max_loadouts = 9
 
+        def finish_default_loadout(default_loadout, i):
+            complete_loadout = default_loadout.copy()
+            complete_loadout[SLOT_LOADOUT_NAME] = 'LOADOUT %s' % string.ascii_uppercase[i]
+            return complete_loadout
+
         default_loadouts = {
-            LIGHT_CLASS: {i: dict(default_light_loadout) for i in range(max_loadouts)},
-            MEDIUM_CLASS: {i: dict(default_medium_loadout) for i in range(max_loadouts)},
-            HEAVY_CLASS: {i: dict(default_heavy_loadout) for i in range(max_loadouts)}
+            LIGHT_CLASS: {i: finish_default_loadout(default_light_loadout, i) for i in range(max_loadouts)},
+            MEDIUM_CLASS: {i: finish_default_loadout(default_medium_loadout, i) for i in range(max_loadouts)},
+            HEAVY_CLASS: {i: finish_default_loadout(default_heavy_loadout, i) for i in range(max_loadouts)}
         }
 
         return default_loadouts
