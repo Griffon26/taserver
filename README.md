@@ -1,46 +1,101 @@
 # taserver
 A replacement implementation of the Tribes Ascend login server
 
-## How to use it
+This software allows anyone to host the servers that are needed to play Tribes Ascend 
+multiplayer games. 
 
-1. Get the code for this project from github
+### Joining games
 
-2. Modify `dir` under the `[gameserver]` section in `data/gameserverlauncher.ini` to point to the directory where your TribesAscend.exe is located. For instance:
+If you just want to join games on the login server hosted by me (Griffon26), then
+you don't need to download anything. All you need to do is create a Windows shortcut to
+`TribesAscend.exe` and add `-hostx=18.195.72.223` to the end of the target field, like this:
+
+![Shortcut dialog](/docs/images/tashortcut.png?raw=true)
+
+Start the game through the shortcut and log in with any name and password. The servers
+listed in the server browser will be servers hosted by fellow players.
+
+### Hosting a dedicated server
+
+If you want to run a game server and have it show up in the server list for players who
+connect to the replacement login server, follow these steps:
+
+1. Get the code for [this project](https://github.com/Griffon26/taserver) from github
+
+2. Download the latest `TAMods-Server.dll` (ask on the 
+   [public Discord channel](https://discord.gg/8enekHQ) where to find it)
+
+3. Modify `dir` under the `[gameserver]` section in `data/gameserverlauncher.ini` to point to 
+   the directory where your TribesAscend.exe is located. For instance:
 
     ```
     C:\Games\Tribes Ascend\Binaries\Win32
     ```
-  
-3. Create a shortcut to TribesAscend.exe with the following command line for starting a client that will connect to the login server running on your own machine:
+    
+4. Modify `controller_dll` under the `[gameserver]` section in `data/gameserverlauncher.ini` to 
+   point to the downloaded TAMods-Server.dll.
 
-    ```
-    TribesAscend.exe -hostx=127.0.0.1
-    ```
-3. Install python 3
+5. Install python 3
 
-4. Install the gevent module for python. From an administrator command prompt you should be able to do it with:
+6. Install the gevent module for python. From an administrator command prompt you should be able 
+   to do it with:
 
     ```
     pip install gevent
     ```
+    
    You may have to specify the full path. Something like:
    
     ```
     C:\Program Files (x86)\Python36\Scripts\pip install gevent
     ```
 
-5. Start the login server by running the `start_login_server.py` script in the root of this repository (preferably from a command window so you can read the errors if it exits for some reason).
+7. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
+   important. This script will manage firewall rules to keep kicked players out and only allow 
+   logged in players on the game server. Without this script running you will not be able to get
+   rid of hackers that are normally "unkickable".
 
-6. (Optional) As administrator start `taserverfirewall.py` in the `script` directory of this repository. This script will manage firewall rules to keep kicked players out and only allow logged in players on the game server.
+8. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
+   root of this repository.
 
-7. Start the game server launcher by running the `start_game_server_launcher.py` script. This will launch a dedicated Tribes Ascend server. If starting the server fails, for instance because you specified the wrong directory in `data/gameserverlauncher.ini`, then it will keep on trying to start the server every 5 seconds. In that case use ctrl-C to shut it down and fix what's wrong.
+Your server should now show up in the list for anyone connecting to the login server.
+Try it out by following the instructions under [Joining games](#Joining-games)
 
-8. Start your Tribes Ascend client using the shortcut you created earlier.
+### Running your own login server
 
-9. You can log on with any credentials. They are not checked (yet).
+Follow the steps for installation of python 
+[Hosting a dedicated server](#Hosting-a-dedicated-server), you can start the login server by
+running  
 
-10. There should be one server in the server list. Connect to that and you will be connecting to your own dedicated server.
+1. Install python 3
+
+2. Install the gevent module for python. From an administrator command prompt you should be able 
+   to do it with:
+
+    ```
+    pip install gevent
+    ```
+    
+   You may have to specify the full path. Something like:
+   
+    ```
+    C:\Program Files (x86)\Python36\Scripts\pip install gevent
+    ```
+
+3. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
+   important if you want to make votekick work against "unkickable" hackers, but can be skipped
+   if that does not interest you.
+
+4. Start the login server by running the `start_login_server.py` script in the root of this 
+   repository (preferably from a command window so you can read the errors if it exits for 
+   some reason).
+
+5. Change `host` under the `[loginserver]` section in `data/gameserverlauncher.ini` to 127.0.0.1
+   if you want any [game server that you start](#Hosting-a-dedicated-server) to connect to your
+   locally running login server.   
 
 ## Limitations
 
-This is very much a work in progress and even basic functionality may not work correctly yet. This will come over time.
+In the past months we have worked hard to get to a version that has all required functionality
+for a first usable release. If you encounter bugs or features that don't work yet, feel free
+to [submit issues on this project](https://github.com/Griffon26/taserver/issues)  
