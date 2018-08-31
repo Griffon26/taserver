@@ -26,10 +26,13 @@ from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherSetPlayerLoadoutsMessage, \
                             Login2LauncherRemovePlayerLoadoutsMessage, \
                             Login2LauncherAddPlayer, \
-                            Login2LauncherRemovePlayer
+                            Login2LauncherRemovePlayer, \
+                            Login2LauncherPings
 from .datatypes import *
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .player.state.authenticated_state import AuthenticatedState
+
+PING_UPDATE_TIME = 3
 
 
 class GameServer(Peer):
@@ -42,6 +45,7 @@ class GameServer(Peer):
         self.port = None
         self.description = None
         self.motd = None
+        self.region = REGION_EUROPE
 
         self.joinable = False
         self.players = {}
@@ -61,6 +65,7 @@ class GameServer(Peer):
         self.description = description
         self.motd = motd
         self.joinable = True
+        self.send_pings()
 
     def set_match_time(self, seconds_remaining, counting):
         self.match_end_time = int(time.time() + seconds_remaining)
@@ -208,3 +213,9 @@ class GameServer(Peer):
 
         self.player_being_kicked = None
 
+    def send_pings(self):
+        player_pings = {}
+        for unique_id, player in self.players.items():
+            player_pings[unique_id] = player.pings[self.region] if self.region in player.pings else 999
+        self.send(Login2LauncherPings(player_pings))
+        self.login_server.pending_callbacks.add(self, PING_UPDATE_TIME, self.send_pings)

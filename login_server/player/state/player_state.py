@@ -63,7 +63,10 @@ class PlayerState:
 
     @handles(packet=a01c8)
     def handle_ping(self, request):
-        pass
+        for arr in request.findbytype(m068b).arrays:
+            region = findbytype(arr, m0448).value
+            ping = findbytype(arr, m053d).value
+            self.player.pings[region] = ping
 
     def on_enter(self):
         print("%s is entering state %s" % (self.player, type(self).__name__))

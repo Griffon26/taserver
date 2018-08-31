@@ -23,10 +23,11 @@ import gevent
 import gevent.queue
 import os
 
-from .gameserverhandler import run_game_server, ConfigurationError
-from .loginserverhandler import handle_login_server
 from .gamecontrollerhandler import handle_game_controller
+from .gameserverhandler import run_game_server, ConfigurationError
 from .launcher import handle_launcher, IncompatibleVersionError
+from .loginserverhandler import handle_login_server
+from .pinghandler import handle_ping
 
 INI_PATH = os.path.join('data', 'gameserverlauncher.ini')
 
@@ -45,6 +46,7 @@ def main():
             incoming_queue = gevent.queue.Queue()
 
             tasks = [
+                gevent.spawn(handle_ping),
                 gevent.spawn(run_game_server, config['gameserver']),
                 gevent.spawn(handle_login_server, config['loginserver'], incoming_queue),
                 gevent.spawn(handle_game_controller, config['gamecontrollerhandler'], incoming_queue),

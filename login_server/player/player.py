@@ -47,6 +47,7 @@ class Player(Peer):
         self.loadouts = Loadouts()
         self.friends = Friends()
         self.team = None
+        self.pings = {}
 
     def set_state(self, state_class, *args, **kwargs):
         assert self.unique_id is not None

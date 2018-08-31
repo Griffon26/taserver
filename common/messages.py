@@ -30,6 +30,7 @@ _MSGID_LOGIN2LAUNCHER_REMOVEPLAYERLOADOUTS = 0x1002
 _MSGID_LOGIN2LAUNCHER_PROTOCOL_VERSION = 0x1003
 _MSGID_LOGIN2LAUNCHER_ADD_PLAYER = 0x1004
 _MSGID_LOGIN2LAUNCHER_REMOVE_PLAYER = 0x1005
+_MSGID_LOGIN2LAUNCHER_PINGS = 0x1006
 
 _MSGID_LAUNCHER2LOGIN_SERVERINFO = 0x2000
 _MSGID_LAUNCHER2LOGIN_MAPINFO = 0x2001
@@ -48,6 +49,7 @@ _MSGID_GAME2LAUNCHER_LOADOUTREQUEST = 0x3005
 
 _MSGID_LAUNCHER2GAME_LOADOUT = 0x4000
 _MSGID_LAUNCHER2GAME_NEXTMAP = 0x4001
+_MSGID_LAUNCHER2GAME_PINGS = 0x4002
 
 
 class Message:
@@ -107,6 +109,14 @@ class Login2LauncherRemovePlayer(Message):
     def __init__(self, unique_id: int, ip: str):
         self.unique_id = unique_id
         self.ip = ip
+
+
+# Example json: { 'player_pings': { '123': 10, '124': 25 } }
+class Login2LauncherPings(Message):
+    msg_id = _MSGID_LOGIN2LAUNCHER_PINGS
+
+    def __init__(self, player_pings):
+        self.player_pings = player_pings
 
 
 class Launcher2LoginServerInfoMessage(Message):
@@ -257,6 +267,14 @@ class Launcher2GameNextMapMessage(Message):
         pass
 
 
+# Example json: { 'player_pings': { '123': 10, '124': 25 } }
+class Launcher2GamePings(Message):
+    msg_id = _MSGID_LAUNCHER2GAME_PINGS
+
+    def __init__(self, player_pings):
+        self.player_pings = player_pings
+
+
 _message_classes = [
 
     Login2LauncherProtocolVersionMessage,
@@ -265,6 +283,7 @@ _message_classes = [
     Login2LauncherRemovePlayerLoadoutsMessage,
     Login2LauncherAddPlayer,
     Login2LauncherRemovePlayer,
+    Login2LauncherPings,
 
     Launcher2LoginServerInfoMessage,
     Launcher2LoginMapInfoMessage,
@@ -282,6 +301,8 @@ _message_classes = [
     Game2LauncherLoadoutRequest,
 
     Launcher2GameLoadoutMessage,
+    Launcher2GameNextMapMessage,
+    Launcher2GamePings
 ]
 
 _message_map = { msg_class.msg_id : msg_class for msg_class in _message_classes }

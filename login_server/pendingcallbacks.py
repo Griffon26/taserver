@@ -44,7 +44,7 @@ class PendingCallbacks:
         for callback_id, callback in self.callbacks.items():
             if callback['receiver_id'] == id(receiver):
                 # Only disable callbacks here, removal is done when the callback is fired
-                callback = None
+                callback['callback_func'] = None
 
     def _post_callback(self, callback_id):
         self.server_queue.put(ExecuteCallbackMessage(callback_id))
@@ -53,5 +53,8 @@ class PendingCallbacks:
         assert callback_id in self.callbacks, "Callback not found. A callback should only be removed by " \
                                               "its trigger to avoid problems with reused callback IDs."
 
-        if self.callbacks[callback_id] is not None:
+        if self.callbacks[callback_id]['callback_func'] is not None:
             self.callbacks[callback_id]['callback_func']()
+        else:
+            del self.callbacks[callback_id]
+

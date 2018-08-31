@@ -24,6 +24,10 @@ from ipaddress import IPv4Address
 
 PING_PORT = 9002
 
+REGION_NORTH_AMERICA = 1
+REGION_EUROPE = 4
+REGION_OCEANIA_AUSTRALIA = 5
+
 TEAM_BLOODEAGLE = 0
 TEAM_DIAMONDSWORD = 1
 TEAM_SPEC = 255
@@ -1018,8 +1022,8 @@ class m0246(nbytes):
     def __init__(self):
         super().__init__(0x0246, hexparse('00 00 00 00 00 00 00 00'))
 
-    def set(self, ip1, ip2, ip3, ip4, port):
-        self.value = struct.pack('>BBHBBBB', 0x02, 0x00, port, ip1, ip2, ip3, ip4)
+    def set(self, ip: IPv4Address, port):
+        self.value = struct.pack('>BBH', 0x02, 0x00, port) + ip.packed
         return self
 
 
@@ -1249,7 +1253,7 @@ class m00e9(arrayofenumblockarrays):
                 m02f4().set(server.get_time_remaining()),
                 m0035().set(server.be_score),
                 m0197().set(server.ds_score),
-                m0246().set(127, 0, 0, 1, 1234)
+                m0246().set(server.ip, PING_PORT) # The value doesn't matter, the client uses the address in a0035
             ])
         return self
 
@@ -2007,30 +2011,32 @@ class m0681(arrayofenumblockarrays):
 class m068b(arrayofenumblockarrays):
     def __init__(self):
         super().__init__(0x068b)
+
+        # Reuse Hirez' UDP echo servers that are set up in each region
         self.arrays = [
             [
-                m0448().set(1),
+                m0448().set(REGION_NORTH_AMERICA),
                 m03fd(),
                 m06e9(),
-                m02ff(),
+                m02ff().set(1),
                 m0300().set("North America"),
-                m0246().set(69, 147, 237, 186, PING_PORT)
+                m0246().set(IPv4Address('69.147.237.186'), PING_PORT)
             ],
             [
-                m0448().set(4),
+                m0448().set(REGION_EUROPE),
                 m03fd(),
                 m06e9(),
-                m02ff(),
+                m02ff().set(2),
                 m0300().set("Europe"),
-                m0246().set(95, 211, 127, 134, PING_PORT)
+                m0246().set(IPv4Address('95.211.127.134'), PING_PORT)
             ],
             [
-                m0448().set(5),
+                m0448().set(REGION_OCEANIA_AUSTRALIA),
                 m03fd(),
                 m06e9(),
-                m02ff(),
+                m02ff().set(3),
                 m0300().set("Oceania/Australia"),
-                m0246().set(221, 121, 148, 81, PING_PORT)
+                m0246().set(IPv4Address('221.121.148.81'), PING_PORT)
             ]
         ]
 
@@ -2088,7 +2094,7 @@ class a0035(enumblockarray):
             m0615(),
             m06ef(),
             m024f().set(server.ip, server.port),
-            m0246().set(127, 0, 0, 1, 1234),
+            m0246().set(server.ip, PING_PORT),
             m0448().set(4),
             m02b5(),
             m03e0(),

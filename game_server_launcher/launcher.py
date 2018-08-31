@@ -57,6 +57,7 @@ class Launcher:
             Login2LauncherRemovePlayerLoadoutsMessage: self.handle_remove_player_loadouts_message,
             Login2LauncherAddPlayer: self.handle_add_player_message,
             Login2LauncherRemovePlayer: self.handle_remove_player_message,
+            Login2LauncherPings: self.handle_pings_message,
             Game2LauncherProtocolVersionMessage: self.handle_game_controller_protocol_version_message,
             Game2LauncherTeamInfoMessage: self.handle_team_info_message,
             Game2LauncherScoreInfoMessage: self.handle_score_info_message,
@@ -148,6 +149,10 @@ class Launcher:
 
     def handle_remove_player_message(self, msg):
         modify_firewall('whitelist', 'remove', msg.ip)
+
+    def handle_pings_message(self, msg):
+        if self.game_controller:
+            self.game_controller.send(Launcher2GamePings(msg.player_pings))
 
     def handle_game_controller_protocol_version_message(self, msg):
         controller_version = StrictVersion(msg.version)
