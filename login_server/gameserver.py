@@ -19,7 +19,7 @@
 #
 
 import gevent.monkey
-gevent.monkey.patch_socket()
+gevent.monkey.patch_all()
 
 import json
 import time
@@ -61,7 +61,7 @@ class GameServer(Peer):
         self.be_score = 0
         self.ds_score = 0
 
-        response = urllib.request.urlopen('https://tools.keycdn.com/geo.json?host=%s' % self.ip)
+        response = urllib.request.urlopen('http://tools.keycdn.com/geo.json?host=%s' % self.ip)
         result = response.read()
         json_result = json.loads(result)
 
