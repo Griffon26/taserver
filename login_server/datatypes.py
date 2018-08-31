@@ -22,6 +22,8 @@ import struct
 from ipaddress import IPv4Address
 
 
+PING_PORT = 9002
+
 TEAM_BLOODEAGLE = 0
 TEAM_DIAMONDSWORD = 1
 TEAM_SPEC = 255
@@ -2007,12 +2009,28 @@ class m068b(arrayofenumblockarrays):
         super().__init__(0x068b)
         self.arrays = [
             [
+                m0448().set(1),
+                m03fd(),
+                m06e9(),
+                m02ff(),
+                m0300().set("North America"),
+                m0246().set(69, 147, 237, 186, PING_PORT)
+            ],
+            [
                 m0448().set(4),
                 m03fd(),
                 m06e9(),
                 m02ff(),
                 m0300().set("Europe"),
-                m0246().set(10, 0, 0, 1, 1234)
+                m0246().set(95, 211, 127, 134, PING_PORT)
+            ],
+            [
+                m0448().set(5),
+                m03fd(),
+                m06e9(),
+                m02ff(),
+                m0300().set("Oceania/Australia"),
+                m0246().set(221, 121, 148, 81, PING_PORT)
             ]
         ]
 
