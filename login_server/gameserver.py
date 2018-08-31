@@ -18,7 +18,13 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import gevent.monkey
+gevent.monkey.patch_socket()
+
+import json
 import time
+import urllib.request
+
 
 from common.connectionhandler import Peer
 from common.firewall import modify_firewall
@@ -45,7 +51,7 @@ class GameServer(Peer):
         self.port = None
         self.description = None
         self.motd = None
-        self.region = REGION_EUROPE
+        self.region = None
 
         self.joinable = False
         self.players = {}
@@ -54,6 +60,20 @@ class GameServer(Peer):
         self.match_time_counting = False
         self.be_score = 0
         self.ds_score = 0
+
+        response = urllib.request.urlopen('https://tools.keycdn.com/geo.json?host=%s' % self.ip)
+        result = response.read()
+        json_result = json.loads(result)
+
+        continent_code_to_region = {
+            'NA': REGION_NORTH_AMERICA,
+            'EU': REGION_EUROPE,
+            'OC': REGION_OCEANIA_AUSTRALIA
+        }
+        try:
+            self.region = continent_code_to_region[json_result['data']['geo']['continent_code']]
+        except KeyError:
+            self.region = REGION_EUROPE
 
     def disconnect(self):
         for player in list(self.players.values()):
