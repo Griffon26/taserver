@@ -59,12 +59,12 @@ connect to the replacement login server, follow these steps:
    root of this repository.
 
 Your server should now show up in the list for anyone connecting to the login server.
-Try it out by following the instructions under [Joining games](#Joining-games)
+Try it out by following the instructions under [Joining games](#joining-games)
 
 ### Running your own login server
 
 Follow the steps for installation of python 
-[Hosting a dedicated server](#Hosting-a-dedicated-server), you can start the login server by
+[Hosting a dedicated server](#hosting-a-dedicated-server), you can start the login server by
 running  
 
 1. Install python 3
@@ -91,7 +91,7 @@ running
    some reason).
 
 5. Change `host` under the `[loginserver]` section in `data/gameserverlauncher.ini` to 127.0.0.1
-   if you want any [game server that you start](#Hosting-a-dedicated-server) to connect to your
+   if you want any [game server that you start](#hosting-a-dedicated-server) to connect to your
    locally running login server.   
 
 ## Limitations
