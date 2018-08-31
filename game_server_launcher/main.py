@@ -49,7 +49,7 @@ def main():
                 gevent.spawn(handle_ping),
                 gevent.spawn(run_game_server, config['gameserver']),
                 gevent.spawn(handle_login_server, config['loginserver'], incoming_queue),
-                gevent.spawn(handle_game_controller, config['gamecontrollerhandler'], incoming_queue),
+                gevent.spawn(handle_game_controller, config['gamecontroller'], incoming_queue),
                 gevent.spawn(handle_launcher, config['gameserver'], incoming_queue)
             ]
 
