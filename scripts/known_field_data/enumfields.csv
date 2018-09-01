@@ -88,6 +88,7 @@
 0x06E9,SizedContent,
 0x0705,SizedContent,player name to kick
 0x006F,OneByte,
+0x01FA,OneByte,
 0x02C9,OneByte,
 0x0326,OneByte,
 0x0442,OneByte,
