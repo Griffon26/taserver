@@ -89,11 +89,16 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a00b1)
     def handle_server_join_first_step(self, request):
-        serverid1 = request.findbytype(m02c7).value
-        game_server = self.player.login_server.find_server_by_id1(serverid1)
-        serverid2 = game_server.serverid2
-        self.player.send(a00b0().setlength(9).setserverid1(serverid1))
-        self.player.send(a00b4().setserverid2(serverid2))
+        server_field = request.findbytype(m02c7)
+        if not server_field:
+            self._send_private_msg_from_server(self.player, 'Quick match is not yet supported. '
+                                                            'Please select a server to join instead.')
+        else:
+            serverid1 = server_field.value
+            game_server = self.player.login_server.find_server_by_id1(serverid1)
+            serverid2 = game_server.serverid2
+            self.player.send(a00b0().setlength(9).setserverid1(serverid1))
+            self.player.send(a00b4().setserverid2(serverid2))
 
     @handles(packet=a00b2)
     def handle_server_join_second_step(self, request):
@@ -111,7 +116,7 @@ class AuthenticatedState(PlayerState):
     def handle_chat(self, request):
         message_type = request.findbytype(m009e).value
 
-        if message_type == 3:  # team
+        if message_type == MESSAGE_TEAM:
             request.content.append(m02fe().set(self.player.display_name))
             request.content.append(m06de().set(self.player.tag))
 
@@ -119,7 +124,7 @@ class AuthenticatedState(PlayerState):
                 self.player.game_server.send_all_players_on_team(request,
                                                                  self.player.team)
 
-        elif message_type == 6:  # private
+        elif message_type == MESSAGE_PRIVATE:
             addressed_player_name = request.findbytype(m034a).value
             addressed_player = self.player.login_server.find_player_by(display_name=addressed_player_name)
             if addressed_player:
@@ -131,12 +136,23 @@ class AuthenticatedState(PlayerState):
                 if self.player.unique_id != addressed_player.unique_id:
                     addressed_player.send(request)
 
-        else:  # public
+        else:  # MESSAGE_PUBLIC
             request.content.append(m02fe().set(self.player.display_name))
             request.content.append(m06de().set(self.player.tag))
 
             if self.player.game_server:
                 self.player.game_server.send_all_players(request)
+
+    def _send_private_msg_from_server(self, player, text):
+        msg = a0070().set([
+            m009e().set(MESSAGE_PRIVATE),
+            m02e6().set(text),
+            m034a().set(player.display_name),
+            m0574(),
+            m02fe().set('taserver'),
+            m06de().set('bot')
+        ])
+        player.send(msg)
 
     @handles(packet=a0175)
     def handle_promotion_code_redemption(self, request):
