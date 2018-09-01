@@ -470,6 +470,11 @@ class m0219(fourbytes):
         super().__init__(0x0219, 0x00190c0c)
 
 
+class m021b(fourbytes):
+    def __init__(self):
+        super().__init__(0x021b, 0x00000000)
+
+
 class m021f(fourbytes):
     def __init__(self):
         super().__init__(0x021f, 0x00000000)
