@@ -79,6 +79,6 @@ class Accounts():
         return key in self.accounts
     
     def add_account(self, login_name, authcode):
-        used_ids = {account.unique_id for account in self.accounts}
+        used_ids = {account.unique_id for account in self.accounts.values()}
         unique_id = first_unused_number_above(used_ids, 1)
         self.accounts[login_name] = AccountInfo(unique_id, login_name, authcode)
