@@ -69,7 +69,13 @@ class LoginServer:
         while True:
             for message in self.server_queue:
                 handler = self.message_handlers[type(message)]
-                handler(message)
+                try:
+                    handler(message)
+                except Exception as e:
+                    if hasattr(message, 'peer'):
+                        message.peer.disconnect(e)
+                    else:
+                        raise
 
     def find_server_by_id1(self, id1):
         for game_server in self.game_servers.values():

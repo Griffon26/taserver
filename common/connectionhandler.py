@@ -31,8 +31,9 @@ class PeerConnectedMessage:
 
 
 class PeerDisconnectedMessage:
-    def __init__(self, peer):
+    def __init__(self, peer, exception=None):
         self.peer = peer
+        self.exception = exception
 
 
 class ConnectionReader:
@@ -99,9 +100,12 @@ class ConnectionWriter:
                     # we can close the socket and terminate
                     pass
             else:
-                break
+                self.sock.close()
+                if msg.exception:
+                    raise msg.exception
+                else:
+                    break
 
-        self.sock.close()
         print('%s(%s): writer exiting gracefully' % (self.task_name, self.task_id))
 
     def encode(self, msg):
@@ -131,8 +135,8 @@ class Peer:
     def send(self, msg):
         self.outgoing_queue.put(msg)
 
-    def disconnect(self):
-        self.outgoing_queue.put(PeerDisconnectedMessage(self))
+    def disconnect(self, exception=None):
+        self.outgoing_queue.put(PeerDisconnectedMessage(self, exception))
 
 
 class ConnectionHandler:
