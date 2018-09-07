@@ -834,6 +834,11 @@ class m05e9(fourbytes):
         super().__init__(0x05e9, 0x00000000)
 
 
+class m05ea(fourbytes):
+    def __init__(self):
+        super().__init__(0x05ea, 0x00000000)
+
+
 class m0608(fourbytes):
     def __init__(self):
         super().__init__(0x0608, 0x00000000)

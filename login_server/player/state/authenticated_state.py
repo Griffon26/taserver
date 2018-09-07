@@ -156,18 +156,20 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a0175)
     def handle_promotion_code_redemption(self, request):
-        authcode = request.findbytype(m0669).value
-        if (self.player.login_name in self.player.login_server.accounts and
-                self.player.login_server.accounts[self.player.login_name].authcode == authcode):
+        promotion_code = request.findbytype(m0669)
+        if promotion_code:
+            authcode = promotion_code.value
+            if (self.player.login_name in self.player.login_server.accounts and
+                    self.player.login_server.accounts[self.player.login_name].authcode == authcode):
 
-            self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
-            self.player.login_server.accounts[self.player.login_name].authcode = None
-            self.player.login_server.accounts.save()
-        else:
-            invalid_code_msg = a0175()
-            invalid_code_msg.findbytype(m02fc).set(0x00019646)  # message type
-            invalid_code_msg.findbytype(m0669).set(authcode)
-            self.player.send(invalid_code_msg)
+                self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
+                self.player.login_server.accounts[self.player.login_name].authcode = None
+                self.player.login_server.accounts.save()
+            else:
+                invalid_code_msg = a0175()
+                invalid_code_msg.findbytype(m02fc).set(0x00019646)  # message type
+                invalid_code_msg.findbytype(m0669).set(authcode)
+                self.player.send(invalid_code_msg)
 
     @handles(packet=a006d)
     def handle_menuchange(self, request):

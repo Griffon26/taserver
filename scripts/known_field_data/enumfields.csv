@@ -23,7 +23,7 @@
 0x011C,EnumBlockArray,
 0x011B,EnumBlockArray,player online/join notification
 0x0145,EnumBlockArray,
-0x0175,EnumBlockArray,promotion code
+0x0175,EnumBlockArray,purchase
 0x0176,EnumBlockArray,
 0x0177,EnumBlockArray,
 0x0182,EnumBlockArray,
@@ -72,7 +72,7 @@
 0x02B1,SizedContent,internal map name
 0x02B6,SizedContent,map name
 0x02E6,SizedContent,message text
-0x02FE,SizedContent,sender name
+0x02FE,SizedContent,sender name/clan tag to purchase
 0x0300,SizedContent,"map+gamemode, server or region name"
 0x034A,SizedContent,player name
 0x035B,SizedContent,
@@ -151,7 +151,7 @@
 0x0298,FourBytes,
 0x0299,FourBytes,
 0x02A3,FourBytes,
-0x02AB,FourBytes,
+0x02AB,FourBytes,"purchase type (1de=server,1fc=boosters,200=name,221=tag)"
 0x02AC,FourBytes,
 0x02B2,FourBytes,map id
 0x02B3,FourBytes,
@@ -179,7 +179,7 @@
 0x0346,FourBytes,
 0x0347,FourBytes,
 0x0348,FourBytes,player id
-0x035A,FourBytes,
+0x035A,FourBytes,payment amount
 0x0363,FourBytes,
 0x0369,FourBytes,menu option identifier
 0x036B,FourBytes,
@@ -231,11 +231,12 @@
 0x0596,FourBytes,
 0x0597,FourBytes,
 0x05B8,FourBytes,
-0x05CC,FourBytes,
+0x05CC,FourBytes,"currency? (0x0645=gold, 0x27f9=xp)"
 0x05CF,FourBytes,
 0x05D3,FourBytes,player gold
 0x05DC,FourBytes,player rank progress
 0x05E9,FourBytes,
+0x05EA,FourBytes,
 0x05EE,FourBytes,
 0x0602,FourBytes,
 0x0608,FourBytes,
