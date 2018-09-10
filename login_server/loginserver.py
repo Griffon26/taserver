@@ -27,6 +27,7 @@ from common.firewall import reset_firewall
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.versions import launcher2loginserver_protocol_version
+from .authcodehandler import AuthCodeRequester
 from .datatypes import *
 from .gameserver import GameServer
 from .pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
@@ -37,10 +38,9 @@ from .utils import first_unused_number_above
 
 
 class LoginServer:
-    def __init__(self, server_queue, client_queues, authcode_queue, accounts, configuration):
+    def __init__(self, server_queue, client_queues, accounts, configuration):
         self.server_queue = server_queue
         self.client_queues = client_queues
-        self.authcode_queue = authcode_queue
 
         self.game_servers = {}
 
@@ -113,12 +113,14 @@ class LoginServer:
         self.players[new_id] = player
 
     def handle_authcode_request_message(self, msg):
+        authcode_requester = msg.peer
+
         availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
         authcode = ''.join([random.choice(availablechars) for i in range(8)])
         print('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
         self.accounts.add_account(msg.login_name, authcode)
         self.accounts.save()
-        self.authcode_queue.put((msg.login_name, authcode))
+        authcode_requester.send(authcode)
 
     def handle_execute_callback_message(self, msg):
         callback_id = msg.callback_id
@@ -143,6 +145,8 @@ class LoginServer:
             self.game_servers[serverid1] = game_server
 
             print('server: added game server %s (%s)' % (serverid1, game_server.ip))
+        elif isinstance(msg.peer, AuthCodeRequester):
+            pass
         else:
             assert False, "Invalid connection message received"
 
@@ -162,6 +166,9 @@ class LoginServer:
             game_server.disconnect()
             self.pending_callbacks.remove_receiver(game_server)
             del (self.game_servers[game_server.serverid1])
+
+        elif isinstance(msg.peer, AuthCodeRequester):
+            msg.peer.disconnect()
 
         else:
             assert False, "Invalid disconnection message received"

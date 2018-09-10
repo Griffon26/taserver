@@ -23,7 +23,7 @@ import gevent
 import gevent.queue
 
 from .accounts import Accounts
-from .authcodehandler import AuthCodeHandler
+from .authcodehandler import handle_authcodes
 from .configuration import Configuration
 from .gameserverlauncherhandler import handle_game_server_launcher
 from .gameclienthandler import handle_game_client
@@ -38,13 +38,8 @@ def handle_dump(dumpqueue):
         hex_dumper.run()
 
 
-def handle_authcodes(server_queue, authcode_queue):
-    authcode_handler = AuthCodeHandler(server_queue, authcode_queue)
-    authcode_handler.run()
-
-
-def handle_server(server_queue, client_queues, authcode_queue, accounts, configuration):
-    server = LoginServer(server_queue, client_queues, authcode_queue, accounts, configuration)
+def handle_server(server_queue, client_queues, accounts, configuration):
+    server = LoginServer(server_queue, client_queues, accounts, configuration)
     server.run()
 
 
@@ -58,15 +53,14 @@ def main():
     
     client_queues = {}
     server_queue = gevent.queue.Queue()
-    authcode_queue = gevent.queue.Queue()
     dump_queue = gevent.queue.Queue() if args.dump else None
 
     accounts = Accounts('data/accountdatabase.json')
     configuration = Configuration()
 
     tasks = [
-        gevent.spawn(handle_server, server_queue, client_queues, authcode_queue, accounts, configuration),
-        gevent.spawn(handle_authcodes, server_queue, authcode_queue),
+        gevent.spawn(handle_server, server_queue, client_queues, accounts, configuration),
+        gevent.spawn(handle_authcodes, server_queue),
         gevent.spawn(handle_game_client, server_queue, dump_queue),
         gevent.spawn(handle_game_server_launcher, server_queue)
     ]
