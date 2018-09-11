@@ -166,7 +166,7 @@ class GameServer(Peer):
         if self.player_being_kicked:
             eligible_voters, total_votes, yes_votes = self._tally_votes()
             vote_passed = total_votes >= 4 and yes_votes / total_votes >= 0.5
-            print('server: votekick %s at timeout with %d/%d/%d (yes/no/abstain) with %d players' %
+            self.logger.info('server: votekick %s at timeout with %d/%d/%d (yes/no/abstain) with %d players' %
                   ('passed' if vote_passed else 'failed',
                    yes_votes,
                    total_votes - yes_votes,
@@ -180,7 +180,7 @@ class GameServer(Peer):
 
             # If enough people vote yes, kick immediately. Otherwise wait for a majority at the timeout.
             if yes_votes >= 8:
-                print('server: votekick passed immediately %d/%d/%d (yes/no/abstain) with %d players' %
+                self.logger.info('server: votekick passed immediately %d/%d/%d (yes/no/abstain) with %d players' %
                       (yes_votes,
                        total_votes - yes_votes,
                        eligible_voters - total_votes,

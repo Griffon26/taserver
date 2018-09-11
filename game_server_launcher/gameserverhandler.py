@@ -20,6 +20,7 @@
 
 import gevent
 import gevent.subprocess as sp
+import logging
 import os
 
 from .inject import inject
@@ -30,6 +31,7 @@ class ConfigurationError(Exception):
 
 
 def run_game_server(game_server_config):
+    logger = logging.getLogger(__name__)
     gevent.getcurrent().name = 'gameserver'
 
     try:
@@ -57,15 +59,15 @@ def run_game_server(game_server_config):
                 "Invalid 'controller_dll' specified under [gameserver]: the specified file does not exist. "
                 "Either remove the key from the ini file to work without a controller or correct the specified location.")
 
-    print('gameserver: Starting a new TribesAscend server...')
+    logger.info('gameserver: Starting a new TribesAscend server...')
     process = sp.Popen([exe_path, *args], cwd=working_dir)
     try:
-        print('gameserver: Started process with pid: ', process.pid)
+        logger.info('gameserver: Started process with pid: %s' % process.pid)
         if dll_to_inject:
             gevent.sleep(10)
-            print('gameserver: Injecting game controller DLL into game server...')
+            logger.info('gameserver: Injecting game controller DLL into game server...')
             inject(process.pid, dll_to_inject)
-            print('gameserver: Injection done.')
+            logger.info('gameserver: Injection done.')
         process.wait()
     finally:
         process.terminate()

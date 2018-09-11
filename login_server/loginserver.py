@@ -20,6 +20,7 @@
 
 from distutils.version import StrictVersion
 import gevent
+import logging
 import random
 import string
 
@@ -39,6 +40,7 @@ from .utils import first_unused_number_above
 
 class LoginServer:
     def __init__(self, server_queue, client_queues, accounts, configuration):
+        self.logger = logging.getLogger(__name__)
         self.server_queue = server_queue
         self.client_queues = client_queues
 
@@ -64,7 +66,7 @@ class LoginServer:
 
     def run(self):
         gevent.getcurrent().name = 'loginserver'
-        print('server: login server started')
+        self.logger.info('server: login server started')
         reset_firewall('blacklist')
         while True:
             for message in self.server_queue:
@@ -117,7 +119,7 @@ class LoginServer:
 
         availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
         authcode = ''.join([random.choice(availablechars) for i in range(8)])
-        print('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
+        self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
         self.accounts.add_account(msg.login_name, authcode)
         self.accounts.save()
         authcode_requester.send(authcode)
@@ -144,7 +146,7 @@ class LoginServer:
             game_server.login_server = self
             self.game_servers[serverid1] = game_server
 
-            print('server: added game server %s (%s)' % (serverid1, game_server.ip))
+            self.logger.info('server: added game server %s (%s)' % (serverid1, game_server.ip))
         elif isinstance(msg.peer, AuthCodeRequester):
             pass
         else:
@@ -160,9 +162,9 @@ class LoginServer:
 
         elif isinstance(msg.peer, GameServer):
             game_server = msg.peer
-            print('server: removed game server %s (%s:%s)' % (game_server.serverid1,
-                                                              game_server.ip,
-                                                              game_server.port))
+            self.logger.info('server: removed game server %s (%s:%s)' % (game_server.serverid1,
+                                                                         game_server.ip,
+                                                                         game_server.port))
             game_server.disconnect()
             self.pending_callbacks.remove_receiver(game_server)
             del (self.game_servers[game_server.serverid1])
@@ -178,7 +180,7 @@ class LoginServer:
         current_player.last_received_seq = msg.clientseq
 
         requests = '\n'.join(['  %04X' % req.ident for req in msg.requests])
-        print('server: %s sent:\n%s' % (current_player, requests))
+        self.logger.info('server: %s sent:\n%s' % (current_player, requests))
 
         for request in msg.requests:
             current_player.handle_request(request)
@@ -194,9 +196,9 @@ class LoginServer:
     def handle_server_info_message(self, msg):
         game_server = msg.peer
         game_server.set_info(msg.port, msg.description, msg.motd)
-        print('server: server info received for server %s (%s:%s)' % (game_server.serverid1,
-                                                                      game_server.ip,
-                                                                      game_server.port))
+        self.logger.info('server: server info received for server %s (%s:%s)' % (game_server.serverid1,
+                                                                                 game_server.ip,
+                                                                                 game_server.port))
 
     def handle_team_info_message(self, msg):
         game_server = msg.peer
@@ -205,9 +207,9 @@ class LoginServer:
             if player_id in self.players and self.players[player_id].game_server is game_server:
                 self.players[player_id].team = team_id
             else:
-                print('server: warning: received an invalid message from server %s about player 0x%08X '
-                      'while that player is not on that server'%
-                      (game_server.serverid1, player_id))
+                self.logger.warning('server: received an invalid message from server %s about player 0x%08X '
+                                    'while that player is not on that server' %
+                                    (game_server.serverid1, player_id))
 
     def handle_score_info_message(self, msg):
         game_server = msg.peer
@@ -216,7 +218,7 @@ class LoginServer:
 
     def handle_match_time_message(self, msg):
         game_server = msg.peer
-        print('server: received match time for server %s: %s seconds remaining (counting = %s)' %
+        self.logger.info('server: received match time for server %s: %s seconds remaining (counting = %s)' %
               (game_server.serverid1,
                msg.seconds_remaining,
                msg.counting))
@@ -224,5 +226,5 @@ class LoginServer:
 
     def handle_match_end_message(self, msg):
         game_server = msg.peer
-        print('server: match ended on server %s. Starting next map in 5 seconds.' % game_server.serverid1)
+        self.logger.info('server: match ended on server %s. Starting next map in 5 seconds.' % game_server.serverid1)
         self.pending_callbacks.add(game_server, 5, game_server.start_next_map)

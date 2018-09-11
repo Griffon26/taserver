@@ -21,7 +21,9 @@
 import argparse
 import gevent
 import gevent.queue
+import logging
 
+from common.logging import set_up_logging
 from .accounts import Accounts
 from .authcodehandler import handle_authcodes
 from .configuration import Configuration
@@ -43,7 +45,10 @@ def handle_server(server_queue, client_queues, accounts, configuration):
     server.run()
 
 
+
 def main():
+    set_up_logging('login_server.log')
+    logger = logging.getLogger(__name__)
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dump', action='store_true',
                         help='Dump all traffic to %s in a format suitable '
@@ -72,13 +77,13 @@ def main():
         # Wait for any of the tasks to terminate
         finished_greenlets = gevent.joinall(tasks, count=1)
 
-        print('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
+        logger.error('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
 
         if dump_queue:
-            print('Giving the dump greenlet some time to finish writing to disk...')
+            logger.info('Giving the dump greenlet some time to finish writing to disk...')
             gevent.sleep(2)
 
-        print('Killing everything and waiting 10 seconds before exiting...')
+        logger.info('Killing everything and waiting 10 seconds before exiting...')
         gevent.killall(tasks)
         gevent.sleep(5)
 

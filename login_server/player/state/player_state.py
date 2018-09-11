@@ -18,7 +18,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
+
 import inspect
+import logging
 from functools import wraps
 
 from ...datatypes import *
@@ -45,6 +47,7 @@ def handles(packet):
 
 class PlayerState:
     def __init__(self, player: Player):
+        self.logger = logging.getLogger(__name__)
         self.player = player
 
     def handle_request(self, request):
@@ -53,7 +56,7 @@ class PlayerState:
             getattr(func, 'handles_packet', None) == type(request)
         ]
         if not methods:
-            print("No handler found for request %s" % request)
+            self.logger.warning("No handler found for request %s" % request)
             return
 
         if len(methods) > 1:
@@ -69,9 +72,9 @@ class PlayerState:
             self.player.pings[region] = ping
 
     def on_enter(self):
-        print("%s is entering state %s" % (self.player, type(self).__name__))
+        self.logger.info("%s is entering state %s" % (self.player, type(self).__name__))
 
     def on_exit(self):
-        print("%s is exiting state %s" % (self.player, type(self).__name__))
+        self.logger.info("%s is exiting state %s" % (self.player, type(self).__name__))
 
 

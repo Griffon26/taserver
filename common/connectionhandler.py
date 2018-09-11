@@ -21,6 +21,7 @@
 import gevent.server
 import gevent.queue
 from gevent import socket
+import logging
 
 from common.tcpmessage import TcpMessageReader, TcpMessageWriter
 
@@ -38,6 +39,7 @@ class PeerDisconnectedMessage:
 
 class ConnectionReader:
     def __init__(self, sock):
+        self.logger = logging.getLogger(__name__)
         self.task_name = None
         self.task_id = None
         self.incoming_queue = None
@@ -56,10 +58,10 @@ class ConnectionReader:
                 self.incoming_queue.put(msg)
 
         except (ConnectionResetError, gevent._socketcommon.cancel_wait_ex):
-            print('%s(%s): disconnected' % (self.task_name, self.task_id))
+            self.logger.info('%s(%s): disconnected' % (self.task_name, self.task_id))
 
         self.incoming_queue.put(PeerDisconnectedMessage(self.peer))
-        print('%s(%s): signalled launcher; reader exiting' % (self.task_name, self.task_id))
+        self.logger.info('%s(%s): signalled launcher; reader exiting' % (self.task_name, self.task_id))
 
     def decode(self, msg_bytes):
         """ Decode a message from a series of bytes """
@@ -81,6 +83,7 @@ class TcpMessageConnectionReader(ConnectionReader):
 
 class ConnectionWriter:
     def __init__(self, sock):
+        self.logger = logging.getLogger(__name__)
         self.task_name = None
         self.task_id = None
         self.outgoing_queue = None
@@ -106,7 +109,7 @@ class ConnectionWriter:
                 else:
                     break
 
-        print('%s(%s): writer exiting gracefully' % (self.task_name, self.task_id))
+        self.logger.info('%s(%s): writer exiting gracefully' % (self.task_name, self.task_id))
 
     def encode(self, msg):
         """ Encode msg into a series of bytes """
@@ -141,6 +144,7 @@ class Peer:
 
 class ConnectionHandler:
     def __init__(self, task_name, address, port, incoming_queue):
+        self.logger = logging.getLogger(__name__)
         gevent.getcurrent().name = task_name
         self.task_name = task_name
         self.address = address
@@ -157,7 +161,7 @@ class ConnectionHandler:
     def _handle(self, sock, address):
         gevent.getcurrent().name = self.task_name
         task_id = id(gevent.getcurrent())
-        print('%s(%s): connected' % (self.task_name, task_id))
+        self.logger.info('%s(%s): connected' % (self.task_name, task_id))
 
         reader, writer, peer = self.create_connection_instances(sock, address)
 
@@ -211,8 +215,8 @@ class OutgoingConnectionHandler(ConnectionHandler):
                     break
             except ConnectionRefusedError:
                 if retry_time is not None:
-                    print('%s(%s): remote end is refusing connections. Reconnecting in %d seconds...' %
-                          (self.task_name, task_id, retry_time))
+                    self.logger.info('%s(%s): remote end is refusing connections. Reconnecting in %d seconds...' %
+                                     (self.task_name, task_id, retry_time))
                     gevent.sleep(retry_time)
                 else:
                     break

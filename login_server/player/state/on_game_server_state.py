@@ -31,14 +31,14 @@ class OnGameServerState(AuthenticatedState):
         self.game_server = game_server
 
     def on_enter(self):
-        print("%s is entering state %s" % (self.player, type(self).__name__))
+        self.logger.info("%s is entering state %s" % (self.player, type(self).__name__))
         self.player.game_server = self.game_server
         self.player.game_server.add_player(self.player)
         self.player.game_server.set_player_loadouts(self.player)
         self.player.team = None
 
     def on_exit(self):
-        print("%s is exiting state %s" % (self.player, type(self).__name__))
+        self.logger.info("%s is exiting state %s" % (self.player, type(self).__name__))
         self.player.game_server.remove_player_loadouts(self.player)
         self.player.game_server.remove_player(self.player)
         self.player.game_server = None

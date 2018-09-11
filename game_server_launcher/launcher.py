@@ -20,6 +20,7 @@
 
 from distutils.version import StrictVersion
 import gevent
+import logging
 
 from common.firewall import reset_firewall, modify_firewall
 from common.messages import *
@@ -37,6 +38,7 @@ class Launcher:
     def __init__(self, game_server_config, incoming_queue):
         gevent.getcurrent().name = 'launcher'
 
+        self.logger = logging.getLogger(__name__)
         self.game_server_config = game_server_config
         self.incoming_queue = incoming_queue
         self.players = {}
@@ -137,11 +139,11 @@ class Launcher:
         self.game_controller.send(Launcher2GameNextMapMessage())
 
     def handle_set_player_loadouts_message(self, msg):
-        print('launcher: loadouts changed for player 0x%08X' % msg.unique_id)
+        self.logger.info('launcher: loadouts changed for player 0x%08X' % msg.unique_id)
         self.players[msg.unique_id] = msg.loadouts
 
     def handle_remove_player_loadouts_message(self, msg):
-        print('launcher: loadouts removed for player 0x%08X' % msg.unique_id)
+        self.logger.info('launcher: loadouts removed for player 0x%08X' % msg.unique_id)
         del(self.players[msg.unique_id])
 
     def handle_add_player_message(self, msg):
@@ -197,7 +199,7 @@ class Launcher:
 
     def handle_loadout_request_message(self, msg):
         if msg.player_unique_id not in self.players:
-            print('launcher: Unable to find player 0x%08X\'s loadouts. Ignoring request.' % msg.player_unique_id)
+            self.logger.warning('launcher: Unable to find player 0x%08X\'s loadouts. Ignoring request.' % msg.player_unique_id)
             return
 
         # Class and loadout keys are strings because they came in as json.

@@ -20,6 +20,7 @@
 
 from gevent import socket
 import json
+import logging
 
 from .tcpmessage import TcpMessageWriter
 
@@ -33,11 +34,13 @@ def _send_command(command):
             TcpMessageWriter(sock).send(json.dumps(command).encode('utf8'))
 
     except ConnectionRefusedError:
-        print('--------------------------------------------------------------\n'
-              'Warning: Failed to connect to taserver firewall for modifying \n'
-              'the firewall rules.\n'
-              'Did you forget to run start_taserver_firewall.py (as admin)?\n'
-              '--------------------------------------------------------------')
+        logger = logging.getLogger(__name__)
+        logger.warning('\n'
+                       '--------------------------------------------------------------\n'
+                       'Warning: Failed to connect to taserver firewall for modifying \n'
+                       'the firewall rules.\n'
+                       'Did you forget to run start_taserver_firewall.py (as admin)?\n'
+                       '--------------------------------------------------------------')
 
 
 def reset_firewall(list_type):

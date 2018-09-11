@@ -30,7 +30,7 @@ class AuthenticatedState(PlayerState):
         self.player.send(a0033())
 
     def on_exit(self):
-        print("%s is exiting state %s" % (self.player, type(self).__name__))
+        self.logger.info("%s is exiting state %s" % (self.player, type(self).__name__))
         self.player.save()
 
     @handles(packet=a00d5)
@@ -195,10 +195,10 @@ class AuthenticatedState(PlayerState):
                         pass
                     else:
                         value = int_field.value if int_field else string_field.value
-                        print('******* Setting %08X of menu area %s to value %s' % (setting, menu_area_field.value, value))
+                        self.logger.debug('******* Setting %08X of menu area %s to value %s' % (setting, menu_area_field.value, value))
                 else:
                     value = int_field.value if int_field else string_field.value
-                    print('******* Setting %08X to value %s' % (setting, value))
+                    self.logger.debug('******* Setting %08X to value %s' % (setting, value))
 
             if self.player.game_server and loadout_changed:
                 self.player.game_server.set_player_loadouts(self.player)

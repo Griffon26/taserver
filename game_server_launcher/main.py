@@ -21,8 +21,10 @@
 import configparser
 import gevent
 import gevent.queue
+import logging
 import os
 
+from common.logging import set_up_logging
 from .gamecontrollerhandler import handle_game_controller
 from .gameserverhandler import run_game_server, ConfigurationError
 from .launcher import handle_launcher, IncompatibleVersionError
@@ -33,7 +35,8 @@ INI_PATH = os.path.join('data', 'gameserverlauncher.ini')
 
 
 def main():
-
+    set_up_logging('game_server_launcher.log')
+    logger = logging.getLogger(__name__)
     config = configparser.ConfigParser()
     with open(INI_PATH) as f:
         config.read_file(f)
@@ -56,30 +59,34 @@ def main():
             # Wait for any of the tasks to terminate
             finished_greenlets = gevent.joinall(tasks, count=1)
 
-            print('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
+            logger.warning('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
 
             configuration_errors = ['  %s' % g.exception for g in finished_greenlets
                                     if isinstance(g.exception, ConfigurationError)]
             if configuration_errors:
-                print('\n-------------------------------------------\n')
-                print('Found errors in configuration files:')
-                print('\n'.join(configuration_errors))
-                print('\n-------------------------------------------\n')
+                logger.critical('\n' +
+                    '\n-------------------------------------------\n' +
+                    'Found errors in configuration files:' +
+                    '\n'.join(configuration_errors) +
+                    '\n-------------------------------------------\n'
+                )
                 restart = False
 
             incompatible_version_errors = ['  %s' % g.exception for g in finished_greenlets
                                            if isinstance(g.exception, IncompatibleVersionError)]
             if incompatible_version_errors:
-                print('\n-------------------------------------------\n')
-                print('A version incompatibility was found:')
-                print('\n'.join(incompatible_version_errors))
-                print('\n-------------------------------------------\n')
+                logger.critical('\n' +
+                    '\n-------------------------------------------\n' +
+                    'A version incompatibility was found:' +
+                    '\n'.join(incompatible_version_errors) +
+                    '\n-------------------------------------------\n'
+                )
                 restart = False
 
-            print('Killing all tasks...')
+            logger.info('Killing all tasks...')
             gevent.killall(tasks)
-            print('Waiting %s seconds before %s...' %
-                  (restart_delay, ('restarting' if restart else 'exiting')))
+            logger.info('Waiting %s seconds before %s...' %
+                        (restart_delay, ('restarting' if restart else 'exiting')))
             gevent.sleep(restart_delay)
 
     except KeyboardInterrupt:
