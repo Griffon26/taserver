@@ -88,5 +88,8 @@ def main():
         gevent.sleep(5)
 
     except KeyboardInterrupt:
+        logger.info('Keyboard interrupt received. Exiting...')
         gevent.killall(tasks)
         accounts.save()
+    except Exception:
+        logger.exception('Main login server thread exited with an exception')

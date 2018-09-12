@@ -90,4 +90,7 @@ def main():
             gevent.sleep(restart_delay)
 
     except KeyboardInterrupt:
+        logger.info('Keyboard interrupt received. Exiting...')
         gevent.killall(tasks)
+    except Exception:
+        logger.exception('Main game server launcher thread exited with an exception')

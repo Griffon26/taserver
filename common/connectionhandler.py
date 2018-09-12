@@ -196,10 +196,15 @@ class ConnectionHandler:
         gevent.spawn(reader.run)
         writer.run()
 
+    def _handle_and_catch(self, sock, address):
+        try:
+            self._handle(sock, address)
+        except Exception:
+            self.logger.exception('%s(%s) terminated with an exception' % (self.task_name, id(gevent.getcurrent())))
 
 class IncomingConnectionHandler(ConnectionHandler):
     def run(self):
-        server = gevent.server.StreamServer((self.address, self.port), self._handle)
+        server = gevent.server.StreamServer((self.address, self.port), self._handle_and_catch)
         server.serve_forever()
 
 
@@ -207,16 +212,19 @@ class OutgoingConnectionHandler(ConnectionHandler):
     def run(self, retry_time = None):
         task_id = id(gevent.getcurrent())
 
-        while True:
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                    sock.connect((self.address, self.port))
-                    self._handle(sock, (str(self.address), self.port))
-                    break
-            except ConnectionRefusedError:
-                if retry_time is not None:
-                    self.logger.info('%s(%s): remote end is refusing connections. Reconnecting in %d seconds...' %
-                                     (self.task_name, task_id, retry_time))
-                    gevent.sleep(retry_time)
-                else:
-                    break
+        try:
+            while True:
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                        sock.connect((self.address, self.port))
+                        self._handle(sock, (str(self.address), self.port))
+                        break
+                except ConnectionRefusedError:
+                    if retry_time is not None:
+                        self.logger.info('%s(%s): remote end is refusing connections. Reconnecting in %d seconds...' %
+                                         (self.task_name, task_id, retry_time))
+                        gevent.sleep(retry_time)
+                    else:
+                        break
+        except Exception:
+            self.logger.exception('%s(%s) terminated with an exception' % (self.task_name, task_id))

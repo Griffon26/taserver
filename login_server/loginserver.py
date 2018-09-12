@@ -190,6 +190,14 @@ class LoginServer:
         my_version = launcher2loginserver_protocol_version
 
         if my_version.version[0] != launcher_version.version[0]:
+            game_server = msg.peer
+            self.logger.warning("server: game server %s (%s) uses launcher protocol %s which is " 
+                                "not compatible with this login server's protocol version %s. "
+                                "Disconnecting game server..." %
+                                (game_server.serverid1,
+                                 game_server.ip,
+                                 launcher_version,
+                                 my_version))
             msg.peer.send(Login2LauncherProtocolVersionMessage(str(my_version)))
             msg.peer.disconnect()
 
