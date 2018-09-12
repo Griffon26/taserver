@@ -62,7 +62,7 @@ class AuthenticatedState(PlayerState):
         menu_fragments = {
             0x01de: originalfragment(0x38d17, 0x3d0fe),
             0x01ed: originalfragment(0x219d9, 0x2219e),
-            0x01f0: originalfragment(0x4758e, 0x4ae15),
+            0x01f0: originalfragment(0x4758e, 0x4ae0d),
             0x01f1: originalfragment(0x54bc6, 0x54db0),
             0x01f2: originalfragment(0x55a2e, 0x57375),
             0x01f3: originalfragment(0x54db8, 0x55a26),

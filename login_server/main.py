@@ -29,15 +29,15 @@ from .authcodehandler import handle_authcodes
 from .configuration import Configuration
 from .gameserverlauncherhandler import handle_game_server_launcher
 from .gameclienthandler import handle_game_client
-from .hexdumper import HexDumper, dumpfilename
+from .trafficdumper import TrafficDumper, dumpfilename
 from .loginserver import LoginServer
 
 
 def handle_dump(dumpqueue):
-    gevent.getcurrent().name = 'hexdumper'
+    gevent.getcurrent().name = 'trafficdumper'
     if dumpqueue:
-        hex_dumper = HexDumper(dumpqueue)
-        hex_dumper.run()
+        traffic_dumper = TrafficDumper(dumpqueue)
+        traffic_dumper.run()
 
 
 def handle_server(server_queue, client_queues, accounts, configuration):
