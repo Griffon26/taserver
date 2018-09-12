@@ -60,6 +60,7 @@ class GameServer(Peer):
         self.match_time_counting = False
         self.be_score = 0
         self.ds_score = 0
+        self.map_id = 0
 
         response = urllib.request.urlopen('http://tools.keycdn.com/geo.json?host=%s' % self.ip)
         result = response.read()

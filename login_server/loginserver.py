@@ -56,7 +56,7 @@ class LoginServer:
             ClientMessage: self.handle_client_message,
             Launcher2LoginProtocolVersionMessage: self.handle_launcher_protocol_version_message,
             Launcher2LoginServerInfoMessage: self.handle_server_info_message,
-            Launcher2LoginMapInfoMessage: None,
+            Launcher2LoginMapInfoMessage: self.handle_map_info_message,
             Launcher2LoginTeamInfoMessage: self.handle_team_info_message,
             Launcher2LoginScoreInfoMessage: self.handle_score_info_message,
             Launcher2LoginMatchTimeMessage: self.handle_match_time_message,
@@ -207,6 +207,10 @@ class LoginServer:
         self.logger.info('server: server info received for server %s (%s:%s)' % (game_server.serverid1,
                                                                                  game_server.ip,
                                                                                  game_server.port))
+
+    def handle_map_info_message(self, msg):
+        game_server = msg.peer
+        game_server.map_id = msg.map_id
 
     def handle_team_info_message(self, msg):
         game_server = msg.peer

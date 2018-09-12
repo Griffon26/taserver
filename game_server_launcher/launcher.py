@@ -45,6 +45,7 @@ class Launcher:
         self.game_controller = None
         self.login_server = None
 
+        self.last_map_info_message = None
         self.last_team_info_message = None
         self.last_score_info_message = None
         self.last_match_time_message = None
@@ -61,6 +62,7 @@ class Launcher:
             Login2LauncherRemovePlayer: self.handle_remove_player_message,
             Login2LauncherPings: self.handle_pings_message,
             Game2LauncherProtocolVersionMessage: self.handle_game_controller_protocol_version_message,
+            Game2LauncherMapInfoMessage: self.handle_map_info_message,
             Game2LauncherTeamInfoMessage: self.handle_team_info_message,
             Game2LauncherScoreInfoMessage: self.handle_score_info_message,
             Game2LauncherMatchTimeMessage: self.handle_match_time_message,
@@ -95,6 +97,9 @@ class Launcher:
             self.login_server.send(msg)
 
             # Send the latest relevant information that was received while the login server was not connected
+            if self.last_map_info_message:
+                self.login_server.send(self.last_map_info_message)
+                self.last_map_info_message = None
             if self.last_team_info_message:
                 self.login_server.send(self.last_team_info_message)
                 self.last_team_info_message = None
@@ -165,6 +170,13 @@ class Launcher:
                                            'with the version supported by this game server launcher (%s)' %
                                            (controller_version,
                                             my_version))
+
+    def handle_map_info_message(self, msg):
+        msg = Launcher2LoginMapInfoMessage(msg.map_id)
+        if self.login_server:
+            self.login_server.send(msg)
+        else:
+            self.last_map_info_message = msg
 
     def handle_team_info_message(self, msg):
         for player_id, team_id in msg.player_to_team_id.items():

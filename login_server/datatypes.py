@@ -1261,7 +1261,7 @@ class m00e9(arrayofenumblockarrays):
                 m069b(),
                 m0300().set(server.description),
                 m01a4().set(server.motd),
-                m02b2().set(0x000005A7),
+                m02b2().set(server.map_id),
                 m02b5(),
                 m0347().set(0x00000018),
                 m02f4().set(server.get_time_remaining()),

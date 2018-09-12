@@ -46,6 +46,7 @@ _MSGID_GAME2LAUNCHER_SCOREINFO = 0x3002
 _MSGID_GAME2LAUNCHER_MATCHTIME = 0x3003
 _MSGID_GAME2LAUNCHER_MATCHEND = 0x3004
 _MSGID_GAME2LAUNCHER_LOADOUTREQUEST = 0x3005
+_MSGID_GAME2LAUNCHER_MAPINFO = 0x3006
 
 _MSGID_LAUNCHER2GAME_LOADOUT = 0x4000
 _MSGID_LAUNCHER2GAME_NEXTMAP = 0x4001
@@ -131,6 +132,9 @@ class Launcher2LoginServerInfoMessage(Message):
 class Launcher2LoginMapInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MAPINFO
 
+    def __init(self, map_id):
+        self.map_id = map_id
+
 
 class Launcher2LoginTeamInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_TEAMINFO
@@ -176,6 +180,15 @@ class Game2LauncherProtocolVersionMessage(Message):
 
     def __init__(self, version: str):
         self.version = version
+
+
+# Example json: { 'map_id' : 1447 }
+# Where: 1447 (0x5a7) is the map ID of Katabatic
+class Game2LauncherMapInfoMessage(Message):
+    msg_id = _MSGID_GAME2LAUNCHER_MAPINFO
+
+    def __init__(self, map_id: int):
+        self.map_id = map_id
 
 
 # Example json: { 'player_to_team_id' : { '123' : 0, '234' : 1, '321' : 255 } }
@@ -294,6 +307,7 @@ _message_classes = [
     Launcher2LoginProtocolVersionMessage,
 
     Game2LauncherProtocolVersionMessage,
+    Game2LauncherMapInfoMessage,
     Game2LauncherTeamInfoMessage,
     Game2LauncherScoreInfoMessage,
     Game2LauncherMatchTimeMessage,
