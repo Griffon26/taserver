@@ -132,7 +132,7 @@ class Launcher2LoginServerInfoMessage(Message):
 class Launcher2LoginMapInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MAPINFO
 
-    def __init(self, map_id):
+    def __init__(self, map_id):
         self.map_id = map_id
 
 
