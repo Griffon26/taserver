@@ -1,5 +1,6 @@
 0x0056,Authentication,
 0x03E3,Salt,
+0x032E,Password,server password?
 0x0014,EnumBlockArray,class menu content
 0x0033,EnumBlockArray,
 0x0035,EnumBlockArray,
@@ -32,6 +33,9 @@
 0x018C,EnumBlockArray,/votekick command
 0x0197,EnumBlockArray,
 0x019A,EnumBlockArray,something to do with match end
+0x01A2,EnumBlockArray,something to do with setting up a custom server
+0x01A4,EnumBlockArray,something to do with setting up a custom server
+0x01A5,EnumBlockArray,something to do with setting up a custom server
 0x01B5,EnumBlockArray,watch now menu content
 0x01BC,EnumBlockArray,
 0x01C6,EnumBlockArray,
@@ -44,6 +48,7 @@
 0x0132,ArrayOfEnumBlockArrays,
 0x0138,ArrayOfEnumBlockArrays,
 0x0144,ArrayOfEnumBlockArrays,
+0x0148,ArrayOfEnumBlockArrays,
 0x05CB,ArrayOfEnumBlockArrays,
 0x0632,ArrayOfEnumBlockArrays,
 0x0633,ArrayOfEnumBlockArrays,
@@ -90,6 +95,7 @@
 0x006F,OneByte,
 0x01FA,OneByte,
 0x02C9,OneByte,
+0x0318,OneByte,
 0x0326,OneByte,
 0x0442,OneByte,
 0x046B,OneByte,
@@ -164,6 +170,7 @@
 0x02D7,FourBytes,
 0x02D8,FourBytes,
 0x02DC,FourBytes,
+0x02EA,FourBytes,
 0x02EC,FourBytes,
 0x02ED,FourBytes,
 0x02EF,FourBytes,
@@ -171,6 +178,7 @@
 0x02FC,FourBytes,std message id
 0x02FF,FourBytes,
 0x0319,FourBytes,
+0x0320,FourBytes,
 0x0331,FourBytes,
 0x0333,FourBytes,
 0x0343,FourBytes,
@@ -271,7 +279,11 @@
 0x0683,FourBytes,
 0x0684,FourBytes,
 0x068C,FourBytes,
+0x0698,FourBytes,
 0x0699,FourBytes,
+0x069D,FourBytes,
+0x069E,FourBytes,
+0x069F,FourBytes,
 0x06B7,FourBytes,
 0x06B9,FourBytes,
 0x06BA,FourBytes,

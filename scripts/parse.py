@@ -185,6 +185,7 @@ class Parser:
                 'arrayofenumblockarrays': set(),
                 'authentication': set(),
                 'salt': set(),
+                'password': set()
             }
             with open(fname, 'r') as f:
                 for enumid, enumtype, _ in csv.reader(f):
@@ -339,6 +340,14 @@ class Parser:
         salt = bytearray2hex(read_bytearray(self.infile, 16))
         self.outfile.write(f'{salt} (salt)\n')
 
+    def parse_password(self, enumid: int, nesting_level: int) -> None:
+        """
+        Parses a value from the stream
+        """
+        length = read_short(self.infile) & 0x7FFF
+        password = bytearray2hex(read_bytearray(self.infile, length * 2))
+        self.outfile.write(f'{password} {self.get_description(enumid, None)}\n')
+
     def parse_seq_ack(self) -> None:
         """
         Parses a seq/ack from the stream
@@ -385,6 +394,8 @@ class Parser:
             self.parse_enumblockarray(enumid, nesting_level + 1, False)
         elif enumid in self.enum_ids['salt']:
             self.parse_salt(enumid, nesting_level + 1)
+        elif enumid in self.enum_ids['password']:
+            self.parse_password(enumid, nesting_level + 1)
         elif enumid in self.enum_ids['sizedcontent'] or (nesting_level != 0 and enumid == 444):
             try:
                 self.parse_sizedcontent(enumid, nesting_level + 1)
