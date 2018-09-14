@@ -3,5 +3,6 @@ __pycache__/
 .mypy_cache/
 /game_server_launcher.log
 /login_server.log
-/taserverdump.hexdump_parsed.txt
-/taserverdump.hexdump
+/taserverdump.carrays_parsed.txt
+/taserverdump.carrays
+/TAMods-Server.dll
