@@ -63,9 +63,13 @@ Try it out by following the instructions under [Joining games](#joining-games)
 
 ### Running your own login server
 
-Follow the steps for installation of python 
-[Hosting a dedicated server](#hosting-a-dedicated-server), you can start the login server by
-running  
+Running your own login server is usually not needed. When you start a game server using
+[the instructions above](#hosting-a-dedicated-server) it will connect to the default login 
+server running on ta.kfk4ever.com (18.195.72.223). Your server will show up in the list 
+for anyone else connecting to this login server.
+
+One scenario where you would want to run your own login server is when you want to play
+on a LAN disconnected from the internet. In that case, follow these steps to set it up:
 
 1. Install python 3
 
@@ -92,7 +96,7 @@ running
 
 5. Change `host` under the `[loginserver]` section in `data/gameserverlauncher.ini` to 127.0.0.1
    if you want any [game server that you start](#hosting-a-dedicated-server) to connect to your
-   locally running login server.   
+   locally running login server.
 
 ## Limitations
 
