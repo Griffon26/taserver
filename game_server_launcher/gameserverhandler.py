@@ -29,6 +29,12 @@ from .inject import inject
 class ConfigurationError(Exception):
     pass
 
+def wait_until_file_contains_string(filename, string):
+    while True:
+        with open(filename, 'rt') as f:
+            if string in f.read():
+                break
+            gevent.sleep(3)
 
 def run_game_server(game_server_config):
     logger = logging.getLogger(__name__)
@@ -64,7 +70,13 @@ def run_game_server(game_server_config):
     try:
         logger.info('gameserver: Started process with pid: %s' % process.pid)
         if dll_to_inject:
-            gevent.sleep(10)
+            launch_log_filename = os.path.join(os.environ['USERPROFILE'],
+                                               'Documents', 'My Games', 'Tribes Ascend',
+                                               'TribesGame', 'Logs', 'Launch.log')
+            gevent.sleep(3)
+            logger.info('gameserver: Waiting until game server has finished starting up...')
+            wait_until_file_contains_string(launch_log_filename, 'Log: Flushing async loaders.')
+
             logger.info('gameserver: Injecting game controller DLL into game server...')
             inject(process.pid, dll_to_inject)
             logger.info('gameserver: Injection done.')
