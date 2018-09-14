@@ -65,7 +65,7 @@ Try it out by following the instructions under [Joining games](#joining-games)
 
 Running your own login server is usually not needed. When you start a game server using
 [the instructions above](#hosting-a-dedicated-server) it will connect to the default login 
-server running on ta.kfk4ever.com (18.195.72.223). Your server will show up in the list 
+server running on `ta.kfk4ever.com` (`18.195.72.223`). Your server will show up in the list 
 for anyone else connecting to this login server.
 
 One scenario where you would want to run your own login server is when you want to play
@@ -94,9 +94,12 @@ on a LAN disconnected from the internet. In that case, follow these steps to set
    repository (preferably from a command window so you can read the errors if it exits for 
    some reason).
 
-5. Change `host` under the `[loginserver]` section in `data/gameserverlauncher.ini` to 127.0.0.1
-   if you want any [game server that you start](#hosting-a-dedicated-server) to connect to your
-   locally running login server.
+5. Change `host` under the `[loginserver]` section in `data/gameserverlauncher.ini` to `127.0.0.1`
+   to have any [game server that you start](#hosting-a-dedicated-server) connect to your locally
+   running login server. Note: setting `host` to `127.0.0.1` will prevent anyone else from
+   connecting to your game server. For LAN play you should set `host` to the LAN IP of the computer
+   running the login server. If you want people on the internet to join you can try setting `host` 
+   to your external IP instead, but it depends on your network setup/hardware if this will work. 
 
 ## Limitations
 
