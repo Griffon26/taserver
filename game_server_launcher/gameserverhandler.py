@@ -25,15 +25,23 @@ import os
 
 from .inject import inject
 
+log_filename = os.path.join(os.environ['USERPROFILE'],
+                            'Documents', 'My Games', 'Tribes Ascend',
+                            'TribesGame', 'Logs', 'tagameserver.log')
+
 
 class ConfigurationError(Exception):
     pass
 
+
 def wait_until_file_contains_string(filename, string):
     while True:
-        with open(filename, 'rt') as f:
-            if string in f.read():
-                break
+        try:
+            with open(filename, 'rt') as f:
+                if string in f.read():
+                    break
+                gevent.sleep(3)
+        except FileNotFoundError:
             gevent.sleep(3)
 
 def run_game_server(game_server_config):
@@ -42,7 +50,6 @@ def run_game_server(game_server_config):
 
     try:
         working_dir = game_server_config['dir']
-        args = game_server_config['args'].split()
         dll_to_inject = game_server_config.get('controller_dll', None)
     except KeyError as e:
         raise ConfigurationError("%s is a required configuration item under [gameserver]" % str(e))
@@ -65,17 +72,18 @@ def run_game_server(game_server_config):
                 "Invalid 'controller_dll' specified under [gameserver]: the specified file does not exist. "
                 "Either remove the key from the ini file to work without a controller or correct the specified location.")
 
+    try:
+        os.remove(log_filename)
+    except FileNotFoundError:
+        pass
+
     logger.info('gameserver: Starting a new TribesAscend server...')
-    process = sp.Popen([exe_path, *args], cwd=working_dir)
+    process = sp.Popen([exe_path, 'server', '-Log=tagameserver.log'], cwd=working_dir)
     try:
         logger.info('gameserver: Started process with pid: %s' % process.pid)
         if dll_to_inject:
-            launch_log_filename = os.path.join(os.environ['USERPROFILE'],
-                                               'Documents', 'My Games', 'Tribes Ascend',
-                                               'TribesGame', 'Logs', 'Launch.log')
-            gevent.sleep(3)
             logger.info('gameserver: Waiting until game server has finished starting up...')
-            wait_until_file_contains_string(launch_log_filename, 'Log: Flushing async loaders.')
+            wait_until_file_contains_string(log_filename, 'Log: Bringing up level for play took:')
 
             logger.info('gameserver: Injecting game controller DLL into game server...')
             inject(process.pid, dll_to_inject)
