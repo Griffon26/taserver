@@ -18,16 +18,14 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import ctypes
+import ctypes.wintypes
 import gevent
 import gevent.subprocess as sp
 import logging
 import os
 
 from .inject import inject
-
-log_filename = os.path.join(os.environ['USERPROFILE'],
-                            'Documents', 'My Games', 'Tribes Ascend',
-                            'TribesGame', 'Logs', 'tagameserver.log')
 
 
 class ConfigurationError(Exception):
@@ -44,7 +42,31 @@ def wait_until_file_contains_string(filename, string):
         except FileNotFoundError:
             gevent.sleep(3)
 
+
+def get_my_documents_folder():
+    S_OK = 0
+    CSIDL_MYDOCUMENTS = 5
+    SHGFP_TYPE_CURRENT = 0
+
+    _SHGetFolderPath = ctypes.windll.shell32.SHGetFolderPathW
+    _SHGetFolderPath.argtypes = [
+        ctypes.wintypes.HWND,
+        ctypes.c_int,
+        ctypes.wintypes.HANDLE,
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.LPWSTR
+    ]
+
+    buf = ctypes.create_unicode_buffer(1024)
+    if _SHGetFolderPath(0, CSIDL_MYDOCUMENTS, 0, SHGFP_TYPE_CURRENT, buf) != S_OK:
+        raise RuntimeError('For some reason requesting the location of the Documents folder failed')
+    return buf.value
+
 def run_game_server(game_server_config):
+    log_filename = os.path.join(get_my_documents_folder(),
+                                'My Games', 'Tribes Ascend',
+                                'TribesGame', 'Logs', 'tagameserver.log')
+
     logger = logging.getLogger(__name__)
     gevent.getcurrent().name = 'gameserver'
 
@@ -73,6 +95,7 @@ def run_game_server(game_server_config):
                 "Either remove the key from the ini file to work without a controller or correct the specified location.")
 
     try:
+        logger.info('gameserver: Removing previous log file %s' % log_filename)
         os.remove(log_filename)
     except FileNotFoundError:
         pass
