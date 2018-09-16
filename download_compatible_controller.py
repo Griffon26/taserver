@@ -20,6 +20,7 @@
 
 from distutils.version import StrictVersion
 import json
+import os
 import re
 from urllib.error import HTTPError
 import urllib.request as urlreq
@@ -27,7 +28,7 @@ import urllib.request as urlreq
 from common.versions import launcher2controller_protocol_version
 
 compatibility_csv = 'https://raw.githubusercontent.com/Griffon26/taserver/master/data/tamods_compatibility.csv'
-target_filename = 'TAMods-Server.dll'
+target_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'TAMods-Server.dll')
 
 
 class UserError(Exception):
@@ -48,17 +49,19 @@ def get_available_tamods_versions():
                            and entry['path'].endswith('.dll')]
 
     available_tamods_versions = []
+    version_to_filename_map = {}
     for filename in tamods_server_files:
         match = re.match(r'TAMods-Server-(.*).dll', filename)
         if match:
             try:
                 version = StrictVersion(match.group(1))
                 available_tamods_versions.append(version)
+                version_to_filename_map[str(version)] = filename
             except ValueError:
                 # Ignore versions that cannot be parsed
                 pass
 
-    return available_tamods_versions
+    return sorted(available_tamods_versions), version_to_filename_map
 
 
 def load_version_map():
@@ -89,8 +92,8 @@ def is_compatible(version1, version2):
     return version1.version[0] == version2.version[0]
 
 
-def download_tamods_server_version(version):
-    result = urlreq.urlopen('https://github.com/mcoot/tamodsupdate/raw/release/TAMods-Server-%s.dll' % version)
+def download_tamods_server_version(download_filename):
+    result = urlreq.urlopen('https://github.com/mcoot/tamodsupdate/raw/release/%s' % download_filename)
     with open(target_filename, 'wb') as outfile:
         outfile.write(result.read())
 
@@ -101,7 +104,7 @@ def main():
     except HTTPError as e:
         raise UserError('unable to download %s: %s' % (compatibility_csv, e))
 
-    available_tamods_versions = sorted(get_available_tamods_versions())
+    available_tamods_versions, version_to_filename_map = get_available_tamods_versions()
     if not available_tamods_versions:
         raise UserError('no TAMods-Server versions were found in the release branch of github.com/mcoot/tamodsupdate')
 
@@ -121,9 +124,10 @@ def main():
         raise UserError('no compatible version of TAMods-Server is available')
 
     print('Latest compatible TAMods-Server version is %s' % latest_compatible_version)
-    print('Downloading this version to %s' % target_filename)
+    download_filename = version_to_filename_map[str(latest_compatible_version)]
+    print('Downloading %s to %s' % (download_filename, target_filename))
     try:
-        download_tamods_server_version(latest_compatible_version)
+        download_tamods_server_version(download_filename)
     except HTTPError as e:
         raise UserError('download failed: %s' % e)
 
