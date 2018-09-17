@@ -46,6 +46,8 @@ class LoginServerHandler(OutgoingConnectionHandler):
                          socket.gethostbyname(config['host']),
                          int(config['port']),
                          incoming_queue)
+        self.logger.info('%s(%s): Connecting to login server at %s:%s...' %
+                         (self.task_name, id(gevent.getcurrent()), config['host'], config['port']))
 
     def create_connection_instances(self, sock, address):
         reader = LoginServerReader(sock)
