@@ -107,7 +107,7 @@
 0x063C,OneByte,
 0x0673,OneByte,
 0x069B,OneByte,
-0x069C,OneByte,
+0x069C,OneByte,password required
 0x0703,OneByte,
 0x0307,TwoBytes,
 0x053D,TwoBytes,ping time

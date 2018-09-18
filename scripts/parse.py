@@ -435,7 +435,7 @@ class Parser:
 
 
 def carrays2indentandbytesperblock(hexdumpfile: TextIO) -> Generator[Tuple[bool, bytearray], None, None]:
-    lastpacketnumber = -1
+    lastpacketnumber = {}
     collectedbytes: bytearray = []
     lastlineofpacket = False
     peer = None
@@ -446,19 +446,19 @@ def carrays2indentandbytesperblock(hexdumpfile: TextIO) -> Generator[Tuple[bool,
         if not line:
             continue
 
-        match = re.match('char peer(\d)_.* Packet ([^ ]*) .*', line)
+        match = re.match('char peer(\d)_(\d+).* Packet .*', line)
 
         if match:
             peer = int(match.group(1))
             packetnumber = int(match.group(2))
-            if packetnumber < lastpacketnumber:
+            if packetnumber < lastpacketnumber.get(peer, -1):
                 print('Warning: found non-increasing packet number on line %d: %s\n' % (linenum + 1, packetnumber) +
                       '\n' +
                       'This is probably caused by a known bug in Wireshark,\n' +
                       'so we\'ll just ignore this and stop reading here.\n'
                       'Everything up to this point has been converted successfully.')
                 break
-            lastpacketnumber = packetnumber
+            lastpacketnumber[peer] = packetnumber
             continue
 
         lastlineofpacket = line.endswith('};')
