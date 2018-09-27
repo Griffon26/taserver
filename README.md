@@ -22,8 +22,10 @@ connect to the replacement login server, follow these steps:
 
 1. Get the code for [this project](https://github.com/Griffon26/taserver) from github
 
-2. Download the latest `TAMods-Server.dll` (ask on the 
-   [public Discord channel](https://discord.gg/8enekHQ) where to find it)
+2. Run the `download_compatible_controller.py` script to download the latest compatible
+   version of `TAMods-Server.dll`. TAMods-Server is responsible for all game-related settings. 
+   Consult the [TAMods-Server documentation](https://www.tamods.org/docs/doc_srv_api_overview.html)
+   on how to change any of these.
 
 3. Modify `dir` under the `[gameserver]` section in `data/gameserverlauncher.ini` to point to 
    the directory where your TribesAscend.exe is located. For instance:
@@ -32,12 +34,9 @@ connect to the replacement login server, follow these steps:
     C:\Games\Tribes Ascend\Binaries\Win32
     ```
     
-4. Modify `controller_dll` under the `[gameserver]` section in `data/gameserverlauncher.ini` to 
-   point to the downloaded TAMods-Server.dll.
+4. Install python 3
 
-5. Install python 3
-
-6. Install the gevent module for python. From an administrator command prompt you should be able 
+5. Install the gevent module for python. From an administrator command prompt you should be able 
    to do it with:
 
     ```
@@ -50,12 +49,12 @@ connect to the replacement login server, follow these steps:
     C:\Program Files (x86)\Python36\Scripts\pip install gevent
     ```
 
-7. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
+6. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
    important. This script will manage firewall rules to keep kicked players out and only allow 
    logged in players on the game server. Without this script running you will not be able to get
    rid of hackers that are normally "unkickable".
 
-8. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
+7. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
    root of this repository.
 
 Your server should now show up in the list for anyone connecting to the login server.

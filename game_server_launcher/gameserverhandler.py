@@ -85,14 +85,13 @@ def run_game_server(game_server_config):
         raise ConfigurationError(
             "Invalid 'dir' specified under [gameserver]: the specified directory does not contain a TribesAscend.exe")
 
-    if dll_to_inject:
-        if not os.path.isabs(dll_to_inject):
-            raise ConfigurationError(
-                "Invalid 'controller_dll' specified under [gameserver]: an absolute path is required")
-        if not os.path.exists(dll_to_inject):
-            raise ConfigurationError(
-                "Invalid 'controller_dll' specified under [gameserver]: the specified file does not exist. "
-                "Either remove the key from the ini file to work without a controller or correct the specified location.")
+    if not os.path.isabs(dll_to_inject):
+        dll_to_inject = os.path.abspath(dll_to_inject)
+    logger.info('gameserver: Path to controller DLL is %s' % dll_to_inject)
+
+    if not os.path.exists(dll_to_inject):
+        raise ConfigurationError(
+            "Invalid 'controller_dll' specified under [gameserver]: the specified file does not exist.")
 
     try:
         logger.info('gameserver: Removing previous log file %s' % log_filename)
@@ -104,13 +103,14 @@ def run_game_server(game_server_config):
     process = sp.Popen([exe_path, 'server', '-Log=tagameserver.log'], cwd=working_dir)
     try:
         logger.info('gameserver: Started process with pid: %s' % process.pid)
-        if dll_to_inject:
-            logger.info('gameserver: Waiting until game server has finished starting up...')
-            wait_until_file_contains_string(log_filename, 'Log: Bringing up level for play took:')
 
-            logger.info('gameserver: Injecting game controller DLL into game server...')
-            inject(process.pid, dll_to_inject)
-            logger.info('gameserver: Injection done.')
+        logger.info('gameserver: Waiting until game server has finished starting up...')
+        wait_until_file_contains_string(log_filename, 'Log: Bringing up level for play took:')
+
+        logger.info('gameserver: Injecting game controller DLL into game server...')
+        inject(process.pid, dll_to_inject)
+        logger.info('gameserver: Injection done.')
+
         process.wait()
     finally:
         process.terminate()
