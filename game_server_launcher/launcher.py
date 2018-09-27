@@ -141,6 +141,7 @@ class Launcher:
                                         StrictVersion(msg.version)))
 
     def handle_next_map_message(self, msg):
+        self.logger.info('launcher: login server requested next map')
         self.game_controller.send(Launcher2GameNextMapMessage())
 
     def handle_set_player_loadouts_message(self, msg):
@@ -152,9 +153,11 @@ class Launcher:
         del(self.players[msg.unique_id])
 
     def handle_add_player_message(self, msg):
+        self.logger.info('launcher: login server added a player with ip %s' % msg.ip)
         modify_firewall('whitelist', 'add', msg.ip)
 
     def handle_remove_player_message(self, msg):
+        self.logger.info('launcher: login server removed a player with ip %s' % msg.ip)
         modify_firewall('whitelist', 'remove', msg.ip)
 
     def handle_pings_message(self, msg):
@@ -165,6 +168,8 @@ class Launcher:
         controller_version = StrictVersion(msg.version)
         my_version = versions.launcher2controller_protocol_version
 
+        self.logger.info('launcher: received protocol version %s from game controller' % controller_version)
+
         if controller_version.version[0] != my_version.version[0]:
             raise IncompatibleVersionError('The protocol version of the game controller DLL (%s) is incompatible '
                                            'with the version supported by this game server launcher (%s)' %
@@ -172,6 +177,8 @@ class Launcher:
                                             my_version))
 
     def handle_map_info_message(self, msg):
+        self.logger.info('launcher: received map info from game controller')
+
         msg = Launcher2LoginMapInfoMessage(msg.map_id)
         if self.login_server:
             self.login_server.send(msg)
@@ -179,6 +186,8 @@ class Launcher:
             self.last_map_info_message = msg
 
     def handle_team_info_message(self, msg):
+        self.logger.info('launcher: received team info from game controller')
+
         for player_id, team_id in msg.player_to_team_id.items():
             assert int(player_id) in self.players
 
@@ -189,6 +198,8 @@ class Launcher:
             self.last_team_info_message = msg
 
     def handle_score_info_message(self, msg):
+        self.logger.info('launcher: received score info from game controller')
+
         msg = Launcher2LoginScoreInfoMessage(msg.be_score, msg.ds_score)
         if self.login_server:
             self.login_server.send(msg)
@@ -196,6 +207,8 @@ class Launcher:
             self.last_score_info_message = msg
 
     def handle_match_time_message(self, msg):
+        self.logger.info('launcher: received match time from game controller')
+
         msg = Launcher2LoginMatchTimeMessage(msg.seconds_remaining, msg.counting)
         if self.login_server:
             self.login_server.send(msg)
@@ -203,6 +216,8 @@ class Launcher:
             self.last_match_time_message = msg
 
     def handle_match_end_message(self, msg):
+        self.logger.info('launcher: received match end from game controller')
+
         msg = Launcher2LoginMatchEndMessage()
         if self.login_server:
             self.login_server.send(msg)
@@ -210,6 +225,8 @@ class Launcher:
             self.last_match_end_message = msg
 
     def handle_loadout_request_message(self, msg):
+        self.logger.info('launcher: received loadout request from game controller')
+
         if msg.player_unique_id not in self.players:
             self.logger.warning('launcher: Unable to find player 0x%08X\'s loadouts. Ignoring request.' % msg.player_unique_id)
             return
