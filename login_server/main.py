@@ -21,56 +21,34 @@
 import argparse
 import gevent
 import gevent.queue
-from gevent.server import StreamServer
+import logging
 
+from common.logging import set_up_logging
 from .accounts import Accounts
-from .authcodehandler import AuthCodeHandler
-from .clientreader import ClientReader
-from .clientwriter import ClientWriter
+from .authcodehandler import handle_authcodes
 from .configuration import Configuration
-from .gameserverreader import GameServerReader
-from .gameserverwriter import GameServerWriter
-from .hexdumper import HexDumper, dumpfilename
-from .server import Server
+from .gameserverlauncherhandler import handle_game_server_launcher
+from .gameclienthandler import handle_game_client
+from .trafficdumper import TrafficDumper, dumpfilename
+from .loginserver import LoginServer
 
 
 def handle_dump(dumpqueue):
+    gevent.getcurrent().name = 'trafficdumper'
     if dumpqueue:
-        hex_dumper = HexDumper(dumpqueue)
-        hex_dumper.run()
+        traffic_dumper = TrafficDumper(dumpqueue)
+        traffic_dumper.run()
 
 
-def handle_authcodes(server_queue, authcode_queue):
-    authcode_handler = AuthCodeHandler(server_queue, authcode_queue)
-    authcode_handler.run()
-
-
-def handle_server(server_queue, client_queues, authcode_queue, accounts, configuration):
-    server = Server(server_queue, client_queues, authcode_queue, accounts, configuration)
+def handle_server(server_queue, client_queues, accounts, configuration):
+    server = LoginServer(server_queue, client_queues, accounts, configuration)
     server.run()
 
 
-def handle_game_server(server_queue, game_server_queue, socket, address):
-    myid = id(gevent.getcurrent())
-    print('gameserver(%s): connected from %s:%s' % (myid, address[0], address[1]))
-    reader = GameServerReader(socket, myid, address, server_queue)
-    gevent.spawn(reader.run)
-
-    writer = GameServerWriter(socket, myid, game_server_queue)
-    writer.run()
-    
-
-def handle_client(server_queue, client_queue, socket, address, dump_queue):
-    myid = id(gevent.getcurrent())
-    print('client(%s): connected from %s:%s' % (myid, address[0], address[1]))
-    reader = ClientReader(socket, myid, address, server_queue, dump_queue)
-    gevent.spawn(reader.run)
-
-    writer = ClientWriter(socket, myid, client_queue, dump_queue)
-    writer.run()
-
 
 def main():
+    set_up_logging('login_server.log')
+    logger = logging.getLogger(__name__)
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dump', action='store_true',
                         help='Dump all traffic to %s in a format suitable '
@@ -79,32 +57,39 @@ def main():
     args = parser.parse_args()
     
     client_queues = {}
-    game_server_queues = {}
     server_queue = gevent.queue.Queue()
-    authcode_queue = gevent.queue.Queue()
     dump_queue = gevent.queue.Queue() if args.dump else None
 
     accounts = Accounts('data/accountdatabase.json')
     configuration = Configuration()
-    gevent.spawn(handle_server, server_queue, client_queues, authcode_queue, accounts, configuration)
-    gevent.spawn(handle_dump, dump_queue)
-    gevent.spawn(handle_authcodes, server_queue, authcode_queue)
 
-    def handle_client_wrapper(socket, address):
-        client_queue = gevent.queue.Queue()
-        client_queues[id(gevent.getcurrent())] = client_queue
-        handle_client(server_queue, client_queue, socket, address, dump_queue)
+    tasks = [
+        gevent.spawn(handle_server, server_queue, client_queues, accounts, configuration),
+        gevent.spawn(handle_authcodes, server_queue),
+        gevent.spawn(handle_game_client, server_queue, dump_queue),
+        gevent.spawn(handle_game_server_launcher, server_queue)
+    ]
 
-    def handle_game_server_wrapper(socket, address):
-        game_server_queue = gevent.queue.Queue()
-        game_server_queues[id(gevent.getcurrent())] = game_server_queue
-        handle_game_server(server_queue, game_server_queue, socket, address)
+    if dump_queue:
+        tasks.append(gevent.spawn(handle_dump, dump_queue))
 
-    login_server = StreamServer(('0.0.0.0', 9000), handle_client_wrapper)
-    game_server_handler = StreamServer(('0.0.0.0', 9001), handle_game_server_wrapper)
-
-    game_server_handler.start()
     try:
-        login_server.serve_forever()
+        # Wait for any of the tasks to terminate
+        finished_greenlets = gevent.joinall(tasks, count=1)
+
+        logger.error('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
+
+        if dump_queue:
+            logger.info('Giving the dump greenlet some time to finish writing to disk...')
+            gevent.sleep(2)
+
+        logger.info('Killing everything and waiting 10 seconds before exiting...')
+        gevent.killall(tasks)
+        gevent.sleep(5)
+
     except KeyboardInterrupt:
+        logger.info('Keyboard interrupt received. Exiting...')
+        gevent.killall(tasks)
         accounts.save()
+    except Exception:
+        logger.exception('Main login server thread exited with an exception')

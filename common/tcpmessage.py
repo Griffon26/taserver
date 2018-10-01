@@ -18,13 +18,15 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import io
 import struct
 
 
 class TcpMessageReader:
-    def __init__(self, socket, max_message_size = 0xFFFF):
+    def __init__(self, socket, max_message_size = 0xFFFF, dump_queue = None):
         self.socket = socket
         self.max_message_size = max_message_size
+        self.dump_queue = dump_queue
         if self.max_message_size > 0xFFFF:
             raise ValueError('max_message_size is not allowed to be greater than 0xFFFF')
 
@@ -34,7 +36,7 @@ class TcpMessageReader:
         while remaining_size > 0:
             chunk = self.socket.recv(remaining_size)
             if not chunk:
-                raise RuntimeError('Socket connection closed')
+                raise ConnectionResetError()
             remaining_size -= len(chunk)
             msg += chunk
         return msg
@@ -48,6 +50,8 @@ class TcpMessageReader:
             raise RuntimeError('Received a packet size that is larger than the TcpMessageReader was created for')
 
         packet_body_bytes = self._recvall(packet_size)
+        if self.dump_queue:
+            self.dump_queue.put(('tcpreader', packet_size_bytes + packet_body_bytes))
         if len(packet_body_bytes) != packet_size:
             raise RuntimeError('Received %d bytes, but expected %d. What happened?' %
                                (len(packet_body_bytes), packet_size))
@@ -55,29 +59,27 @@ class TcpMessageReader:
 
 
 class TcpMessageWriter:
-    def __init__(self, socket, max_message_size = 0xFFFF):
+    def __init__(self, socket, max_message_size = 0xFFFF, dump_queue = None):
         self.socket = socket
         self.max_message_size = max_message_size
+        self.dump_queue = dump_queue
         if self.max_message_size > 0xFFFF:
             raise ValueError('max_message_size is not allowed to be greater than 0xFFFF')
 
-    def _recvall(self, size):
-        remaining_size = size
-        msg = bytes()
-        while remaining_size > 0:
-            chunk = self.socket.recv(remaining_size)
-            if not chunk:
-                raise RuntimeError('Socket connection closed')
-            remaining_size -= len(chunk)
-            msg += chunk
-        return msg
-
     def send(self, data):
         size = len(data)
-        if size > self.max_message_size:
-            raise ValueError('TcpMessageWriter: Can only send messages up to %d bytes in size' % self.max_message_size)
-        size_bytes = struct.pack('<H', size)
-        self.socket.sendall(size_bytes + data)
+        if size == 0:
+            raise ValueError('TcpMessageWriter: Sending empty messages is not allowed')
+        output_buffer = io.BytesIO()
+        while size > 0:
+            output_buffer.write(struct.pack('<H', size if size < self.max_message_size else 0))
+            output_buffer.write(data[:self.max_message_size])
+            data = data[self.max_message_size:]
+            size = len(data)
+
+        if self.dump_queue:
+            self.dump_queue.put(('tcpwriter', output_buffer.getvalue()))
+        self.socket.sendall(output_buffer.getvalue())
 
     def close(self):
         self.socket.close()

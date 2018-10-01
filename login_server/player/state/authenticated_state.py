@@ -20,7 +20,7 @@
 #
 
 from ...datatypes import *
-from ...firewall import modify_gameserver_whitelist, modify_loginserver_blacklist
+from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles
 
 
@@ -29,12 +29,16 @@ class AuthenticatedState(PlayerState):
     def handle_a0033(self, request):
         self.player.send(a0033())
 
+    def on_exit(self):
+        self.logger.info("%s is exiting state %s" % (self.player, type(self).__name__))
+        self.player.save()
+
     @handles(packet=a00d5)
     def handle_a00d5(self, request):
         if request.findbytype(m0228).value == 1:
             self.player.send(originalfragment(0x1EEB3, 0x20A10))  # 00d5 (map list)
         else:
-            self.player.send(a00d5().setservers(self.player.login_server.game_servers))  # 00d5 (server list)
+            self.player.send(a00d5().setservers(self.player.login_server.game_servers.values()))  # 00d5 (server list)
 
     @handles(packet=a0014)
     def handle_a0014(self, request):
@@ -58,7 +62,7 @@ class AuthenticatedState(PlayerState):
         menu_fragments = {
             0x01de: originalfragment(0x38d17, 0x3d0fe),
             0x01ed: originalfragment(0x219d9, 0x2219e),
-            0x01f0: originalfragment(0x4758e, 0x54bbe),
+            0x01f0: originalfragment(0x4758e, 0x4ae0d),
             0x01f1: originalfragment(0x54bc6, 0x54db0),
             0x01f2: originalfragment(0x55a2e, 0x57375),
             0x01f3: originalfragment(0x54db8, 0x55a26),
@@ -85,43 +89,42 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a00b1)
     def handle_server_join_first_step(self, request):
-        serverid1 = request.findbytype(m02c7).value
-        game_server = self.player.login_server.find_server_by_id1(serverid1)
-        serverid2 = game_server.serverid2
-        self.player.send(a00b0().setlength(9).setserverid1(serverid1))
-        self.player.send(a00b4().setserverid2(serverid2))
+        server_field = request.findbytype(m02c7)
+        if not server_field:
+            self._send_private_msg_from_server(self.player, 'Quick match is not yet supported. '
+                                                            'Please select a server to join instead.')
+        else:
+            serverid1 = server_field.value
+            game_server = self.player.login_server.find_server_by_id1(serverid1)
+            serverid2 = game_server.serverid2
+            self.player.send(a00b0().setlength(9).setserverid1(serverid1))
+            self.player.send(a00b4().setserverid2(serverid2))
 
     @handles(packet=a00b2)
     def handle_server_join_second_step(self, request):
+        # Import here to avoid a circular import dependency
+        from .on_game_server_state import OnGameServerState
+
         serverid2 = request.findbytype(m02c4).value
         game_server = self.player.login_server.find_server_by_id2(serverid2)
         self.player.send(a00b0().setlength(10))
         self.player.send(a0035().setserverdata(game_server))
 
-        modify_gameserver_whitelist('add', self.player, self.player.game_server)
-        self.player.game_server = game_server
-
-        # todo: add joined server state and enter it
-
-    @handles(packet=a00b3)
-    def handle_server_disconnect(self, request):  # server disconnect
-        # TODO: check on the real server if there's a response to this msg
-        # serverid2 = request.findbytype(m02c4).value
-        modify_gameserver_whitelist('remove', self.player, self.player.game_server)
-        self.player.game_server = None
+        self.player.set_state(OnGameServerState, game_server)
 
     @handles(packet=a0070)
     def handle_chat(self, request):
         message_type = request.findbytype(m009e).value
 
-        if message_type == 3:  # team
-            reply = a0070()
-            reply.findbytype(m009e).set(3)
-            reply.findbytype(m02e6).set('Unfortunately team messages are not yet supported. Use VGS for now.')
-            reply.findbytype(m02fe).set('taserver')
-            self.player.send(reply)
+        if message_type == MESSAGE_TEAM:
+            request.content.append(m02fe().set(self.player.display_name))
+            request.content.append(m06de().set(self.player.tag))
 
-        elif message_type == 6:  # private
+            if self.player.game_server and self.player.team is not None:
+                self.player.game_server.send_all_players_on_team(request,
+                                                                 self.player.team)
+
+        elif message_type == MESSAGE_PRIVATE:
             addressed_player_name = request.findbytype(m034a).value
             addressed_player = self.player.login_server.find_player_by(display_name=addressed_player_name)
             if addressed_player:
@@ -130,106 +133,120 @@ class AuthenticatedState(PlayerState):
 
                 self.player.send(request)
 
-                if self.player.id != addressed_player.id:
+                if self.player.unique_id != addressed_player.unique_id:
                     addressed_player.send(request)
 
-        else:  # public
+        else:  # MESSAGE_PUBLIC
             request.content.append(m02fe().set(self.player.display_name))
             request.content.append(m06de().set(self.player.tag))
 
             if self.player.game_server:
-                self.player.login_server.send_all_on_server(request, self.player.game_server)
+                self.player.game_server.send_all_players(request)
+
+    def _send_private_msg_from_server(self, player, text):
+        msg = a0070().set([
+            m009e().set(MESSAGE_PRIVATE),
+            m02e6().set(text),
+            m034a().set(player.display_name),
+            m0574(),
+            m02fe().set('taserver'),
+            m06de().set('bot')
+        ])
+        player.send(msg)
 
     @handles(packet=a0175)
     def handle_promotion_code_redemption(self, request):
-        authcode = request.findbytype(m0669).value
-        if (self.player.login_name in self.player.login_server.accounts and
-                self.player.login_server.accounts[self.player.login_name].authcode == authcode):
+        promotion_code = request.findbytype(m0669)
+        if promotion_code:
+            authcode = promotion_code.value
+            if (self.player.login_name in self.player.login_server.accounts and
+                    self.player.login_server.accounts[self.player.login_name].authcode == authcode):
 
-            self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
-            self.player.login_server.accounts[self.player.login_name].authcode = None
-            self.player.login_server.accounts.save()
-            self.player.authenticated = True
+                self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
+                self.player.login_server.accounts[self.player.login_name].authcode = None
+                self.player.login_server.accounts.save()
+            else:
+                invalid_code_msg = a0175()
+                invalid_code_msg.findbytype(m02fc).set(0x00019646)  # message type
+                invalid_code_msg.findbytype(m0669).set(authcode)
+                self.player.send(invalid_code_msg)
+
+    @handles(packet=a006d)
+    def handle_menuchange(self, request):
+        # Request to change the player's region
+        if len(request.content) == 1 and type(request.content[0]) is m0448:
+            pass
         else:
-            invalid_code_msg = a0175()
-            invalid_code_msg.findbytype(m02fc).set(0x00019646)  # message type
-            invalid_code_msg.findbytype(m0669).set(authcode)
-            self.player.send(invalid_code_msg)
+            loadout_changed = False
+            for arr in request.findbytype(m0144).arrays:
+                setting = findbytype(arr, m0369).value
+                int_field = findbytype(arr, m0261)
+                string_field = findbytype(arr, m0437)
 
-    @handles(packet=a018c)
-    def handle_votekick(self, request):
-        response = request.findbytype(m0592)
+                menu_area_field = findbytype(arr, m0661)
 
-        if response is None:  # votekick initiation
-            other_player = self.player.login_server.find_player_by(display_name=request.findbytype(m034a).value)
-
-            if (other_player and
-                    self.player.game_server and
-                    other_player.game_server and
-                    self.player.game_server == other_player.game_server and
-                    self.player.game_server.playerbeingkicked is None):
-
-                # Start a new vote
-                reply = a018c()
-                reply.content = [
-                    m02c4().set(self.player.game_server.serverid2),
-                    m034a().set(self.player.display_name),
-                    m0348().set(self.player.id),
-                    m02fc().set(0x0001942F),
-                    m0442(),
-                    m0704().set(other_player.id),
-                    m0705().set(other_player.display_name)
-                ]
-                self.player.login_server.send_all_on_server(reply, self.player.game_server)
-
-                for player in self.player.login_server.players.values():
-                    player.vote = None
-                self.player.game_server.playerbeingkicked = other_player
-
-        else:  # votekick response
-            if (self.player.game_server and
-                    self.player.game_server.playerbeingkicked is not None):
-                current_server = self.player.game_server
-
-                self.player.vote = (response.value == 1)
-
-                votes = [p.vote for p in self.player.login_server.players.values() if p.vote is not None]
-                yes_votes = [v for v in votes if v]
-
-                if len(votes) >= 1:
-                    playertokick = current_server.playerbeingkicked
-                    kick = len(yes_votes) >= 1
-
-                    reply = a018c()
-                    reply.content = [
-                        m0348().set(playertokick.id),
-                        m034a().set(playertokick.display_name)
-                    ]
-
-                    if kick:
-                        reply.content.extend([
-                            m02fc().set(0x00019430),
-                            m0442().set(1)
-                        ])
-
+                if menu_area_field:
+                    if self.player.loadouts.is_loadout_menu_item(menu_area_field.value):
+                        equip_value = int(int_field.value) if int_field else string_field.value
+                        self.player.loadouts.modify(menu_area_field.value, setting, equip_value)
+                        loadout_changed = True
+                    elif menu_area_field.value == MENU_AREA_SETTINGS:
+                        # Ignore user settings. They'll have to store them themselves
+                        pass
                     else:
-                        reply.content.extend([
-                            m02fc().set(0x00019431),
-                            m0442().set(0)
-                        ])
+                        value = int_field.value if int_field else string_field.value
+                        self.logger.debug('******* Setting %08X of menu area %s to value %s' % (setting, menu_area_field.value, value))
+                else:
+                    value = int_field.value if int_field else string_field.value
+                    self.logger.debug('******* Setting %08X to value %s' % (setting, value))
 
-                        self.player.login_server.send_all_on_server(reply, current_server)
+            if self.player.game_server and loadout_changed:
+                self.player.game_server.set_player_loadouts(self.player)
 
-                    if kick:
-                        # TODO: figure out if a real votekick also causes an
-                        # inconsistency between the menu you see and the one
-                        # you're really in
-                        for msg in [a00b0(), a0035().setmainmenu(), a006f()]:
-                            playertokick.send(msg)
-                        playertokick.game_server = None
-                        modify_gameserver_whitelist('remove', playertokick, current_server)
-                        modify_loginserver_blacklist('add', playertokick)
+    @handles(packet=a01c6)
+    def handle_request_for_server_info(self, request):
+        serverid1 = request.findbytype(m02c7).value
+        game_server = self.player.login_server.find_server_by_id1(serverid1)
+        players = self.player.login_server.find_players_by(game_server = game_server)
+        reply = a01c6()
+        reply.content = [
+            m02c7().set(serverid1),
+            m0228().set(0x00000002),
+            m00e9().setservers([game_server]).setplayers(players)
+        ]
+        self.player.send(reply)
 
-                    current_server.playerbeingkicked = None
+    @handles(packet=a011b)
+    def handle_edit_friend_list(self, request):
+        if self.player.registered:
+            add = request.findbytype(m0592).value
+            if add:
+                name = request.findbytype(m034a).value
+                # TODO: also make this work for registered players that are offline
+                other_player = self.player.login_server.find_player_by(login_name=name)
 
-        # TODO: implement removal of kickvote on timeout
+                if other_player and other_player.registered:
+                    self.player.friends.add(other_player.unique_id, name)
+
+            else: # remove
+                unique_id = request.findbytype(m020d).value
+                self.player.friends.remove(unique_id)
+
+    @handles(packet=a011c)
+    def handle_request_for_friend_list(self, request):
+        assert request.content == []
+
+        if self.player.registered:
+
+            reply = a011c().set([
+                m0348().set(self.player.unique_id),
+                m0116().set([[
+                    m034a().set(friend['login_name']),
+                    m020d().set(friend_id),
+                    m0296(),
+                    m0591().set(FRIEND_STATE_VISIBLE),
+                    m0307()] for friend_id, friend in self.player.friends.friends_dict.items()]
+                )
+            ])
+
+            self.player.send(reply)

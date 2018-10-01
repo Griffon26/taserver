@@ -3,17 +3,17 @@
 # Copyright (C) 2018  Maurice van der Pot <griffon26@kfk4ever.com>
 #
 # This file is part of taserver
-# 
+#
 # taserver is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
-# 
+#
 # taserver is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -21,12 +21,9 @@
 import io
 import struct
 
-from .datatypes import ClientMessage, \
-    ClientConnectedMessage, \
-    ClientDisconnectedMessage, \
-    constructenumblockarray, ParseError
-from .utils import hexdump
-from .tcpmessage import TcpMessageReader
+from common.connectionhandler import *
+from .datatypes import ClientMessage, constructenumblockarray
+from .player.player import Player
 
 
 def peekshort(infile):
@@ -50,20 +47,14 @@ def parseseqack(infile):
 
 
 class PacketReader:
-    def __init__(self, socket, dump_queue):
-        self.tcp_message_reader = TcpMessageReader(socket)
+    def __init__(self, receive_func):
         self.buffer = bytes()
-        self.dumpqueue = dump_queue
+        self.receive_func = receive_func
 
     def prepare(self, length):
         ''' Makes sure that at least length bytes are available in self.buffer '''
         while len(self.buffer) < length:
-            message_data = self.tcp_message_reader.receive()
-            # print('Received:')
-            # hexdump(packetbodybytes)
-            if self.dumpqueue:
-                packetsize = len(message_data)
-                self.dumpqueue.put(('client', struct.pack('<H', packetsize) + message_data))
+            message_data = self.receive_func()
             self.buffer += message_data
 
     def read(self, length):
@@ -89,8 +80,8 @@ class StreamParser:
         out_file = io.StringIO()
         next_value = peekshort(self.in_stream)
 
-        # FIXME: That we have to look at the first short to see how 
-        # many items are in this packet probably indicates that we 
+        # FIXME: That we have to look at the first short to see how
+        # many items are in this packet probably indicates that we
         # interpret the packet structure incorrectly.
         item_count = 1
         has_seq_ack = True
@@ -109,29 +100,61 @@ class StreamParser:
         return seq, objs
 
 
-class ClientReader:
-    def __init__(self, socket, client_id, client_address, server_queue, dump_queue):
-        self.client_id = client_id
-        self.socket = socket
-        self.server_queue = server_queue
+class GameClientReader(TcpMessageConnectionReader):
+    def __init__(self, sock, dump_queue):
+        super().__init__(sock, max_message_size = 1450, dump_queue = dump_queue)
+        packet_reader = PacketReader(super().receive)
+        self.stream_parser = StreamParser(packet_reader)
+
+    def receive(self):
+        return None
+
+    def decode(self, msg_bytes):
+        seq, msg = self.stream_parser.parse()
+        return ClientMessage(seq, msg)
+
+
+class GameClientWriter(TcpMessageConnectionWriter):
+    def __init__(self, sock, dump_queue):
+        super().__init__(sock, max_message_size = 1450, dump_queue = dump_queue)
+        self.seq = None
+
+    def encode(self, msg_tuple):
+        stream = io.BytesIO()
+        message, ack = msg_tuple
+
+        if isinstance(message, list):
+            for el in message:
+                el.write(stream)
+        else:
+            message.write(stream)
+
+        if ack is None:
+            ack = 0
+        if self.seq is not None:
+            stream.write(struct.pack('<LL', self.seq, ack))
+            self.seq += 1
+        else:
+            self.seq = 0
+
+        return stream.getvalue()
+
+
+class GameClientHandler(IncomingConnectionHandler):
+    def __init__(self, incoming_queue, dump_queue):
+        super().__init__('gameclient',
+                         '0.0.0.0',
+                         9000,
+                         incoming_queue)
         self.dump_queue = dump_queue
 
-        ip, port = client_address
-        player_ip = tuple(int(ippart) for ippart in ip.split('.'))
+    def create_connection_instances(self, sock, address):
+        reader = GameClientReader(sock, self.dump_queue)
+        writer = GameClientWriter(sock, self.dump_queue)
+        peer = Player(address)
+        return reader, writer, peer
 
-        self.server_queue.put(ClientConnectedMessage(self.client_id, player_ip, port))
 
-    def run(self):
-        packet_reader = PacketReader(self.socket, self.dump_queue)
-        stream_parser = StreamParser(packet_reader)
-        while True:
-            try:
-                seq, msg = stream_parser.parse()
-                self.server_queue.put(ClientMessage(self.client_id, seq, msg))
-                # print('client(%s): received incoming message' % self.clientid)
-            except RuntimeError as e:
-                print('client(%s): caught exception: %s' % (self.client_id, str(e)))
-                break
-
-        self.server_queue.put(ClientDisconnectedMessage(self.client_id))
-        print('client(%s): signalled server; reader exiting' % self.client_id)
+def handle_game_client(incoming_queue, dump_queue):
+    game_client_handler = GameClientHandler(incoming_queue, dump_queue)
+    game_client_handler.run()

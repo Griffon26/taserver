@@ -1,5 +1,8 @@
 __pycache__/
 \.idea/
 .mypy_cache/
-/taserverdump.hexdump_parsed.txt
-/taserverdump.hexdump
+/game_server_launcher.log
+/login_server.log
+/taserverdump.carrays_parsed.txt
+/taserverdump.carrays
+/TAMods-Server.dll

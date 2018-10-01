@@ -18,18 +18,99 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import gevent.monkey
-gevent.monkey.patch_subprocess()
-
+import ctypes
+import ctypes.wintypes
+import gevent
+import gevent.subprocess as sp
+import logging
 import os
-import subprocess as sp
+
+from .inject import inject
+
+
+class ConfigurationError(Exception):
+    pass
+
+
+def wait_until_file_contains_string(filename, string):
+    while True:
+        try:
+            with open(filename, 'rt') as f:
+                if string in f.read():
+                    break
+                gevent.sleep(3)
+        except FileNotFoundError:
+            gevent.sleep(3)
+
+
+def get_my_documents_folder():
+    S_OK = 0
+    CSIDL_MYDOCUMENTS = 5
+    SHGFP_TYPE_CURRENT = 0
+
+    _SHGetFolderPath = ctypes.windll.shell32.SHGetFolderPathW
+    _SHGetFolderPath.argtypes = [
+        ctypes.wintypes.HWND,
+        ctypes.c_int,
+        ctypes.wintypes.HANDLE,
+        ctypes.wintypes.DWORD,
+        ctypes.wintypes.LPWSTR
+    ]
+
+    buf = ctypes.create_unicode_buffer(1024)
+    if _SHGetFolderPath(0, CSIDL_MYDOCUMENTS, 0, SHGFP_TYPE_CURRENT, buf) != S_OK:
+        raise RuntimeError('For some reason requesting the location of the Documents folder failed')
+    return buf.value
 
 def run_game_server(game_server_config):
+    log_filename = os.path.join(get_my_documents_folder(),
+                                'My Games', 'Tribes Ascend',
+                                'TribesGame', 'Logs', 'tagameserver.log')
 
-    working_dir = game_server_config['dir']
-    args = game_server_config['args'].split()
-    exepath = os.path.join(working_dir, 'TribesAscend.exe')
+    logger = logging.getLogger(__name__)
+    gevent.getcurrent().name = 'gameserver'
 
-    while True:
-        print('Starting a new TribesAscend server')
-        sp.call([exepath, *args], cwd = working_dir)
+    try:
+        working_dir = game_server_config['dir']
+        dll_to_inject = game_server_config.get('controller_dll', None)
+    except KeyError as e:
+        raise ConfigurationError("%s is a required configuration item under [gameserver]" % str(e))
+
+    exe_path = os.path.join(working_dir, 'TribesAscend.exe')
+
+    if not os.path.exists(working_dir):
+        raise ConfigurationError(
+            "Invalid 'dir' specified under [gameserver]: the directory does not exist")
+    if not os.path.exists(exe_path):
+        raise ConfigurationError(
+            "Invalid 'dir' specified under [gameserver]: the specified directory does not contain a TribesAscend.exe")
+
+    if not os.path.isabs(dll_to_inject):
+        dll_to_inject = os.path.abspath(dll_to_inject)
+    logger.info('gameserver: Path to controller DLL is %s' % dll_to_inject)
+
+    if not os.path.exists(dll_to_inject):
+        raise ConfigurationError(
+            "Invalid 'controller_dll' specified under [gameserver]: the specified file does not exist.")
+
+    try:
+        logger.info('gameserver: Removing previous log file %s' % log_filename)
+        os.remove(log_filename)
+    except FileNotFoundError:
+        pass
+
+    logger.info('gameserver: Starting a new TribesAscend server...')
+    process = sp.Popen([exe_path, 'server', '-Log=tagameserver.log'], cwd=working_dir)
+    try:
+        logger.info('gameserver: Started process with pid: %s' % process.pid)
+
+        logger.info('gameserver: Waiting until game server has finished starting up...')
+        wait_until_file_contains_string(log_filename, 'Log: Bringing up level for play took:')
+
+        logger.info('gameserver: Injecting game controller DLL into game server...')
+        inject(process.pid, dll_to_inject)
+        logger.info('gameserver: Injection done.')
+
+        process.wait()
+    finally:
+        process.terminate()

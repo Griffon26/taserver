@@ -42,19 +42,22 @@ class UnauthenticatedState(PlayerState):
         else:  # actual login
             self.player.login_name = request.findbytype(m0494).value
             self.player.password_hash = request.findbytype(m0056).content
-            if (self.player.login_name in self.player.login_server.accounts and
-                self.player.password_hash == self.player.login_server.accounts[self.player.login_name].password_hash):
+            accounts = self.player.login_server.accounts
+            if (self.player.login_name in accounts and
+                self.player.password_hash == accounts[self.player.login_name].password_hash):
+                self.player.login_server.change_player_unique_id(self.player.unique_id,
+                                                                 accounts[self.player.login_name].unique_id)
+                self.player.registered = True
 
-                self.player.authenticated = True
-
-            name_prefix = '' if self.player.authenticated else 'unverif-'
+            name_prefix = '' if self.player.registered else 'unverif-'
             self.player.display_name = name_prefix + self.player.login_name
+            self.player.load()
             self.player.send([
-                a003d().setplayer(self.player.display_name, ''),
-                m0662(0x8898, 0xdaff),
-                m0633(),
-                m063e(),
-                m067e(),
+                a003d().set_player(self.player.unique_id, self.player.display_name, '', self.player.loadouts),
+                m0662().set_original_bytes(0x8898, 0xdaff),
+                m0633().set_original_bytes(0xdaff, 0x19116),
+                m063e().set_original_bytes(0x19116, 0x1c6ee),
+                m067e().set_original_bytes(0x1c6ee, 0x1ec45),
                 m0442(),
                 m02fc(),
                 m0219(),

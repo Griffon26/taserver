@@ -21,41 +21,76 @@
 import configparser
 import gevent
 import gevent.queue
-from gevent.server import StreamServer
+import logging
 import os
 
-from .gameserverhandler import run_game_server
-from .loginserverhandler import handle_login_server
+from common.logging import set_up_logging
 from .gamecontrollerhandler import handle_game_controller
+from .gameserverhandler import run_game_server, ConfigurationError
+from .launcher import handle_launcher, IncompatibleVersionError
+from .loginserverhandler import handle_login_server
+from .pinghandler import handle_ping
 
 INI_PATH = os.path.join('data', 'gameserverlauncher.ini')
 
 
 def main():
-
-    game_controller_queue = gevent.queue.Queue()
-    login_server_queue = gevent.queue.Queue()
-    incoming_queue = gevent.queue.Queue()
-
+    set_up_logging('game_server_launcher.log')
+    logger = logging.getLogger(__name__)
     config = configparser.ConfigParser()
     with open(INI_PATH) as f:
         config.read_file(f)
 
+    restart = True
+    restart_delay = 10
+    tasks = []
     try:
-        while True:
+        while restart:
+            incoming_queue = gevent.queue.Queue()
+
             tasks = [
+                gevent.spawn(handle_ping),
                 gevent.spawn(run_game_server, config['gameserver']),
-                gevent.spawn(handle_login_server, config['loginserver'], incoming_queue, login_server_queue),
-                gevent.spawn(handle_game_controller, config['gamecontroller'], incoming_queue, game_controller_queue)
+                gevent.spawn(handle_login_server, config['loginserver'], incoming_queue),
+                gevent.spawn(handle_game_controller, config['gamecontroller'], incoming_queue),
+                gevent.spawn(handle_launcher, config['gameserver'], incoming_queue)
             ]
 
             # Wait for any of the tasks to terminate
-            finished_greenlets = gevent.joinall(tasks, count = 1)
+            finished_greenlets = gevent.joinall(tasks, count=1)
 
-            print('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
-            print('Killing everything and restarting...')
+            logger.warning('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
+
+            configuration_errors = ['  %s' % g.exception for g in finished_greenlets
+                                    if isinstance(g.exception, ConfigurationError)]
+            if configuration_errors:
+                logger.critical('\n' +
+                    '\n-------------------------------------------\n' +
+                    'Found errors in configuration files:' +
+                    '\n'.join(configuration_errors) +
+                    '\n-------------------------------------------\n'
+                )
+                restart = False
+
+            incompatible_version_errors = ['  %s' % g.exception for g in finished_greenlets
+                                           if isinstance(g.exception, IncompatibleVersionError)]
+            if incompatible_version_errors:
+                logger.critical('\n' +
+                    '\n-------------------------------------------\n' +
+                    'A version incompatibility was found:' +
+                    '\n'.join(incompatible_version_errors) +
+                    '\n-------------------------------------------\n'
+                )
+                restart = False
+
+            logger.info('Killing all tasks...')
             gevent.killall(tasks)
-            gevent.sleep(3)
+            logger.info('Waiting %s seconds before %s...' %
+                        (restart_delay, ('restarting' if restart else 'exiting')))
+            gevent.sleep(restart_delay)
 
     except KeyboardInterrupt:
+        logger.info('Keyboard interrupt received. Exiting...')
         gevent.killall(tasks)
+    except Exception:
+        logger.exception('Main game server launcher thread exited with an exception')

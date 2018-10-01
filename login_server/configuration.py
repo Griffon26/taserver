@@ -21,17 +21,11 @@
 import configparser
 from os import path
 
-from .server_configuration import ServerConfiguration
-
-SERVERS_INI_PATH = path.join('data', 'configurations', 'servers.ini')
+INI_PATH = path.join('data', 'loginserver.ini')
 
 
 class Configuration:
     def __init__(self):
-        self.server_config = ServerConfiguration.from_configuration(self.read_config(file_name=SERVERS_INI_PATH))
-
-    @classmethod
-    def read_config(cls, file_name: str):
-        parser = configparser.ConfigParser()
-        parser.read(file_name)
-        return parser._sections
+        self.config = configparser.ConfigParser()
+        with open(INI_PATH) as f:
+            self.config.read_file(f)

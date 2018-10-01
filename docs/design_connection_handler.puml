@@ -1,0 +1,23 @@
+@startuml
+
+rectangle {
+queue "incoming queue" as inqueue
+rectangle "main task" as main
+}
+rectangle "ConnectionHandler" {
+rectangle "ConnectionReader" as reader
+rectangle "ConnectionWriter" as writer
+rectangle "Peer" as peer
+queue "outgoing queue" as outqueue
+}
+cloud Internet
+
+main -down-> peer : send(msg)
+reader -> inqueue : put(msg)
+main <- inqueue : get()
+peer -down-> outqueue : put(msg)
+outqueue -right-> writer : get()
+reader <- Internet: TCP
+writer -> Internet: TCP
+
+@enduml

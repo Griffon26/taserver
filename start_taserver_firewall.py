@@ -23,7 +23,10 @@ import gevent
 import gevent.queue
 from gevent.server import StreamServer
 import gevent.subprocess as sp
+import json
 import re
+
+from common.tcpmessage import TcpMessageReader
 
 # Unused for now, but it'll need to move to the login server
 '''
@@ -56,31 +59,87 @@ def writeiplist(filename, iplist):
             f.write('%d.%d.%d.%d\n' % ip)
 '''
 
+
 def removeallrules():
+    print('Removing any previous TAserverfirewall rules')
+    for name in ('TAserverfirewall-blacklist',
+                 'TAserverfirewall-whitelist',
+                 'TAserverfirewall-general'):
+        args = [
+            'c:\\windows\\system32\\Netsh.exe',
+            'advfirewall',
+            'firewall',
+            'delete',
+            'rule',
+            'name="%s"' % name
+        ]
+        # Don't check for failure here, because it is expected to
+        # fail if there are no left-over rules from a previous run.
+        sp.call(args, stdout=sp.DEVNULL)
+
+
+def reset_whitelist():
+    print('Resetting TAserverfirewall whitelist to initial state')
     args = [
         'c:\\windows\\system32\\Netsh.exe',
         'advfirewall',
         'firewall',
         'delete',
         'rule',
-        'name="TAserverfirewall"'
+        'name="TAserverfirewall-whitelist"'
     ]
     # Don't check for failure here, because it is expected to
     # fail if there are no left-over rules from a previous run.
-    print('Removing any previous TAserverfirewall rules')
     sp.call(args, stdout=sp.DEVNULL)
 
-def createinitialrules():
-    # The only initial rule we need is an allow rule for
-    # the login server
+
+def reset_blacklist():
+    print('Resetting TAserverfirewall blacklist to initial state')
+    args = [
+        'c:\\windows\\system32\\Netsh.exe',
+        'advfirewall',
+        'firewall',
+        'delete',
+        'rule',
+        'name="TAserverfirewall-blacklist"'
+    ]
+    # Don't check for failure here, because it is expected to
+    # fail if there are no left-over rules from a previous run.
+    sp.call(args, stdout=sp.DEVNULL)
+
     args = [
         'c:\\windows\\system32\\Netsh.exe',
         'advfirewall',
         'firewall',
         'add',
         'rule',
-        'name="TAserverfirewall"',
-        'protocol=udp',
+        'name="TAserverfirewall-blacklist"',
+        'protocol=tcp',
+        'dir=in',
+        'enable=yes',
+        'profile=any',
+        'localport=9000',
+        'action=allow'
+    ]
+    try:
+        sp.check_output(args, text = True)
+    except sp.CalledProcessError as e:
+        print('Failed to add initial rule to firewall during reset of blacklist:\n%s' % e.output)
+
+
+def createinitialrules():
+    print('Adding initial set of TAserverfirewall rules')
+
+    # The only initial rules we need are a allow rules for
+    # the login server for both clients and game servers
+    args = [
+        'c:\\windows\\system32\\Netsh.exe',
+        'advfirewall',
+        'firewall',
+        'add',
+        'rule',
+        'name="TAserverfirewall-blacklist"',
+        'protocol=tcp',
         'dir=in',
         'enable=yes',
         'profile=any',
@@ -92,26 +151,47 @@ def createinitialrules():
     except sp.CalledProcessError as e:
         print('Failed to add initial rule to firewall:\n%s' % e.output)
 
-def removerule(ip, port):
+    args = [
+        'c:\\windows\\system32\\Netsh.exe',
+        'advfirewall',
+        'firewall',
+        'add',
+        'rule',
+        'name="TAserverfirewall-general"',
+        'protocol=tcp',
+        'dir=in',
+        'enable=yes',
+        'profile=any',
+        'localport=9001',
+        'action=allow'
+    ]
+    try:
+        sp.check_output(args, text=True)
+    except sp.CalledProcessError as e:
+        print('Failed to add initial rule to firewall:\n%s' % e.output)
+
+
+def removerule(name, ip, port, protocol):
     args = [
         'c:\\windows\\system32\\Netsh.exe',
         'advfirewall',
         'firewall',
         'delete',
         'rule',
-        'name="TAserverfirewall"',
-        'protocol=udp',
+        'name="%s"' % name,
+        'protocol=%s' % protocol,
         'dir=in',
         'profile=any',
         'localport=%d' % port,
-        'remoteip=%d.%d.%d.%d' % ip
+        'remoteip=%s' % ip
     ]
     try:
         sp.check_output(args, text = True)
     except sp.CalledProcessError as e:
         print('Failed to remove rule from firewall:\n%s' % e.output)
 
-def addrule(ip, port, allow_or_block):
+
+def addrule(name, ip, port, protocol, allow_or_block):
     if allow_or_block not in ('allow', 'block'):
         raise RuntimeError('Invalid argument provided: %s' % allow_or_block)
     args = [
@@ -120,19 +200,20 @@ def addrule(ip, port, allow_or_block):
         'firewall',
         'add',
         'rule',
-        'name="TAserverfirewall"',
-        'protocol=udp',
+        'name="%s"' % name,
+        'protocol=%s' % protocol,
         'dir=in',
         'enable=yes',
         'profile=any',
         'localport=%d' % port,
         'action=%s' % allow_or_block,
-        'remoteip=%d.%d.%d.%d' % ip
+        'remoteip=%s' % ip
     ]
     try:
         sp.check_output(args, text = True)
     except sp.CalledProcessError as e:
         print('Failed to add rule to firewall:\n%s' % e.output)
+
 
 def findtribesascendrules():
     args = [
@@ -167,7 +248,8 @@ def findtribesascendrules():
                 tarules.append(newrule)
 
     return tarules
-            
+
+
 def disablerulesforprogramname(programname):
     args = [
         'c:\\windows\\system32\\Netsh.exe',
@@ -188,17 +270,22 @@ def disablerulesforprogramname(programname):
     except sp.CalledProcessError as e:
         print('Failed to remove firewall rules for program %s. Output:\n%s' %
               (programname, e.output))
-    
-def handleserver(serverqueue):
+
+
+def handle_server(server_queue):
     lists = {
         'whitelist' : {
+            'name' : 'TAserverfirewall-whitelist',
             'ruletype' : 'allow',
             'port' : 7777,
+            'protocol' : 'udp',
             'IPs' : set(),
         },
         'blacklist' : {
+            'name' : 'TAserverfirewall-blacklist',
             'ruletype' : 'block',
             'port' : 9000,
+            'protocol' : 'tcp',
             'IPs' : set()
         }
     }
@@ -212,44 +299,48 @@ def handleserver(serverqueue):
     createinitialrules()
     
     while True:
-        listtype, action, ip = serverqueue.get()
-        thelist = lists[listtype]
+        command = server_queue.get()
+        thelist = lists[command['list']]
 
-        if action == 'add':
+        if command['action'] == 'reset':
+            if command['list'] == 'whitelist':
+                reset_whitelist()
+            else:
+                reset_blacklist()
+        elif command['action'] == 'add':
+            ip = command['ip']
             if ip not in thelist['IPs']:
-                print('add %sing firewall rule for %s to port %d' %
-                      (thelist['ruletype'], ip, thelist['port']))
+                print('add %sing firewall rule for %s to %s port %d' %
+                      (thelist['ruletype'], ip, thelist['protocol'], thelist['port']))
                 thelist['IPs'].add(ip)
-                addrule(ip, thelist['port'], thelist['ruletype'])
-        else:
+                addrule(thelist['name'], ip, thelist['port'], thelist['protocol'], thelist['ruletype'])
+        elif command['action'] == 'remove':
+            ip = command['ip']
             if ip in thelist['IPs']:
-                print('remove %sing firewall rule for %s to port %d' %
-                      (thelist['ruletype'], ip, thelist['port']))
+                print('remove %sing firewall rule for %s to %s port %d' %
+                      (thelist['ruletype'], ip, thelist['protocol'], thelist['port']))
                 thelist['IPs'].remove(ip)
-                removerule(ip, thelist['port'])
-       
+                removerule(thelist['name'], ip, thelist['port'], thelist['protocol'])
+
+
 def main(args):
-    serverqueue = gevent.queue.Queue()
+    server_queue = gevent.queue.Queue()
     
-    gevent.spawn(handleserver, serverqueue)
+    gevent.spawn(handle_server, server_queue)
 
-    def handleclient(socket, address):
-        ipbytes = socket.recv(6)
-        socket.close()
-        if(len(ipbytes) == 6):
-            listtype = 'whitelist' if ipbytes[0] == ord('w') else 'blacklist'
-            action = 'add' if ipbytes[1] == ord('a') else 'remove'
-            serverqueue.put( (listtype,
-                              action,
-                              (ipbytes[2], ipbytes[3], ipbytes[4], ipbytes[5])) )
+    def handle_client(socket, address):
+        msg = TcpMessageReader(socket).receive()
+        command = json.loads(msg.decode('utf8'))
+        server_queue.put(command)
 
-    server = StreamServer(('127.0.0.1', 9801), handleclient)
+    server = StreamServer(('127.0.0.1', 9801), handle_client)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         removeallrules()
 
-if __name__ == '__main__':        
+
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     main(args)

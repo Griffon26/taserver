@@ -18,29 +18,36 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from gevent import socket
-import struct
-
+from common.connectionhandler import *
 from .datatypes import AuthCodeRequestMessage
 
-authcode_address = ('127.0.0.1', 9800)
+
+class AuthCodeReader(TcpMessageConnectionReader):
+    def decode(self, msg_bytes):
+        return AuthCodeRequestMessage(msg_bytes.decode('utf8'))
 
 
-class AuthCodeHandler:
-    def __init__(self, server_queue, authcode_queue):
-        self.server_queue = server_queue
-        self.authcode_queue = authcode_queue
+class AuthCodeWriter(TcpMessageConnectionWriter):
+    def encode(self, msg):
+        return msg.encode('utf8')
 
-    def run(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind(authcode_address)
-        while True:
-            data, addr = sock.recvfrom(4096)
-            length = struct.unpack('<H', data[0:2])[0]
-            name_from_client = data[2:2 + length].decode('latin1')
-            self.server_queue.put(AuthCodeRequestMessage(name_from_client))
+class AuthCodeRequester(Peer):
+    pass
 
-            name_from_server, authcode = self.authcode_queue.get()
-            if name_from_server != name_from_client:
-                raise RuntimeError('bug!')
-            sock.sendto(struct.pack('<H', len(authcode)) + authcode.encode('latin1'), addr)
+class AuthCodeHandler(IncomingConnectionHandler):
+    def __init__(self, incoming_queue):
+        super().__init__('authcodehandler',
+                         '127.0.0.1',
+                         9800,
+                         incoming_queue)
+
+    def create_connection_instances(self, sock, address):
+        reader = AuthCodeReader(sock)
+        writer = AuthCodeWriter(sock)
+        peer = AuthCodeRequester()
+        return reader, writer, peer
+
+
+def handle_authcodes(incoming_queue):
+    auth_code_handler = AuthCodeHandler(incoming_queue)
+    auth_code_handler.run()

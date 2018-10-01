@@ -1,0 +1,8 @@
+# This file specifies for each game controller protocol version the oldest
+# TAmods-Server version that implemented it. Unlisted versions upto the
+# next listed version are assumed to implement the same protocol version.
+# The download_compatible_controller.py script downloads the latest version
+# of this file from github when it runs.
+
+# protocol version, TAmods-Server version
+0.1, 0.1

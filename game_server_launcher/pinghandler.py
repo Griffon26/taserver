@@ -18,22 +18,15 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import os
-import gevent.subprocess as sp
-
-modify_firewall_script = os.path.join('scripts','modifyfirewall.py')
-
-def modify_gameserver_whitelist(add_or_remove, player, server):
-    if add_or_remove not in ('add', 'remove'):
-        raise RuntimeError('Invalid argument provided')
-    ipstring = '%d.%d.%d.%d' % player.ip
-    sp.call('%s whitelist %s %s' %
-            (modify_firewall_script, add_or_remove, ipstring), shell=True)
+import gevent
+from gevent.server import DatagramServer
 
 
-def modify_loginserver_blacklist(add_or_remove, player):
-    if add_or_remove not in ('add', 'remove'):
-        raise RuntimeError('Invalid argument provided')
-    ipstring = '%d.%d.%d.%d' % player.ip
-    sp.call('%s blacklist %s %s' %
-            (modify_firewall_script, add_or_remove, ipstring), shell=True)
+class EchoServer(DatagramServer):
+    def handle(self, data, address):
+        self.socket.sendto(data, address)
+
+
+def handle_ping():
+    gevent.getcurrent().name = 'pinghandler'
+    EchoServer('0.0.0.0:9002').serve_forever()

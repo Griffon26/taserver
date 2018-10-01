@@ -1,5 +1,6 @@
 0x0056,Authentication,
 0x03E3,Salt,
+0x032E,Password,server password?
 0x0014,EnumBlockArray,class menu content
 0x0033,EnumBlockArray,
 0x0035,EnumBlockArray,
@@ -19,10 +20,11 @@
 0x00D5,EnumBlockArray,
 0x00EC,EnumBlockArray,/report command
 0x00FB,EnumBlockArray,
+0x010F,EnumBlockArray,something to do with match end
 0x011C,EnumBlockArray,
 0x011B,EnumBlockArray,player online/join notification
 0x0145,EnumBlockArray,
-0x0175,EnumBlockArray,promotion code
+0x0175,EnumBlockArray,purchase
 0x0176,EnumBlockArray,
 0x0177,EnumBlockArray,
 0x0182,EnumBlockArray,
@@ -30,6 +32,10 @@
 0x018B,EnumBlockArray,
 0x018C,EnumBlockArray,/votekick command
 0x0197,EnumBlockArray,
+0x019A,EnumBlockArray,something to do with match end
+0x01A2,EnumBlockArray,something to do with setting up a custom server
+0x01A4,EnumBlockArray,something to do with setting up a custom server
+0x01A5,EnumBlockArray,something to do with setting up a custom server
 0x01B5,EnumBlockArray,watch now menu content
 0x01BC,EnumBlockArray,
 0x01C6,EnumBlockArray,
@@ -42,6 +48,7 @@
 0x0132,ArrayOfEnumBlockArrays,
 0x0138,ArrayOfEnumBlockArrays,
 0x0144,ArrayOfEnumBlockArrays,
+0x0148,ArrayOfEnumBlockArrays,
 0x05CB,ArrayOfEnumBlockArrays,
 0x0632,ArrayOfEnumBlockArrays,
 0x0633,ArrayOfEnumBlockArrays,
@@ -70,7 +77,7 @@
 0x02B1,SizedContent,internal map name
 0x02B6,SizedContent,map name
 0x02E6,SizedContent,message text
-0x02FE,SizedContent,sender name
+0x02FE,SizedContent,sender name/clan tag to purchase
 0x0300,SizedContent,"map+gamemode, server or region name"
 0x034A,SizedContent,player name
 0x035B,SizedContent,
@@ -86,7 +93,9 @@
 0x06E9,SizedContent,
 0x0705,SizedContent,player name to kick
 0x006F,OneByte,
+0x01FA,OneByte,
 0x02C9,OneByte,
+0x0318,OneByte,
 0x0326,OneByte,
 0x0442,OneByte,
 0x046B,OneByte,
@@ -98,14 +107,14 @@
 0x063C,OneByte,
 0x0673,OneByte,
 0x069B,OneByte,
-0x069C,OneByte,
+0x069C,OneByte,password required
 0x0703,OneByte,
 0x0307,TwoBytes,
 0x053D,TwoBytes,ping time
 0x0600,TwoBytes,
 0x006E,ThreeBytes,
 0x0019,FourBytes,
-0x0035,FourBytes,
+0x0035,FourBytes,blood eagle score
 0x006D,FourBytes,
 0x0073,FourBytes,
 0x008B,FourBytes,
@@ -118,7 +127,7 @@
 0x00C3,FourBytes,
 0x00C6,FourBytes,
 0x00D4,FourBytes,
-0x0197,FourBytes,
+0x0197,FourBytes,diamond sword score
 0x01A3,FourBytes,
 0x01C0,FourBytes,
 0x01C1,FourBytes,
@@ -148,7 +157,7 @@
 0x0298,FourBytes,
 0x0299,FourBytes,
 0x02A3,FourBytes,
-0x02AB,FourBytes,
+0x02AB,FourBytes,"purchase type (1de=server,1fc=boosters,200=name,221=tag)"
 0x02AC,FourBytes,
 0x02B2,FourBytes,map id
 0x02B3,FourBytes,
@@ -161,13 +170,15 @@
 0x02D7,FourBytes,
 0x02D8,FourBytes,
 0x02DC,FourBytes,
+0x02EA,FourBytes,
 0x02EC,FourBytes,
 0x02ED,FourBytes,
 0x02EF,FourBytes,
-0x02F4,FourBytes,
+0x02F4,FourBytes,remaining time in seconds
 0x02FC,FourBytes,std message id
 0x02FF,FourBytes,
 0x0319,FourBytes,
+0x0320,FourBytes,
 0x0331,FourBytes,
 0x0333,FourBytes,
 0x0343,FourBytes,
@@ -176,7 +187,7 @@
 0x0346,FourBytes,
 0x0347,FourBytes,
 0x0348,FourBytes,player id
-0x035A,FourBytes,
+0x035A,FourBytes,payment amount
 0x0363,FourBytes,
 0x0369,FourBytes,menu option identifier
 0x036B,FourBytes,
@@ -228,11 +239,12 @@
 0x0596,FourBytes,
 0x0597,FourBytes,
 0x05B8,FourBytes,
-0x05CC,FourBytes,
+0x05CC,FourBytes,"currency? (0x0645=gold, 0x27f9=xp)"
 0x05CF,FourBytes,
 0x05D3,FourBytes,player gold
 0x05DC,FourBytes,player rank progress
 0x05E9,FourBytes,
+0x05EA,FourBytes,
 0x05EE,FourBytes,
 0x0602,FourBytes,
 0x0608,FourBytes,
@@ -267,7 +279,11 @@
 0x0683,FourBytes,
 0x0684,FourBytes,
 0x068C,FourBytes,
+0x0698,FourBytes,
 0x0699,FourBytes,
+0x069D,FourBytes,
+0x069E,FourBytes,
+0x069F,FourBytes,
 0x06B7,FourBytes,
 0x06B9,FourBytes,
 0x06BA,FourBytes,

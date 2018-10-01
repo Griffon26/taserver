@@ -22,40 +22,222 @@ import struct
 from ipaddress import IPv4Address
 
 
+PING_PORT = 9002
+
+REGION_NORTH_AMERICA = 1
+REGION_EUROPE = 4
+REGION_OCEANIA_AUSTRALIA = 5
+
+TEAM_BLOODEAGLE = 0
+TEAM_DIAMONDSWORD = 1
+TEAM_SPEC = 255
+
+MESSAGE_PUBLIC = 2
+MESSAGE_TEAM = 3
+MESSAGE_PRIVATE = 6
+
+
+MENU_AREA_SETTINGS = 0x0192C9D3
+
+MENU_AREA_PHYSICS_PRESET_A = 0x0153FCA6
+MENU_AREA_PHYSICS_PRESET_B = 0x0153FCA7
+MENU_AREA_PHYSICS_PRESET_C = 0x0153FCA8
+MENU_AREA_PHYSICS_PRESET_D = 0x0153FCA9
+MENU_AREA_PHYSICS_PRESET_E = 0x0153FCAA
+MENU_AREA_PHYSICS_PRESET_F = 0x0153FCAB
+MENU_AREA_PHYSICS_PRESET_G = 0x0153FCAC
+
+MENU_AREA_LIGHT_LOADOUT_A = 0x02990EE4
+MENU_AREA_LIGHT_LOADOUT_B = 0x02990EE5
+MENU_AREA_LIGHT_LOADOUT_C = 0x02990EE6
+MENU_AREA_LIGHT_LOADOUT_D = 0x02990EE7
+MENU_AREA_LIGHT_LOADOUT_E = 0x02990EE8
+MENU_AREA_LIGHT_LOADOUT_F = 0x02990EE9
+MENU_AREA_LIGHT_LOADOUT_G = 0x02990EEA
+MENU_AREA_LIGHT_LOADOUT_H = 0x02990EEB
+MENU_AREA_LIGHT_LOADOUT_I = 0x02990EEC
+
+MENU_AREA_HEAVY_LOADOUT_A = 0x02990EED
+MENU_AREA_HEAVY_LOADOUT_B = 0x02990EEE
+MENU_AREA_HEAVY_LOADOUT_C = 0x02990EEF
+MENU_AREA_HEAVY_LOADOUT_D = 0x02990EF0
+MENU_AREA_HEAVY_LOADOUT_E = 0x02990EF1
+MENU_AREA_HEAVY_LOADOUT_F = 0x02990EF2
+MENU_AREA_HEAVY_LOADOUT_G = 0x02990EF3
+MENU_AREA_HEAVY_LOADOUT_H = 0x02990EF4
+MENU_AREA_HEAVY_LOADOUT_I = 0x02990EF5
+
+MENU_AREA_MEDIUM_LOADOUT_A = 0x02990EF6
+MENU_AREA_MEDIUM_LOADOUT_B = 0x02990EF7
+MENU_AREA_MEDIUM_LOADOUT_C = 0x02990EF8
+MENU_AREA_MEDIUM_LOADOUT_D = 0x02990EF9
+MENU_AREA_MEDIUM_LOADOUT_E = 0x02990EFA
+MENU_AREA_MEDIUM_LOADOUT_F = 0x02990EFB
+MENU_AREA_MEDIUM_LOADOUT_G = 0x02990EFC
+MENU_AREA_MEDIUM_LOADOUT_H = 0x02990EFD
+MENU_AREA_MEDIUM_LOADOUT_I = 0x02990EFE
+
+UNLOCKABLE_ITEMS = {
+    'RAIDER_PRIMARY_ARXBUSTER': 0x00001cd8,
+    'SOLDIER_PRIMARY_ASSAULTRIFLE': 0x00001cd9,
+    'DOOMBRINGER_PRIMARY_CHAINGUN': 0x00001cda,
+    'PATHFINDER_BELT_IMPACTNITRON': 0x00001cdb,
+    'SOLDIER_SECONDARY_EAGLE': 0x00001cdc,
+    'DOOMBRINGER_BELT_STANDARDGRENADE': 0x00001cde,
+    'DOOMBRINGER_BELT_MINE': 0x00001ce0,
+    'JUGGERNAUT_PRIMARY_FUSIONMORTAR': 0x00001ce1,
+    'MEDIUM_SIDEARM_NOVABLASTER': 0x00001ce2,
+    'SENTINEL_PRIMARY_PHASERIFLE': 0x00001ce3,
+    'INFILTRATOR_PRIMARY_RHINOSMG': 0x00001ce5,
+    'DOOMBRINGER_SECONDARY_SABERLAUNCHER': 0x00001ce6,
+    'PATHFINDER_SECONDARY_SHOTGUN': 0x00001ce7,
+    'SENTINEL_PRIMARY_SNIPERRIFLE': 0x00001ce8,
+    'SOLDIER_PRIMARY_SPINFUSOR': 0x00001ce9,
+    'INFILTRATOR_BELT_STICKYGRENADE': 0x00001cea,
+    'DOOMBRINGER_PACK_FORCEFIELD': 0x00001cf3,
+    'TECHNICIAN_PACK_LIGHTTURRET': 0x00001cf5,
+    'RAIDER_PRIMARY_GRENADELAUNCHER': 0x00001cf8,
+    'TECHNICIAN_PACK_EXRTURRET': 0x00001cf9,
+    'INFILTRATOR_SECONDARY_SN7': 0x00001cfa,
+    'SENTINEL_SECONDARY_FALCON': 0x00001cfb,
+    'SENTINEL_BELT_CLAYMORE': 0x00001cfd,
+    'PATHFINDER_PRIMARY_LIGHTSPINFUSOR': 0x00001cfe,
+    'PATHFINDER_PRIMARY_BOLTLAUNCHER': 0x00001d01,
+    'TECHNICIAN_BELT_MOTIONALARM': 0x00001d02,
+    'TECHNICIAN_SECONDARY_SAWEDOFF': 0x00001d03,
+    'BRUTE_BELT_FRACTALGRENADE': 0x00001d04,
+    'SOLDIER_BELT_FRAGGRENADEXL': 0x00001d06,
+    'BRUTE_SECONDARY_NOVACOLT': 0x00001d07,
+    'RAIDER_BELT_WHITEOUT': 0x00001d08,
+    'LIGHT_SIDEARM_SPARROW': 0x00001d09,
+    'SOLDIER_BELT_APGRENADE': 0x00001d0a,
+    'ALL_H1_SHOCKLANCE': 0x00001d0b,
+    'TECHNICIAN_SECONDARY_REPAIRTOOLSD': 0x00001d0c,
+    'PATHFINDER_BELT_STGRENADE': 0x00001d0d,
+    'PATHFINDER_SECONDARY_LIGHTASSAULTRIFLE': 0x00001d0e,
+    'INFILTRATOR_BELT_PRISMMINES': 0x00001d10,
+    'RAIDER_SECONDARY_NJ4SMG': 0x00001d11,
+    'TECHNICIAN_PRIMARY_TCN4': 0x00001d13,
+    'RAIDER_BELT_EMPGRENADE': 0x00001d14,
+    'JUGGERNAUT_SECONDARY_SPINFUSORD': 0x00001d16,
+    'JUGGERNAUT_BELT_HEAVYAPGRENADE': 0x00001d17,
+    'BRUTE_PRIMARY_HEAVYSPINFUSOR': 0x00001d18,
+    'BRUTE_SECONDARY_AUTOSHOTGUN': 0x00001d19,
+    'DOOMBRINGER_PRIMARY_HEAVYBOLTLAUNCHER': 0x00001d1c,
+    'BRUTE_BELT_LIGHTSTICKYGRENADE': 0x00001d1f,
+    'MEDIUM_PACK_INVENTORY': 0x00001d20,
+    'JUGGERNAUT_PRIMARY_MIRVLAUNCHER': 0x00001d21,
+    'JUGGERNAUT_SECONDARY_X1LMG': 0x00001d22,
+    'JUGGERNAUT_BELT_DISKTOSS': 0x00001d23,
+    'TECHNICIAN_PRIMARY_THUMPER': 0x00001d25,
+    'SOLDIER_SECONDARY_THUMPERD': 0x00001d26,
+    'PATHFINDER_PACK_JUMPPACK': 0x00001e8e,
+    'SOLDIER_PACK_ENERGYPOOL': 0x00001e90,
+    'PATHFINDER_PACK_ENERGYRECHARGE': 0x00001e91,
+    'BRUTE_PACK_HEAVYSHIELD': 0x00001e92,
+    'RAIDER_PACK_JAMMER': 0x00001e93,
+    'BRUTE_PACK_MINORENERGY': 0x00001e96,
+    'JUGGERNAUT_PACK_HEALTHREGEN': 0x00001e97,
+    'RAIDER_PACK_SHIELD': 0x00001e98,
+    'INFILTRATOR_PACK_STEALTH': 0x00001e99,
+    'SKIN_PTH': 0x00001eba,
+    'SKIN_INF': 0x00001ebb,
+    'SENTINEL_PACK_ENERGYRECHARGE': 0x00001edc,
+    'INFILTRATOR_PRIMARY_STEALTHLIGHTSPINFUSOR': 0x00001ede,
+    'SENTINEL_BELT_GRENADET5': 0x00001eea,
+    'SOLDIER_BELT_PROXIMITYGRENADE': 0x0000201e,
+    'SOLDIER_PACK_UTILITY': 0x0000201f,
+    'SENTINEL_SECONDARY_ACCURIZEDSHOTGUN': 0x0000202f,
+    'SENTINEL_BELT_ARMOREDCLAYMORE': 0x00002030,
+    'PATHFINDER_PRIMARY_LIGHTTWINFUSOR': 0x00002035,
+    'RAIDER_BELT_MIRVGRENADE': 0x00002037,
+    'INFILTRATOR_BELT_NINJASMOKE': 0x00002038,
+    'RAIDER_SECONDARY_NJ5SMG': 0x00002039,
+    'BRUTE_SECONDARY_PLASMACANNON': 0x0000203a,
+    'RAIDER_PRIMARY_PLASMAGUN': 0x0000203b,
+    'INFILTRATOR_PRIMARY_REMOTEARXBUSTER': 0x0000203c,
+    'BRUTE_PACK_SURVIVALPACK': 0x0000203f,
+    'INFILTRATOR_SECONDARY_THROWINGKNIVES': 0x00002040,
+    'SOLDIER_PRIMARY_TWINFUSOR': 0x00002041,
+    'BRUTE_PRIMARY_SPIKELAUNCHER': 0x000020a5,
+    'RAIDER_PRIMARY_ARXBUSTER_MKD': 0x000020c7,
+    'DOOMBRINGER_PRIMARY_CHAINGUN_MKD': 0x000020c8,
+    'DOOMBRINGER_BELT_STANDARDGRENADE_MKD': 0x000020c9,
+    'JUGGERNAUT_BELT_HEAVYAPGRENADE_MKD': 0x000020ca,
+    'RAIDER_BELT_EMPGRENADE_MKD': 0x000020cb,
+    'PATHFINDER_BELT_IMPACTNITRON_MKD': 0x000020cc,
+    'BRUTE_BELT_FRACTALGRENADE_MKD': 0x000020cd,
+    'INFILTRATOR_BELT_STICKYGRENADE_MKD': 0x000020ce,
+    'SOLDIER_BELT_FRAGGRENADEXL_MKD': 0x000020cf,
+    'JUGGERNAUT_PRIMARY_FUSIONMORTAR_MKD': 0x000020d0,
+    'DOOMBRINGER_SECONDARY_SABERLAUNCHER_MKD': 0x000020d1,
+    'SENTINEL_BELT_CLAYMORE_MKD': 0x000020d2,
+    'HEAVY_SIDEARM_NOVABLASTER_MKD': 0x000020d3,
+    'INFILTRATOR_SECONDARY_SN7_MKD': 0x000020d4,
+    'TECHNICIAN_SECONDARY_REPAIRTOOLSD_MKD': 0x000020d5,
+    'SOLDIER_PRIMARY_ASSAULTRIFLE_MKD': 0x000020d6,
+    'SENTINEL_PRIMARY_SNIPERRIFLE_MKD': 0x000020d7,
+    'RAIDER_SECONDARY_NJ4SMG_MKD': 0x000020d8,
+    'INFILTRATOR_PRIMARY_RHINOSMG_MKD': 0x000020d9,
+    'TECHNICIAN_PRIMARY_TCN4_MKD': 0x000020da,
+    'PATHFINDER_SECONDARY_SHOTGUN_MKD': 0x000020db,
+    'BRUTE_SECONDARY_AUTOSHOTGUN_MKD': 0x000020dc,
+    'JUGGERNAUT_SECONDARY_SPINFUSORD_MKD': 0x000020dd,
+    'BRUTE_PRIMARY_HEAVYSPINFUSOR_MKD': 0x000020de,
+    'PATHFINDER_PRIMARY_LIGHTSPINFUSOR_MKD': 0x000020df,
+    'TECHNICIAN_BELT_TCNG_MKD': 0x000020e0,
+    'SOLDIER_SECONDARY_THUMPERD_MKD': 0x000020e1,
+    'JUGGERNAUT_SECONDARY_HEAVYTWINFUSOR': 0x000021d0,
+    'PATHFINDER_PRIMARY_LIGHTSPINFUSOR_100X': 0x000021f8,
+    'SOLDIER_PRIMARY_SPINFUSOR_100X': 0x000021f9,
+    'TECHNICIAN_BELT_REPAIRDEPLOYABLE': 0x000021fb,
+    'TECHNICIAN_PRIMARY_TC24': 0x000021fc,
+    'LIGHT_PRIMARY_LIGHTGRENADELAUNCHER': 0x00002239,
+    'MEDIUM_ELFPROJECTOR': 0x0000223d,
+    'ELF_FLAKCANNON': 0x0000223e,
+    'SOLDIER_PRIMARY_HONORFUSOR': 0x00002240
+}
+
+UNLOCKABLE_VOICES = {
+    'DARK': 0x000021dd,
+    'FEM1': 0x000021de,
+    'FEM2': 0x000021df,
+    'AUS': 0x000021f7,
+    'T2_FEM01': 0x00002208,
+    'T2_FEM02': 0x0000220a,
+    'T2_FEM03': 0x0000220b,
+    'T2_FEM04': 0x0000220c,
+    'T2_FEM05': 0x0000220d,
+    'T2_MALE01': 0x0000220f,
+    'T2_MALE02': 0x00002210,
+    'T2_MALE03': 0x00002211,
+    'T2_MALE04': 0x00002212,
+    'T2_MALE05': 0x00002213,
+    'T2_DERM01': 0x00002214,
+    'T2_DERM02': 0x00002215,
+    'T2_DERM03': 0x00002216,
+    'TOTAL_BISCUIT': 0x0000222b,
+    'STOWAWAY': 0x0000222d,
+    'BASEMENT_CHAMPION': 0x0000222e
+}
+
+
 class ParseError(Exception):
     pass
 
 
 class ClientMessage():
-    def __init__(self, clientid, clientseq, requests):
-        self.clientid = clientid
+    def __init__(self, clientseq, requests):
         self.clientseq = clientseq
         self.requests = requests
 
 
-class ClientConnectedMessage():
-    def __init__(self, clientid, clientaddress, clientport):
-        self.clientid = clientid
-        self.clientaddress = clientaddress
-        self.clientport = clientport
-
-
-class ClientDisconnectedMessage():
-    def __init__(self, clientid):
-        self.clientid = clientid
-
-
-class GameServerMessage():
-    def __init__(self, clientid, content):
-        self.game_server_id = game_server_id
-        self.content = content
-
-
 class GameServerConnectedMessage():
-    def __init__(self, game_server_id, game_server_address, game_server_port):
+    def __init__(self, game_server_id, game_server_ip, game_server_port, game_server_queue):
         self.game_server_id = game_server_id
-        self.game_server_address = game_server_address
+        self.game_server_ip = game_server_ip
         self.game_server_port = game_server_port
+        self.game_server_queue = game_server_queue
 
 
 class GameServerDisconnectedMessage():
@@ -76,6 +258,12 @@ def _originalbytes(start, end):
     with open('data/tribescapture.bin.stripped', 'rb') as f:
         f.seek(start)
         return f.read(end - start)
+
+def findbytype(arr, requestedtype):
+    for item in arr:
+        if type(item) == requestedtype:
+            return item
+    return None
 
 
 # ------------------------------------------------------------
@@ -124,6 +312,7 @@ class fourbytes():
         self.value = value
 
     def set(self, value):
+        assert 0 <= value <= 0xFFFFFFFF
         self.value = value
         return self
 
@@ -143,6 +332,11 @@ class nbytes():
         self.ident = ident
         self.value = valuebytes
 
+    def set(self, value):
+        assert len(value) == len(self.value)
+        self.value = value
+        return self
+
     def write(self, stream):
         stream.write(struct.pack('<H', self.ident) + self.value)
 
@@ -160,6 +354,8 @@ class stringenum():
         self.value = value
 
     def set(self, value):
+        if not isinstance(value, str):
+            raise ValueError('Cannot set the value of a stringenum to %s' % type(value).__name__)
         self.value = value
         return self
 
@@ -178,13 +374,27 @@ class arrayofenumblockarrays():
     def __init__(self, ident):
         self.ident = ident
         self.arrays = []
+        self.original_bytes = None
+
+    def set(self, arrays):
+        self.original_bytes = None
+        self.arrays = arrays
+        return self
+
+    def set_original_bytes(self, start, end):
+        self.original_bytes = (start, end)
+        self.arrays = None
+        return self
 
     def write(self, stream):
-        stream.write(struct.pack('<HH', self.ident, len(self.arrays)))
-        for arr in self.arrays:
-            stream.write(struct.pack('<H', len(arr)))
-            for enumfield in arr:
-                enumfield.write(stream)
+        if self.original_bytes:
+            stream.write(_originalbytes(*self.original_bytes))
+        else:
+            stream.write(struct.pack('<HH', self.ident, len(self.arrays)))
+            for arr in self.arrays:
+                stream.write(struct.pack('<H', len(arr)))
+                for enumfield in arr:
+                    enumfield.write(stream)
 
     def read(self, stream):
         ident, length1 = struct.unpack('<HH', stream.read(4))
@@ -214,6 +424,10 @@ class enumblockarray():
                 return item
         return None
 
+    def set(self, content):
+        self.content = content
+        return self
+
     def write(self, stream):
         stream.write(struct.pack('<HH', self.ident, len(self.content)))
         for el in self.content:
@@ -238,81 +452,86 @@ class enumblockarray():
 
 class m01fa(onebyte):
     def __init__(self):
-        super(m01fa, self).__init__(0x01fa, 0x00)
+        super().__init__(0x01fa, 0x00)
 
 
 class m02c9(onebyte):
     def __init__(self):
-        super(m02c9, self).__init__(0x02c9, 0x00)
+        super().__init__(0x02c9, 0x00)
 
 
 class m0326(onebyte):
     def __init__(self):
-        super(m0326, self).__init__(0x0326, 0x00)
+        super().__init__(0x0326, 0x00)
 
 
 class m0442(onebyte):
     def __init__(self):
-        super(m0442, self).__init__(0x0442, 0x01)
+        super().__init__(0x0442, 0x01)
 
 
 class m0574(onebyte):
     def __init__(self):
-        super(m0574, self).__init__(0x0574, 0x00)
+        super().__init__(0x0574, 0x00)
 
 
 class m0592(onebyte):
     def __init__(self):
-        super(m0592, self).__init__(0x0592, 0x00)
+        super().__init__(0x0592, 0x00)
 
 
 class m05d6(onebyte):
     def __init__(self):
-        super(m05d6, self).__init__(0x05d6, 0x00)
+        super().__init__(0x05d6, 0x00)
 
 
 class m05e6(onebyte):
     def __init__(self):
-        super(m05e6, self).__init__(0x05e6, 0x01)
+        super().__init__(0x05e6, 0x01)
 
 
 class m0601(onebyte):
     def __init__(self):
-        super(m0601, self).__init__(0x0601, 0x00)
+        super().__init__(0x0601, 0x00)
 
 
 class m0673(onebyte):
     def __init__(self):
-        super(m0673, self).__init__(0x0673, 0x00)
+        super().__init__(0x0673, 0x00)
 
 
 class m069b(onebyte):
     def __init__(self):
-        super(m069b, self).__init__(0x069b, 0x00)
+        super().__init__(0x069b, 0x00)
 
 
 class m069c(onebyte):
     def __init__(self):
-        super(m069c, self).__init__(0x069c, 0x00)
+        super().__init__(0x069c, 0x00)
 
 
 class m0703(onebyte):
     def __init__(self):
-        super(m0703, self).__init__(0x0703, 0x00)
+        super().__init__(0x0703, 0x00)
 
 
 # ------------------------------------------------------------
 # twobytes
 # ------------------------------------------------------------
 
+class m0307(twobytes):
+    def __init__(self):
+        super().__init__(0x0307, 0x0000)
+
+
 class m053d(twobytes):
     def __init__(self):
-        super(m053d, self).__init__(0x053d, 0x0000)
+        super().__init__(0x053d, 0x0000)
 
 
 class m0600(twobytes):
     def __init__(self):
-        super(m0600, self).__init__(0x0600, 0x0003)
+        super().__init__(0x0600, 0x0003)
 
 
 # ------------------------------------------------------------
@@ -321,472 +540,647 @@ class m0600(twobytes):
 
 class m0019(fourbytes):
     def __init__(self):
-        super(m0019, self).__init__(0x0019, 0x00000000)
+        super().__init__(0x0019, 0x00000000)
 
 
 class m0035(fourbytes):
     def __init__(self):
-        super(m0035, self).__init__(0x0035, 0x00000004)
+        super().__init__(0x0035, 0x00000000)
 
 
 class m008d(fourbytes):
     def __init__(self):
-        super(m008d, self).__init__(0x008d, 0x00000001)
+        super().__init__(0x008d, 0x00000001)
 
 
 class m0095(fourbytes):
     def __init__(self):
-        super(m0095, self).__init__(0x0095, 0x00000000)
+        super().__init__(0x0095, 0x00000000)
 
 
 class m009e(fourbytes):
     def __init__(self):
-        super(m009e, self).__init__(0x009e, 0x00000000)
+        super().__init__(0x009e, 0x00000000)
 
 
 class m00ba(fourbytes):
     def __init__(self):
-        super(m00ba, self).__init__(0x00ba, 0x00030ce8)
+        super().__init__(0x00ba, 0x00030ce8)
+
+
+class m00c3(fourbytes):
+    def __init__(self):
+        super().__init__(0x00c3, 0x00000000)
+
+
+class m00c6(fourbytes):
+    def __init__(self):
+        super().__init__(0x00c6, 0x00000000)
 
 
 class m00d4(fourbytes):
     def __init__(self):
-        super(m00d4, self).__init__(0x00d4, 0x00000000)
+        super().__init__(0x00d4, 0x00000000)
 
 
 class m0197(fourbytes):
     def __init__(self):
-        super(m0197, self).__init__(0x0197, 0x00000003)
+        super().__init__(0x0197, 0x00000000)
 
 
 class m01a3(fourbytes):
     def __init__(self):
-        super(m01a3, self).__init__(0x01a3, 0x00000000)
+        super().__init__(0x01a3, 0x00000000)
+
+
+class m01c9(fourbytes):
+    def __init__(self):
+        super().__init__(0x01c9, 0x00000000)
 
 
 class m01e3(fourbytes):
     def __init__(self):
-        super(m01e3, self).__init__(0x01e3, 0x00000000)
+        super().__init__(0x01e3, 0x00000000)
+
+
+class m01e8(fourbytes):
+    def __init__(self):
+        super().__init__(0x01e8, 0x00000000)
 
 
 class m020b(fourbytes):
     def __init__(self):
-        super(m020b, self).__init__(0x020b, 0x0001994b)
+        super().__init__(0x020b, 0x0001994b)
+
+
+class m020d(fourbytes):
+    def __init__(self):
+        super().__init__(0x020d, 0x00000000)
 
 
 class m0219(fourbytes):
     def __init__(self):
-        super(m0219, self).__init__(0x0219, 0x00190c0c)
+        super().__init__(0x0219, 0x00190c0c)
+
+
+class m021b(fourbytes):
+    def __init__(self):
+        super().__init__(0x021b, 0x00000000)
+
+
+class m021f(fourbytes):
+    def __init__(self):
+        super().__init__(0x021f, 0x00000000)
 
 
 class m0225(fourbytes):
     def __init__(self):
-        super(m0225, self).__init__(0x0225, 0x00067675)
+        super().__init__(0x0225, 0x00067675)
 
 
 class m0228(fourbytes):
     def __init__(self):
-        super(m0228, self).__init__(0x0228, 0x00000000)
+        super().__init__(0x0228, 0x00000000)
+
+
+class m0242(fourbytes):
+    def __init__(self):
+        super().__init__(0x0242, 0x00000000)
 
 
 class m0259(fourbytes):
     def __init__(self):
-        super(m0259, self).__init__(0x0259, 0x00000000)
+        super().__init__(0x0259, 0x00000000)
+
+
+class m025c(fourbytes):
+    def __init__(self):
+        super().__init__(0x025c, 0x00000000)
+
+
+class m025d(fourbytes):
+    def __init__(self):
+        super().__init__(0x025d, 0x00000000)
+
+
+class m025e(fourbytes):
+    def __init__(self):
+        super().__init__(0x025e, 0x00000000)
+
+
+class m025f(fourbytes):
+    def __init__(self):
+        super().__init__(0x025f, 0x00000000)
+
+
+class m0263(fourbytes):
+    def __init__(self):
+        super().__init__(0x0263, 0x00000000)
+
+
+class m026d(fourbytes):
+    def __init__(self):
+        super().__init__(0x026d, 0x00000000)
+
+
+class m0272(fourbytes):
+    def __init__(self):
+        super().__init__(0x0272, 0x00000000)
+
+
+class m0273(fourbytes):
+    def __init__(self):
+        super().__init__(0x0273, 0x00000000)
 
 
 class m0296(fourbytes):
     def __init__(self):
-        super(m0296, self).__init__(0x0296, 0x00000007)  # player level
+        super().__init__(0x0296, 0x00000007)  # player level
 
 
 class m0298(fourbytes):
     def __init__(self):
-        super(m0298, self).__init__(0x0298, 0x00000000)
+        super().__init__(0x0298, 0x00000000)
 
 
 class m0299(fourbytes):
     def __init__(self):
-        super(m0299, self).__init__(0x0299, 0x00000000)
+        super().__init__(0x0299, 0x00000000)
+
+
+class m02a3(fourbytes):
+    def __init__(self):
+        super().__init__(0x02a3, 0x00000000)
 
 
 class m02ab(fourbytes):
     def __init__(self):
-        super(m02ab, self).__init__(0x02ab, 0x00000000)
+        super().__init__(0x02ab, 0x00000000)
 
 
 class m02b2(fourbytes):
     def __init__(self):
-        super(m02b2, self).__init__(0x02b2, 0x00000000)
+        super().__init__(0x02b2, 0x00000000)
 
 
 class m02b3(fourbytes):
     def __init__(self):
-        super(m02b3, self).__init__(0x02b3, 0x00001d06)
+        super().__init__(0x02b3, 0x00001d06)
 
 
 class m02b5(fourbytes):
     def __init__(self):
-        super(m02b5, self).__init__(0x02b5, 0x00866c82)
+        super().__init__(0x02b5, 0x00866c82)
 
 
 class m02be(fourbytes):
     def __init__(self):
-        super(m02be, self).__init__(0x02be, 0x00000000)
+        super().__init__(0x02be, 0x00000000)
 
 
 class m02c4(fourbytes):
     def __init__(self):
-        super(m02c4, self).__init__(0x02c4, 0x0094883b)
+        super().__init__(0x02c4, 0x0094883b)
 
 
 class m02c7(fourbytes):
     def __init__(self):
-        super(m02c7, self).__init__(0x02c7, 0x00000000)
+        super().__init__(0x02c7, 0x00000000)
 
 
 class m02d6(fourbytes):
     def __init__(self):
-        super(m02d6, self).__init__(0x02d6, 0x0000001c)
+        super().__init__(0x02d6, 0x0000001c)
 
 
 class m02d7(fourbytes):
     def __init__(self):
-        super(m02d7, self).__init__(0x02d7, 0x0000000E)
+        super().__init__(0x02d7, 0x0000000E)
 
 
 class m02d8(fourbytes):
     def __init__(self):
-        super(m02d8, self).__init__(0x02d8, 0x00000000)  # unknown
+        super().__init__(0x02d8, 0x00000000)  # unknown
 
 
 class m02ec(fourbytes):
     def __init__(self):
-        super(m02ec, self).__init__(0x02ec, 0x00000004)
+        super().__init__(0x02ec, 0x00000004)
 
 
 class m02ed(fourbytes):
     def __init__(self):
-        super(m02ed, self).__init__(0x02ed, 0x00000000)
+        super().__init__(0x02ed, 0x00000000)
 
 
 class m02f4(fourbytes):
     def __init__(self):
-        super(m02f4, self).__init__(0x02f4, 0x000000a7)
+        super().__init__(0x02f4, 0x000000a7)
 
 
 class m02fc(fourbytes):
     def __init__(self):
-        super(m02fc, self).__init__(0x02fc, 0x00004949)
+        super().__init__(0x02fc, 0x00004949)
 
 
 class m02ff(fourbytes):
     def __init__(self):
-        super(m02ff, self).__init__(0x02ff, 0x00000000)
+        super().__init__(0x02ff, 0x00000000)
 
 
 class m0319(fourbytes):
     def __init__(self):
-        super(m0319, self).__init__(0x0319, 0x00000000)
+        super().__init__(0x0319, 0x00000000)
 
 
 class m0333(fourbytes):
     def __init__(self):
-        super(m0333, self).__init__(0x0333, 0x00000000)
+        super().__init__(0x0333, 0x00000000)
 
 
 class m0343(fourbytes):
     def __init__(self):
-        super(m0343, self).__init__(0x0343, 0x00000000)
+        super().__init__(0x0343, 0x00000000)
 
 
 class m0344(fourbytes):
     def __init__(self):
-        super(m0344, self).__init__(0x0344, 0x00000000)
+        super().__init__(0x0344, 0x00000000)
 
 
 class m0345(fourbytes):
     def __init__(self):
-        super(m0345, self).__init__(0x0345, 0x00000096)
+        super().__init__(0x0345, 0x00000096)
 
 
 class m0346(fourbytes):
     def __init__(self):
-        super(m0346, self).__init__(0x0346, 0x0000008c)
+        super().__init__(0x0346, 0x0000008c)
 
 
 class m0347(fourbytes):
     def __init__(self):
-        super(m0347, self).__init__(0x0347, 0x00000000)
+        super().__init__(0x0347, 0x00000000)
 
 
 class m0348(fourbytes):
     def __init__(self):
-        super(m0348, self).__init__(0x0348, 0x0023a039)
+        super().__init__(0x0348, 0x00000000)
 
 
 class m035a(fourbytes):
     def __init__(self):
-        super(m035a, self).__init__(0x035a, 0x00000000)
+        super().__init__(0x035a, 0x00000000)
 
 
 class m0363(fourbytes):
     def __init__(self):
-        super(m0363, self).__init__(0x0363, 0x00000000)
+        super().__init__(0x0363, 0x00000000)
 
 
 class m0369(fourbytes):
     def __init__(self):
-        super(m0369, self).__init__(0x0369, 0x00000000)
+        super().__init__(0x0369, 0x00000000)
+
+
+class m037f(fourbytes):
+    def __init__(self):
+        super().__init__(0x037f, 0x00000000)
+
+
+class m0380(fourbytes):
+    def __init__(self):
+        super().__init__(0x0380, 0x00000000)
 
 
 class m0385(fourbytes):
     def __init__(self):
-        super(m0385, self).__init__(0x0385, 0x00002755)
+        super().__init__(0x0385, 0x00002755)
+
+
+class m0398(fourbytes):
+    def __init__(self):
+        super().__init__(0x0398, 0x00000000)
+
+
+class m03ce(fourbytes):
+    def __init__(self):
+        super().__init__(0x03ce, 0x00000000)
 
 
 class m03e0(fourbytes):
     def __init__(self):
-        super(m03e0, self).__init__(0x03e0, 0x00000000)
+        super().__init__(0x03e0, 0x00000000)
 
 
 class m03f5(fourbytes):
     def __init__(self):
-        super(m03f5, self).__init__(0x03f5, 0x40000000)
+        super().__init__(0x03f5, 0x40000000)
 
 
 class m03fd(fourbytes):
     def __init__(self):
-        super(m03fd, self).__init__(0x03fd, 0x00000000)
+        super().__init__(0x03fd, 0x00000000)
 
 
 class m042a(fourbytes):
     def __init__(self):
-        super(m042a, self).__init__(0x042a, 0x00000000)
+        super().__init__(0x042a, 0x00000000)
 
 
 class m042b(fourbytes):
     def __init__(self):
-        super(m042b, self).__init__(0x042b, 0x00004782)
+        super().__init__(0x042b, 0x00004782)
 
 
 class m042e(fourbytes):
     def __init__(self):
-        super(m042e, self).__init__(0x042e, 0x42700000)
+        super().__init__(0x042e, 0x42700000)
 
 
 class m042f(fourbytes):
     def __init__(self):
-        super(m042f, self).__init__(0x042f, 0x41a00000)
+        super().__init__(0x042f, 0x41a00000)
 
 
 class m0448(fourbytes):
     def __init__(self):
-        super(m0448, self).__init__(0x0448, 0x00000000)
+        super().__init__(0x0448, 0x00000000)
 
 
 class m0452(fourbytes):
     def __init__(self):
-        super(m0452, self).__init__(0x0452, 0x00000001)
+        super().__init__(0x0452, 0x00000001)
 
 
 class m0489(fourbytes):
     def __init__(self):
-        super(m0489, self).__init__(0x0489, 0x00000000)
+        super().__init__(0x0489, 0x00000000)
 
 
 class m049e(fourbytes):
     def __init__(self):
-        super(m049e, self).__init__(0x049e, 0x01040B61)
+        super().__init__(0x049e, 0x01040B61)
 
 
 class m04cb(fourbytes):
     def __init__(self):
-        super(m04cb, self).__init__(0x04cb, 0x00100000)  # xp
+        super().__init__(0x04cb, 0x00100000)  # xp
 
 
 class m04d9(fourbytes):
     def __init__(self):
-        super(m04d9, self).__init__(0x04d9, 0x00000000)
+        super().__init__(0x04d9, 0x00000000)
+
+
+class m04fa(fourbytes):
+    def __init__(self):
+        super().__init__(0x04fa, 0x00000000)
 
 
 class m0502(fourbytes):
     def __init__(self):
-        super(m0502, self).__init__(0x0502, 0x00000000)
+        super().__init__(0x0502, 0x00000000)
 
 
 class m0556(fourbytes):
     def __init__(self):
-        super(m0556, self).__init__(0x0556, 0x00000000)
+        super().__init__(0x0556, 0x00000000)
 
 
 class m0558(fourbytes):
     def __init__(self):
-        super(m0558, self).__init__(0x0558, 0x00000000)
+        super().__init__(0x0558, 0x00000000)
+
+
+class m056a(fourbytes):
+    def __init__(self):
+        super().__init__(0x056a, 0x00000000)
+
+
+class m057d(fourbytes):
+    def __init__(self):
+        super().__init__(0x057d, 0x00000000)
+
+
+class m057f(fourbytes):
+    def __init__(self):
+        super().__init__(0x057f, 0x00000000)
 
 
 class m058a(fourbytes):
     def __init__(self):
-        super(m058a, self).__init__(0x058a, 0x00000000)
+        super().__init__(0x058a, 0x00000000)
+
+
+class m0591(fourbytes):
+    def __init__(self):
+        super().__init__(0x0591, 0x00000000)
+
+
+class m0596(fourbytes):
+    def __init__(self):
+        super().__init__(0x0596, 0x00000000)
+
+
+class m0597(fourbytes):
+    def __init__(self):
+        super().__init__(0x0597, 0x00000000)
 
 
 class m05cc(fourbytes):
     def __init__(self):
-        super(m05cc, self).__init__(0x05cc, 0x00000000)
+        super().__init__(0x05cc, 0x00000000)
 
 
 class m05cf(fourbytes):
     def __init__(self):
-        super(m05cf, self).__init__(0x05cf, 0x00000000)
+        super().__init__(0x05cf, 0x00000000)
 
 
 class m05d3(fourbytes):
     def __init__(self):
-        super(m05d3, self).__init__(0x05d3, 0x00001000)  # gold
+        super().__init__(0x05d3, 0x00001000)  # gold
 
 
 class m05dc(fourbytes):
     def __init__(self):
-        super(m05dc, self).__init__(0x05dc, 0x00050000)
+        super().__init__(0x05dc, 0x00050000)
 
 
 class m05e9(fourbytes):
     def __init__(self):
-        super(m05e9, self).__init__(0x05e9, 0x00000000)
+        super().__init__(0x05e9, 0x00000000)
+
+
+class m05ea(fourbytes):
+    def __init__(self):
+        super().__init__(0x05ea, 0x00000000)
+
+
+class m0608(fourbytes):
+    def __init__(self):
+        super().__init__(0x0608, 0x00000000)
 
 
 class m060a(fourbytes):
     def __init__(self):
-        super(m060a, self).__init__(0x060a, 0x7b19f822)
+        super().__init__(0x060a, 0x7b19f822)
 
 
 class m060c(fourbytes):
     def __init__(self):
-        super(m060c, self).__init__(0x060c, 0x00000000)
+        super().__init__(0x060c, 0x00000000)
 
 
 class m0615(fourbytes):
     def __init__(self):
-        super(m0615, self).__init__(0x0615, 0x00000000)
+        super().__init__(0x0615, 0x00000000)
+
+
+class m061d(fourbytes):
+    def __init__(self):
+        super().__init__(0x061d, 0x00000000)
 
 
 class m0623(fourbytes):
     def __init__(self):
-        super(m0623, self).__init__(0x0623, 0x00000000)
+        super().__init__(0x0623, 0x00000000)
 
 
 class m062d(fourbytes):
     def __init__(self):
-        super(m062d, self).__init__(0x062d, 0x00060001)
+        super().__init__(0x062d, 0x00060001)
 
 
 class m062e(fourbytes):
     def __init__(self):
-        super(m062e, self).__init__(0x062e, 0x00000000)
+        super().__init__(0x062e, 0x00000000)
 
 
 class m062f(fourbytes):
     def __init__(self):
-        super(m062f, self).__init__(0x062f, 0x00000000)
+        super().__init__(0x062f, 0x00000000)
+
+
+class m0637(fourbytes):
+    def __init__(self):
+        super().__init__(0x0637, 0x00000000)
+
+
+class m063d(fourbytes):
+    def __init__(self):
+        super().__init__(0x063d, 0x00000000)
 
 
 class m065f(fourbytes):
     def __init__(self):
-        super(m065f, self).__init__(0x065f, 0x00000000)
+        super().__init__(0x065f, 0x00000000)
 
 
 class m0661(fourbytes):
     def __init__(self):
-        super(m0661, self).__init__(0x0661, 0x00000000)
+        super().__init__(0x0661, 0x00000000)
 
 
 class m0663(fourbytes):
     def __init__(self):
-        super(m0663, self).__init__(0x0663, 0x00050001)
+        super().__init__(0x0663, 0x00050001)
 
 
 class m0664(fourbytes):
     def __init__(self):
-        super(m0664, self).__init__(0x0664, 0x00044107)
+        super().__init__(0x0664, 0x00044107)
 
 
 class m0671(fourbytes):
     def __init__(self):
-        super(m0671, self).__init__(0x0671, 0x00000000)
+        super().__init__(0x0671, 0x00000000)
 
 
 class m0672(fourbytes):
     def __init__(self):
-        super(m0672, self).__init__(0x0672, 0x00000000)
+        super().__init__(0x0672, 0x00000000)
 
 
 class m0674(fourbytes):
     def __init__(self):
-        super(m0674, self).__init__(0x0674, 0x00000000)
+        super().__init__(0x0674, 0x00000000)
 
 
 class m0675(fourbytes):
     def __init__(self):
-        super(m0675, self).__init__(0x0675, 0x00000000)
+        super().__init__(0x0675, 0x00000000)
 
 
 class m0676(fourbytes):
     def __init__(self):
-        super(m0676, self).__init__(0x0676, 0x00000000)
+        super().__init__(0x0676, 0x00000000)
 
 
 class m0677(fourbytes):
     def __init__(self):
-        super(m0677, self).__init__(0x0677, 0x00000000)
+        super().__init__(0x0677, 0x00000000)
 
 
 class m0683(fourbytes):
     def __init__(self):
-        super(m0683, self).__init__(0x0683, 0x00000000)
+        super().__init__(0x0683, 0x00000000)
+
+
+class m0684(fourbytes):
+    def __init__(self):
+        super().__init__(0x0684, 0x00000000)
+
+
+class m068c(fourbytes):
+    def __init__(self):
+        super().__init__(0x068c, 0x00000000)
 
 
 class m06bd(fourbytes):
     def __init__(self):
-        super(m06bd, self).__init__(0x06bd, 0x0000001e)
+        super().__init__(0x06bd, 0x0000001e)
 
 
 class m06bf(fourbytes):
     def __init__(self):
-        super(m06bf, self).__init__(0x06bf, 0x00000032)
+        super().__init__(0x06bf, 0x00000032)
 
 
 class m06c0(fourbytes):
     def __init__(self):
-        super(m06c0, self).__init__(0x06c0, 0x00000000)
+        super().__init__(0x06c0, 0x00000000)
 
 
 class m06ea(fourbytes):
     def __init__(self):
-        super(m06ea, self).__init__(0x06ea, 0x00000000)
+        super().__init__(0x06ea, 0x00000000)
 
 
 class m06ee(fourbytes):
     def __init__(self):
-        super(m06ee, self).__init__(0x06ee, 0x00000000)
+        super().__init__(0x06ee, 0x00000000)
 
 
 class m06f1(fourbytes):
     def __init__(self):
-        super(m06f1, self).__init__(0x06f1, 0x41700000)
+        super().__init__(0x06f1, 0x41700000)
 
 
 class m06f5(fourbytes):
     def __init__(self):
-        super(m06f5, self).__init__(0x06f5, 0x00000000)
+        super().__init__(0x06f5, 0x00000000)
 
 
 class m0701(fourbytes):
     def __init__(self):
-        super(m0701, self).__init__(0x0701, 0x00000000)
+        super().__init__(0x0701, 0x00000000)
 
 
 class m0704(fourbytes):
     def __init__(self):
-        super(m0704, self).__init__(0x0704, 0x00000000)
+        super().__init__(0x0704, 0x00000000)
 
 
 # ------------------------------------------------------------
@@ -794,31 +1188,41 @@ class m0704(fourbytes):
 # ------------------------------------------------------------
 class m0008(nbytes):
     def __init__(self):
-        super(m0008, self).__init__(0x0008, hexparse('00 00 00 00 00 00 00 00'))
+        super().__init__(0x0008, hexparse('00 00 00 00 00 00 00 00'))
+
+
+class m006e(nbytes):
+    def __init__(self):
+        super().__init__(0x006e, hexparse('00 00 00'))
 
 
 class m00b7(nbytes):
     def __init__(self):
-        super(m00b7, self).__init__(0x00b7, hexparse('d0 69 03 1d f9 4c e4 40'))
+        super().__init__(0x00b7, hexparse('d0 69 03 1d f9 4c e4 40'))
 
 
 class m01d7(nbytes):
     def __init__(self):
-        super(m01d7, self).__init__(0x01d7, hexparse('00 00 00 00 2c 20 e5 40'))
+        super().__init__(0x01d7, hexparse('00 00 00 00 2c 20 e5 40'))
+
+
+class m01f5(nbytes):
+    def __init__(self):
+        super().__init__(0x01f5, hexparse('00 00 00 00 00 00 00 00'))
 
 
 class m0246(nbytes):
     def __init__(self):
-        super(m0246, self).__init__(0x0246, hexparse('00 00 00 00 00 00 00 00'))
+        super().__init__(0x0246, hexparse('00 00 00 00 00 00 00 00'))
 
-    def set(self, ip1, ip2, ip3, ip4, port):
-        self.value = struct.pack('>BBHBBBB', 0x02, 0x00, port, ip1, ip2, ip3, ip4)
+    def set(self, ip: IPv4Address, port):
+        self.value = struct.pack('>BBH', 0x02, 0x00, port) + ip.packed
         return self
 
 
 class m024f(nbytes):
     def __init__(self):
-        super(m024f, self).__init__(0x024f, hexparse('00 00 00 00 00 00 00 00'))
+        super().__init__(0x024f, hexparse('00 00 00 00 00 00 00 00'))
 
     def set(self, ip: IPv4Address, port: int):
         self.value = struct.pack('>BBH', 0x02, 0x00, port) + ip.packed
@@ -827,12 +1231,12 @@ class m024f(nbytes):
 
 class m0303(nbytes):
     def __init__(self):
-        super(m0303, self).__init__(0x0303, hexparse('00 00 00 40 00 00 00 00'))
+        super().__init__(0x0303, hexparse('00 00 00 40 00 00 00 00'))
 
 
 class m03e3(nbytes):
     def __init__(self):
-        super(m03e3, self).__init__(0x03e3,
+        super().__init__(0x03e3,
                                     hexparse('00 00 00 00 00 00 00 00 '
                                              '00 00 00 00 00 00 00 00'))
         # hexparse('6b 6a 0a 5f 8f 04 e7 41 '
@@ -841,17 +1245,32 @@ class m03e3(nbytes):
 
 class m0419(nbytes):
     def __init__(self):
-        super(m0419, self).__init__(0x0419, hexparse('00 00 00 00 0c 20 e5 40'))
+        super().__init__(0x0419, hexparse('00 00 00 00 0c 20 e5 40'))
 
 
 class m0434(nbytes):
     def __init__(self):
-        super(m0434, self).__init__(0x0434, hexparse('03 4c ba fa 2e 26 40 01'))
+        super().__init__(0x0434, hexparse('03 4c ba fa 2e 26 40 01'))
+
+
+class m04d4(nbytes):
+    def __init__(self):
+        super().__init__(0x04d4, hexparse('00 00 00 00 00 00 00 00'))
+
+
+class m05e2(nbytes):
+    def __init__(self):
+        super().__init__(0x05e2, hexparse('00 00 00 00 00 00 00 00'))
+
+
+class m057e(nbytes):
+    def __init__(self):
+        super().__init__(0x057e, hexparse('00 00 00 00 00 00 00 00'))
 
 
 class m05e4(nbytes):
     def __init__(self):
-        super(m05e4, self).__init__(0x05e4, hexparse('00 00 00 00 00 00 00 00'))
+        super().__init__(0x05e4, hexparse('00 00 00 00 00 00 00 00'))
 
 
 # ------------------------------------------------------------
@@ -860,117 +1279,125 @@ class m05e4(nbytes):
 
 class m0013(stringenum):
     def __init__(self):
-        super(m0013, self).__init__(0x0013, 'y')
+        super().__init__(0x0013, 'y')
+
+
+class m00a2(stringenum):
+    def __init__(self):
+        super().__init__(0x00a2, '')
 
 
 class m00a3(stringenum):
     def __init__(self):
-        super(m00a3, self).__init__(0x00a3, '')
+        super().__init__(0x00a3, '')
 
 
 class m00aa(stringenum):
     def __init__(self):
-        super(m00aa, self).__init__(0x00aa, 'y')
+        super().__init__(0x00aa, 'y')
 
 
 class m01a4(stringenum):
     def __init__(self):
-        super(m01a4, self).__init__(0x01a4, '')
+        super().__init__(0x01a4, '')
 
 
 class m01a6(stringenum):
     def __init__(self):
-        super(m01a6, self).__init__(0x01a6, 'n')
+        super().__init__(0x01a6, 'n')
 
 
 class m01bc(stringenum):
     def __init__(self):
-        super(m01bc, self).__init__(0x01bc, 'n')
+        super().__init__(0x01bc, 'n')
 
 
 class m01c4(stringenum):
     def __init__(self):
-        super(m01c4, self).__init__(0x01c4, 'n')
+        super().__init__(0x01c4, 'n')
 
 
 class m0261(stringenum):
     def __init__(self):
-        super(m0261, self).__init__(0x0261, '')
+        super().__init__(0x0261, '')
 
 
 class m02af(stringenum):
     def __init__(self):
-        super(m02af, self).__init__(0x02af, 'n')
+        super().__init__(0x02af, 'n')
 
 
 class m02b1(stringenum):
     def __init__(self):
-        super(m02b1, self).__init__(0x02b1, '')
+        super().__init__(0x02b1, '')
 
 
 class m02b6(stringenum):
     def __init__(self):
-        super(m02b6, self).__init__(0x02b6, '')
+        super().__init__(0x02b6, '')
 
 
 class m02e6(stringenum):
     def __init__(self):
-        super(m02e6, self).__init__(0x02e6, '')
+        super().__init__(0x02e6, '')
 
 
 class m02fe(stringenum):
     def __init__(self):
-        super(m02fe, self).__init__(0x02fe, '')
+        super().__init__(0x02fe, '')
 
 
 class m0300(stringenum):
     def __init__(self):
-        super(m0300, self).__init__(0x0300, '')
+        super().__init__(0x0300, '')
 
 
 class m034a(stringenum):
     def __init__(self):
-        super(m034a, self).__init__(0x034a, '')
+        super().__init__(0x034a, '')
 
 
 class m035b(stringenum):
     def __init__(self):
-        super(m035b, self).__init__(0x035b, 'y')
+        super().__init__(0x035b, 'y')
 
 
 class m037c(stringenum):
     def __init__(self):
-        super(m037c, self).__init__(0x037c, 'n')
+        super().__init__(0x037c, 'n')
 
+class m0437(stringenum):
+    def __init__(self):
+        super().__init__(0x0437, '')
 
 class m0468(stringenum):
     def __init__(self):
-        super(m0468, self).__init__(0x0468, 'f8')
+        super().__init__(0x0468, 'f8')
 
 
 class m0494(stringenum):
     def __init__(self):
-        super(m0494, self).__init__(0x0494, '')
+        super().__init__(0x0494, '')
 
 
 class m0669(stringenum):
     def __init__(self):
-        super(m0669, self).__init__(0x0669, '')
+        super().__init__(0x0669, '')
 
 
 class m06de(stringenum):
     def __init__(self):
-        super(m06de, self).__init__(0x06de, '')
+        super().__init__(0x06de, '')
 
 
 class m06e9(stringenum):
     def __init__(self):
-        super(m06e9, self).__init__(0x06e9, 'n')
+        super().__init__(0x06e9, 'n')
 
 
 class m0705(stringenum):
     def __init__(self):
-        super(m0705, self).__init__(0x0705, '')
+        super().__init__(0x0705, '')
 
 
 # ------------------------------------------------------------
@@ -979,11 +1406,14 @@ class m0705(stringenum):
 
 class m00e9(arrayofenumblockarrays):
     def __init__(self):
-        super(m00e9, self).__init__(0x00e9)
+        super().__init__(0x00e9)
 
     def setservers(self, servers):
         self.arrays = []
         for server in servers:
+            if not server.joinable:
+                continue
+
             self.arrays.append([
                 m0385(),
                 m06ee(),
@@ -1000,12 +1430,12 @@ class m00e9(arrayofenumblockarrays):
                 m01a6(),
                 m06f1(),
                 m0703(),
-                m0343(),
+                m0343().set(len(server.players)),
                 m0344(),
                 m0259(),
                 m03fd(),
                 m02b3(),
-                m0448().set(4),
+                m0448().set(server.region),
                 m02d6(),
                 m06f5(),
                 m0299(),
@@ -1015,41 +1445,79 @@ class m00e9(arrayofenumblockarrays):
                 m069b(),
                 m0300().set(server.description),
                 m01a4().set(server.motd),
-                m02b2().set(0x000005A7),
+                m02b2().set(server.map_id),
                 m02b5(),
                 m0347().set(0x00000018),
-                m02f4(),
-                m0035(),
-                m0197(),
-                m0246().set(127, 0, 0, 1, 1234)
+                m02f4().set(server.get_time_remaining()),
+                m0035().set(server.be_score),
+                m0197().set(server.ds_score),
+                m0246().set(server.ip, PING_PORT) # The value doesn't matter, the client uses the address in a0035
             ])
+        return self
+
+    def setplayers(self, players):
+        assert len(self.arrays) == 1, 'Can only set players for an m00e9 message that contains a single server'
+        self.arrays[0].append(
+            m0132().setplayers(players)
+        )
         return self
 
 
 class m00fe(arrayofenumblockarrays):
     def __init__(self):
-        super(m00fe, self).__init__(0x00fe)
+        super().__init__(0x00fe)
 
-    def write(self, stream):
-        stream.write(_originalbytes(0x8519, 0x873d))
+
+class m0116(arrayofenumblockarrays):
+    def __init__(self):
+        super().__init__(0x0116)
+
+
+class m0132(arrayofenumblockarrays):
+    def __init__(self):
+        super().__init__(0x0132)
+
+    def setplayers(self, players):
+        player_team_to_datatype_team = {
+            None: 1,
+            TEAM_SPEC: 1,
+            TEAM_BLOODEAGLE: 1,
+            TEAM_DIAMONDSWORD: 2
+        }
+
+        self.arrays = []
+        for player in players:
+            self.arrays.append([
+                m0348().set(player.unique_id),
+                m034a().set(player.display_name),
+                m042a(),
+                m0558(),
+                m0363(),
+                m0615(),
+                m0452().set(player_team_to_datatype_team[player.team]),
+                m0225(),
+                m0296(),
+                m06ee(),
+                m042e(),
+                m042f(),
+                m03f5()
+            ])
+        return self
 
 
 class m0138(arrayofenumblockarrays):
     def __init__(self):
-        super(m0138, self).__init__(0x0138)
-
-    # def write(self, stream):
-    #    stream.write(_originalbytes(0x103, 0x4f49))
+        super().__init__(0x0138)
 
 
 class m0144(arrayofenumblockarrays):
     def __init__(self):
-        super(m0144, self).__init__(0x0144)
+        super().__init__(0x0144)
 
 
 class m06ef(arrayofenumblockarrays):
     def __init__(self):
-        super(m06ef, self).__init__(0x06ef)
+        super().__init__(0x06ef)
         self.arrays = [
             [
                 m06ee(),
@@ -1068,72 +1536,707 @@ class m06ef(arrayofenumblockarrays):
 
 class m0632(arrayofenumblockarrays):
     def __init__(self):
-        super(m0632, self).__init__(0x0632)
-
-    def write(self, stream):
-        stream.write(_originalbytes(0x7371, 0x8515))
+        super().__init__(0x0632)
 
 
 class m0633(arrayofenumblockarrays):
     def __init__(self):
-        super(m0633, self).__init__(0x0633)
-
-    def write(self, stream):
-        stream.write(_originalbytes(0xdaff, 0x19116))
+        super().__init__(0x0633)
 
 
 class m063e(arrayofenumblockarrays):
     def __init__(self):
-        super(m063e, self).__init__(0x063e)
-
-    def write(self, stream):
-        stream.write(_originalbytes(0x19116, 0x1c6ee))
+        super().__init__(0x063e)
 
 
 class m0662(arrayofenumblockarrays):
-    def __init__(self, start, end):
-        super(m0662, self).__init__(0x0662)
-        self.start = start
-        self.end = end
+    part1 = [
+        [
+            m0661().set(0x0191C7D8),
+            m01e3().set(0x00002710),
+            m065f().set(0x00000001),
+            m02fe(),
+            m0144()
+        ],
+        [
+            m0661().set(0x0191C7D9),
+            m01e3().set(0x00002711),
+            m065f().set(0x00000001),
+            m02fe(),
+            m0144()
+        ],
+        [
+            m0661().set(0x0191C7DA),
+            m01e3().set(0x00002712),
+            m065f().set(0x00000001),
+            m02fe(),
+            m0144()
+        ],
+        [
+
+            m0661().set(0x0191C7DB),
+            m01e3().set(0x00002713),
+            m065f().set(0x00000001),
+            m02fe(),
+            m0144()
+        ],
+        [
+
+            m0661().set(0x0191C7DC),
+            m01e3().set(0x00002714),
+            m065f().set(0x00000001),
+            m02fe(),
+            m0144()
+        ],
+        [
+
+            m0661().set(0x0191C7DD),
+            m01e3().set(0x00002715),
+            m065f().set(0x00000001),
+            m02fe(),
+            m0144()
+        ],
+        [
+            m0661().set(0x0191C7DE),
+            m01e3().set(0x00002716),
+            m065f().set(0x00000001),
+            m02fe(),
+            m0144()
+        ],
+        [
+
+            m0661().set(0x0191C7DF),
+            m01e3().set(0x00002717),
+            m065f().set(0x00000001),
+            m02fe(),
+            m0144()
+        ],
+        [
+
+            m0661().set(0x0191C7E0),
+            m01e3().set(0x00002718),
+            m065f().set(0x00000001),
+            m02fe(),
+            m0144()
+        ]
+    ]
+    physics_presets = [
+        [
+            m0661().set(0x0153FCA6),
+            m01e3().set(0x00002710),
+            m065f().set(0x0000002A),
+            m02fe().set("Standard"),
+            m0144().set([
+                [
+                    m0369().set(0x000005C4),
+                    m0261().set("1"),
+                ]
+            ])
+        ],
+        [
+            m0661().set(0x0153FCA7),
+            m01e3().set(0x00002711),
+            m065f().set(0x0000002A),
+            m02fe().set("Accelerate"),
+            m0144().set([
+                [
+                    m0369().set(0x000005AF),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B0),
+                    m0261().set("150000000"),
+                ], [
+                    m0369().set(0x000005B1),
+                    m0261().set("200000000"),
+                ], [
+                    m0369().set(0x000005B2),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B3),
+                    m0261().set("80000000"),
+                ], [
+                    m0369().set(0x000005B4),
+                    m0261().set("150000000"),
+                ], [
+                    m0369().set(0x000005B5),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B6),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B7),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B8),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B9),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BA),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BB),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BC),
+                    m0261().set("150000000"),
+                ], [
+                    m0369().set(0x000005BD),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BE),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BF),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C0),
+                    m0261().set("200000000"),
+                ], [
+                    m0369().set(0x000005C1),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C2),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C3),
+                    m0261().set("200000000"),
+                ], [
+                    m0369().set(0x000005C4),
+                    m0261().set("2"),
+                ], [
+                    m0369().set(0x000005C5),
+                    m0261().set("40000000"),
+                ], [
+                    m0369().set(0x000005C6),
+                    m0261().set("30000000"),
+                ], [
+                    m0369().set(0x000005C7),
+                    m0261().set("110000000"),
+                ], [
+                    m0369().set(0x000005C8),
+                    m0261().set("110000000"),
+                ], [
+                    m0369().set(0x000005C9),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005CA),
+                    m0261().set("100000000"),
+                ]
+            ])
+        ],
+        [
+            m0661().set(0x0153FCA8),
+            m01e3().set(0x00002712),
+            m065f().set(0x0000002A),
+            m02fe().set("Impulse"),
+            m0144().set([
+                [
+                    m0369().set(0x000005AF),
+                    m0261().set("130000000"),
+
+                ], [
+                    m0369().set(0x000005B0),
+                    m0261().set("70000000"),
+
+                ], [
+                    m0369().set(0x000005B1),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B2),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B3),
+                    m0261().set("80000000"),
+                ], [
+                    m0369().set(0x000005B4),
+                    m0261().set("133000000"),
+                ], [
+                    m0369().set(0x000005B5),
+                    m0261().set("153000000"),
+                ], [
+                    m0369().set(0x000005B6),
+                    m0261().set("650000000"),
+                ], [
+                    m0369().set(0x000005B7),
+                    m0261().set("130000000"),
+                ], [
+                    m0369().set(0x000005B8),
+                    m0261().set("20000000"),
+                ], [
+                    m0369().set(0x000005B9),
+                    m0261().set("80000000"),
+                ], [
+                    m0369().set(0x000005BA),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BB),
+                    m0261().set("95000000"),
+                ], [
+                    m0369().set(0x000005BC),
+                    m0261().set("110000000"),
+                ], [
+                    m0369().set(0x000005BD),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BE),
+                    m0261().set("210000000"),
+                ], [
+                    m0369().set(0x000005BF),
+                    m0261().set("0"),
+                ], [
+                    m0369().set(0x000005C0),
+                    m0261().set("30000000"),
+                ], [
+                    m0369().set(0x000005C1),
+                    m0261().set("118000000"),
+                ], [
+                    m0369().set(0x000005C2),
+                    m0261().set("320000000"),
+                ], [
+                    m0369().set(0x000005C3),
+                    m0261().set("65000000"),
+                ], [
+                    m0369().set(0x000005C4),
+                    m0261().set("3"),
+                ], [
+                    m0369().set(0x000005C5),
+                    m0261().set("120000000"),
+                ], [
+                    m0369().set(0x000005C6),
+                    m0261().set("400000000"),
+                ], [
+                    m0369().set(0x000005C7),
+                    m0261().set("120000000"),
+                ], [
+                    m0369().set(0x000005C8),
+                    m0261().set("400000000"),
+                ], [
+                    m0369().set(0x000005C9),
+                    m0261().set("140000000"),
+                ], [
+                    m0369().set(0x000005CA),
+                    m0261().set("140000000"),
+                ], [
+                    m0369().set(0x000005D0),
+                    m0261().set("0"),
+                ], [
+                    m0369().set(0x000005D7),
+                    m0261().set("0"),
+                ]
+            ])
+        ],
+        [
+            m0661().set(0x0153FCA9),
+            m01e3().set(0x00002713),
+            m065f().set(0x0000002A),
+            m02fe().set("Quake: Ascend"),
+            m0144().set([
+                [
+                    m0369().set(0x000005AF),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B0),
+                    m0261().set("350000000"),
+                ], [
+                    m0369().set(0x000005B1),
+                    m0261().set("400000000"),
+                ], [
+                    m0369().set(0x000005B2),
+                    m0261().set("260000000"),
+                ], [
+                    m0369().set(0x000005B3),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B4),
+                    m0261().set("350000000"),
+                ], [
+                    m0369().set(0x000005B5),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B6),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B7),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B8),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B9),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BA),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BB),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BC),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BD),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BE),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BF),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C0),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C1),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C2),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C3),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C4),
+                    m0261().set("4"),
+                ], [
+                    m0369().set(0x000005C5),
+                    m0261().set("0"),
+                ], [
+                    m0369().set(0x000005C6),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C7),
+                    m0261().set("0"),
+                ], [
+                    m0369().set(0x000005C8),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C9),
+                    m0261().set("1000000000"),
+                ], [
+                    m0369().set(0x000005CA),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005D0),
+                    m0261().set("1000000000"),
+                ], [
+                    m0369().set(0x000005D7),
+                    m0261().set("100000000"),
+                ]
+            ])
+        ],
+        [
+            m0661().set(0x0153FCAA),
+            m01e3().set(0x00002714),
+            m065f().set(0x0000002A),
+            m02fe().set("Rock Bounce"),
+            m0144().set([
+                [
+                    m0369().set(0x000005C4),
+                    m0261().set("5"),
+                ]
+            ])
+        ],
+        [
+            m0661().set(0x0153FCAB),
+            m01e3().set(0x00002715),
+            m065f().set(0x0000002A),
+            m02fe().set("Scramble"),
+            m0144().set([
+                [
+                    m0369().set(0x000005AF),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B0),
+                    m0261().set("120000000"),
+                ], [
+                    m0369().set(0x000005B1),
+                    m0261().set("200000000"),
+                ], [
+                    m0369().set(0x000005B2),
+                    m0261().set("150000000"),
+                ], [
+                    m0369().set(0x000005B3),
+                    m0261().set("90000000"),
+                ], [
+                    m0369().set(0x000005B4),
+                    m0261().set("90000000"),
+                ], [
+                    m0369().set(0x000005B5),
+                    m0261().set("90000000"),
+                ], [
+                    m0369().set(0x000005B6),
+                    m0261().set("400000000"),
+                ], [
+                    m0369().set(0x000005B7),
+                    m0261().set("200000000"),
+                ], [
+                    m0369().set(0x000005B8),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005B9),
+                    m0261().set("400000000"),
+                ], [
+                    m0369().set(0x000005BA),
+                    m0261().set("500000000"),
+                ], [
+                    m0369().set(0x000005BB),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BC),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BD),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BE),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BF),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C0),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C1),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C2),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C3),
+                    m0261().set("400000000"),
+                ], [
+                    m0369().set(0x000005C4),
+                    m0261().set("6"),
+                ], [
+                    m0369().set(0x000005C5),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C6),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C7),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C8),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005C9),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005CA),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005D0),
+                    m0261().set("50000000"),
+                ], [
+                    m0369().set(0x000005D1),
+                    m0261().set("140000000"),
+                ], [
+                    m0369().set(0x000005D2),
+                    m0261().set("80000000"),
+                ], [
+                    m0369().set(0x000005D3),
+                    m0261().set("0"),
+                ], [
+                    m0369().set(0x000005D4),
+                    m0261().set("120000000"),
+                ], [
+                    m0369().set(0x000005D5),
+                    m0261().set("50000000"),
+                ], [
+                    m0369().set(0x000005D6),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005D7),
+                    m0261().set("300000000"),
+                ]
+            ])
+        ],
+        [
+            m0661().set(0x0153FCAC),
+            m01e3().set(0x00002716),
+            m065f().set(0x0000002A),
+            m02fe().set("Freedom"),
+            m0144().set([
+                [
+                    m0369().set(0x000005AF),
+                    m0261().set("127000000"),
+                ], [
+                    m0369().set(0x000005B0),
+                    m0261().set("103000000"),
+                ], [
+                    m0369().set(0x000005B1),
+                    m0261().set("121000000"),
+                ], [
+                    m0369().set(0x000005B2),
+                    m0261().set("126000000"),
+                ], [
+                    m0369().set(0x000005B3),
+                    m0261().set("86000000"),
+                ], [
+                    m0369().set(0x000005B4),
+                    m0261().set("108000000"),
+                ], [
+                    m0369().set(0x000005B5),
+                    m0261().set("0"),
+                ], [
+                    m0369().set(0x000005B6),
+                    m0261().set("1537000000"),
+                ], [
+                    m0369().set(0x000005B7),
+                    m0261().set("141000000"),
+                ], [
+                    m0369().set(0x000005B8),
+                    m0261().set("143000000"),
+                ], [
+                    m0369().set(0x000005B9),
+                    m0261().set("119000000"),
+                ], [
+                    m0369().set(0x000005BA),
+                    m0261().set("116000000"),
+                ], [
+                    m0369().set(0x000005BB),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005BC),
+                    m0261().set("117000000"),
+                ], [
+                    m0369().set(0x000005BD),
+                    m0261().set("173000000"),
+                ], [
+                    m0369().set(0x000005BE),
+                    m0261().set("136000000"),
+                ], [
+                    m0369().set(0x000005BF),
+                    m0261().set("164000000"),
+                ], [
+                    m0369().set(0x000005C0),
+                    m0261().set("121000000"),
+                ], [
+                    m0369().set(0x000005C1),
+                    m0261().set("137000000"),
+                ], [
+                    m0369().set(0x000005C2),
+                    m0261().set("194000000"),
+                ], [
+                    m0369().set(0x000005C3),
+                    m0261().set("208000000"),
+                ], [
+                    m0369().set(0x000005C4),
+                    m0261().set("7"),
+                ], [
+                    m0369().set(0x000005C5),
+                    m0261().set("121000000"),
+                ], [
+                    m0369().set(0x000005C6),
+                    m0261().set("331000000"),
+                ], [
+                    m0369().set(0x000005C7),
+                    m0261().set("117000000"),
+                ], [
+                    m0369().set(0x000005C8),
+                    m0261().set("342000000"),
+                ], [
+                    m0369().set(0x000005C9),
+                    m0261().set("126000000"),
+                ], [
+                    m0369().set(0x000005CA),
+                    m0261().set("137000000"),
+                ], [
+                    m0369().set(0x000005D0),
+                    m0261().set("99100000"),
+                ], [
+                    m0369().set(0x000005D1),
+                    m0261().set("108000000"),
+                ], [
+                    m0369().set(0x000005D2),
+                    m0261().set("111000000"),
+                ], [
+                    m0369().set(0x000005D3),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005D4),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005D5),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005D6),
+                    m0261().set("100000000"),
+                ], [
+                    m0369().set(0x000005D7),
+                    m0261().set("100000000")]
+            ])
+        ]
+    ]
+
+    def __init__(self):
+        super().__init__(0x0662)
+        self.arrays = []
+        self.original_bytes = None
+
+    def set(self, loadout_arrays):
+        self.arrays = []
+        self.arrays.extend(self.part1)
+        self.arrays.extend(loadout_arrays)
+        self.arrays.extend(self.physics_presets)
+        return self
+
+    def setoriginalbytes(self, start, end):
+        self.original_bytes = (start, end)
+        return self
 
     def write(self, stream):
-        stream.write(_originalbytes(self.start, self.end))
+        if self.original_bytes:
+            stream.write(_originalbytes(*self.original_bytes))
+        else:
+            super().write(stream)
 
 
 class m067e(arrayofenumblockarrays):
     def __init__(self):
-        super(m067e, self).__init__(0x067e)
-
-    def write(self, stream):
-        stream.write(_originalbytes(0x1c6ee, 0x1ec45))
+        super().__init__(0x067e)
 
 
 class m0681(arrayofenumblockarrays):
     def __init__(self):
-        super(m0681, self).__init__(0x0681)
+        super().__init__(0x0681)
 
 
 class m068b(arrayofenumblockarrays):
     def __init__(self):
-        super(m068b, self).__init__(0x068b)
+        super().__init__(0x068b)
+
+        # Reuse Hirez' UDP echo servers that are set up in each region
         self.arrays = [
             [
-                m0448().set(4),
+                m0448().set(REGION_NORTH_AMERICA),
                 m03fd(),
                 m06e9(),
-                m02ff(),
+                m02ff().set(1),
+                m0300().set("North America"),
+                m0246().set(IPv4Address('69.147.237.186'), PING_PORT)
+            ],
+            [
+                m0448().set(REGION_EUROPE),
+                m03fd(),
+                m06e9(),
+                m02ff().set(2),
                 m0300().set("Europe"),
-                m0246().set(10, 0, 0, 1, 1234)
+                m0246().set(IPv4Address('95.211.127.134'), PING_PORT)
+            ],
+            [
+                m0448().set(REGION_OCEANIA_AUSTRALIA),
+                m03fd(),
+                m06e9(),
+                m02ff().set(3),
+                m0300().set("Oceania/Australia"),
+                m0246().set(IPv4Address('221.121.148.81'), PING_PORT)
             ]
         ]
-
-
-class m0681(arrayofenumblockarrays):
-    def __init__(self):
-        super(m0681, self).__init__(0x0681)
-
-    def write(self, stream):
-        stream.write(_originalbytes(0x8822, 0x8898))
 
 
 # ------------------------------------------------------------
@@ -1142,17 +2245,17 @@ class m0681(arrayofenumblockarrays):
 
 class a0014(enumblockarray):
     def __init__(self):
-        super(a0014, self).__init__(0x0014)
+        super().__init__(0x0014)
 
 
 class a0033(enumblockarray):
     def __init__(self):
-        super(a0033, self).__init__(0x0033)
+        super().__init__(0x0033)
 
 
 class a0035(enumblockarray):
     def __init__(self):
-        super(a0035, self).__init__(0x0035)
+        super().__init__(0x0035)
         self.content = [
             m0348(),
             m0095(),
@@ -1189,8 +2292,8 @@ class a0035(enumblockarray):
             m0615(),
             m06ef(),
             m024f().set(server.ip, server.port),
-            m0246().set(127, 0, 0, 1, 1234),
-            m0448().set(4),
+            m0246().set(server.ip, PING_PORT),
+            m0448().set(server.region),
             m02b5(),
             m03e0(),
             m0347().set(7),
@@ -1201,7 +2304,7 @@ class a0035(enumblockarray):
 
 class a003a(enumblockarray):
     def __init__(self):
-        super(a003a, self).__init__(0x003a)
+        super().__init__(0x003a)
         self.content = [
             m049e(),
             m03e3(),
@@ -1211,7 +2314,124 @@ class a003a(enumblockarray):
 
 class a003d(enumblockarray):
     def __init__(self):
-        super(a003d, self).__init__(0x003d)
+        super().__init__(0x003d)
+
+        ids_to_unlock = list(UNLOCKABLE_VOICES.values()) + list(UNLOCKABLE_ITEMS.values())
+
+        general_unlocks_arrays = []
+        for purchase_index, general_item in enumerate(ids_to_unlock, start = 10000):
+            general_unlocks_arrays.append([
+                m0263().set(purchase_index),
+                m026d().set(general_item)
+            ])
+
+        general_unlocks_arrays.append([
+            m00c6().set(0x00002B76),
+            m037f().set(0x00002B76),
+            m0263().set(0x10123456),
+            m026d().set(0x00001CFE),
+            #m05b8(),
+            m056a(),
+        ])
+
+        skin_unlocks_common_fields = [
+            m02fe(),
+            m02b2(),
+            m021f(),
+            m057d(),
+            m057e(),
+            m057f().set(0x27a4),
+            m05e2(),
+            m0684(),
+            m05dc(),
+            m04cb(),
+            m00d4(),
+            m025c(),
+            m025d(),
+            m025e(),
+            m025f().set(0xFFFFF448),
+            m0596(),
+            m0597()
+        ]
+
+        medium_skin_unlocks_fields = [
+            m0095().set(0x00ba8dc7),
+            m0363().set(0x0000069d),
+            m00a2().set('101342'),
+            m0138().set([
+                [
+                    m0263().set(0x00000001),
+                    m026d().set(0x0000209f)
+                ],
+                [
+                    m0263().set(0x00000002),
+                    m026d().set(0x000020a0)
+                ],
+                [
+                    m0263().set(0x00000003),
+                    m026d().set(0x0000221b)
+                ],
+                [
+                    m0263().set(0x00000004),
+                    m026d().set(0x0000222c)
+                ],
+                [
+                    m0263().set(0x00000005),
+                    m026d().set(0x000020e1)
+                ]
+            ])
+        ]
+
+        light_skin_unlocks_fields = [
+            m0095().set(0x00ba8dc8),
+            m0363().set(0x00000693),
+            m00a2().set('101330'),
+            m0138().set([
+                [
+                    m0263().set(0x00000001),
+                    m026d().set(0x00002090)
+                ],
+                [
+                    m0263().set(0x00000002),
+                    m026d().set(0x00002091)
+                ],
+                [
+                    m0263().set(0x00000003),
+                    m026d().set(0x000021d9)
+                ],
+                [
+                    m0263().set(0x00000004),
+                    m026d().set(0x00002086)
+                ]
+            ])
+        ]
+
+        heavy_skin_unlocks_fields = [
+            m0095().set(0x00ba8dc9),
+            m0363().set(0x0000069c),
+            m00a2().set('101341'),
+            m0138().set([
+                [
+                    m0263().set(0x00000001),
+                    m026d().set(0x000021d7)
+                ],
+                [
+                    m0263().set(0x00000002),
+                    m026d().set(0x00002228)
+                ],
+                [
+                    m0263().set(0x00000003),
+                    m026d().set(0x00002229)
+                ]
+            ])
+        ]
+
+        skin_unlocks_arrays = [
+            medium_skin_unlocks_fields + skin_unlocks_common_fields,
+            light_skin_unlocks_fields + skin_unlocks_common_fields,
+            heavy_skin_unlocks_fields + skin_unlocks_common_fields,
+        ]
+
         self.content = [
             m03e3(),
             m0348(),
@@ -1233,11 +2453,11 @@ class a003d(enumblockarray):
             m06ea(),
             m058a(),
             m02be().set(0x00000000),
-            m0138(),
-            m0662(0x4f49, 0x7371),
-            m0632(),
-            m0681(),
-            m00fe(),
+            m0138().set(general_unlocks_arrays),
+            m0662(),
+            m0632().set_original_bytes(0x7371, 0x8515),
+            m0681().set_original_bytes(0x8822, 0x8898),
+            m00fe().set(skin_unlocks_arrays),
             m062d(),
             m008d(),
             m062e(),
@@ -1249,32 +2469,77 @@ class a003d(enumblockarray):
             m0468(),
             m0663(),
             m068b(),
-            m0681()]
+            m0681().set_original_bytes(0x8822, 0x8898)]
 
-    def setplayer(self, name, tag):
+    def set_player(self, unique_id, name, tag, loadouts):
+        self.findbytype(m0348).set(unique_id)
         self.findbytype(m034a).set(name)
         self.findbytype(m06de).set(tag)
+
+        loadout_arrays = []
+        for class_id, class_loadout in loadouts.loadout_dict.items():
+            for loadout_index, loadout in class_loadout.items():
+                loadout_id = loadouts.loadout_key2id[(class_id, loadout_index)]
+
+                entry_array = []
+                for slot, equipment in loadout.items():
+                    if isinstance(equipment, str):
+                        equip_field = m0437().set(equipment)
+                    else:
+                        equip_field = m0261().set(str(equipment))
+                    entry_array.append([
+                        m0369().set(slot),
+                        equip_field
+                    ])
+                entry_array.append([
+                    m0369().set(0x00000442),
+                    m0261().set(str(8167))
+                ])
+                entry_array.append([
+                    m0369().set(0x00000443),
+                    m0261().set(str(8162))
+                ])
+                entry_array.append([
+                    m0369().set(0x00000447),
+                    m0261().set(str(class_id))
+                ])
+                if loadout_index:
+                    entry_array.append([
+                        m0369().set(0x0000053C),
+                        m0261().set(str(loadout_index))
+                    ])
+
+                loadout_arrays.append([
+                    m0661().set(loadout_id),
+                    m01e3().set(0x00002730),
+                    m065f().set(0x00000001),
+                    m02fe().set(""),
+                    m0144().set(entry_array)
+                ])
+
+        self.findbytype(m0662).set(loadout_arrays)
+
         return self
 
 
 class a0041(enumblockarray):
     def __init__(self):
-        super(a0041, self).__init__(0x0041)
+        super().__init__(0x0041)
 
 
 class a004c(enumblockarray):
     def __init__(self):
-        super(a004c, self).__init__(0x004c)
+        super().__init__(0x004c)
 
 
 class a006d(enumblockarray):
     def __init__(self):
-        super(a006d, self).__init__(0x006d)
+        super().__init__(0x006d)
 
 
 class a006f(enumblockarray):
     def __init__(self):
-        super(a006f, self).__init__(0x006f)
+        super().__init__(0x006f)
         self.content = [
             m00e9()
         ]
@@ -1282,7 +2547,7 @@ class a006f(enumblockarray):
 
 class a0070(enumblockarray):
     def __init__(self):
-        super(a0070, self).__init__(0x0070)
+        super().__init__(0x0070)
         self.content = [
             m009e(),
             m02e6(),
@@ -1293,12 +2558,12 @@ class a0070(enumblockarray):
 
 class a0085(enumblockarray):
     def __init__(self):
-        super(a0085, self).__init__(0x0085)
+        super().__init__(0x0085)
 
 
 class a00b0(enumblockarray):
     def __init__(self):
-        super(a00b0, self).__init__(0x00b0)
+        super().__init__(0x00b0)
         self.content = [
             m035b(),
             m0348(),
@@ -1331,22 +2596,22 @@ class a00b0(enumblockarray):
 
 class a00b1(enumblockarray):
     def __init__(self):
-        super(a00b1, self).__init__(0x00b1)
+        super().__init__(0x00b1)
 
 
 class a00b2(enumblockarray):
     def __init__(self):
-        super(a00b2, self).__init__(0x00b2)
+        super().__init__(0x00b2)
 
 
 class a00b3(enumblockarray):
     def __init__(self):
-        super(a00b3, self).__init__(0x00b3)
+        super().__init__(0x00b3)
 
 
 class a00b4(enumblockarray):
     def __init__(self):
-        super(a00b4, self).__init__(0x00b4)
+        super().__init__(0x00b4)
         self.content = [
             m042b(),
             m01c4(),
@@ -1371,7 +2636,7 @@ class a00b4(enumblockarray):
 
 class a00d5(enumblockarray):
     def __init__(self):
-        super(a00d5, self).__init__(0x00d5)
+        super().__init__(0x00d5)
         self.content = [
             m0228().set(2),
             m00e9(),
@@ -1385,17 +2650,32 @@ class a00d5(enumblockarray):
 
 class a00ec(enumblockarray):
     def __init__(self):
-        super(a00ec, self).__init__(0x00ec)
+        super().__init__(0x00ec)
+
+
+class a00fb(enumblockarray):
+    def __init__(self):
+        super().__init__(0x00fb)
+
+
+class a010f(enumblockarray):
+    def __init__(self):
+        super().__init__(0x010f)
+
+
+class a011b(enumblockarray):
+    def __init__(self):
+        super().__init__(0x011b)
 
 
 class a011c(enumblockarray):
     def __init__(self):
-        super(a011c, self).__init__(0x011c)
+        super().__init__(0x011c)
 
 
 class a0175(enumblockarray):
     def __init__(self):
-        super(a0175, self).__init__(0x0175)
+        super().__init__(0x0175)
         self.content = [
             m0442(),
             m02fc(),
@@ -1412,37 +2692,37 @@ class a0175(enumblockarray):
 
 class a0176(enumblockarray):
     def __init__(self):
-        super(a0176, self).__init__(0x0176)
+        super().__init__(0x0176)
 
 
 class a0177(enumblockarray):
     def __init__(self):
-        super(a0177, self).__init__(0x0177)
+        super().__init__(0x0177)
 
 
 class a0182(enumblockarray):
     def __init__(self):
-        super(a0182, self).__init__(0x0182)
+        super().__init__(0x0182)
 
 
 class a0183(enumblockarray):
     def __init__(self):
-        super(a0183, self).__init__(0x0183)
+        super().__init__(0x0183)
 
 
 class a018b(enumblockarray):
     def __init__(self):
-        super(a018b, self).__init__(0x018b)
+        super().__init__(0x018b)
 
 
 class a018c(enumblockarray):
     def __init__(self):
-        super(a018c, self).__init__(0x018c)
+        super().__init__(0x018c)
 
 
 class a0197(enumblockarray):
     def __init__(self):
-        super(a0197, self).__init__(0x0197)
+        super().__init__(0x0197)
         self.content = [
             m0664(),
             m03e3(),
@@ -1450,14 +2730,19 @@ class a0197(enumblockarray):
         ]
 
 
+class a019a(enumblockarray):
+    def __init__(self):
+        super().__init__(0x019a)
+
+
 class a01b5(enumblockarray):
     def __init__(self):
-        super(a01b5, self).__init__(0x01b5)
+        super().__init__(0x01b5)
 
 
 class a01bc(enumblockarray):
     def __init__(self):
-        super(a01bc, self).__init__(0x01bc)
+        super().__init__(0x01bc)
         self.content = [
             m049e(),
             m0489().set(0x0000000c),
@@ -1467,12 +2752,12 @@ class a01bc(enumblockarray):
 
 class a01c6(enumblockarray):
     def __init__(self):
-        super(a01c6, self).__init__(0x01c6)
+        super().__init__(0x01c6)
 
 
 class a01c8(enumblockarray):
     def __init__(self):
-        super(a01c8, self).__init__(0x01c8)
+        super().__init__(0x01c8)
 
 
 # ------------------------------------------------------------

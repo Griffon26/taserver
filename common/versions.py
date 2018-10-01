@@ -18,13 +18,8 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from distutils.version import StrictVersion
 
-class ServerInfo:
-    def __init__(self, first_id, second_id, description, motd, ip, port):
-        self.serverid1 = first_id
-        self.serverid2 = second_id
-        self.description = description
-        self.motd = motd
-        self.ip = ip
-        self.port = port
-        self.playerbeingkicked = None
+# These versions must follow the MAJOR.MINOR.PATCH format of SemVer (https://semver.org/)
+launcher2controller_protocol_version = StrictVersion('0.1.0')
+launcher2loginserver_protocol_version = StrictVersion('0.1.0')

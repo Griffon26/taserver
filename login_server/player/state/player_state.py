@@ -18,35 +18,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
+
 import inspect
+import logging
 from functools import wraps
 
+from ...datatypes import *
 from ..player import Player
-
-
-class PlayerState:
-    def __init__(self, player: Player):
-        self.player = player
-
-    def handle_request(self, request):
-        methods = [
-            func for name, func in inspect.getmembers(self) if
-            getattr(func, 'handles_packet', None) == type(request)
-        ]
-        if not methods:
-            print("No handler found for request %s" % request)
-            return
-
-        if len(methods) > 1:
-            raise ValueError("Duplicate handlers found for request")
-
-        methods[0](request)
-
-    def on_enter(self):
-        print("%s is entering state %s" % (self.player, self))
-
-    def on_exit(self):
-        print("%s is exiting state %s" % (self.player, self))
 
 
 def handles(packet):
@@ -65,3 +43,38 @@ def handles(packet):
         return wrapper
 
     return real_decorator
+
+
+class PlayerState:
+    def __init__(self, player: Player):
+        self.logger = logging.getLogger(__name__)
+        self.player = player
+
+    def handle_request(self, request):
+        methods = [
+            func for name, func in inspect.getmembers(self) if
+            getattr(func, 'handles_packet', None) == type(request)
+        ]
+        if not methods:
+            self.logger.warning("No handler found for request %s" % request)
+            return
+
+        if len(methods) > 1:
+            raise ValueError("Duplicate handlers found for request")
+
+        methods[0](request)
+
+    @handles(packet=a01c8)
+    def handle_ping(self, request):
+        for arr in request.findbytype(m068b).arrays:
+            region = findbytype(arr, m0448).value
+            ping = findbytype(arr, m053d).value
+            self.player.pings[region] = ping
+
+    def on_enter(self):
+        self.logger.info("%s is entering state %s" % (self.player, type(self).__name__))
+
+    def on_exit(self):
+        self.logger.info("%s is exiting state %s" % (self.player, type(self).__name__))
+
+

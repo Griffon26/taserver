@@ -18,12 +18,13 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from typing import TypeVar, cast, Optional, List, Union, Set, Dict, Tuple, Generator, TextIO, BinaryIO, NamedTuple
-
+import argparse
 import csv
 import io
+import os
+import re
 import struct
-import argparse
+from typing import TypeVar, cast, Optional, List, Union, Set, Dict, Tuple, Generator, TextIO, BinaryIO, NamedTuple
 
 K = TypeVar('K')
 V = TypeVar('V')
@@ -184,6 +185,7 @@ class Parser:
                 'arrayofenumblockarrays': set(),
                 'authentication': set(),
                 'salt': set(),
+                'password': set()
             }
             with open(fname, 'r') as f:
                 for enumid, enumtype, _ in csv.reader(f):
@@ -338,6 +340,14 @@ class Parser:
         salt = bytearray2hex(read_bytearray(self.infile, 16))
         self.outfile.write(f'{salt} (salt)\n')
 
+    def parse_password(self, enumid: int, nesting_level: int) -> None:
+        """
+        Parses a value from the stream
+        """
+        length = read_short(self.infile) & 0x7FFF
+        password = bytearray2hex(read_bytearray(self.infile, length * 2))
+        self.outfile.write(f'{password} {self.get_description(enumid, None)}\n')
+
     def parse_seq_ack(self) -> None:
         """
         Parses a seq/ack from the stream
@@ -384,6 +394,8 @@ class Parser:
             self.parse_enumblockarray(enumid, nesting_level + 1, False)
         elif enumid in self.enum_ids['salt']:
             self.parse_salt(enumid, nesting_level + 1)
+        elif enumid in self.enum_ids['password']:
+            self.parse_password(enumid, nesting_level + 1)
         elif enumid in self.enum_ids['sizedcontent'] or (nesting_level != 0 and enumid == 444):
             try:
                 self.parse_sizedcontent(enumid, nesting_level + 1)
@@ -422,61 +434,44 @@ class Parser:
             offset += 16
 
 
-def hexdump2indentandbytesperline(hexdumpfile: TextIO) -> Generator[Tuple[bool, bytearray], None, None]:
-    """
-    Generator yielding, for each line of a hexdump, whether the line is indented and the bytes contained
-    """
-    lastoffset: Dict[bool, int] = {
-        False: -1,
-        True: -1
-    }
-    for linenum, line in enumerate(hexdumpfile):
-        indent: bool = line.startswith('   ')
-        line: str = line.strip()
+def carrays2indentandbytesperblock(hexdumpfile: TextIO) -> Generator[Tuple[bool, bytearray], None, None]:
+    lastpacketnumber = {}
+    collectedbytes: bytearray = []
+    lastlineofpacket = False
+    peer = None
+
+    for linenum, line in enumerate(infile):
+        line = line.strip()
 
         if not line:
             continue
 
-        offsettext, rest = line.split('  ', maxsplit=1)
-        hexpart, asciipart = rest.split('   ', maxsplit=1)
+        match = re.match('char peer(\d)_(\d+).* Packet .*', line)
 
-        lineoffset = int(offsettext, 16)
-        if lineoffset > lastoffset[indent]:
-            lastoffset[indent] = lineoffset
-        else:
-            print('Warning: found non-increasing offset on line %d: %s\n' % (linenum + 1, offsettext) +
-                  '\n' +
-                  'This is probably caused by a known bug in Wireshark,\n' +
-                  'so we\'ll just ignore this and stop parsing here.\n'
-                  'Everything up to this point has been parsed successfully.')
-            break
+        if match:
+            peer = int(match.group(1))
+            packetnumber = int(match.group(2))
+            if packetnumber < lastpacketnumber.get(peer, -1):
+                print('Warning: found non-increasing packet number on line %d: %s\n' % (linenum + 1, packetnumber) +
+                      '\n' +
+                      'This is probably caused by a known bug in Wireshark,\n' +
+                      'so we\'ll just ignore this and stop reading here.\n'
+                      'Everything up to this point has been converted successfully.')
+                break
+            lastpacketnumber[peer] = packetnumber
+            continue
 
-        hexline = cast(bytearray, [int('0x%s' % hextext, 16) for hextext in hexpart.split()])
+        lastlineofpacket = line.endswith('};')
+        line = line.replace('};', '')
+        line = line.rstrip(',')
 
-        yield indent, hexline
+        hexthisline = [int('%s' % hextext, 16) for hextext in line.split(',')]
+        collectedbytes.extend(hexthisline)
 
-
-def hexdump2indentandbytesperblock(hexdumpfile: TextIO) -> Generator[Tuple[bool, bytearray], None, None]:
-    """
-    Generator yielding the indent status and the data for each block of the given hexdump file
-    """
-    lastindent = None
-    collectedbytes: bytearray = []
-    for indent, hexline in hexdump2indentandbytesperline(hexdumpfile):
-
-        if lastindent is None:
-            lastindent = indent
-
-        if indent != lastindent:
-            yield lastindent, collectedbytes
+        if lastlineofpacket:
+            assert peer is not None
+            yield (peer == 1), collectedbytes
             collectedbytes = []
-            lastindent = indent
-
-        collectedbytes.extend(hexline)
-
-    if collectedbytes:
-        yield indent, collectedbytes
-
 
 def removepacketsizes(indent: bool, bytestreamin: BinaryIO) -> Tuple[List[int], BinaryIO]:
     """
@@ -543,7 +538,8 @@ class CliArguments(NamedTuple):
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser(description='Client-Login Server Capture Parser')
-    arg_parser.add_argument('file', metavar='FILE', type=str)
+    arg_parser.add_argument('file', metavar='FILE', type=str,
+                            help='a wireshark capture in C-arrays format')
     arg_parser.add_argument('--disable-id-annotations', action='store_true',
                             help='disable printing annotations for enumfield ids')
     arg_parser.add_argument('--disable-value-annotations', action='store_true',
@@ -568,7 +564,7 @@ if __name__ == '__main__':
                 False: io.BytesIO(),
                 True: io.BytesIO()
             }
-            for indent, hex_bytes in hexdump2indentandbytesperblock(infile):
+            for indent, hex_bytes in carrays2indentandbytesperblock(infile):
                 offset_list.append((indent, offsets[indent], offsets[indent] + len(hex_bytes)))
                 offsets[indent] += len(hex_bytes)
                 data[indent].write(bytes(hex_bytes))
@@ -576,10 +572,11 @@ if __name__ == '__main__':
             packet_boundaries = {}
             payload_data = {}
             parsed_by_offset = {}
-            id_sources_list = ['known_field_data/enumfields.csv']
+
+            id_sources_list = [os.path.join(os.path.dirname(__file__), 'known_field_data/enumfields.csv')]
             if args.id_annotation_sources:
                 id_sources_list.extend(args.id_annotation_sources)
-            value_sources_list = ['known_field_data/fieldvalues.csv']
+            value_sources_list = [os.path.join(os.path.dirname(__file__), 'known_field_data/fieldvalues.csv')]
             if args.value_annotation_sources:
                 value_sources_list.extend(args.value_annotation_sources)
             parser = Parser(id_sources_list, value_sources_list,

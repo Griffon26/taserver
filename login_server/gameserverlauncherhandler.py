@@ -18,44 +18,38 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from common.connectionhandler import *
-from common.messages import parse_message
 from ipaddress import IPv4Address
 
+from common.connectionhandler import *
+from common.messages import parse_message
+from .gameserver import GameServer
 
-class LoginServerReader(TcpMessageConnectionReader):
+
+class GameServerLauncherReader(TcpMessageConnectionReader):
     def decode(self, msg_bytes):
+        # TODO: add validation
         return parse_message(msg_bytes)
 
 
-class LoginServerWriter(TcpMessageConnectionWriter):
+class GameServerLauncherWriter(TcpMessageConnectionWriter):
     def encode(self, msg):
         return msg.to_bytes()
 
 
-class LoginServer(Peer):
-    def __init__(self, ip, port):
-        super().__init__()
-        self.ip = ip
-        self.port = port
-
-
-class LoginServerHandler(OutgoingConnectionHandler):
-    def __init__(self, config, incoming_queue):
-        super().__init__('loginserver',
-                         socket.gethostbyname(config['host']),
-                         int(config['port']),
+class GameServerLauncherHandler(IncomingConnectionHandler):
+    def __init__(self, incoming_queue):
+        super().__init__('gameserverlauncher',
+                         '0.0.0.0',
+                         9001,
                          incoming_queue)
-        self.logger.info('%s(%s): Connecting to login server at %s:%s...' %
-                         (self.task_name, id(gevent.getcurrent()), config['host'], config['port']))
 
     def create_connection_instances(self, sock, address):
-        reader = LoginServerReader(sock)
-        writer = LoginServerWriter(sock)
-        peer = LoginServer(IPv4Address(address[0]), int(address[1]))
+        reader = GameServerLauncherReader(sock)
+        writer = GameServerLauncherWriter(sock)
+        peer = GameServer(IPv4Address(address[0]))
         return reader, writer, peer
 
 
-def handle_login_server(login_server_config, incoming_queue):
-    login_server_handler = LoginServerHandler(login_server_config, incoming_queue)
-    login_server_handler.run(retry_time=10)
+def handle_game_server_launcher(incoming_queue):
+    game_controller_handler = GameServerLauncherHandler(incoming_queue)
+    game_controller_handler.run()
