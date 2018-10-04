@@ -12,6 +12,11 @@
 7825,Light Energy Pack
 7834,Pathfinder Skin
 7835,Infiltrator Skin
+8327,Sentinel Skin
+8337,Inf Assassin Skin
+8336,Inf Mercenary Skin
+8665,Sen Spectre Skin
+8326,Pth Freerunner Skin
 8666,Light Voice
 1683,Light Class
 7401,Spinfusor
@@ -22,6 +27,12 @@
 7832,Shield Pack
 7434,AP Grenades
 8328,Soldier Skin
+8330,Raider Skin
+8329,Technician Skin
+8748,Sld Synthrall Skin
+8731,Tcn Specialist Skin
+8351,Rdr Griever Skin
+8352,Rdr Mercenary Skin
 8667,Medium Voice
 1693,Medium Class
 7448,Heavy Spinfusor
@@ -30,9 +41,36 @@
 7393,Fusion Mortar
 7826,Heavy Shield Pack
 7390,Frag Grenades
+7455,Light Sticky Grenades
 8331,Juggernaut Skin
+8332,Doombringer Skin
+8333,Brute Skin
+8745,Jug Forlorn Skin
+8744,Dmb Executioner Skin
+8663,Brt Mr T Skin
 8668,Heavy Voice
 1692,Heavy Class
+8670,Femme Fatale Voice
+8671,Ms Wilderzone Voice
+8695,Disker Dundee Voice
+8669,Battleworn Voice
+8747,TotalBiscuit Voice
+8749,Stowaway Voice
+11126, Light Impact Weapon Category
+11142, Light Timed Weapon Category
+11128, Light Speciality Weapon Category
+11127, Light Bullet Weapon Category
+11129, Light Short Range Weapon Category
+11131, Medium Impact Weapon Category
+11133, Medium Timed Weapon Category
+11135, Medium Speciality Weapon Category
+11132, Medium Bullet Weapon Category
+11143, Medium Short Range Weapon Category
+11136, Heavy Impact Weapon Category
+11139, Heavy Timed Weapon Category
+11141, Heavy Speciality Weapon Category
+11137, Heavy Bullet Weapon Category
+11138, Heavy Short Range Weapon Category
 0x0000043E,Primary weapon loadout item
 0x0000043F,Secondary weapon loadout item
 0x00000440,Pack loadout item
