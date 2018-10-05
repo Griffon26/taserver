@@ -483,7 +483,7 @@ hierarchical_definitions = {
             },
             'belt': {
                 'ootb': {
-                    # <VERIFY> What is the JUG's OOTB grenade really? FragXL or HeavyAP?
+                    # <VERIFY> What is the JUG's OOTB grenade really? Neither FragXL or HeavyAP it seems?
                     'Brute_Belt_FractalGrenade': 7428,
                     'Doombringer_Belt_Mine': 7392,
                 },

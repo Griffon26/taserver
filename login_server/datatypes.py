@@ -1537,7 +1537,7 @@ class m0122(arrayofenumblockarrays):
         return self.set([
             [
                 m0013().set('y' if item.shown else 'n'),
-                m04d9().set(idx),  # Needs to be unique between items seemingly
+                m04d9().set(idx + 1),  # Needs to be unique between items seemingly
                 m057f().set(0x27a1),  # in capture, either 0 or 0x27a1, not clear on pattern; either seems_to work at least for weapon menus?
                 m026d().set(item.item_id),
                 m04d5(),
@@ -1546,9 +1546,8 @@ class m0122(arrayofenumblockarrays):
                 m0380().set(0x0001),
                 m05ee(),
                 m026f().set(item.name),
-                # m02ff().set(0x00018CF9) if item.item_id == 7425 else m02ff().set(0x00018CF6),  # Needs filling?
-                m02ff().set(idx),  # Needs to be unique between items seemingly; in capture there seems to be a mapping between the value here and other menu sections, unknown if important
-                m01a3(),  # Voices have this = m02ff's value - 1?
+                m02ff().set(idx + 1),  # Needs to be unique between items seemingly; in capture there seems to be a mapping between the value here and other menu sections, unknown if important
+                m01a3().set(idx) if isinstance(item, UnlockableVoice) else m01a3(),  # Voices have this = m02ff's value - 1?
                 m03f1(),
                 m03a4(),
                 m0253(),
