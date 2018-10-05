@@ -19,6 +19,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from common.game_items import class_menu_data
 from ...datatypes import *
 from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles
@@ -62,25 +63,53 @@ class AuthenticatedState(PlayerState):
         menu_fragments = {
             0x01de: originalfragment(0x38d17, 0x3d0fe),
             0x01ed: originalfragment(0x219d9, 0x2219e),
-            0x01f0: originalfragment(0x4758e, 0x4ae0d),
+            # 0x01f0: originalfragment(0x4758e, 0x4ae0d),  # Weapons with categories
+            0x01f0: a0177().setdata(0x01f0, {item
+                                             for _, class_items
+                                             in class_menu_data.class_items.items()
+                                             for item
+                                             in class_items.weapons},
+                                    False),  # Weapons with categories
             0x01f1: originalfragment(0x54bc6, 0x54db0),
-            0x01f2: originalfragment(0x55a2e, 0x57375),
-            0x01f3: originalfragment(0x54db8, 0x55a26),
-            0x01f4: originalfragment(0x5a776, 0x6fde3),
-            0x01f6: originalfragment(0x5965a, 0x5a72b),
+            # 0x01f2: originalfragment(0x55a2e, 0x57375),  # Belt items
+            0x01f2: a0177().setdata(0x01f2, {item
+                                             for _, class_items
+                                             in class_menu_data.class_items.items()
+                                             for item
+                                             in class_items.belt_items},
+                                    False),
+            # 0x01f3: originalfragment(0x54db8, 0x55a26),  # Packs
+            0x01f3: a0177().setdata(0x01f3, {item
+                                             for _, class_items
+                                             in class_menu_data.class_items.items()
+                                             for item
+                                             in class_items.packs},
+                                    False),
+            0x01f4: originalfragment(0x5a776, 0x6fde3),  # Item upgrades
+            0x01f6: originalfragment(0x5965a, 0x5a72b),  # Perks
             0x01f7: originalfragment(0x5a733, 0x5a76e),
             0x01f8: originalfragment(0x5737d, 0x579af),
-            0x01f9: originalfragment(0x579b7, 0x586a7),
+            # 0x01f9: originalfragment(0x579b7, 0x586a7),  # Skins
+            0x01f9: a0177().setdata(0x01f9, {item
+                                             for _, class_items
+                                             in class_menu_data.class_items.items()
+                                             for item
+                                             in class_items.skins},
+                                    False),
             0x01fa: originalfragment(0x221a6, 0x22723),
             0x01fb: originalfragment(0x2272b, 0x235b8),
             0x01fc: originalfragment(0x235c0, 0x239dd),
             0x0200: originalfragment(0x239e5, 0x23acf),
             0x0206: originalfragment(0x2620e, 0x28ac1),
             0x0214: originalfragment(0x23ad7, 0x26206),
-            0x0218: originalfragment(0x28ac9, 0x2f4d7),
+            0x0218: originalfragment(0x28ac9, 0x2f4d7),  # Weapon name <-> ID mapping - Probably only need to construct this at some point if we wanted to add entirely new weapons
             0x021b: originalfragment(0x3d106, 0x47586),
             0x021c: originalfragment(0x6fdeb, 0x6fecf),
-            0x0220: originalfragment(0x586af, 0x59652),
+            # 0x0220: originalfragment(0x586af, 0x59652),  # Voices
+            0x0220: a0177().setdata(0x0220, {item
+                                             for item
+                                             in class_menu_data.voices},
+                                    False),
             0x0221: originalfragment(0x2f4df, 0x2f69f),
             0x0227: originalfragment(0x2f6a7, 0x38d0f),
         }
