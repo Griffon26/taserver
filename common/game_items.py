@@ -22,6 +22,9 @@ from typing import NamedTuple, Dict, Set, List, Tuple, Generator
 
 
 class GameClass:
+    """
+    Data about an in-game class
+    """
 
     def __init__(self, class_id: int, secondary_id: int, family_info_name: str, short_name: str):
         self.class_id = class_id
@@ -41,6 +44,7 @@ class UnlockableItem:
     An unlockable in-game item of any kind
     """
 
+    # Item kind is a field used in the purchase menu, which differs between weapons/belt items vs packs vs skins/voices
     item_kind_id = 0x0
 
     def __init__(self, name: str, item_id: int, shown: bool = True, unlocked: bool = True,
@@ -107,6 +111,9 @@ class UnlockableSkin(UnlockableClassSpecificItem):
 
 
 class UnlockableVoice(UnlockableItem):
+    """
+    An unlockable in-game voice, not specific to a class
+    """
     item_kind_id = 0x03B6
 
     def __repr__(self):
@@ -133,6 +140,9 @@ class Unlockables(NamedTuple):
     voices: Set[UnlockableVoice]
 
     def get_every_item(self) -> List[UnlockableItem]:
+        """
+        :return: a flattened list of every unlockable item
+        """
         items = []
         for _, c in self.class_items.items():
             items.extend(c.weapons)
@@ -144,6 +154,13 @@ class Unlockables(NamedTuple):
 
 
 def get_items_generator(items: Dict[str, Dict[str, int]]) -> Generator[Tuple[str, int, bool], None, None]:
+    """
+    Generator which converts a structure defining weapons under 'ootb' and other categories
+    to an iterable of items augmented with status of whether or not they are OOTB items
+
+    :param items: mapping of weapon origin - 'ootb' or another, to weapon name -> id mappings
+    :return: yields each item in turn, with a boolean indicating whether it is an OOTB item
+    """
     for sect_name, section in items.items():
         for item_name, item_id in section.items():
             yield item_name, item_id, sect_name.lower() == 'ootb'
@@ -151,6 +168,17 @@ def get_items_generator(items: Dict[str, Dict[str, int]]) -> Generator[Tuple[str
 
 def process_class_items(game_class: GameClass, categories: Dict[str, Dict[str, int]], items_def: Dict,
                         removals: Set[str], locked: Set[str], non_ootb_unlocked: bool) -> ClassUnlockables:
+    """
+    Process a hierarchical definition of a class's items into a ClassUnlockables structure
+
+    :param game_class: the game class
+    :param categories: mapping of classes to the mappings of categories of weapons for each class
+    :param items_def: hierarchical items definition
+    :param removals: list of item names to remove (not show at all in the menu)
+    :param locked: list of item names to show locked in the menu
+    :param non_ootb_unlocked: whether items not marked as OOTB should be unlocked
+    :return: the resulting ClassUnlockables
+    """
     # Weapons
     weapons = [UnlockableWeapon(item_name, item_id,
                                 game_class, categories[game_class.short_name][category_name],
@@ -191,6 +219,17 @@ def build_class_menu_data(classes: Dict[str, GameClass],
                           removals: Set[str],
                           locked: Set[str],
                           non_ootb_unlocked: bool) -> Unlockables:
+    """
+    Process a full hierarchical definition of the item menus into a structured Unlockables object
+
+    :param classes: mapping of game class names to GameClass definitions
+    :param categories: mapping of class names to the mappings of categories of weapons for each class
+    :param definitions: the original hierarchical definition of the menus
+    :param removals: list of item names to remove (not show at all in the menu)
+    :param locked: list of item names to show locked in the menu
+    :param non_ootb_unlocked: whether items not marked as OOTB should be unlocked
+    :return: the resulting Unlockables object
+    """
     voices = {UnlockableVoice(name, item_id,
                               name not in removals, name not in locked and (is_ootb or non_ootb_unlocked), is_ootb)
               for name, item_id, is_ootb
@@ -207,12 +246,14 @@ def build_class_menu_data(classes: Dict[str, GameClass],
     return unlockables
 
 
+# Definition of the game class info; the class name keys should match weapon_categories and hierarchical_definitions
 game_classes: Dict[str, GameClass] = {
     'light': GameClass(1683, 101330, 'TrFamilyInfo_Light_Pathfinder', 'light'),
     'medium': GameClass(1693, 101342, 'TrFamilyInfo_Medium_Soldier', 'medium'),
     'heavy': GameClass(1692, 101341, 'TrFamilyInfo_Heavy_Juggernaught', 'heavy'),
 }
 
+# Definition of the weapon categories; category names should match hierarchical_definitions
 weapon_categories: Dict[str, Dict[str, int]] = {
     'light': {
         'impact': 11126,
@@ -238,7 +279,7 @@ weapon_categories: Dict[str, Dict[str, int]] = {
 }
 
 # Definition of where items appear in the menu (including weapons going to be removed/locked)
-# <VERIFY> Moving these should move where the item appears, e.g. which class/category it is
+# Moving items will change where the item appears in the menus, e.g. which class/category it is available to
 hierarchical_definitions = {
     'classes': {
         'light': {
@@ -322,7 +363,7 @@ hierarchical_definitions = {
                 },
                 'other': {
                     'Sentinel_Pack_EnergyRecharge': 7900,
-                    # 'Sentinel_Pack_DropJammer': 7456, # Repurposed as Drop Station I think?
+                    # 'Sentinel_Pack_DropJammer': 7456, # Repurposed as Drop Station
                 },
             },
             'skins': {
@@ -390,7 +431,7 @@ hierarchical_definitions = {
                 'short_range': {
                     'ootb': {
                         'Technician_Secondary_SawedOff': 7427,
-                        'Technician_Primary_TC24': 8699,
+                        'Technician_Primary_TC24': 8699, # Repurposed as Flak Cannon
                     },
                     'other': {},
 
@@ -493,7 +534,7 @@ hierarchical_definitions = {
             },
             'belt': {
                 'ootb': {
-                    # <VERIFY> What is the JUG's OOTB grenade really? Neither FragXL or HeavyAP it seems?
+                    # <VERIFY> What is the JUG's OOTB grenade really? Neither FragXL or HeavyAP it seems
                     'Brute_Belt_FractalGrenade': 7428,
                     'Doombringer_Belt_Mine': 7392,
                 },
@@ -554,7 +595,7 @@ hierarchical_definitions = {
             'Voice Stowaway': 8749,
         },
         'other': {
-            'Voice Basement Champion': 8750,  # Unreleased voice?
+            'Voice Basement Champion': 8750,  # Unreleased voice
         },
 
     }
