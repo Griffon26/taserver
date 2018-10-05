@@ -18,6 +18,8 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from common.game_items import UnlockableItem, UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
+from typing import Set
 import struct
 from ipaddress import IPv4Address
 
@@ -648,6 +650,11 @@ class m0242(fourbytes):
         super().__init__(0x0242, 0x00000000)
 
 
+class m0253(fourbytes):
+    def __init__(self):
+        super().__init__(0x0253, 0x00000000)
+
+
 class m0259(fourbytes):
     def __init__(self):
         super().__init__(0x0259, 0x00000000)
@@ -716,6 +723,10 @@ class m02a3(fourbytes):
 class m02ab(fourbytes):
     def __init__(self):
         super().__init__(0x02ab, 0x00000000)
+
+class m02ac(fourbytes):
+    def __init__(self):
+        super().__init__(0x02ac, 0x00000000)
 
 
 class m02b2(fourbytes):
@@ -863,6 +874,11 @@ class m0398(fourbytes):
         super().__init__(0x0398, 0x00000000)
 
 
+class m03a4(fourbytes):
+    def __init__(self):
+        super().__init__(0x03a4, 0x00000000)
+
+
 class m03ce(fourbytes):
     def __init__(self):
         super().__init__(0x03ce, 0x00000000)
@@ -873,6 +889,11 @@ class m03e0(fourbytes):
         super().__init__(0x03e0, 0x00000000)
 
 
+class m03f1(fourbytes):
+    def __init__(self):
+        super().__init__(0x03f1, 0x00000000)
+
+
 class m03f5(fourbytes):
     def __init__(self):
         super().__init__(0x03f5, 0x40000000)
@@ -881,6 +902,11 @@ class m03f5(fourbytes):
 class m03fd(fourbytes):
     def __init__(self):
         super().__init__(0x03fd, 0x00000000)
+
+
+class m041a(fourbytes):
+    def __init__(self):
+        super().__init__(0x041a, 0x00000000)
 
 
 class m042a(fourbytes):
@@ -923,9 +949,19 @@ class m049e(fourbytes):
         super().__init__(0x049e, 0x01040B61)
 
 
+class m04bb(fourbytes):
+    def __init__(self):
+        super().__init__(0x04bb, 0x00000000)
+
+
 class m04cb(fourbytes):
     def __init__(self):
         super().__init__(0x04cb, 0x00100000)  # xp
+
+
+class m04d5(fourbytes):
+    def __init__(self):
+        super().__init__(0x04d5, 0x00000000)
 
 
 class m04d9(fourbytes):
@@ -956,6 +992,11 @@ class m0558(fourbytes):
 class m056a(fourbytes):
     def __init__(self):
         super().__init__(0x056a, 0x00000000)
+
+
+class m0577(fourbytes):
+    def __init__(self):
+        super().__init__(0x0577, 0x00000000)
 
 
 class m057d(fourbytes):
@@ -1016,6 +1057,16 @@ class m05e9(fourbytes):
 class m05ea(fourbytes):
     def __init__(self):
         super().__init__(0x05ea, 0x00000000)
+
+
+class m05ee(fourbytes):
+    def __init__(self):
+        super().__init__(0x05ee, 0x00000000)
+
+
+class m0602(fourbytes):
+    def __init__(self):
+        super().__init__(0x0602, 0x00000000)
 
 
 class m0608(fourbytes):
@@ -1322,6 +1373,11 @@ class m0261(stringenum):
         super().__init__(0x0261, '')
 
 
+class m026f(stringenum):
+    def __init__(self):
+        super().__init__(0x026f, '')
+
+
 class m02af(stringenum):
     def __init__(self):
         super().__init__(0x02af, 'n')
@@ -1473,6 +1529,65 @@ class m0116(arrayofenumblockarrays):
         super().__init__(0x0116)
 
 
+class m0122(arrayofenumblockarrays):
+    def __init__(self):
+        super().__init__(0x0122)
+
+    def setpurchases(self, purchases: Set[UnlockableItem], include_id_mapping: bool):
+        return self.set([
+            [
+                m0013().set('y' if item.shown else 'n'),
+                m04d9().set(idx),  # Needs to be unique between items seemingly
+                m057f().set(0x27a1),  # in capture, either 0 or 0x27a1, not clear on pattern; either seems_to work at least for weapon menus?
+                m026d().set(item.item_id),
+                m04d5(),
+                m0273().set(item.item_kind_id),
+                m0272(),
+                m0380().set(0x0001),
+                m05ee(),
+                m026f().set(item.name),
+                # m02ff().set(0x00018CF9) if item.item_id == 7425 else m02ff().set(0x00018CF6),  # Needs filling?
+                m02ff().set(idx),  # Needs to be unique between items seemingly; in capture there seems to be a mapping between the value here and other menu sections, unknown if important
+                m01a3(),  # Voices have this = m02ff's value - 1?
+                m03f1(),
+                m03a4(),
+                m0253(),
+                m037f().set(item.category) if isinstance(item, UnlockableWeapon) else m037f(),
+                m04bb(),
+                m0577(),
+                m0398().set(item.game_class.class_id) if isinstance(item, UnlockableClassSpecificItem) else m0398(),
+                # Below is used to map weapon name <-> item id; also for weapon upgrades to tie an upgrade to an item id
+                m04fa().set(item.item_id) if include_id_mapping else m04fa(),
+                m0602(),
+                m03fd(),  # Sometimes filled in capture, may relate to pricing; doesn't seem to cause issues if not filled
+                # Price - currently this only handles pricing for items (in gold/xp)
+                # Field is also used to handle pricing for gold etc.
+                # but that is replayed from capture for now
+                m05cb()  # .add_gold_price(0).add_xp_price(0),
+            ]
+            for idx, item
+            in enumerate(purchases)
+        ])
+
+
+class m0127(arrayofenumblockarrays):
+    def __init__(self):
+        super().__init__(0x0127)
+
+    # 0127 only ever has one element
+    def setpurchasedata(self, menu_section: int, purchases: Set[UnlockableItem], include_id_mapping: bool):
+        return self.set([
+            [
+                m049e().set(0x0001),
+                m02ab().set(menu_section),
+                m02ac().set(0x0290),
+                m02ff().set(0x000195B5),  # Don't know if this can be 0
+                m01a3(),
+                m0122().setpurchases(purchases, include_id_mapping),
+            ]
+        ])
+
+
 class m0132(arrayofenumblockarrays):
     def __init__(self):
         super().__init__(0x0132)
@@ -1513,6 +1628,38 @@ class m0138(arrayofenumblockarrays):
 class m0144(arrayofenumblockarrays):
     def __init__(self):
         super().__init__(0x0144)
+
+
+class m05cb(arrayofenumblockarrays):
+    def __init__(self):
+        super().__init__(0x05cb)
+
+    def add_gold_price(self, amount):
+        self.arrays.append([
+            m05cc().set(0x0645),
+            m02ff(),
+            m035a().set(amount),
+            m041a().set(amount),
+        ])
+        return self
+
+    def add_xp_price(self, amount):
+        self.arrays.append([
+            m05cc().set(0x27f9),
+            m02ff(),
+            m035a().set(amount),
+            m041a().set(amount),
+        ])
+        return self
+
+    def add_other_price(self, currency, amount):
+        self.arrays.append([
+            m05cc().set(currency),
+            m02ff(),
+            m035a().set(amount),
+            m041a().set(amount),
+        ])
+        return self
 
 
 class m06ef(arrayofenumblockarrays):
@@ -2698,6 +2845,14 @@ class a0176(enumblockarray):
 class a0177(enumblockarray):
     def __init__(self):
         super().__init__(0x0177)
+
+    def setdata(self, menu_part: int, purchase_data, include_id_mapping: bool):
+        return self.set([
+                m02ab().set(menu_part),
+                m0127().setpurchasedata(menu_part, purchase_data, include_id_mapping),
+                m049e().set(0x0001),
+                m0442().set(0x01),
+            ])
 
 
 class a0182(enumblockarray):

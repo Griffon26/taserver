@@ -19,6 +19,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from common.game_items import class_menu_data
 from ...datatypes import *
 from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles
@@ -62,7 +63,13 @@ class AuthenticatedState(PlayerState):
         menu_fragments = {
             0x01de: originalfragment(0x38d17, 0x3d0fe),
             0x01ed: originalfragment(0x219d9, 0x2219e),
-            0x01f0: originalfragment(0x4758e, 0x4ae0d),  # Weapons with categories
+            # 0x01f0: originalfragment(0x4758e, 0x4ae0d),  # Weapons with categories
+            0x01f0: a0177().setdata(0x01f0, {item
+                                             for _, class_items
+                                             in class_menu_data.class_items.items()
+                                             for item
+                                             in class_items.weapons},
+                                    False),  # Weapons with categories
             0x01f1: originalfragment(0x54bc6, 0x54db0),
             0x01f2: originalfragment(0x55a2e, 0x57375),  # Grenades
             0x01f3: originalfragment(0x54db8, 0x55a26),  # Packs
