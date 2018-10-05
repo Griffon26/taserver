@@ -18,7 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from common.game_items import UnlockableItem, UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
+from common.game_items import class_menu_data, UnlockableItem, UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
 from typing import Set
 import struct
 from ipaddress import IPv4Address
@@ -2462,7 +2462,8 @@ class a003d(enumblockarray):
     def __init__(self):
         super().__init__(0x003d)
 
-        ids_to_unlock = list(UNLOCKABLE_VOICES.values()) + list(UNLOCKABLE_ITEMS.values())
+        # ids_to_unlock = list(UNLOCKABLE_VOICES.values()) + list(UNLOCKABLE_ITEMS.values())
+        ids_to_unlock = [item.item_id for item in class_menu_data.get_every_item() if item.unlocked]
 
         general_unlocks_arrays = []
         for purchase_index, general_item in enumerate(ids_to_unlock, start = 10000):

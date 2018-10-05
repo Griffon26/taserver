@@ -132,6 +132,16 @@ class Unlockables(NamedTuple):
     class_items: Dict[GameClass, ClassUnlockables]
     voices: Set[UnlockableVoice]
 
+    def get_every_item(self) -> List[UnlockableItem]:
+        items = []
+        for _, c in self.class_items.items():
+            items.extend(c.weapons)
+            items.extend(c.belt_items)
+            items.extend(c.packs)
+            items.extend(c.skins)
+        items.extend(self.voices)
+        return items
+
 
 def get_items_generator(items: Dict[str, Dict[str, int]]) -> Generator[Tuple[str, int, bool], None, None]:
     for sect_name, section in items.items():
@@ -551,18 +561,11 @@ hierarchical_definitions = {
 }
 
 # Definition of items that should not appear in the menu at all
-items_to_remove = {
-    'Raider_Primary_GrenadeLauncher',
-    'Raider_Belt_WhiteOut',
-}
+items_to_remove: Set[str] = set()
 
 # Definition of items that should appear in the menu, but should be by default locked
-items_to_lock = {
-    'Soldier_Primary_Twinfusor',
-    'Juggernaut_Secondary_HeavyTwinfusor',
-    'Brute_Belt_FractalGrenade',
-}
+items_to_lock: Set[str] = set()
 
 # Processed form containing the information needed to build the menu content
-class_menu_data = build_class_menu_data(game_classes, weapon_categories, hierarchical_definitions,
-                                        items_to_remove, items_to_lock, True)
+class_menu_data: Unlockables = build_class_menu_data(game_classes, weapon_categories, hierarchical_definitions,
+                                                     items_to_remove, items_to_lock, True)
