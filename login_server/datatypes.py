@@ -18,11 +18,11 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from common.game_items import class_menu_data, GamePurchase, GameClass, UnlockableGameClass, UnlockableItem, UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
+from common.game_items import class_menu_data, GamePurchase, GameClass, UnlockableGameClass, UnlockableItem, \
+    UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
 from typing import Set, Iterable
 import struct
 from ipaddress import IPv4Address
-
 
 PING_PORT = 9002
 
@@ -37,7 +37,6 @@ TEAM_SPEC = 255
 MESSAGE_PUBLIC = 2
 MESSAGE_TEAM = 3
 MESSAGE_PRIVATE = 6
-
 
 MENU_AREA_SETTINGS = 0x0192C9D3
 
@@ -116,6 +115,7 @@ def _originalbytes(start, end):
     with open('data/tribescapture.bin.stripped', 'rb') as f:
         f.seek(start)
         return f.read(end - start)
+
 
 def findbytype(arr, requestedtype):
     for item in arr:
@@ -589,6 +589,7 @@ class m02a3(fourbytes):
 class m02ab(fourbytes):
     def __init__(self):
         super().__init__(0x02ab, 0x00000000)
+
 
 class m02ac(fourbytes):
     def __init__(self):
@@ -1159,8 +1160,8 @@ class m0303(nbytes):
 class m03e3(nbytes):
     def __init__(self):
         super().__init__(0x03e3,
-                                    hexparse('00 00 00 00 00 00 00 00 '
-                                             '00 00 00 00 00 00 00 00'))
+                         hexparse('00 00 00 00 00 00 00 00 '
+                                  '00 00 00 00 00 00 00 00'))
         # hexparse('6b 6a 0a 5f 8f 04 e7 41 '
         #         '81 96 29 0b 80 49 83 cf'))
 
@@ -1293,9 +1294,11 @@ class m037c(stringenum):
     def __init__(self):
         super().__init__(0x037c, 'n')
 
+
 class m0437(stringenum):
     def __init__(self):
         super().__init__(0x0437, '')
+
 
 class m0468(stringenum):
     def __init__(self):
@@ -1378,7 +1381,7 @@ class m00e9(arrayofenumblockarrays):
                 m02f4().set(server.get_time_remaining()),
                 m0035().set(server.be_score),
                 m0197().set(server.ds_score),
-                m0246().set(server.ip, PING_PORT) # The value doesn't matter, the client uses the address in a0035
+                m0246().set(server.ip, PING_PORT)  # The value doesn't matter, the client uses the address in a0035
             ])
         return self
 
@@ -1426,27 +1429,32 @@ class m0122(arrayofenumblockarrays):
             [
                 m0013().set('y' if item.shown else 'n'),
                 m04d9().set(idx + 1),  # Needs to be unique between items seemingly
-                m057f().set(0x27a1),  # in capture, either 0 or 0x27a1, not clear on pattern; either seems_to work at least for weapon menus?
-                m026d().set(item.item_id) if isinstance(item, UnlockableItem) else m026d(),
+                m057f().set(0x27a1),
+                # in capture, either 0 or 0x27a1, not clear on pattern; either seems_to work at least for weapon menus?
+                m026d().set(item.item_id),
                 m04d5(),
                 m0273().set(item.item_kind_id),
                 m0272(),
                 m0380().set(0x0001),
                 m05ee(),
                 m026f().set(item.name),
-                m02ff().set(idx + 1),  # Needs to be unique between items seemingly; in capture there seems to be a mapping between the value here and other menu sections, unknown if important
-                m01a3().set(idx) if isinstance(item, UnlockableVoice) else m01a3(),  # Voices have this = m02ff's value - 1?
+                m02ff().set(idx + 1),
+                # Needs to be unique between items seemingly; in capture there seems to be a mapping between the value here and other menu sections, unknown if important
+                m01a3().set(idx) if isinstance(item, UnlockableVoice) else m01a3(),
+                # Voices have this = m02ff's value - 1?
                 m03f1(),
                 m03a4(),
                 m0253(),
                 m037f().set(item.category) if isinstance(item, UnlockableWeapon) else m037f(),
                 m04bb(),
                 m0577(),
-                m0398().set(item.game_class.class_id) if isinstance(item, UnlockableClassSpecificItem) or isinstance(item, UnlockableGameClass) else m0398(),
+                m0398().set(item.game_class.class_id) if isinstance(item, UnlockableClassSpecificItem) or isinstance(
+                    item, UnlockableGameClass) else m0398(),
                 # Below is used to map weapon name <-> item id; also for weapon upgrades to tie an upgrade to an item id
                 m04fa().set(item.item_id) if include_id_mapping else m04fa(),
                 m0602(),
-                m03fd(),  # Sometimes filled in capture, may relate to pricing; doesn't seem to cause issues if not filled
+                m03fd(),
+                # Sometimes filled in capture, may relate to pricing; doesn't seem to cause issues if not filled
                 # Price - currently this only handles pricing for items (in gold/xp)
                 # Field is also used to handle pricing for gold etc.
                 # but that is replayed from capture for now
@@ -2360,7 +2368,7 @@ class a003d(enumblockarray):
         ids_to_unlock = [item.item_id for item in class_menu_data.get_every_item() if item.unlocked]
 
         general_unlocks_arrays = []
-        for purchase_index, general_item in enumerate(ids_to_unlock, start = 10000):
+        for purchase_index, general_item in enumerate(ids_to_unlock, start=10000):
             general_unlocks_arrays.append([
                 m0263().set(purchase_index),
                 m026d().set(general_item)
@@ -2371,107 +2379,35 @@ class a003d(enumblockarray):
             m037f().set(0x00002B76),
             m0263().set(0x10123456),
             m026d().set(0x00001CFE),
-            #m05b8(),
+            # m05b8(),
             m056a(),
         ])
 
-        skin_unlocks_common_fields = [
-            m02fe(),
-            m02b2(),
-            m021f(),
-            m057d(),
-            m057e(),
-            m057f().set(0x27a4),
-            m05e2(),
-            m0684(),
-            m05dc(),
-            m04cb(),
-            m00d4(),
-            m025c(),
-            m025d(),
-            m025e(),
-            m025f().set(0xFFFFF448),
-            m0596(),
-            m0597()
-        ]
-
-        medium_skin_unlocks_fields = [
-            m0095().set(0x00ba8dc7),
-            m0363().set(0x0000069d),
-            m00a2().set('101342'),
-            m0138().set([
-                [
-                    m0263().set(0x00000001),
-                    m026d().set(0x0000209f)
-                ],
-                [
-                    m0263().set(0x00000002),
-                    m026d().set(0x000020a0)
-                ],
-                [
-                    m0263().set(0x00000003),
-                    m026d().set(0x0000221b)
-                ],
-                [
-                    m0263().set(0x00000004),
-                    m026d().set(0x0000222c)
-                ],
-                [
-                    m0263().set(0x00000005),
-                    m026d().set(0x000020e1)
-                ]
-            ])
-        ]
-
-        light_skin_unlocks_fields = [
-            m0095().set(0x00ba8dc8),
-            m0363().set(0x00000693),
-            m00a2().set('101330'),
-            m0138().set([
-                [
-                    m0263().set(0x00000001),
-                    m026d().set(0x00002090)
-                ],
-                [
-                    m0263().set(0x00000002),
-                    m026d().set(0x00002091)
-                ],
-                [
-                    m0263().set(0x00000003),
-                    m026d().set(0x000021d9)
-                ],
-                [
-                    m0263().set(0x00000004),
-                    m026d().set(0x00002086)
-                ]
-            ])
-        ]
-
-        heavy_skin_unlocks_fields = [
-            m0095().set(0x00ba8dc9),
-            m0363().set(0x0000069c),
-            m00a2().set('101341'),
-            m0138().set([
-                [
-                    m0263().set(0x00000001),
-                    m026d().set(0x000021d7)
-                ],
-                [
-                    m0263().set(0x00000002),
-                    m026d().set(0x00002228)
-                ],
-                [
-                    m0263().set(0x00000003),
-                    m026d().set(0x00002229)
-                ]
-            ])
-        ]
-
-        skin_unlocks_arrays = [
-            medium_skin_unlocks_fields + skin_unlocks_common_fields,
-            light_skin_unlocks_fields + skin_unlocks_common_fields,
-            heavy_skin_unlocks_fields + skin_unlocks_common_fields,
-        ]
+        skin_unlocks_arrays = [[
+                                   m0095().set(0x00ba8dc7 + idx),
+                                   m0363().set(game_class.class_id),
+                                   m00a2().set(str(game_class.secondary_id)),
+                                   m0138(),
+                                   m02fe(),
+                                   m02b2(),
+                                   m021f(),
+                                   m057d(),
+                                   m057e(),
+                                   m057f().set(0x27a4),
+                                   m05e2(),
+                                   m0684(),
+                                   m05dc(),
+                                   m04cb(),
+                                   m00d4(),
+                                   m025c(),
+                                   m025d(),
+                                   m025e(),
+                                   m025f().set(0xFFFFF448),
+                                   m0596(),
+                                   m0597()
+                               ]
+                               for idx, (name, game_class)
+                               in enumerate(class_menu_data.classes.items())]
 
         self.content = [
             m03e3(),
@@ -2742,11 +2678,11 @@ class a0177(enumblockarray):
 
     def setdata(self, menu_part: int, purchase_data: Set[GamePurchase], include_id_mapping: bool):
         return self.set([
-                m02ab().set(menu_part),
-                m0127().setpurchasedata(menu_part, purchase_data, include_id_mapping),
-                m049e().set(0x0001),
-                m0442().set(0x01),
-            ])
+            m02ab().set(menu_part),
+            m0127().setpurchasedata(menu_part, purchase_data, include_id_mapping),
+            m049e().set(0x0001),
+            m0442().set(0x01),
+        ])
 
 
 class a0182(enumblockarray):

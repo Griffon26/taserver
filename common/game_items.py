@@ -285,6 +285,7 @@ def build_class_menu_data(classes: Dict[str, GameClass],
 # Definition of the game class info; the class name keys should match weapon_categories and hierarchical_definitions
 game_classes: Dict[str, GameClass] = {
     'pathfinder': GameClass(1683, 101330, 'TrFamilyInfo_Light_Pathfinder', 'pathfinder', "Pathfinder Purchase", True),
+    'sentinel': GameClass(1686, 101331, 'TrFamilyInfo_Light_Sentinel', 'sentinel', "Sentinel Purchase", True),
     'soldier': GameClass(1693, 101342, 'TrFamilyInfo_Medium_Soldier', 'soldier', "Soldier Purchase", True),
     'juggernaught': GameClass(1692, 101341, 'TrFamilyInfo_Heavy_Juggernaught', 'juggernaught', "Juggernaught Purchase", True),
 }
@@ -292,6 +293,13 @@ game_classes: Dict[str, GameClass] = {
 # Definition of the weapon categories; category names should match hierarchical_definitions
 weapon_categories: Dict[str, Dict[str, int]] = {
     'pathfinder': {
+        'impact': 11126,
+        'timed': 11142,
+        'speciality': 11128,
+        'bullet': 11127,
+        'short_range': 11129
+    },
+    'sentinel': {
         'impact': 11126,
         'timed': 11142,
         'speciality': 11128,
@@ -411,6 +419,70 @@ hierarchical_definitions = {
                     'Skin INF Mercenary': 8336,
                     'Skin SEN Mercenary': 8337,
                     'Skin INF Assassin': 8665,
+                },
+                'other': {},
+            }
+        },
+        'sentinel': {
+            'weapons': {
+                'impact': {
+                    'ootb': {
+                    },
+                    'other': {
+                    },
+                },
+                'timed': {
+                    'ootb': {
+                    },
+                    'other': {},
+
+                },
+                'speciality': {
+                    'ootb': {
+                        'Sentinel_Primary_SniperRifle': 7400,
+                        'Sentinel_Primary_PhaseRifle': 7395,
+                    },
+                    'other': {
+                        'Sentinel_Primary_SniperRifle_MKD': 8407,
+                        'Sentinel_Primary_SAP20': 8254,
+                    },
+                },
+                'bullet': {
+                    'ootb': {
+                        'Sentinel_Secondary_Falcon': 7419,
+                    },
+                    'other': {
+                    },
+                },
+                'short_range': {
+                    'ootb': {
+                    },
+                    'other': {
+                        'Sentinel_Secondary_AccurizedShotgun': 8239,
+                    },
+                },
+            },
+            'belt': {
+                'ootb': {
+                    'Sentinel_Belt_GrenadeT5': 7914,
+                    'Sentinel_Belt_Claymore': 7421,
+                },
+                'other': {
+                    'Sentinel_Belt_ArmoredClaymore': 8240,
+                },
+            },
+            'packs': {
+                'ootb': {
+                },
+                'other': {
+                    'Sentinel_Pack_EnergyRecharge': 7900,
+                    # 'Sentinel_Pack_DropJammer': 7456, # Repurposed as Drop Station
+                },
+            },
+            'skins': {
+                'ootb': {
+                    'Skin SEN': 8327,
+                    'Skin SEN Mercenary': 8337,
                 },
                 'other': {},
             }
