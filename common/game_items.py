@@ -21,6 +21,22 @@
 from typing import NamedTuple, Dict, Set, List, Tuple, Generator
 
 
+class GamePurchase:
+    """
+    Data about an in-game purchase of any kind
+    """
+
+    item_kind_id = 0x0
+
+    def __init__(self, name: str, item_id: int, shown: bool):
+        self.name = name
+        self.item_id = item_id
+        self.shown = shown
+
+    def __repr__(self):
+        return f'GamePurchase("{self.name}", {self.item_id}, {self.shown})'
+
+
 class GameClass:
     """
     Data about an in-game class
@@ -43,19 +59,26 @@ class GameClass:
                f'"{self.short_name}", "{self.purchase_name}")'
 
 
-class UnlockableItem:
+class UnlockableGameClass(GamePurchase):
     """
-    An unlockable in-game item of any kind
+    Data and state for an in-game unlockable class
     """
 
-    # Item kind is a field used in the purchase menu, which differs between weapons/belt items vs packs vs skins/voices
-    item_kind_id = 0x0
+    item_kind_id = 0x27a5
+
+    def __init__(self, game_class: GameClass, shown: bool = True):
+        super().__init__(game_class.purchase_name, game_class.class_id, shown)
+        self.game_class = game_class
+
+
+class UnlockableItem(GamePurchase):
+    """
+    Data and state for unlockable in-game item of any kind
+    """
 
     def __init__(self, name: str, item_id: int, shown: bool = True, unlocked: bool = True,
                  is_ootb: bool = True) -> None:
-        self.name = name
-        self.item_id = item_id
-        self.shown = shown
+        super().__init__(name, item_id, shown)
         self.unlocked = unlocked
         self.is_ootb = is_ootb
 
@@ -139,6 +162,7 @@ class Unlockables(NamedTuple):
     Definition of the intended state of the whole loadout menu
     """
     classes: Dict[str, GameClass]  # Valid in-game classes
+    class_purchases: Set[UnlockableGameClass]
     categories: Dict[str, Dict[str, int]]
     class_items: Dict[GameClass, ClassUnlockables]
     voices: Set[UnlockableVoice]
@@ -232,10 +256,15 @@ def build_class_menu_data(classes: Dict[str, GameClass],
     :param definitions: the original hierarchical definition of the menus
     :param removals: list of item names to remove (not show at all in the menu)
     :param locked: list of item names to show locked in the menu
+    :param non_ootb_classes: whether classes not marked as OOTB should be shown
     :param non_ootb_unlocked: whether items not marked as OOTB should be unlocked
     :return: the resulting Unlockables object
     """
     enabled_classes = {n: c for n, c in classes.items() if c.is_ootb or non_ootb_classes}
+
+    class_purchases = {UnlockableGameClass(game_class, game_class.is_ootb or non_ootb_classes)
+                       for name, game_class
+                       in enabled_classes.items()}
 
     voices = {UnlockableVoice(name, item_id,
                               name not in removals, name not in locked and (is_ootb or non_ootb_unlocked), is_ootb)
@@ -248,7 +277,7 @@ def build_class_menu_data(classes: Dict[str, GameClass],
                    for class_name, game_class
                    in enabled_classes.items()}
 
-    unlockables = Unlockables(enabled_classes, categories, class_items, voices)
+    unlockables = Unlockables(enabled_classes, class_purchases, categories, class_items, voices)
 
     return unlockables
 

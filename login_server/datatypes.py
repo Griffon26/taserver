@@ -18,7 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from common.game_items import class_menu_data, GameClass, UnlockableItem, UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
+from common.game_items import class_menu_data, GamePurchase, GameClass, UnlockableGameClass, UnlockableItem, UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
 from typing import Set, Iterable
 import struct
 from ipaddress import IPv4Address
@@ -1421,13 +1421,13 @@ class m0122(arrayofenumblockarrays):
     def __init__(self):
         super().__init__(0x0122)
 
-    def setpurchases(self, purchases: Set[UnlockableItem], include_id_mapping: bool):
+    def setpurchases(self, purchases: Set[GamePurchase], include_id_mapping: bool):
         return self.set([
             [
                 m0013().set('y' if item.shown else 'n'),
                 m04d9().set(idx + 1),  # Needs to be unique between items seemingly
                 m057f().set(0x27a1),  # in capture, either 0 or 0x27a1, not clear on pattern; either seems_to work at least for weapon menus?
-                m026d().set(item.item_id),
+                m026d().set(item.item_id) if isinstance(item, UnlockableItem) else m026d(),
                 m04d5(),
                 m0273().set(item.item_kind_id),
                 m0272(),
@@ -1442,7 +1442,7 @@ class m0122(arrayofenumblockarrays):
                 m037f().set(item.category) if isinstance(item, UnlockableWeapon) else m037f(),
                 m04bb(),
                 m0577(),
-                m0398().set(item.game_class.class_id) if isinstance(item, UnlockableClassSpecificItem) else m0398(),
+                m0398().set(item.game_class.class_id) if isinstance(item, UnlockableClassSpecificItem) or isinstance(item, UnlockableGameClass) else m0398(),
                 # Below is used to map weapon name <-> item id; also for weapon upgrades to tie an upgrade to an item id
                 m04fa().set(item.item_id) if include_id_mapping else m04fa(),
                 m0602(),
@@ -1462,7 +1462,7 @@ class m0127(arrayofenumblockarrays):
         super().__init__(0x0127)
 
     # 0127 only ever has one element
-    def setpurchasedata(self, menu_section: int, purchases: Set[UnlockableItem], include_id_mapping: bool):
+    def setpurchasedata(self, menu_section: int, purchases: Set[GamePurchase], include_id_mapping: bool):
         return self.set([
             [
                 m049e().set(0x0001),
@@ -2740,7 +2740,7 @@ class a0177(enumblockarray):
     def __init__(self):
         super().__init__(0x0177)
 
-    def setdata(self, menu_part: int, purchase_data, include_id_mapping: bool):
+    def setdata(self, menu_part: int, purchase_data: Set[GamePurchase], include_id_mapping: bool):
         return self.set([
                 m02ab().set(menu_part),
                 m0127().setpurchasedata(menu_part, purchase_data, include_id_mapping),
