@@ -18,8 +18,8 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from common.game_items import class_menu_data, UnlockableItem, UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
-from typing import Set
+from common.game_items import class_menu_data, GameClass, UnlockableItem, UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
+from typing import Set, Iterable
 import struct
 from ipaddress import IPv4Address
 
@@ -406,6 +406,11 @@ class m0035(fourbytes):
         super().__init__(0x0035, 0x00000000)
 
 
+class m006d(fourbytes):
+    def __init__(self):
+        super().__init__(0x006d, 0x00000000)
+
+
 class m008d(fourbytes):
     def __init__(self):
         super().__init__(0x008d, 0x00000001)
@@ -424,6 +429,11 @@ class m009e(fourbytes):
 class m00ba(fourbytes):
     def __init__(self):
         super().__init__(0x00ba, 0x00030ce8)
+
+
+class m00bf(fourbytes):
+    def __init__(self):
+        super().__init__(0x00bf, 0x00000000)
 
 
 class m00c3(fourbytes):
@@ -658,6 +668,11 @@ class m02ff(fourbytes):
 class m0319(fourbytes):
     def __init__(self):
         super().__init__(0x0319, 0x00000000)
+
+
+class m0331(fourbytes):
+    def __init__(self):
+        super().__init__(0x0331, 0x00000000)
 
 
 class m0333(fourbytes):
@@ -1372,6 +1387,23 @@ class m00e9(arrayofenumblockarrays):
         self.arrays[0].append(
             m0132().setplayers(players)
         )
+        return self
+
+    # Same enum id used for classes as well as servers...
+    def setclasses(self, classes: Iterable[GameClass]):
+        self.arrays = [
+            [
+                m0363().set(c.class_id),
+                m00a2().set(str(c.secondary_id)),
+                m0331(),  # Need to set? Unique between classes?
+                m00a3().set(c.family_info_name),
+                m00bf(),
+                m006d(),  # Need to set?
+            ]
+            for c
+            in classes
+        ]
+
         return self
 
 
@@ -2248,6 +2280,13 @@ class m068b(arrayofenumblockarrays):
 class a0014(enumblockarray):
     def __init__(self):
         super().__init__(0x0014)
+
+    def setclasses(self, classes: Iterable[GameClass]):
+        self.content = [
+            m02ab().set(0x000001ed),
+            m00e9().setclasses(classes),
+        ]
+        return self
 
 
 class a0033(enumblockarray):

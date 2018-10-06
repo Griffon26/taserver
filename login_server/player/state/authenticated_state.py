@@ -43,7 +43,8 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a0014)
     def handle_a0014(self, request):
-        self.player.send(originalfragment(0x20A18, 0x20B3F))  # 0014 (class list)
+        # self.player.send(originalfragment(0x20A18, 0x20B3F))  # 0014 (class list)
+        self.player.send(a0014().setclasses(class_menu_data.classes.values()))
 
     @handles(packet=a018b)
     def handle_a018b(self, request):
@@ -62,7 +63,7 @@ class AuthenticatedState(PlayerState):
         menu_part = request.findbytype(m02ab).value
         menu_fragments = {
             0x01de: originalfragment(0x38d17, 0x3d0fe),
-            0x01ed: originalfragment(0x219d9, 0x2219e),
+            0x01ed: originalfragment(0x219d9, 0x2219e), # Classes
             # 0x01f0: originalfragment(0x4758e, 0x4ae0d),  # Weapons with categories
             0x01f0: a0177().setdata(0x01f0, {item
                                              for _, class_items

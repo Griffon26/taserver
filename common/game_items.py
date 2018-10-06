@@ -26,17 +26,21 @@ class GameClass:
     Data about an in-game class
     """
 
-    def __init__(self, class_id: int, secondary_id: int, family_info_name: str, short_name: str):
+    def __init__(self, class_id: int, secondary_id: int, family_info_name: str,
+                 short_name: str, purchase_name: str, is_ootb: bool):
         self.class_id = class_id
         self.secondary_id = secondary_id
         self.family_info_name = family_info_name
         self.short_name = short_name
+        self.purchase_name = purchase_name
+        self.is_ootb = is_ootb
 
     def __hash__(self):
         return self.class_id.__hash__()
 
     def __repr__(self):
-        return f'GameClass({self.class_id}, {self.secondary_id}, "{self.family_info_name}", "{self.short_name}")'
+        return f'GameClass({self.class_id}, {self.secondary_id}, "{self.family_info_name}", ' \
+               f'"{self.short_name}", "{self.purchase_name}")'
 
 
 class UnlockableItem:
@@ -218,6 +222,7 @@ def build_class_menu_data(classes: Dict[str, GameClass],
                           definitions: Dict,
                           removals: Set[str],
                           locked: Set[str],
+                          non_ootb_classes: bool,
                           non_ootb_unlocked: bool) -> Unlockables:
     """
     Process a full hierarchical definition of the item menus into a structured Unlockables object
@@ -230,6 +235,8 @@ def build_class_menu_data(classes: Dict[str, GameClass],
     :param non_ootb_unlocked: whether items not marked as OOTB should be unlocked
     :return: the resulting Unlockables object
     """
+    enabled_classes = {n: c for n, c in classes.items() if c.is_ootb or non_ootb_classes}
+
     voices = {UnlockableVoice(name, item_id,
                               name not in removals, name not in locked and (is_ootb or non_ootb_unlocked), is_ootb)
               for name, item_id, is_ootb
@@ -239,37 +246,37 @@ def build_class_menu_data(classes: Dict[str, GameClass],
                                                    definitions['classes'][class_name],
                                                    removals, locked, non_ootb_unlocked)
                    for class_name, game_class
-                   in classes.items()}
+                   in enabled_classes.items()}
 
-    unlockables = Unlockables(classes, categories, class_items, voices)
+    unlockables = Unlockables(enabled_classes, categories, class_items, voices)
 
     return unlockables
 
 
 # Definition of the game class info; the class name keys should match weapon_categories and hierarchical_definitions
 game_classes: Dict[str, GameClass] = {
-    'light': GameClass(1683, 101330, 'TrFamilyInfo_Light_Pathfinder', 'light'),
-    'medium': GameClass(1693, 101342, 'TrFamilyInfo_Medium_Soldier', 'medium'),
-    'heavy': GameClass(1692, 101341, 'TrFamilyInfo_Heavy_Juggernaught', 'heavy'),
+    'pathfinder': GameClass(1683, 101330, 'TrFamilyInfo_Light_Pathfinder', 'pathfinder', "Pathfinder Purchase", True),
+    'soldier': GameClass(1693, 101342, 'TrFamilyInfo_Medium_Soldier', 'soldier', "Soldier Purchase", True),
+    'juggernaught': GameClass(1692, 101341, 'TrFamilyInfo_Heavy_Juggernaught', 'juggernaught', "Juggernaught Purchase", True),
 }
 
 # Definition of the weapon categories; category names should match hierarchical_definitions
 weapon_categories: Dict[str, Dict[str, int]] = {
-    'light': {
+    'pathfinder': {
         'impact': 11126,
         'timed': 11142,
         'speciality': 11128,
         'bullet': 11127,
         'short_range': 11129
     },
-    'medium': {
+    'soldier': {
         'impact': 11131,
         'timed': 11133,
         'speciality': 11135,
         'bullet': 11132,
         'short_range': 11143
     },
-    'heavy': {
+    'juggernaught': {
         'impact': 11136,
         'timed': 11139,
         'speciality': 11141,
@@ -282,7 +289,7 @@ weapon_categories: Dict[str, Dict[str, int]] = {
 # Moving items will change where the item appears in the menus, e.g. which class/category it is available to
 hierarchical_definitions = {
     'classes': {
-        'light': {
+        'pathfinder': {
             'weapons': {
                 'impact': {
                     'ootb': {
@@ -379,7 +386,7 @@ hierarchical_definitions = {
                 'other': {},
             }
         },
-        'medium': {
+        'soldier': {
             'weapons': {
                 'impact': {
                     'ootb': {
@@ -478,7 +485,7 @@ hierarchical_definitions = {
 
             }
         },
-        'heavy': {
+        'juggernaught': {
             'weapons': {
                 'impact': {
                     'ootb': {
@@ -609,4 +616,4 @@ items_to_lock: Set[str] = set()
 
 # Processed form containing the information needed to build the menu content
 class_menu_data: Unlockables = build_class_menu_data(game_classes, weapon_categories, hierarchical_definitions,
-                                                     items_to_remove, items_to_lock, True)
+                                                     items_to_remove, items_to_lock, True, True)
