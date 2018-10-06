@@ -285,9 +285,14 @@ def build_class_menu_data(classes: Dict[str, GameClass],
 # Definition of the game class info; the class name keys should match weapon_categories and hierarchical_definitions
 game_classes: Dict[str, GameClass] = {
     'pathfinder': GameClass(1683, 101330, 'TrFamilyInfo_Light_Pathfinder', 'pathfinder', "Pathfinder Purchase", True),
-    'sentinel': GameClass(1686, 101331, 'TrFamilyInfo_Light_Sentinel', 'sentinel', "Sentinel Purchase", True),
+    # 'infiltrator': GameClass(1682, 101331, 'TrFamilyInfo_Light_Infiltrator', 'infiltrator', "Infiltrator Purchase", True),
+    'sentinel': GameClass(1686, 101332, 'TrFamilyInfo_Light_Sentinel', 'sentinel', "Sentinel Purchase", True),
     'soldier': GameClass(1693, 101342, 'TrFamilyInfo_Medium_Soldier', 'soldier', "Soldier Purchase", True),
+    # 'raider': GameClass(1699, 101343, 'TrFamilyInfo_Medium_Raider', 'raider', "Raider Purchase", True),
+    # 'technician': GameClass(1694, 101344, 'TrFamilyInfo_Medium_Technician', 'technician', "Technician Purchase", True),
     'juggernaught': GameClass(1692, 101341, 'TrFamilyInfo_Heavy_Juggernaught', 'juggernaught', "Juggernaught Purchase", True),
+    # 'brute': GameClass(1689, 101345, 'TrFamilyInfo_Heavy_Brute', 'brute', "Brute Purchase", True),
+    # 'doombringer': GameClass(1691, 101346, 'TrFamilyInfo_Heavy_Doombringer', 'doombringer', "Doombringer Purchase", True),
 }
 
 # Definition of the weapon categories; category names should match hierarchical_definitions
@@ -300,11 +305,11 @@ weapon_categories: Dict[str, Dict[str, int]] = {
         'short_range': 11129
     },
     'sentinel': {
-        'impact': 11126,
-        'timed': 11142,
-        'speciality': 11128,
-        'bullet': 11127,
-        'short_range': 11129
+        'impact': 11131,
+        'timed': 11133,
+        'speciality': 11135,
+        'bullet': 11132,
+        'short_range': 11143
     },
     'soldier': {
         'impact': 11131,
@@ -324,7 +329,7 @@ weapon_categories: Dict[str, Dict[str, int]] = {
 
 # Definition of where items appear in the menu (including weapons going to be removed/locked)
 # Moving items will change where the item appears in the menus, e.g. which class/category it is available to
-hierarchical_definitions = {
+hierarchical_definitions_ootb = {
     'classes': {
         'pathfinder': {
             'weapons': {
@@ -716,5 +721,5 @@ items_to_remove: Set[str] = set()
 items_to_lock: Set[str] = set()
 
 # Processed form containing the information needed to build the menu content
-class_menu_data: Unlockables = build_class_menu_data(game_classes, weapon_categories, hierarchical_definitions,
+class_menu_data: Unlockables = build_class_menu_data(game_classes, weapon_categories, hierarchical_definitions_ootb,
                                                      items_to_remove, items_to_lock, True, True)
