@@ -8,7 +8,7 @@ multiplayer games.
 
 If you just want to join games on the login server hosted by me (Griffon26), then
 you don't need to download anything. All you need to do is create a Windows shortcut to
-`TribesAscend.exe` and add `-hostx=18.195.72.223` to the end of the target field, like this:
+`TribesAscend.exe` and add `-hostx=18.197.240.229` to the end of the target field, like this:
 
 ![Shortcut dialog](/docs/images/tashortcut.png?raw=true)
 
@@ -64,7 +64,7 @@ Try it out by following the instructions under [Joining games](#joining-games)
 
 Running your own login server is usually not needed. When you start a game server using
 [the instructions above](#hosting-a-dedicated-server) it will connect to the default login 
-server running on `ta.kfk4ever.com` (`18.195.72.223`). Your server will show up in the list 
+server running on `ta.kfk4ever.com` (`18.197.240.229`). Your server will show up in the list 
 for anyone else connecting to this login server.
 
 One scenario where you would want to run your own login server is when you want to play
