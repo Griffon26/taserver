@@ -61,7 +61,7 @@ EQUIPMENT_HEAVY_VOICE = 8668
 EQUIPMENT_LIGHT_GRENADE_LAUNCHER = 8761
 
 default_loadouts = {
-    'pathfinder': {
+    'light': {
         SLOT_PRIMARY_WEAPON: EQUIPMENT_LIGHT_SPINFUSOR,
         SLOT_SECONDARY_WEAPON: EQUIPMENT_LIGHT_ASSAULT_RIFLE,
         SLOT_TERTIARY_WEAPON: EQUIPMENT_LIGHT_GRENADE_LAUNCHER,
@@ -70,16 +70,7 @@ default_loadouts = {
         SLOT_SKIN: EQUIPMENT_PATHFINDER_SKIN,
         SLOT_VOICE: EQUIPMENT_LIGHT_VOICE
     },
-    'sentinel': {
-        SLOT_PRIMARY_WEAPON: EQUIPMENT_BXT1,
-        SLOT_SECONDARY_WEAPON: EQUIPMENT_FALCON,
-        SLOT_TERTIARY_WEAPON: EQUIPMENT_LIGHT_GRENADE_LAUNCHER,
-        SLOT_PACK: EQUIPMENT_ENERGY_PACK,
-        SLOT_BELT: EQUIPMENT_T5_GRENADES,
-        SLOT_SKIN: EQUIPMENT_SENTINEL_SKIN,
-        SLOT_VOICE: EQUIPMENT_LIGHT_VOICE
-    },
-    'soldier': {
+    'medium': {
         SLOT_PRIMARY_WEAPON: EQUIPMENT_SPINFUSOR,
         SLOT_SECONDARY_WEAPON: EQUIPMENT_ASSAULT_RIFLE,
         SLOT_TERTIARY_WEAPON: EQUIPMENT_GRENADE_LAUNCHER,
@@ -88,7 +79,7 @@ default_loadouts = {
         SLOT_SKIN: EQUIPMENT_SOLDIER_SKIN,
         SLOT_VOICE: EQUIPMENT_MEDIUM_VOICE
     },
-    'juggernaught': {
+    'heavy': {
         SLOT_PRIMARY_WEAPON: EQUIPMENT_HEAVY_SPINFUSOR,
         SLOT_SECONDARY_WEAPON: EQUIPMENT_FUSION_MORTAR,
         SLOT_TERTIARY_WEAPON: EQUIPMENT_CHAINGUN,
@@ -104,45 +95,35 @@ class Loadouts:
     max_loadouts = 9
 
     loadout_id2key = {
-        MENU_AREA_LIGHT_LOADOUT_A: (game_classes['pathfinder'].class_id, 0),
-        MENU_AREA_LIGHT_LOADOUT_B: (game_classes['pathfinder'].class_id, 1),
-        MENU_AREA_LIGHT_LOADOUT_C: (game_classes['pathfinder'].class_id, 2),
-        MENU_AREA_LIGHT_LOADOUT_D: (game_classes['pathfinder'].class_id, 3),
-        MENU_AREA_LIGHT_LOADOUT_E: (game_classes['pathfinder'].class_id, 4),
-        MENU_AREA_LIGHT_LOADOUT_F: (game_classes['pathfinder'].class_id, 5),
-        MENU_AREA_LIGHT_LOADOUT_G: (game_classes['pathfinder'].class_id, 6),
-        MENU_AREA_LIGHT_LOADOUT_H: (game_classes['pathfinder'].class_id, 7),
-        MENU_AREA_LIGHT_LOADOUT_I: (game_classes['pathfinder'].class_id, 8),
+        MENU_AREA_LIGHT_LOADOUT_A: (game_classes['light'].class_id, 0),
+        MENU_AREA_LIGHT_LOADOUT_B: (game_classes['light'].class_id, 1),
+        MENU_AREA_LIGHT_LOADOUT_C: (game_classes['light'].class_id, 2),
+        MENU_AREA_LIGHT_LOADOUT_D: (game_classes['light'].class_id, 3),
+        MENU_AREA_LIGHT_LOADOUT_E: (game_classes['light'].class_id, 4),
+        MENU_AREA_LIGHT_LOADOUT_F: (game_classes['light'].class_id, 5),
+        MENU_AREA_LIGHT_LOADOUT_G: (game_classes['light'].class_id, 6),
+        MENU_AREA_LIGHT_LOADOUT_H: (game_classes['light'].class_id, 7),
+        MENU_AREA_LIGHT_LOADOUT_I: (game_classes['light'].class_id, 8),
 
-        MENU_AREA_SENTINEL_LOADOUT_A: (game_classes['sentinel'].class_id, 0),
-        MENU_AREA_SENTINEL_LOADOUT_B: (game_classes['sentinel'].class_id, 1),
-        MENU_AREA_SENTINEL_LOADOUT_C: (game_classes['sentinel'].class_id, 2),
-        MENU_AREA_SENTINEL_LOADOUT_D: (game_classes['sentinel'].class_id, 3),
-        MENU_AREA_SENTINEL_LOADOUT_E: (game_classes['sentinel'].class_id, 4),
-        MENU_AREA_SENTINEL_LOADOUT_F: (game_classes['sentinel'].class_id, 5),
-        MENU_AREA_SENTINEL_LOADOUT_G: (game_classes['sentinel'].class_id, 6),
-        MENU_AREA_SENTINEL_LOADOUT_H: (game_classes['sentinel'].class_id, 7),
-        MENU_AREA_SENTINEL_LOADOUT_I: (game_classes['sentinel'].class_id, 8),
+        MENU_AREA_HEAVY_LOADOUT_A: (game_classes['medium'].class_id, 0),
+        MENU_AREA_HEAVY_LOADOUT_B: (game_classes['medium'].class_id, 1),
+        MENU_AREA_HEAVY_LOADOUT_C: (game_classes['medium'].class_id, 2),
+        MENU_AREA_HEAVY_LOADOUT_D: (game_classes['medium'].class_id, 3),
+        MENU_AREA_HEAVY_LOADOUT_E: (game_classes['medium'].class_id, 4),
+        MENU_AREA_HEAVY_LOADOUT_F: (game_classes['medium'].class_id, 5),
+        MENU_AREA_HEAVY_LOADOUT_G: (game_classes['medium'].class_id, 6),
+        MENU_AREA_HEAVY_LOADOUT_H: (game_classes['medium'].class_id, 7),
+        MENU_AREA_HEAVY_LOADOUT_I: (game_classes['medium'].class_id, 8),
 
-        MENU_AREA_HEAVY_LOADOUT_A: (game_classes['juggernaught'].class_id, 0),
-        MENU_AREA_HEAVY_LOADOUT_B: (game_classes['juggernaught'].class_id, 1),
-        MENU_AREA_HEAVY_LOADOUT_C: (game_classes['juggernaught'].class_id, 2),
-        MENU_AREA_HEAVY_LOADOUT_D: (game_classes['juggernaught'].class_id, 3),
-        MENU_AREA_HEAVY_LOADOUT_E: (game_classes['juggernaught'].class_id, 4),
-        MENU_AREA_HEAVY_LOADOUT_F: (game_classes['juggernaught'].class_id, 5),
-        MENU_AREA_HEAVY_LOADOUT_G: (game_classes['juggernaught'].class_id, 6),
-        MENU_AREA_HEAVY_LOADOUT_H: (game_classes['juggernaught'].class_id, 7),
-        MENU_AREA_HEAVY_LOADOUT_I: (game_classes['juggernaught'].class_id, 8),
-
-        MENU_AREA_MEDIUM_LOADOUT_A: (game_classes['soldier'].class_id, 0),
-        MENU_AREA_MEDIUM_LOADOUT_B: (game_classes['soldier'].class_id, 1),
-        MENU_AREA_MEDIUM_LOADOUT_C: (game_classes['soldier'].class_id, 2),
-        MENU_AREA_MEDIUM_LOADOUT_D: (game_classes['soldier'].class_id, 3),
-        MENU_AREA_MEDIUM_LOADOUT_E: (game_classes['soldier'].class_id, 4),
-        MENU_AREA_MEDIUM_LOADOUT_F: (game_classes['soldier'].class_id, 5),
-        MENU_AREA_MEDIUM_LOADOUT_G: (game_classes['soldier'].class_id, 6),
-        MENU_AREA_MEDIUM_LOADOUT_H: (game_classes['soldier'].class_id, 7),
-        MENU_AREA_MEDIUM_LOADOUT_I: (game_classes['soldier'].class_id, 8),
+        MENU_AREA_MEDIUM_LOADOUT_A: (game_classes['heavy'].class_id, 0),
+        MENU_AREA_MEDIUM_LOADOUT_B: (game_classes['heavy'].class_id, 1),
+        MENU_AREA_MEDIUM_LOADOUT_C: (game_classes['heavy'].class_id, 2),
+        MENU_AREA_MEDIUM_LOADOUT_D: (game_classes['heavy'].class_id, 3),
+        MENU_AREA_MEDIUM_LOADOUT_E: (game_classes['heavy'].class_id, 4),
+        MENU_AREA_MEDIUM_LOADOUT_F: (game_classes['heavy'].class_id, 5),
+        MENU_AREA_MEDIUM_LOADOUT_G: (game_classes['heavy'].class_id, 6),
+        MENU_AREA_MEDIUM_LOADOUT_H: (game_classes['heavy'].class_id, 7),
+        MENU_AREA_MEDIUM_LOADOUT_I: (game_classes['heavy'].class_id, 8),
     }
 
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
