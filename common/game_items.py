@@ -147,6 +147,16 @@ class UnlockableVoice(UnlockableItem):
         return f'UnlockableVoice("{self.name}", {self.item_id}, {self.shown}, {self.unlocked})'
 
 
+class UnlockablePerk(UnlockableItem):
+    """
+    An unlockable in-game perk, not specific to a class
+    """
+    item_kind_id = 0x27F5
+
+    def __repr__(self):
+        return f'UnlockablePerk("{self.name}", {self.item_id}, {self.shown}, {self.unlocked})'
+
+
 class ClassUnlockables(NamedTuple):
     """
     Definition of the intended state of a class in the loadout menus
@@ -165,7 +175,8 @@ class Unlockables(NamedTuple):
     class_purchases: Set[UnlockableGameClass]
     categories: Dict[str, Dict[str, int]]
     class_items: Dict[GameClass, ClassUnlockables]
-    voices: Set[UnlockableVoice]
+    perks: List[UnlockablePerk]
+    voices: List[UnlockableVoice]
 
     def get_every_item(self) -> List[UnlockableItem]:
         """
@@ -177,6 +188,7 @@ class Unlockables(NamedTuple):
             items.extend(c.belt_items)
             items.extend(c.packs)
             items.extend(c.skins)
+        items.extend(self.perks)
         items.extend(self.voices)
         return items
 
@@ -266,10 +278,15 @@ def build_class_menu_data(classes: Dict[str, GameClass],
                        for name, game_class
                        in enabled_classes.items()}
 
-    voices = {UnlockableVoice(name, item_id,
+    perks = [UnlockablePerk(name, item_id,
+                            name not in removals, name not in locked and (is_ootb or non_ootb_unlocked), is_ootb)
+             for name, item_id, is_ootb
+             in get_items_generator(definitions['perks'])]
+
+    voices = [UnlockableVoice(name, item_id,
                               name not in removals, name not in locked and (is_ootb or non_ootb_unlocked), is_ootb)
               for name, item_id, is_ootb
-              in get_items_generator(definitions['voices'])}
+              in get_items_generator(definitions['voices'])]
 
     class_items = {game_class: process_class_items(game_class, categories,
                                                    definitions['classes'][class_name],
@@ -277,7 +294,7 @@ def build_class_menu_data(classes: Dict[str, GameClass],
                    for class_name, game_class
                    in enabled_classes.items()}
 
-    unlockables = Unlockables(enabled_classes, class_purchases, categories, class_items, voices)
+    unlockables = Unlockables(enabled_classes, class_purchases, categories, class_items, perks, voices)
 
     return unlockables
 
@@ -467,7 +484,7 @@ hierarchical_definitions_ootb = {
                 'short_range': {
                     'ootb': {
                         'Technician_Secondary_SawedOff': 7427,
-                        'Technician_Primary_TC24': 8699, # Repurposed as Flak Cannon
+                        'Technician_Primary_TC24': 8699,  # Repurposed as Flak Cannon
                     },
                     'other': {},
 
@@ -603,6 +620,34 @@ hierarchical_definitions_ootb = {
                 },
                 'other': {},
             }
+        },
+    },
+    'perks': {
+        'ootb': {
+            # In OOTB players are hardcoded to these perks
+            'Perk Survivalist': 8167,
+            'Perk Safe Fall': 8162,
+        },
+        'other': {
+            'Perk Safety Third': 8163,
+            'Perk Reach': 7916,
+            'Perk Wheel Deal': 8169,
+            'Perk Bounty Hunter': 8153,
+            'Perk Close Combat': 8156,
+            'Perk Stealthy': 8164,
+            'Perk Super Capacitor': 8165,
+            'Perk Egocentric': 7917,
+            'Perk Pilot': 8159,
+            'Perk Super Heavy': 8166,
+            'Perk Ultra Capacitor': 8168,
+            'Perk Quickdraw': 8161,
+            'Perk Mechanic': 8170,
+            'Perk Determination': 8157,
+            'Perk Looter': 8158,
+            'Perk Potential Energy': 8160,
+            'Perk Sonic Punch': 8231,
+            'Perk Rage': 8232,
+            'Perk Lightweight': 8646,
         },
     },
     'voices': {

@@ -83,7 +83,11 @@ class AuthenticatedState(PlayerState):
                                              in class_items.packs},
                                     False),  # Packs
             0x01f4: originalfragment(0x5a776, 0x6fde3),  # Item upgrades
-            0x01f6: originalfragment(0x5965a, 0x5a72b),  # Perks
+            # 0x01f6: originalfragment(0x5965a, 0x5a72b),  # Perks
+            0x01f6: a0177().setdata(0x01f6, {item
+                                             for item
+                                             in class_menu_data.perks},
+                                    False),  # Perks
             0x01f8: originalfragment(0x5737d, 0x579af),  # Armor Upgrades
             0x01f9: a0177().setdata(0x01f9, {item
                                              for _, class_items
