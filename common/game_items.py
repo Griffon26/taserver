@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2018  Maurice van der Pot <griffon26@kfk4ever.com>
+# Copyright (C) 2018  Joseph Spearritt <mcoot@tamods.org>
 #
 # This file is part of taserver
 #
@@ -307,7 +307,7 @@ game_classes: Dict[str, GameClass] = {
 }
 
 # Definition of the weapon categories; category names should match hierarchical_definitions
-weapon_categories: Dict[str, Dict[str, int]] = {
+_weapon_categories: Dict[str, Dict[str, int]] = {
     'light': {
         'impact': 11126,
         'timed': 11142,
@@ -333,7 +333,7 @@ weapon_categories: Dict[str, Dict[str, int]] = {
 
 # Definition of where items appear in the menu (including weapons going to be removed/locked)
 # Moving items will change where the item appears in the menus, e.g. which class/category it is available to
-hierarchical_definitions_ootb = {
+_hierarchical_definitions_ootb = {
     'classes': {
         'light': {
             'weapons': {
@@ -683,11 +683,11 @@ hierarchical_definitions_ootb = {
 }
 
 # Definition of items that should not appear in the menu at all
-items_to_remove: Set[str] = set()
+_items_to_remove: Set[str] = set()
 
 # Definition of items that should appear in the menu, but should be by default locked
-items_to_lock: Set[str] = set()
+_items_to_lock: Set[str] = set()
 
 # Processed form containing the information needed to build the menu content
-class_menu_data: Unlockables = build_class_menu_data(game_classes, weapon_categories, hierarchical_definitions_ootb,
-                                                     items_to_remove, items_to_lock, True, True)
+class_menu_data: Unlockables = build_class_menu_data(game_classes, _weapon_categories, _hierarchical_definitions_ootb,
+                                                     _items_to_remove, _items_to_lock, True, True)
