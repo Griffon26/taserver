@@ -97,7 +97,13 @@ class AuthenticatedState(PlayerState):
                                     False),  # Skins
             0x0200: originalfragment(0x239e5, 0x23acf),  # Name change
             # 0x0214: originalfragment(0x23ad7, 0x26206),  # Purchaseable loadouts
-            0x0218: originalfragment(0x28ac9, 0x2f4d7),  # Weapon name <-> ID mapping - Probably only need to construct this at some point if we wanted to add entirely new weapons
+            # 0x0218: originalfragment(0x28ac9, 0x2f4d7),
+            0x0218: a0177().setdata(0x0218, {item
+                                             for _, class_items
+                                             in class_menu_data.class_items.items()
+                                             for item
+                                             in class_items.weapons},
+                                    True),  # Weapon name <-> ID mapping
             0x0220: a0177().setdata(0x0220, {item
                                              for item
                                              in class_menu_data.voices},
