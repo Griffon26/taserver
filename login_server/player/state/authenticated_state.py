@@ -111,7 +111,7 @@ class AuthenticatedState(PlayerState):
                                              in class_menu_data.voices},
                                     False),  # Voices
             0x0221: originalfragment(0x2f4df, 0x2f69f),  # Modify Clantag
-            # 0x0227: originalfragment(0x2f6a7, 0x38d0f),  # GOTY
+            0x0227: originalfragment(0x2f6a7, 0x38d0f),  # GOTY
         }
         if menu_part in menu_fragments:
             self.player.send(menu_fragments[menu_part])
