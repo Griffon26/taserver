@@ -307,7 +307,7 @@ game_classes: Dict[str, GameClass] = {
 }
 
 # Definition of the weapon categories; category names should match hierarchical_definitions
-_weapon_categories: Dict[str, Dict[str, int]] = {
+_weapon_categories_ootb: Dict[str, Dict[str, int]] = {
     'light': {
         'impact': 11126,
         'timed': 11142,
@@ -1018,7 +1018,13 @@ _items_to_remove: Set[str] = set()
 # Definition of items that should appear in the menu, but should be by default locked
 _items_to_lock: Set[str] = set()
 
+# Should probably be moved into a config file at some point
+do_use_goty_defs = True
+
+_weapon_categories = _weapon_categories_goty if do_use_goty_defs else _weapon_categories_ootb
+_hierarchical_definitions = _hierarchical_definitions_goty if do_use_goty_defs else _hierarchical_definitions_ootb
+
 # Processed form containing the information needed to build the menu content
-class_menu_data: Unlockables = build_class_menu_data(game_classes, _weapon_categories_goty,
-                                                     _hierarchical_definitions_goty,
-                                                     _items_to_remove, _items_to_lock, True, True)
+class_menu_data: Unlockables = build_class_menu_data(game_classes, _weapon_categories,
+                                                     _hierarchical_definitions, _items_to_remove, _items_to_lock,
+                                                     do_use_goty_defs, do_use_goty_defs)

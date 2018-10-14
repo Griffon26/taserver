@@ -21,7 +21,7 @@
 import json
 import string
 
-from common.game_items import game_classes
+from common.game_items import game_classes, do_use_goty_defs
 from ..datatypes import *
 
 SLOT_LOADOUT_NAME = 1341
@@ -67,7 +67,7 @@ EQUIPMENT_MEDIUM_VOICE = 8667
 EQUIPMENT_HEAVY_VOICE = 8668
 EQUIPMENT_LIGHT_GRENADE_LAUNCHER = 8761
 
-default_loadouts = {
+default_loadouts_ootb = {
     'light': {
         SLOT_PRIMARY_WEAPON: EQUIPMENT_LIGHT_SPINFUSOR,
         SLOT_SECONDARY_WEAPON: EQUIPMENT_LIGHT_ASSAULT_RIFLE,
@@ -127,6 +127,8 @@ default_loadouts_goty = {
     }
 }
 
+default_loadouts = default_loadouts_goty if do_use_goty_defs else default_loadouts_ootb
+
 
 class Loadouts:
     max_loadouts = 9
@@ -166,7 +168,7 @@ class Loadouts:
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
     def __init__(self):
-        self.loadout_dict = self.defaults(default_loadouts_goty)
+        self.loadout_dict = self.defaults(default_loadouts)
 
     def defaults(self, default_loadout_defs):
         def finish_default_loadout(default_loadout, i):
@@ -195,7 +197,7 @@ class Loadouts:
             with open(filename, 'rt') as infile:
                 self.loadout_dict = json.load(infile, object_hook=json_keys_to_int)
         except OSError:
-            self.loadout_dict = self.defaults(default_loadouts_goty)
+            self.loadout_dict = self.defaults(default_loadouts)
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:
