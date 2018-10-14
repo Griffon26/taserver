@@ -334,15 +334,18 @@ _weapon_categories: Dict[str, Dict[str, int]] = {
 _weapon_categories_goty: Dict[str, Dict[str, int]] = {
     'light': {
         'impact': 11126,
-        'bullet': 11127,
+        'timed': 11142,
+        'speciality': 11128,
     },
     'medium': {
         'impact': 11131,
-        'bullet': 11132,
+        'timed': 11133,
+        'speciality': 11135,
     },
     'heavy': {
         'impact': 11136,
-        'bullet': 11137,
+        'timed': 11139,
+        'speciality': 11141,
     },
 }
 
@@ -726,7 +729,7 @@ _hierarchical_definitions_goty = {
                     },
 
                 },
-                'bullet': {
+                'timed': {
                     'ootb': {},
                     'other': {
                         'Pathfinder_Secondary_LightAssaultRifle': 7438,
@@ -741,6 +744,12 @@ _hierarchical_definitions_goty = {
                         'All_H1_Shocklance': 7435,
                     },
                 },
+                'speciality': {
+                    'ootb': {},
+                    'other': {
+                        'Technician_Secondary_RepairToolSD_MKD': 8405,
+                    },
+                }
             },
             'belt': {
                 'ootb': {},
@@ -800,7 +809,7 @@ _hierarchical_definitions_goty = {
                         'Technician_Primary_TC24': 8699,  # Repurposed as Flak Cannon
                     },
                 },
-                'bullet': {
+                'timed': {
                     'ootb': {},
                     'other': {
                         'Soldier_Secondary_SpareSpinfusor': 8697,
@@ -812,12 +821,18 @@ _hierarchical_definitions_goty = {
                         'Raider_Secondary_NJ4SMG_MKD': 8408,
                         'Raider_Secondary_NJ5SMG': 8249,
                         'Technician_Secondary_RepairToolSD': 7436,
-                        'Technician_Secondary_RepairToolSD_MKD': 8405,
+                        # 'Technician_Secondary_RepairToolSD_MKD': 8405,  # Disabled, used as a placeholder tertiary
                         'Technician_Secondary_SawedOff': 7427,
                         'Medium_ElfProjector': 8765,
                         'All_H1_Shocklance': 7435,
                     },
                 },
+                'speciality': {
+                    'ootb': {},
+                    'other': {
+                        'Technician_Secondary_RepairToolSD_MKD': 8405,
+                    },
+                }
             },
             'belt': {
                 'ootb': {},
@@ -877,7 +892,7 @@ _hierarchical_definitions_goty = {
                         'Brute_Primary_SpikeLauncher': 8401,
                     },
                 },
-                'bullet': {
+                'timed': {
                     'ootb': {},
                     'other': {
                         'Juggernaut_Secondary_SpinfusorD': 7446,
@@ -895,6 +910,12 @@ _hierarchical_definitions_goty = {
                         'All_H1_Shocklance': 7435,
                     },
                 },
+                'speciality': {
+                    'ootb': {},
+                    'other': {
+                        'Technician_Secondary_RepairToolSD_MKD': 8405,
+                    },
+                }
             },
             'belt': {
                 'ootb': {},
@@ -998,5 +1019,6 @@ _items_to_remove: Set[str] = set()
 _items_to_lock: Set[str] = set()
 
 # Processed form containing the information needed to build the menu content
-class_menu_data: Unlockables = build_class_menu_data(game_classes, _weapon_categories_goty, _hierarchical_definitions_goty,
+class_menu_data: Unlockables = build_class_menu_data(game_classes, _weapon_categories_goty,
+                                                     _hierarchical_definitions_goty,
                                                      _items_to_remove, _items_to_lock, True, True)

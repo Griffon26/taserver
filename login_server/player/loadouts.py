@@ -51,6 +51,7 @@ EQUIPMENT_T5_GRENADES = 7914
 EQUIPMENT_ENERGY_PACK = 7900
 EQUIPMENT_HEAVY_SPINFUSOR = 7448
 EQUIPMENT_SPINFUSOR_MKD = 7446
+EQUIPMENT_LONG_RANGE_REPAIR_TOOL = 8405
 EQUIPMENT_THRUST_PACK = 7822
 EQUIPMENT_IMPACT_NITRON = 7387
 EQUIPMENT_HEAVY_SHIELD_PACK = 7826
@@ -100,7 +101,7 @@ default_loadouts_goty = {
     'light': {
         SLOT_PRIMARY_WEAPON: EQUIPMENT_LIGHT_SPINFUSOR,
         SLOT_SECONDARY_WEAPON: EQUIPMENT_LIGHT_ASSAULT_RIFLE,
-        SLOT_TERTIARY_WEAPON: 0,
+        SLOT_TERTIARY_WEAPON: EQUIPMENT_LONG_RANGE_REPAIR_TOOL,
         SLOT_PACK: EQUIPMENT_THRUST_PACK,
         SLOT_BELT: EQUIPMENT_IMPACT_NITRON,
         SLOT_SKIN: EQUIPMENT_PATHFINDER_SKIN,
@@ -109,7 +110,7 @@ default_loadouts_goty = {
     'medium': {
         SLOT_PRIMARY_WEAPON: EQUIPMENT_ASSAULT_RIFLE,
         SLOT_SECONDARY_WEAPON: EQUIPMENT_THUMPERD,
-        SLOT_TERTIARY_WEAPON: 0,
+        SLOT_TERTIARY_WEAPON: EQUIPMENT_LONG_RANGE_REPAIR_TOOL,
         SLOT_PACK: EQUIPMENT_SLD_ENERGY_PACK,
         SLOT_BELT: EQUIPMENT_FRAGXL_GRENADES,
         SLOT_SKIN: EQUIPMENT_SOLDIER_SKIN,
@@ -118,7 +119,7 @@ default_loadouts_goty = {
     'heavy': {
         SLOT_PRIMARY_WEAPON: EQUIPMENT_FUSION_MORTAR,
         SLOT_SECONDARY_WEAPON: EQUIPMENT_SPINFUSOR_MKD,
-        SLOT_TERTIARY_WEAPON: 0,
+        SLOT_TERTIARY_WEAPON: EQUIPMENT_LONG_RANGE_REPAIR_TOOL,
         SLOT_PACK: EQUIPMENT_JUG_REGEN_PACK,
         SLOT_BELT: EQUIPMENT_HEAVYAP_GRENADES,
         SLOT_SKIN: EQUIPMENT_JUGGERNAUT_SKIN,
@@ -165,7 +166,7 @@ class Loadouts:
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
     def __init__(self):
-        self.loadout_dict = self.defaults(default_loadouts)
+        self.loadout_dict = self.defaults(default_loadouts_goty)
 
     def defaults(self, default_loadout_defs):
         def finish_default_loadout(default_loadout, i):
@@ -194,7 +195,7 @@ class Loadouts:
             with open(filename, 'rt') as infile:
                 self.loadout_dict = json.load(infile, object_hook=json_keys_to_int)
         except OSError:
-            self.loadout_dict = self.defaults(default_loadouts)
+            self.loadout_dict = self.defaults(default_loadouts_goty)
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:
