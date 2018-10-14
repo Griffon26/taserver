@@ -165,7 +165,7 @@ class Loadouts:
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
     def __init__(self):
-        self.loadout_dict = self.defaults(default_loadouts_goty)
+        self.loadout_dict = self.defaults(default_loadouts)
 
     def defaults(self, default_loadout_defs):
         def finish_default_loadout(default_loadout, i):
@@ -194,7 +194,7 @@ class Loadouts:
             with open(filename, 'rt') as infile:
                 self.loadout_dict = json.load(infile, object_hook=json_keys_to_int)
         except OSError:
-            self.loadout_dict = self.defaults()
+            self.loadout_dict = self.defaults(default_loadouts)
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:

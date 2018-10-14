@@ -2454,6 +2454,7 @@ class a003d(enumblockarray):
         self.findbytype(m06de).set(tag)
 
         loadout_arrays = []
+        loadout_overall_idx = 0
         for class_id, class_loadout in loadouts.loadout_dict.items():
             for loadout_index, loadout in class_loadout.items():
                 loadout_id = loadouts.loadout_key2id[(class_id, loadout_index)]
@@ -2488,11 +2489,12 @@ class a003d(enumblockarray):
 
                 loadout_arrays.append([
                     m0661().set(loadout_id),
-                    m01e3().set(0x00002730),
+                    m01e3().set(0x00002730 + loadout_overall_idx),
                     m065f().set(0x00000001),
                     m02fe().set(""),
                     m0144().set(entry_array)
                 ])
+                loadout_overall_idx += 1
 
         self.findbytype(m0662).set(loadout_arrays)
 
