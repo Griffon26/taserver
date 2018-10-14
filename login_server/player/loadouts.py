@@ -38,19 +38,25 @@ EQUIPMENT_CHAINGUN = 7386
 EQUIPMENT_FRAG_GRENADES = 7390
 EQUIPMENT_FUSION_MORTAR = 7393
 EQUIPMENT_SPINFUSOR = 7401
+EQUIPMENT_THUMPERD = 7462
 EQUIPMENT_GRENADE_LAUNCHER = 7416
 EQUIPMENT_LIGHT_SPINFUSOR = 7422
 EQUIPMENT_AP_GRENADES = 7434
+EQUIPMENT_HEAVYAP_GRENADES = 7447
+EQUIPMENT_FRAGXL_GRENADES = 7430
 EQUIPMENT_LIGHT_ASSAULT_RIFLE = 7438
 EQUIPMENT_BXT1 = 7400
 EQUIPMENT_FALCON = 7419
 EQUIPMENT_T5_GRENADES = 7914
 EQUIPMENT_ENERGY_PACK = 7900
 EQUIPMENT_HEAVY_SPINFUSOR = 7448
+EQUIPMENT_SPINFUSOR_MKD = 7446
 EQUIPMENT_THRUST_PACK = 7822
 EQUIPMENT_IMPACT_NITRON = 7387
 EQUIPMENT_HEAVY_SHIELD_PACK = 7826
+EQUIPMENT_JUG_REGEN_PACK = 7831
 EQUIPMENT_SHIELD_PACK = 7832
+EQUIPMENT_SLD_ENERGY_PACK = 7824
 EQUIPMENT_PATHFINDER_SKIN = 7834
 EQUIPMENT_SENTINEL_SKIN = 8327
 EQUIPMENT_SOLDIER_SKIN = 8328
@@ -85,6 +91,36 @@ default_loadouts = {
         SLOT_TERTIARY_WEAPON: EQUIPMENT_CHAINGUN,
         SLOT_PACK: EQUIPMENT_HEAVY_SHIELD_PACK,
         SLOT_BELT: EQUIPMENT_FRAG_GRENADES,
+        SLOT_SKIN: EQUIPMENT_JUGGERNAUT_SKIN,
+        SLOT_VOICE: EQUIPMENT_HEAVY_VOICE
+    }
+}
+
+default_loadouts_goty = {
+    'light': {
+        SLOT_PRIMARY_WEAPON: EQUIPMENT_LIGHT_SPINFUSOR,
+        SLOT_SECONDARY_WEAPON: EQUIPMENT_LIGHT_ASSAULT_RIFLE,
+        SLOT_TERTIARY_WEAPON: 0,
+        SLOT_PACK: EQUIPMENT_THRUST_PACK,
+        SLOT_BELT: EQUIPMENT_IMPACT_NITRON,
+        SLOT_SKIN: EQUIPMENT_PATHFINDER_SKIN,
+        SLOT_VOICE: EQUIPMENT_LIGHT_VOICE
+    },
+    'medium': {
+        SLOT_PRIMARY_WEAPON: EQUIPMENT_ASSAULT_RIFLE,
+        SLOT_SECONDARY_WEAPON: EQUIPMENT_THUMPERD,
+        SLOT_TERTIARY_WEAPON: 0,
+        SLOT_PACK: EQUIPMENT_SLD_ENERGY_PACK,
+        SLOT_BELT: EQUIPMENT_FRAGXL_GRENADES,
+        SLOT_SKIN: EQUIPMENT_SOLDIER_SKIN,
+        SLOT_VOICE: EQUIPMENT_MEDIUM_VOICE
+    },
+    'heavy': {
+        SLOT_PRIMARY_WEAPON: EQUIPMENT_FUSION_MORTAR,
+        SLOT_SECONDARY_WEAPON: EQUIPMENT_SPINFUSOR_MKD,
+        SLOT_TERTIARY_WEAPON: 0,
+        SLOT_PACK: EQUIPMENT_JUG_REGEN_PACK,
+        SLOT_BELT: EQUIPMENT_HEAVYAP_GRENADES,
         SLOT_SKIN: EQUIPMENT_JUGGERNAUT_SKIN,
         SLOT_VOICE: EQUIPMENT_HEAVY_VOICE
     }
@@ -129,9 +165,9 @@ class Loadouts:
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
     def __init__(self):
-        self.loadout_dict = self.defaults()
+        self.loadout_dict = self.defaults(default_loadouts_goty)
 
-    def defaults(self):
+    def defaults(self, default_loadout_defs):
         def finish_default_loadout(default_loadout, i):
             complete_loadout = default_loadout.copy()
             complete_loadout[SLOT_LOADOUT_NAME] = 'LOADOUT %s' % string.ascii_uppercase[i]
@@ -140,7 +176,7 @@ class Loadouts:
         return {game_classes[name].class_id:
                 {i: finish_default_loadout(default_loadout, i) for i in range(self.max_loadouts)}
                 for name, default_loadout
-                in default_loadouts.items()}
+                in default_loadout_defs.items()}
 
     def is_loadout_menu_item(self, value):
         return value in self.loadout_id2key
@@ -163,4 +199,3 @@ class Loadouts:
     def save(self, filename):
         with open(filename, 'wt') as outfile:
             json.dump(self.loadout_dict, outfile, indent=4, sort_keys=True)
-

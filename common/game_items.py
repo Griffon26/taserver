@@ -330,6 +330,21 @@ _weapon_categories: Dict[str, Dict[str, int]] = {
         'short_range': 11138
     },
 }
+# Definition of the weapon categories; category names should match hierarchical_definitions
+_weapon_categories_goty: Dict[str, Dict[str, int]] = {
+    'light': {
+        'impact': 11126,
+        'bullet': 11127,
+    },
+    'medium': {
+        'impact': 11131,
+        'bullet': 11132,
+    },
+    'heavy': {
+        'impact': 11136,
+        'bullet': 11137,
+    },
+}
 
 # Definition of where items appear in the menu (including weapons going to be removed/locked)
 # Moving items will change where the item appears in the menus, e.g. which class/category it is available to
@@ -983,5 +998,5 @@ _items_to_remove: Set[str] = set()
 _items_to_lock: Set[str] = set()
 
 # Processed form containing the information needed to build the menu content
-class_menu_data: Unlockables = build_class_menu_data(game_classes, _weapon_categories, _hierarchical_definitions_ootb,
+class_menu_data: Unlockables = build_class_menu_data(game_classes, _weapon_categories_goty, _hierarchical_definitions_goty,
                                                      _items_to_remove, _items_to_lock, True, True)
