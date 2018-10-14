@@ -18,9 +18,11 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from common.game_items import class_menu_data, GamePurchase, GameClass, UnlockableGameClass, UnlockableItem, \
+    UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
+from typing import Set, Iterable
 import struct
 from ipaddress import IPv4Address
-
 
 PING_PORT = 9002
 
@@ -35,7 +37,6 @@ TEAM_SPEC = 255
 MESSAGE_PUBLIC = 2
 MESSAGE_TEAM = 3
 MESSAGE_PRIVATE = 6
-
 
 MENU_AREA_SETTINGS = 0x0192C9D3
 
@@ -77,150 +78,6 @@ MENU_AREA_MEDIUM_LOADOUT_G = 0x02990EFC
 MENU_AREA_MEDIUM_LOADOUT_H = 0x02990EFD
 MENU_AREA_MEDIUM_LOADOUT_I = 0x02990EFE
 
-UNLOCKABLE_ITEMS = {
-    'RAIDER_PRIMARY_ARXBUSTER': 0x00001cd8,
-    'SOLDIER_PRIMARY_ASSAULTRIFLE': 0x00001cd9,
-    'DOOMBRINGER_PRIMARY_CHAINGUN': 0x00001cda,
-    'PATHFINDER_BELT_IMPACTNITRON': 0x00001cdb,
-    'SOLDIER_SECONDARY_EAGLE': 0x00001cdc,
-    'DOOMBRINGER_BELT_STANDARDGRENADE': 0x00001cde,
-    'DOOMBRINGER_BELT_MINE': 0x00001ce0,
-    'JUGGERNAUT_PRIMARY_FUSIONMORTAR': 0x00001ce1,
-    'MEDIUM_SIDEARM_NOVABLASTER': 0x00001ce2,
-    'SENTINEL_PRIMARY_PHASERIFLE': 0x00001ce3,
-    'INFILTRATOR_PRIMARY_RHINOSMG': 0x00001ce5,
-    'DOOMBRINGER_SECONDARY_SABERLAUNCHER': 0x00001ce6,
-    'PATHFINDER_SECONDARY_SHOTGUN': 0x00001ce7,
-    'SENTINEL_PRIMARY_SNIPERRIFLE': 0x00001ce8,
-    'SOLDIER_PRIMARY_SPINFUSOR': 0x00001ce9,
-    'INFILTRATOR_BELT_STICKYGRENADE': 0x00001cea,
-    'DOOMBRINGER_PACK_FORCEFIELD': 0x00001cf3,
-    'TECHNICIAN_PACK_LIGHTTURRET': 0x00001cf5,
-    'RAIDER_PRIMARY_GRENADELAUNCHER': 0x00001cf8,
-    'TECHNICIAN_PACK_EXRTURRET': 0x00001cf9,
-    'INFILTRATOR_SECONDARY_SN7': 0x00001cfa,
-    'SENTINEL_SECONDARY_FALCON': 0x00001cfb,
-    'SENTINEL_BELT_CLAYMORE': 0x00001cfd,
-    'PATHFINDER_PRIMARY_LIGHTSPINFUSOR': 0x00001cfe,
-    'PATHFINDER_PRIMARY_BOLTLAUNCHER': 0x00001d01,
-    'TECHNICIAN_BELT_MOTIONALARM': 0x00001d02,
-    'TECHNICIAN_SECONDARY_SAWEDOFF': 0x00001d03,
-    'BRUTE_BELT_FRACTALGRENADE': 0x00001d04,
-    'SOLDIER_BELT_FRAGGRENADEXL': 0x00001d06,
-    'BRUTE_SECONDARY_NOVACOLT': 0x00001d07,
-    'RAIDER_BELT_WHITEOUT': 0x00001d08,
-    'LIGHT_SIDEARM_SPARROW': 0x00001d09,
-    'SOLDIER_BELT_APGRENADE': 0x00001d0a,
-    'ALL_H1_SHOCKLANCE': 0x00001d0b,
-    'TECHNICIAN_SECONDARY_REPAIRTOOLSD': 0x00001d0c,
-    'PATHFINDER_BELT_STGRENADE': 0x00001d0d,
-    'PATHFINDER_SECONDARY_LIGHTASSAULTRIFLE': 0x00001d0e,
-    'INFILTRATOR_BELT_PRISMMINES': 0x00001d10,
-    'RAIDER_SECONDARY_NJ4SMG': 0x00001d11,
-    'TECHNICIAN_PRIMARY_TCN4': 0x00001d13,
-    'RAIDER_BELT_EMPGRENADE': 0x00001d14,
-    'JUGGERNAUT_SECONDARY_SPINFUSORD': 0x00001d16,
-    'JUGGERNAUT_BELT_HEAVYAPGRENADE': 0x00001d17,
-    'BRUTE_PRIMARY_HEAVYSPINFUSOR': 0x00001d18,
-    'BRUTE_SECONDARY_AUTOSHOTGUN': 0x00001d19,
-    'DOOMBRINGER_PRIMARY_HEAVYBOLTLAUNCHER': 0x00001d1c,
-    'BRUTE_BELT_LIGHTSTICKYGRENADE': 0x00001d1f,
-    'MEDIUM_PACK_INVENTORY': 0x00001d20,
-    'JUGGERNAUT_PRIMARY_MIRVLAUNCHER': 0x00001d21,
-    'JUGGERNAUT_SECONDARY_X1LMG': 0x00001d22,
-    'JUGGERNAUT_BELT_DISKTOSS': 0x00001d23,
-    'TECHNICIAN_PRIMARY_THUMPER': 0x00001d25,
-    'SOLDIER_SECONDARY_THUMPERD': 0x00001d26,
-    'PATHFINDER_PACK_JUMPPACK': 0x00001e8e,
-    'SOLDIER_PACK_ENERGYPOOL': 0x00001e90,
-    'PATHFINDER_PACK_ENERGYRECHARGE': 0x00001e91,
-    'BRUTE_PACK_HEAVYSHIELD': 0x00001e92,
-    'RAIDER_PACK_JAMMER': 0x00001e93,
-    'BRUTE_PACK_MINORENERGY': 0x00001e96,
-    'JUGGERNAUT_PACK_HEALTHREGEN': 0x00001e97,
-    'RAIDER_PACK_SHIELD': 0x00001e98,
-    'INFILTRATOR_PACK_STEALTH': 0x00001e99,
-    'SKIN_PTH': 0x00001eba,
-    'SKIN_INF': 0x00001ebb,
-    'SENTINEL_PACK_ENERGYRECHARGE': 0x00001edc,
-    'INFILTRATOR_PRIMARY_STEALTHLIGHTSPINFUSOR': 0x00001ede,
-    'SENTINEL_BELT_GRENADET5': 0x00001eea,
-    'SOLDIER_BELT_PROXIMITYGRENADE': 0x0000201e,
-    'SOLDIER_PACK_UTILITY': 0x0000201f,
-    'SENTINEL_SECONDARY_ACCURIZEDSHOTGUN': 0x0000202f,
-    'SENTINEL_BELT_ARMOREDCLAYMORE': 0x00002030,
-    'PATHFINDER_PRIMARY_LIGHTTWINFUSOR': 0x00002035,
-    'RAIDER_BELT_MIRVGRENADE': 0x00002037,
-    'INFILTRATOR_BELT_NINJASMOKE': 0x00002038,
-    'RAIDER_SECONDARY_NJ5SMG': 0x00002039,
-    'BRUTE_SECONDARY_PLASMACANNON': 0x0000203a,
-    'RAIDER_PRIMARY_PLASMAGUN': 0x0000203b,
-    'INFILTRATOR_PRIMARY_REMOTEARXBUSTER': 0x0000203c,
-    'BRUTE_PACK_SURVIVALPACK': 0x0000203f,
-    'INFILTRATOR_SECONDARY_THROWINGKNIVES': 0x00002040,
-    'SOLDIER_PRIMARY_TWINFUSOR': 0x00002041,
-    'BRUTE_PRIMARY_SPIKELAUNCHER': 0x000020a5,
-    'RAIDER_PRIMARY_ARXBUSTER_MKD': 0x000020c7,
-    'DOOMBRINGER_PRIMARY_CHAINGUN_MKD': 0x000020c8,
-    'DOOMBRINGER_BELT_STANDARDGRENADE_MKD': 0x000020c9,
-    'JUGGERNAUT_BELT_HEAVYAPGRENADE_MKD': 0x000020ca,
-    'RAIDER_BELT_EMPGRENADE_MKD': 0x000020cb,
-    'PATHFINDER_BELT_IMPACTNITRON_MKD': 0x000020cc,
-    'BRUTE_BELT_FRACTALGRENADE_MKD': 0x000020cd,
-    'INFILTRATOR_BELT_STICKYGRENADE_MKD': 0x000020ce,
-    'SOLDIER_BELT_FRAGGRENADEXL_MKD': 0x000020cf,
-    'JUGGERNAUT_PRIMARY_FUSIONMORTAR_MKD': 0x000020d0,
-    'DOOMBRINGER_SECONDARY_SABERLAUNCHER_MKD': 0x000020d1,
-    'SENTINEL_BELT_CLAYMORE_MKD': 0x000020d2,
-    'HEAVY_SIDEARM_NOVABLASTER_MKD': 0x000020d3,
-    'INFILTRATOR_SECONDARY_SN7_MKD': 0x000020d4,
-    'TECHNICIAN_SECONDARY_REPAIRTOOLSD_MKD': 0x000020d5,
-    'SOLDIER_PRIMARY_ASSAULTRIFLE_MKD': 0x000020d6,
-    'SENTINEL_PRIMARY_SNIPERRIFLE_MKD': 0x000020d7,
-    'RAIDER_SECONDARY_NJ4SMG_MKD': 0x000020d8,
-    'INFILTRATOR_PRIMARY_RHINOSMG_MKD': 0x000020d9,
-    'TECHNICIAN_PRIMARY_TCN4_MKD': 0x000020da,
-    'PATHFINDER_SECONDARY_SHOTGUN_MKD': 0x000020db,
-    'BRUTE_SECONDARY_AUTOSHOTGUN_MKD': 0x000020dc,
-    'JUGGERNAUT_SECONDARY_SPINFUSORD_MKD': 0x000020dd,
-    'BRUTE_PRIMARY_HEAVYSPINFUSOR_MKD': 0x000020de,
-    'PATHFINDER_PRIMARY_LIGHTSPINFUSOR_MKD': 0x000020df,
-    'TECHNICIAN_BELT_TCNG_MKD': 0x000020e0,
-    'SOLDIER_SECONDARY_THUMPERD_MKD': 0x000020e1,
-    'JUGGERNAUT_SECONDARY_HEAVYTWINFUSOR': 0x000021d0,
-    'PATHFINDER_PRIMARY_LIGHTSPINFUSOR_100X': 0x000021f8,
-    'SOLDIER_PRIMARY_SPINFUSOR_100X': 0x000021f9,
-    'TECHNICIAN_BELT_REPAIRDEPLOYABLE': 0x000021fb,
-    'TECHNICIAN_PRIMARY_TC24': 0x000021fc,
-    'LIGHT_PRIMARY_LIGHTGRENADELAUNCHER': 0x00002239,
-    'MEDIUM_ELFPROJECTOR': 0x0000223d,
-    'ELF_FLAKCANNON': 0x0000223e,
-    'SOLDIER_PRIMARY_HONORFUSOR': 0x00002240
-}
-
-UNLOCKABLE_VOICES = {
-    'DARK': 0x000021dd,
-    'FEM1': 0x000021de,
-    'FEM2': 0x000021df,
-    'AUS': 0x000021f7,
-    'T2_FEM01': 0x00002208,
-    'T2_FEM02': 0x0000220a,
-    'T2_FEM03': 0x0000220b,
-    'T2_FEM04': 0x0000220c,
-    'T2_FEM05': 0x0000220d,
-    'T2_MALE01': 0x0000220f,
-    'T2_MALE02': 0x00002210,
-    'T2_MALE03': 0x00002211,
-    'T2_MALE04': 0x00002212,
-    'T2_MALE05': 0x00002213,
-    'T2_DERM01': 0x00002214,
-    'T2_DERM02': 0x00002215,
-    'T2_DERM03': 0x00002216,
-    'TOTAL_BISCUIT': 0x0000222b,
-    'STOWAWAY': 0x0000222d,
-    'BASEMENT_CHAMPION': 0x0000222e
-}
-
 
 class ParseError(Exception):
     pass
@@ -258,6 +115,7 @@ def _originalbytes(start, end):
     with open('data/tribescapture.bin.stripped', 'rb') as f:
         f.seek(start)
         return f.read(end - start)
+
 
 def findbytype(arr, requestedtype):
     for item in arr:
@@ -548,6 +406,11 @@ class m0035(fourbytes):
         super().__init__(0x0035, 0x00000000)
 
 
+class m006d(fourbytes):
+    def __init__(self):
+        super().__init__(0x006d, 0x00000000)
+
+
 class m008d(fourbytes):
     def __init__(self):
         super().__init__(0x008d, 0x00000001)
@@ -566,6 +429,11 @@ class m009e(fourbytes):
 class m00ba(fourbytes):
     def __init__(self):
         super().__init__(0x00ba, 0x00030ce8)
+
+
+class m00bf(fourbytes):
+    def __init__(self):
+        super().__init__(0x00bf, 0x00000000)
 
 
 class m00c3(fourbytes):
@@ -648,6 +516,11 @@ class m0242(fourbytes):
         super().__init__(0x0242, 0x00000000)
 
 
+class m0253(fourbytes):
+    def __init__(self):
+        super().__init__(0x0253, 0x00000000)
+
+
 class m0259(fourbytes):
     def __init__(self):
         super().__init__(0x0259, 0x00000000)
@@ -716,6 +589,11 @@ class m02a3(fourbytes):
 class m02ab(fourbytes):
     def __init__(self):
         super().__init__(0x02ab, 0x00000000)
+
+
+class m02ac(fourbytes):
+    def __init__(self):
+        super().__init__(0x02ac, 0x00000000)
 
 
 class m02b2(fourbytes):
@@ -793,6 +671,11 @@ class m0319(fourbytes):
         super().__init__(0x0319, 0x00000000)
 
 
+class m0331(fourbytes):
+    def __init__(self):
+        super().__init__(0x0331, 0x00000000)
+
+
 class m0333(fourbytes):
     def __init__(self):
         super().__init__(0x0333, 0x00000000)
@@ -863,6 +746,11 @@ class m0398(fourbytes):
         super().__init__(0x0398, 0x00000000)
 
 
+class m03a4(fourbytes):
+    def __init__(self):
+        super().__init__(0x03a4, 0x00000000)
+
+
 class m03ce(fourbytes):
     def __init__(self):
         super().__init__(0x03ce, 0x00000000)
@@ -873,6 +761,11 @@ class m03e0(fourbytes):
         super().__init__(0x03e0, 0x00000000)
 
 
+class m03f1(fourbytes):
+    def __init__(self):
+        super().__init__(0x03f1, 0x00000000)
+
+
 class m03f5(fourbytes):
     def __init__(self):
         super().__init__(0x03f5, 0x40000000)
@@ -881,6 +774,11 @@ class m03f5(fourbytes):
 class m03fd(fourbytes):
     def __init__(self):
         super().__init__(0x03fd, 0x00000000)
+
+
+class m041a(fourbytes):
+    def __init__(self):
+        super().__init__(0x041a, 0x00000000)
 
 
 class m042a(fourbytes):
@@ -923,9 +821,19 @@ class m049e(fourbytes):
         super().__init__(0x049e, 0x01040B61)
 
 
+class m04bb(fourbytes):
+    def __init__(self):
+        super().__init__(0x04bb, 0x00000000)
+
+
 class m04cb(fourbytes):
     def __init__(self):
         super().__init__(0x04cb, 0x00100000)  # xp
+
+
+class m04d5(fourbytes):
+    def __init__(self):
+        super().__init__(0x04d5, 0x00000000)
 
 
 class m04d9(fourbytes):
@@ -956,6 +864,11 @@ class m0558(fourbytes):
 class m056a(fourbytes):
     def __init__(self):
         super().__init__(0x056a, 0x00000000)
+
+
+class m0577(fourbytes):
+    def __init__(self):
+        super().__init__(0x0577, 0x00000000)
 
 
 class m057d(fourbytes):
@@ -1016,6 +929,16 @@ class m05e9(fourbytes):
 class m05ea(fourbytes):
     def __init__(self):
         super().__init__(0x05ea, 0x00000000)
+
+
+class m05ee(fourbytes):
+    def __init__(self):
+        super().__init__(0x05ee, 0x00000000)
+
+
+class m0602(fourbytes):
+    def __init__(self):
+        super().__init__(0x0602, 0x00000000)
 
 
 class m0608(fourbytes):
@@ -1237,8 +1160,8 @@ class m0303(nbytes):
 class m03e3(nbytes):
     def __init__(self):
         super().__init__(0x03e3,
-                                    hexparse('00 00 00 00 00 00 00 00 '
-                                             '00 00 00 00 00 00 00 00'))
+                         hexparse('00 00 00 00 00 00 00 00 '
+                                  '00 00 00 00 00 00 00 00'))
         # hexparse('6b 6a 0a 5f 8f 04 e7 41 '
         #         '81 96 29 0b 80 49 83 cf'))
 
@@ -1322,6 +1245,11 @@ class m0261(stringenum):
         super().__init__(0x0261, '')
 
 
+class m026f(stringenum):
+    def __init__(self):
+        super().__init__(0x026f, '')
+
+
 class m02af(stringenum):
     def __init__(self):
         super().__init__(0x02af, 'n')
@@ -1366,9 +1294,11 @@ class m037c(stringenum):
     def __init__(self):
         super().__init__(0x037c, 'n')
 
+
 class m0437(stringenum):
     def __init__(self):
         super().__init__(0x0437, '')
+
 
 class m0468(stringenum):
     def __init__(self):
@@ -1451,7 +1381,7 @@ class m00e9(arrayofenumblockarrays):
                 m02f4().set(server.get_time_remaining()),
                 m0035().set(server.be_score),
                 m0197().set(server.ds_score),
-                m0246().set(server.ip, PING_PORT) # The value doesn't matter, the client uses the address in a0035
+                m0246().set(server.ip, PING_PORT)  # The value doesn't matter, the client uses the address in a0035
             ])
         return self
 
@@ -1460,6 +1390,23 @@ class m00e9(arrayofenumblockarrays):
         self.arrays[0].append(
             m0132().setplayers(players)
         )
+        return self
+
+    # Same enum id used for classes as well as servers...
+    def setclasses(self, classes: Iterable[GameClass]):
+        self.arrays = [
+            [
+                m0363().set(c.class_id),
+                m00a2().set(str(c.secondary_id)),
+                m0331(),  # Need to set? Unique between classes?
+                m00a3().set(c.family_info_name),
+                m00bf(),
+                m006d(),  # Need to set?
+            ]
+            for c
+            in classes
+        ]
+
         return self
 
 
@@ -1471,6 +1418,69 @@ class m00fe(arrayofenumblockarrays):
 class m0116(arrayofenumblockarrays):
     def __init__(self):
         super().__init__(0x0116)
+
+
+class m0122(arrayofenumblockarrays):
+    def __init__(self):
+        super().__init__(0x0122)
+
+    def setpurchases(self, purchases: Set[GamePurchase], include_id_mapping: bool):
+        return self.set([
+            [
+                m0013().set('y' if item.shown else 'n'),
+                m04d9().set(idx + 1),  # Needs to be unique between items seemingly
+                m057f().set(0x27a1),
+                # in capture, either 0 or 0x27a1, not clear on pattern; either seems_to work at least for weapon menus?
+                m026d().set(item.item_id),
+                m04d5(),
+                m0273().set(item.item_kind_id),
+                m0272(),
+                m0380().set(0x0001),
+                m05ee(),
+                m026f().set(item.name),
+                m02ff().set(idx + 1),
+                # Needs to be unique between items seemingly; in capture there seems to be a mapping between the value here and other menu sections, unknown if important
+                m01a3().set(idx) if isinstance(item, UnlockableVoice) else m01a3(),
+                # Voices have this = m02ff's value - 1?
+                m03f1(),
+                m03a4(),
+                m0253(),
+                m037f().set(item.category) if isinstance(item, UnlockableWeapon) else m037f(),
+                m04bb(),
+                m0577(),
+                m0398().set(item.game_class.class_id) if isinstance(item, UnlockableClassSpecificItem) or isinstance(
+                    item, UnlockableGameClass) else m0398(),
+                # Below is used to map weapon name <-> item id; also for weapon upgrades to tie an upgrade to an item id
+                m04fa().set(item.item_id) if include_id_mapping else m04fa(),
+                m0602(),
+                m03fd(),
+                # Sometimes filled in capture, may relate to pricing; doesn't seem to cause issues if not filled
+                # Price - currently this only handles pricing for items (in gold/xp)
+                # Field is also used to handle pricing for gold etc.
+                # but that is replayed from capture for now
+                m05cb()  # .add_gold_price(0).add_xp_price(0),
+            ]
+            for idx, item
+            in enumerate(purchases)
+        ])
+
+
+class m0127(arrayofenumblockarrays):
+    def __init__(self):
+        super().__init__(0x0127)
+
+    # 0127 only ever has one element
+    def setpurchasedata(self, menu_section: int, purchases: Set[GamePurchase], include_id_mapping: bool):
+        return self.set([
+            [
+                m049e().set(0x0001),
+                m02ab().set(menu_section),
+                m02ac().set(0x0290),
+                m02ff().set(0x000195B5),  # Don't know if this can be 0
+                m01a3(),
+                m0122().setpurchases(purchases, include_id_mapping),
+            ]
+        ])
 
 
 class m0132(arrayofenumblockarrays):
@@ -1513,6 +1523,38 @@ class m0138(arrayofenumblockarrays):
 class m0144(arrayofenumblockarrays):
     def __init__(self):
         super().__init__(0x0144)
+
+
+class m05cb(arrayofenumblockarrays):
+    def __init__(self):
+        super().__init__(0x05cb)
+
+    def add_gold_price(self, amount):
+        self.arrays.append([
+            m05cc().set(0x0645),
+            m02ff(),
+            m035a().set(amount),
+            m041a().set(amount),
+        ])
+        return self
+
+    def add_xp_price(self, amount):
+        self.arrays.append([
+            m05cc().set(0x27f9),
+            m02ff(),
+            m035a().set(amount),
+            m041a().set(amount),
+        ])
+        return self
+
+    def add_other_price(self, currency, amount):
+        self.arrays.append([
+            m05cc().set(currency),
+            m02ff(),
+            m035a().set(amount),
+            m041a().set(amount),
+        ])
+        return self
 
 
 class m06ef(arrayofenumblockarrays):
@@ -2247,6 +2289,13 @@ class a0014(enumblockarray):
     def __init__(self):
         super().__init__(0x0014)
 
+    def setclasses(self, classes: Iterable[GameClass]):
+        self.content = [
+            m02ab().set(0x000001ed),
+            m00e9().setclasses(classes),
+        ]
+        return self
+
 
 class a0033(enumblockarray):
     def __init__(self):
@@ -2316,10 +2365,10 @@ class a003d(enumblockarray):
     def __init__(self):
         super().__init__(0x003d)
 
-        ids_to_unlock = list(UNLOCKABLE_VOICES.values()) + list(UNLOCKABLE_ITEMS.values())
+        ids_to_unlock = [item.item_id for item in class_menu_data.get_every_item() if item.unlocked]
 
         general_unlocks_arrays = []
-        for purchase_index, general_item in enumerate(ids_to_unlock, start = 10000):
+        for purchase_index, general_item in enumerate(ids_to_unlock, start=10000):
             general_unlocks_arrays.append([
                 m0263().set(purchase_index),
                 m026d().set(general_item)
@@ -2330,107 +2379,35 @@ class a003d(enumblockarray):
             m037f().set(0x00002B76),
             m0263().set(0x10123456),
             m026d().set(0x00001CFE),
-            #m05b8(),
+            # m05b8(),
             m056a(),
         ])
 
-        skin_unlocks_common_fields = [
-            m02fe(),
-            m02b2(),
-            m021f(),
-            m057d(),
-            m057e(),
-            m057f().set(0x27a4),
-            m05e2(),
-            m0684(),
-            m05dc(),
-            m04cb(),
-            m00d4(),
-            m025c(),
-            m025d(),
-            m025e(),
-            m025f().set(0xFFFFF448),
-            m0596(),
-            m0597()
-        ]
-
-        medium_skin_unlocks_fields = [
-            m0095().set(0x00ba8dc7),
-            m0363().set(0x0000069d),
-            m00a2().set('101342'),
-            m0138().set([
-                [
-                    m0263().set(0x00000001),
-                    m026d().set(0x0000209f)
-                ],
-                [
-                    m0263().set(0x00000002),
-                    m026d().set(0x000020a0)
-                ],
-                [
-                    m0263().set(0x00000003),
-                    m026d().set(0x0000221b)
-                ],
-                [
-                    m0263().set(0x00000004),
-                    m026d().set(0x0000222c)
-                ],
-                [
-                    m0263().set(0x00000005),
-                    m026d().set(0x000020e1)
-                ]
-            ])
-        ]
-
-        light_skin_unlocks_fields = [
-            m0095().set(0x00ba8dc8),
-            m0363().set(0x00000693),
-            m00a2().set('101330'),
-            m0138().set([
-                [
-                    m0263().set(0x00000001),
-                    m026d().set(0x00002090)
-                ],
-                [
-                    m0263().set(0x00000002),
-                    m026d().set(0x00002091)
-                ],
-                [
-                    m0263().set(0x00000003),
-                    m026d().set(0x000021d9)
-                ],
-                [
-                    m0263().set(0x00000004),
-                    m026d().set(0x00002086)
-                ]
-            ])
-        ]
-
-        heavy_skin_unlocks_fields = [
-            m0095().set(0x00ba8dc9),
-            m0363().set(0x0000069c),
-            m00a2().set('101341'),
-            m0138().set([
-                [
-                    m0263().set(0x00000001),
-                    m026d().set(0x000021d7)
-                ],
-                [
-                    m0263().set(0x00000002),
-                    m026d().set(0x00002228)
-                ],
-                [
-                    m0263().set(0x00000003),
-                    m026d().set(0x00002229)
-                ]
-            ])
-        ]
-
-        skin_unlocks_arrays = [
-            medium_skin_unlocks_fields + skin_unlocks_common_fields,
-            light_skin_unlocks_fields + skin_unlocks_common_fields,
-            heavy_skin_unlocks_fields + skin_unlocks_common_fields,
-        ]
+        skin_unlocks_arrays = [[
+                                   m0095().set(0x00ba8dc7 + idx),
+                                   m0363().set(game_class.class_id),
+                                   m00a2().set(str(game_class.secondary_id)),
+                                   m0138(),
+                                   m02fe(),
+                                   m02b2(),
+                                   m021f(),
+                                   m057d(),
+                                   m057e(),
+                                   m057f().set(0x27a4),
+                                   m05e2(),
+                                   m0684(),
+                                   m05dc(),
+                                   m04cb(),
+                                   m00d4(),
+                                   m025c(),
+                                   m025d(),
+                                   m025e(),
+                                   m025f().set(0xFFFFF448),
+                                   m0596(),
+                                   m0597()
+                               ]
+                               for idx, (name, game_class)
+                               in enumerate(class_menu_data.classes.items())]
 
         self.content = [
             m03e3(),
@@ -2698,6 +2675,14 @@ class a0176(enumblockarray):
 class a0177(enumblockarray):
     def __init__(self):
         super().__init__(0x0177)
+
+    def setdata(self, menu_part: int, purchase_data: Set[GamePurchase], include_id_mapping: bool):
+        return self.set([
+            m02ab().set(menu_part),
+            m0127().setpurchasedata(menu_part, purchase_data, include_id_mapping),
+            m049e().set(0x0001),
+            m0442().set(0x01),
+        ])
 
 
 class a0182(enumblockarray):
