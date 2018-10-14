@@ -102,7 +102,7 @@ class AuthenticatedState(PlayerState):
             0x01fc: originalfragment(0x235c0, 0x239dd),
             0x0200: originalfragment(0x239e5, 0x23acf),  # Name change
             0x0206: originalfragment(0x2620e, 0x28ac1),
-            # 0x0214: originalfragment(0x23ad7, 0x26206),  # Purchaseable loadouts
+            0x0214: originalfragment(0x23ad7, 0x26206),  # Purchaseable loadouts
             0x0218: originalfragment(0x28ac9, 0x2f4d7),  # Weapon name <-> ID mapping - Probably only need to construct this at some point if we wanted to add entirely new weapons
             0x021b: originalfragment(0x3d106, 0x47586),
             0x021c: originalfragment(0x6fdeb, 0x6fecf),
