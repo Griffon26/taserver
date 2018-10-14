@@ -62,6 +62,7 @@ class AuthenticatedState(PlayerState):
     def handle_menu(self, request):
         menu_part = request.findbytype(m02ab).value
         menu_fragments = {
+            0x01de: originalfragment(0x38d17, 0x3d0fe),
             0x01ed: a0177().setdata(0x01ed, class_menu_data.class_purchases, False),  # Classes
             0x01f0: a0177().setdata(0x01f0, {item
                                              for _, class_items
@@ -88,6 +89,7 @@ class AuthenticatedState(PlayerState):
                                              for item
                                              in class_menu_data.perks},
                                     False),  # Perks
+            0x01f7: originalfragment(0x5a733, 0x5a76e),
             0x01f8: originalfragment(0x5737d, 0x579af),  # Armor Upgrades
             0x01f9: a0177().setdata(0x01f9, {item
                                              for _, class_items
@@ -95,9 +97,15 @@ class AuthenticatedState(PlayerState):
                                              for item
                                              in class_items.skins},
                                     False),  # Skins
+            0x01fa: originalfragment(0x221a6, 0x22723),
+            0x01fb: originalfragment(0x2272b, 0x235b8),
+            0x01fc: originalfragment(0x235c0, 0x239dd),
             0x0200: originalfragment(0x239e5, 0x23acf),  # Name change
+            0x0206: originalfragment(0x2620e, 0x28ac1),
             # 0x0214: originalfragment(0x23ad7, 0x26206),  # Purchaseable loadouts
             0x0218: originalfragment(0x28ac9, 0x2f4d7),  # Weapon name <-> ID mapping - Probably only need to construct this at some point if we wanted to add entirely new weapons
+            0x021b: originalfragment(0x3d106, 0x47586),
+            0x021c: originalfragment(0x6fdeb, 0x6fecf),
             0x0220: a0177().setdata(0x0220, {item
                                              for item
                                              in class_menu_data.voices},
