@@ -141,7 +141,6 @@ class LoginServer:
             serverid1 = first_unused_number_above(self.game_servers.keys(), 1)
 
             game_server = msg.peer
-            game_server.ip = IPv4Address('121.200.19.91')
             game_server.serverid1 = serverid1
             game_server.serverid2 = serverid1 + 0x10000000
             game_server.login_server = self
