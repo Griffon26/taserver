@@ -491,7 +491,7 @@ _hierarchical_definitions_ootb = {
                         'Raider_Primary_PlasmaGun': 8251,
                         'Medium_Sidearm_NovaBlaster': 7394,
                         'Soldier_Secondary_Eagle': 7388,
-                        'Technician_Belt_MotionAlarm': 7388,
+                        'Technician_Belt_MotionAlarm': 7426,
                     },
                     'other': {
                         'Soldier_Primary_AssaultRifle_MKD': 8406,
@@ -847,7 +847,7 @@ _hierarchical_definitions_goty = {
                     'Raider_Belt_EMPGrenade_MKD': 8395,
                     'Technician_Belt_TCNG': 7736,
                     'Technician_Belt_TCNG_MKD': 8416,
-                    'Technician_Belt_MotionAlarm': 7388,
+                    'Technician_Belt_MotionAlarm': 7426,
                 },
             },
             'packs': {
