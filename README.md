@@ -8,7 +8,7 @@ multiplayer games.
 
 If you just want to join games on the login server hosted by me (Griffon26), then
 you don't need to download anything. All you need to do is create a Windows shortcut to
-`TribesAscend.exe` and add `-hostx=18.195.72.223` to the end of the target field, like this:
+`TribesAscend.exe` and add `-hostx=18.197.240.229` to the end of the target field, like this:
 
 ![Shortcut dialog](/docs/images/tashortcut.png?raw=true)
 
@@ -54,7 +54,9 @@ connect to the replacement login server, follow these steps:
    logged in players on the game server. Without this script running you will not be able to get
    rid of hackers that are normally "unkickable".
 
-7. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
+7. If the game server is running behind a router you'll need to forward port 7777 UDP to the game server.
+
+8. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
    root of this repository.
 
 Your server should now show up in the list for anyone connecting to the login server.
@@ -64,7 +66,7 @@ Try it out by following the instructions under [Joining games](#joining-games)
 
 Running your own login server is usually not needed. When you start a game server using
 [the instructions above](#hosting-a-dedicated-server) it will connect to the default login 
-server running on `ta.kfk4ever.com` (`18.195.72.223`). Your server will show up in the list 
+server running on `ta.kfk4ever.com` (`18.197.240.229`). Your server will show up in the list 
 for anyone else connecting to this login server.
 
 One scenario where you would want to run your own login server is when you want to play
@@ -88,12 +90,14 @@ on a LAN disconnected from the internet. In that case, follow these steps to set
 3. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
    important if you want to make votekick work against "unkickable" hackers, but can be skipped
    if that does not interest you.
+   
+4. If the login server is running behind a router you'll need to forward ports 9000 and 9001 TCP to the login server.
 
-4. Start the login server by running the `start_login_server.py` script in the root of this 
+5. Start the login server by running the `start_login_server.py` script in the root of this 
    repository (preferably from a command window so you can read the errors if it exits for 
    some reason).
 
-5. Change `host` under the `[loginserver]` section in `data/gameserverlauncher.ini` to `127.0.0.1`
+6. Change `host` under the `[loginserver]` section in `data/gameserverlauncher.ini` to `127.0.0.1`
    to have any [game server that you start](#hosting-a-dedicated-server) connect to your locally
    running login server. Note: setting `host` to `127.0.0.1` will prevent anyone else from
    connecting to your game server. For LAN play you should set `host` to the LAN IP of the computer
