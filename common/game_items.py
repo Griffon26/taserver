@@ -1019,7 +1019,7 @@ _items_to_remove: Set[str] = set()
 _items_to_lock: Set[str] = set()
 
 # Should probably be moved into a config file at some point
-do_use_goty_defs = False
+do_use_goty_defs = True
 
 _weapon_categories = _weapon_categories_goty if do_use_goty_defs else _weapon_categories_ootb
 _hierarchical_definitions = _hierarchical_definitions_goty if do_use_goty_defs else _hierarchical_definitions_ootb
