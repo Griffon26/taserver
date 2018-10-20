@@ -85,12 +85,14 @@ class GameServer(Peer):
         self.port = port
         self.description = description
         self.motd = motd
-        self.joinable = True
         self.send_pings()
 
     def set_match_time(self, seconds_remaining, counting):
         self.match_end_time = int(time.time() + seconds_remaining)
         self.match_time_counting = counting
+        # The game controller sends the match time only after it's properly up
+        # and joinable by players
+        self.joinable = True
 
     def get_time_remaining(self):
         if self.match_end_time is not None:

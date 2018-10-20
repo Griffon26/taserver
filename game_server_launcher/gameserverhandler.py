@@ -72,7 +72,8 @@ def run_game_server(game_server_config):
 
     try:
         working_dir = game_server_config['dir']
-        dll_to_inject = game_server_config.get('controller_dll', None)
+        dll_to_inject = game_server_config['controller_dll']
+        dll_config_path = game_server_config['controller_config']
     except KeyError as e:
         raise ConfigurationError("%s is a required configuration item under [gameserver]" % str(e))
 
@@ -87,7 +88,10 @@ def run_game_server(game_server_config):
 
     if not os.path.isabs(dll_to_inject):
         dll_to_inject = os.path.abspath(dll_to_inject)
+    if not os.path.isabs(dll_config_path):
+        dll_config_path = os.path.abspath(dll_config_path)
     logger.info('gameserver: Path to controller DLL is %s' % dll_to_inject)
+    logger.info('gameserver: Path to controller configuration is %s' % dll_config_path)
 
     if not os.path.exists(dll_to_inject):
         raise ConfigurationError(
@@ -100,7 +104,10 @@ def run_game_server(game_server_config):
         pass
 
     logger.info('gameserver: Starting a new TribesAscend server...')
-    process = sp.Popen([exe_path, 'server', '-Log=tagameserver.log'], cwd=working_dir)
+    args = [exe_path, 'server', '-Log=tagameserver.log']
+    if dll_config_path is not None:
+        args.extend(['-tamodsconfig', dll_config_path])
+    process = sp.Popen(args, cwd=working_dir)
     try:
         logger.info('gameserver: Started process with pid: %s' % process.pid)
 

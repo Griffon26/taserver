@@ -1,0 +1,2 @@
+-- TAMods-Server configuration can be placed in this file
+-- You can read about the configuration language at: https://www.tamods.org/docs/doc_srv_api_overview.html
