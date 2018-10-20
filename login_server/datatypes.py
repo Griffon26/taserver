@@ -2489,7 +2489,7 @@ class a003d(enumblockarray):
 
                 loadout_arrays.append([
                     m0661().set(loadout_id),
-                    m01e3().set(0x00002730 + loadout_overall_idx),
+                    m01e3().set(loadout_overall_idx),
                     m065f().set(0x00000001),
                     m02fe().set(""),
                     m0144().set(entry_array)

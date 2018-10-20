@@ -127,8 +127,6 @@ default_loadouts_goty = {
     }
 }
 
-default_loadouts = default_loadouts_goty if do_use_goty_defs else default_loadouts_ootb
-
 
 class Loadouts:
     max_loadouts = 9
@@ -168,18 +166,19 @@ class Loadouts:
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
     def __init__(self):
-        self.loadout_dict = self.defaults(default_loadouts)
+        self.loadout_dict = self.defaults()
 
-    def defaults(self, default_loadout_defs):
+    def defaults(self):
         def finish_default_loadout(default_loadout, i):
             complete_loadout = default_loadout.copy()
             complete_loadout[SLOT_LOADOUT_NAME] = 'LOADOUT %s' % string.ascii_uppercase[i]
             return complete_loadout
 
+        default_loadouts = default_loadouts_goty if do_use_goty_defs else default_loadouts_ootb
         return {game_classes[name].class_id:
                 {i: finish_default_loadout(default_loadout, i) for i in range(self.max_loadouts)}
                 for name, default_loadout
-                in default_loadout_defs.items()}
+                in default_loadouts.items()}
 
     def is_loadout_menu_item(self, value):
         return value in self.loadout_id2key
@@ -197,7 +196,7 @@ class Loadouts:
             with open(filename, 'rt') as infile:
                 self.loadout_dict = json.load(infile, object_hook=json_keys_to_int)
         except OSError:
-            self.loadout_dict = self.defaults(default_loadouts)
+            self.loadout_dict = self.defaults()
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:

@@ -85,7 +85,6 @@ class GameServer(Peer):
         self.port = port
         self.description = description
         self.motd = motd
-        # self.joinable = True
         self.send_pings()
 
     def set_match_time(self, seconds_remaining, counting):

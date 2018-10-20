@@ -72,7 +72,7 @@ def run_game_server(game_server_config):
 
     try:
         working_dir = game_server_config['dir']
-        dll_to_inject = game_server_config.get('controller_dll', None)
+        dll_to_inject = game_server_config['controller_dll']
         dll_config_path = game_server_config.get('controller_config', None)
     except KeyError as e:
         raise ConfigurationError("%s is a required configuration item under [gameserver]" % str(e))
