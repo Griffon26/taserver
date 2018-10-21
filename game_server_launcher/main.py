@@ -24,6 +24,7 @@ import gevent.queue
 import logging
 import os
 
+from common.connectionhandler import PortInUseError
 from common.logging import set_up_logging
 from .gamecontrollerhandler import handle_game_controller
 from .gameserverhandler import run_game_server, ConfigurationError
@@ -79,6 +80,17 @@ def main():
                     '\n-------------------------------------------\n' +
                     'A version incompatibility was found:' +
                     '\n'.join(incompatible_version_errors) +
+                    '\n-------------------------------------------\n'
+                )
+                restart = False
+
+            port_in_use_errors = ['  %s' % g.exception for g in finished_greenlets
+                                    if isinstance(g.exception, PortInUseError)]
+            if port_in_use_errors:
+                logger.critical('\n' +
+                    '\n-------------------------------------------\n' +
+                    'Some ports are already in use on this computer:\n' +
+                    '\n'.join(port_in_use_errors) +
                     '\n-------------------------------------------\n'
                 )
                 restart = False

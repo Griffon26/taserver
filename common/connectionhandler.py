@@ -26,6 +26,16 @@ import logging
 from common.tcpmessage import TcpMessageReader, TcpMessageWriter
 
 
+class PortInUseError(Exception):
+    def __init__(self, protocol: str, address: str, port: int):
+        self.protocol = protocol
+        self.address = address
+        self.port = port
+
+    def __str__(self):
+        return 'Port %s:%d/%s is already in use' % (self.address, self.port, self.protocol)
+
+
 class PeerConnectedMessage:
     def __init__(self, peer):
         self.peer = peer
@@ -205,7 +215,13 @@ class ConnectionHandler:
 class IncomingConnectionHandler(ConnectionHandler):
     def run(self):
         server = gevent.server.StreamServer((self.address, self.port), self._handle_and_catch)
-        server.serve_forever()
+        try:
+            server.serve_forever()
+        except OSError as e:
+            if e.errno == 10048:
+                raise PortInUseError('tcp', self.address, self.port)
+            else:
+                raise
 
 
 class OutgoingConnectionHandler(ConnectionHandler):

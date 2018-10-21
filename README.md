@@ -54,7 +54,8 @@ connect to the replacement login server, follow these steps:
    logged in players on the game server. Without this script running you will not be able to get
    rid of hackers that are normally "unkickable".
 
-7. If the game server is running behind a router you'll need to forward port 7777 UDP to the game server.
+7. If the game server is running behind a router you'll need to forward ports 7777/UDP and 
+   9002/UDP to the game server.
 
 8. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
    root of this repository.
@@ -91,7 +92,8 @@ on a LAN disconnected from the internet. In that case, follow these steps to set
    important if you want to make votekick work against "unkickable" hackers, but can be skipped
    if that does not interest you.
    
-4. If the login server is running behind a router you'll need to forward ports 9000 and 9001 TCP to the login server.
+4. If the login server is running behind a router you'll need to forward ports 9000/TCP and
+   9001/TCP to the login server.
 
 5. Start the login server by running the `start_login_server.py` script in the root of this 
    repository (preferably from a command window so you can read the errors if it exits for 

@@ -79,6 +79,16 @@ def main():
 
         logger.error('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
 
+        exceptions = ['  %s' % g.exception for g in finished_greenlets
+                                if isinstance(g.exception, Exception)]
+        if exceptions:
+            logger.critical('\n' +
+                            '\n-------------------------------------------\n' +
+                            'The following exceptions occurred:\n' +
+                            '\n'.join(exceptions) +
+                            '\n-------------------------------------------\n'
+                            )
+
         if dump_queue:
             logger.info('Giving the dump greenlet some time to finish writing to disk...')
             gevent.sleep(2)

@@ -21,6 +21,8 @@
 import gevent
 from gevent.server import DatagramServer
 
+from common.connectionhandler import PortInUseError
+
 
 class EchoServer(DatagramServer):
     def handle(self, data, address):
@@ -29,4 +31,12 @@ class EchoServer(DatagramServer):
 
 def handle_ping():
     gevent.getcurrent().name = 'pinghandler'
-    EchoServer('0.0.0.0:9002').serve_forever()
+    address = '0.0.0.0'
+    port = 9002
+    try:
+        EchoServer('%s:%d' % (address, port)).serve_forever()
+    except OSError as e:
+        if e.errno == 10048:
+            raise PortInUseError('udp', address, port)
+        else:
+            raise
