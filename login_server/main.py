@@ -42,8 +42,8 @@ def handle_dump(dumpqueue):
 
 def handle_server(server_queue, client_queues, accounts, configuration):
     server = LoginServer(server_queue, client_queues, accounts, configuration)
+    #server.trace_as('loginserver')
     server.run()
-
 
 
 def main():

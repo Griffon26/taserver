@@ -34,6 +34,7 @@ from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherAddPlayer, \
                             Login2LauncherRemovePlayer, \
                             Login2LauncherPings
+from common.statetracer import statetracer
 from .datatypes import *
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .player.state.authenticated_state import AuthenticatedState
@@ -41,6 +42,8 @@ from .player.state.authenticated_state import AuthenticatedState
 PING_UPDATE_TIME = 3
 
 
+@statetracer('ip', 'port', 'joinable', 'players', 'player_being_kicked',
+             'match_end_time', 'match_time_counting', 'be_score', 'ds_score', 'map_id')
 class GameServer(Peer):
     def __init__(self, ip):
         super().__init__()

@@ -24,9 +24,10 @@ import logging
 import random
 import string
 
+from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.firewall import reset_firewall
 from common.messages import *
-from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
+from common.statetracer import statetracer, TracingDict
 from common.versions import launcher2loginserver_protocol_version
 from .authcodehandler import AuthCodeRequester
 from .datatypes import *
@@ -37,16 +38,16 @@ from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
 from .utils import first_unused_number_above
 
-
+@statetracer('game_servers', 'players')
 class LoginServer:
     def __init__(self, server_queue, client_queues, accounts, configuration):
         self.logger = logging.getLogger(__name__)
         self.server_queue = server_queue
         self.client_queues = client_queues
 
-        self.game_servers = {}
+        self.game_servers = TracingDict()
 
-        self.players = {}
+        self.players = TracingDict()
         self.accounts = accounts
         self.message_handlers = {
             AuthCodeRequestMessage: self.handle_authcode_request_message,
