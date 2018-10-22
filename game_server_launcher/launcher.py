@@ -20,7 +20,10 @@
 
 from distutils.version import StrictVersion
 import gevent
+from ipaddress import IPv4Address
 import logging
+import socket
+import urllib.request as urlreq
 
 from common.firewall import reset_firewall, modify_firewall
 from common.messages import *
@@ -29,6 +32,18 @@ from common import versions
 from .gamecontrollerhandler import GameController
 from .loginserverhandler import LoginServer
 
+
+def _get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        ip = s.getsockname()[0]
+    except:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return IPv4Address(ip)
 
 class IncompatibleVersionError(Exception):
     pass
@@ -50,6 +65,28 @@ class Launcher:
         self.last_score_info_message = None
         self.last_match_time_message = None
         self.last_match_end_message = None
+
+        try:
+            self.external_ip = IPv4Address(urlreq.urlopen('http://icanhazip.com/').read().decode('utf8').strip())
+            self.logger.info('launcher: detected external IP: %s' % self.external_ip)
+        except Exception as e:
+            self.external_ip = None
+            self.logger.warning('Unable to detect public IP address: %s\n'
+                                'This will cause problems if the login server '
+                                'or any of your players are not on your LAN.' % e)
+        if self.external_ip:
+            assert self.external_ip.is_global
+
+        self.internal_ip = _get_local_ip()
+        if self.internal_ip == self.external_ip:
+            self.internal_ip = None
+            self.logger.warning('You appear to be running the game server on a machine '
+                                'directly connected to the internet. This is will cause '
+                                'problems if the login server or any of your players '
+                                'are on your LAN.')
+        else:
+            assert self.internal_ip.is_private
+            self.logger.info('launcher: detected internal IP: %s' % self.internal_ip)
 
         self.message_handlers = {
             PeerConnectedMessage: self.handle_peer_connected,
@@ -91,7 +128,9 @@ class Launcher:
             msg = Launcher2LoginProtocolVersionMessage(str(versions.launcher2loginserver_protocol_version))
             self.login_server.send(msg)
 
-            msg = Launcher2LoginServerInfoMessage(int(self.game_server_config['port']),
+            msg = Launcher2LoginServerInfoMessage(str(self.external_ip),
+                                                  str(self.internal_ip),
+                                                  int(self.game_server_config['port']),
                                                   self.game_server_config['description'],
                                                   self.game_server_config['motd'])
             self.login_server.send(msg)
@@ -153,12 +192,18 @@ class Launcher:
         del(self.players[msg.unique_id])
 
     def handle_add_player_message(self, msg):
-        self.logger.info('launcher: login server added a player with ip %s' % msg.ip)
-        modify_firewall('whitelist', 'add', msg.ip)
+        if msg.ip:
+            self.logger.info('launcher: login server added player 0x%08X with ip %s' % (msg.unique_id, msg.ip))
+            modify_firewall('whitelist', 'add', msg.ip)
+        else:
+            self.logger.info('launcher: login server added local player 0x%08X' % msg.unique_id)
 
     def handle_remove_player_message(self, msg):
-        self.logger.info('launcher: login server removed a player with ip %s' % msg.ip)
-        modify_firewall('whitelist', 'remove', msg.ip)
+        if msg.ip:
+            self.logger.info('launcher: login server removed player 0x%08X with ip %s' % (msg.unique_id, msg.ip))
+            modify_firewall('whitelist', 'remove', msg.ip)
+        else:
+            self.logger.info('launcher: login server removed local player 0x%08X' % msg.unique_id)
 
     def handle_pings_message(self, msg):
         if self.game_controller:

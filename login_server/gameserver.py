@@ -45,12 +45,13 @@ PING_UPDATE_TIME = 3
 @statetracer('ip', 'port', 'joinable', 'players', 'player_being_kicked',
              'match_end_time', 'match_time_counting', 'be_score', 'ds_score', 'map_id')
 class GameServer(Peer):
-    def __init__(self, ip):
+    def __init__(self, detected_ip: IPv4Address):
         super().__init__()
         self.login_server = None
         self.serverid1 = None
         self.serverid2 = None
-        self.ip = ip
+        self.detected_ip = detected_ip
+        self.address_pair = None
         self.port = None
         self.description = None
         self.motd = None
@@ -65,26 +66,30 @@ class GameServer(Peer):
         self.ds_score = 0
         self.map_id = 0
 
-        response = urllib.request.urlopen('http://tools.keycdn.com/geo.json?host=%s' % self.ip)
-        result = response.read()
-        json_result = json.loads(result)
+        if self.detected_ip.is_global:
+            response = urllib.request.urlopen('http://tools.keycdn.com/geo.json?host=%s' % self.detected_ip)
+            result = response.read()
+            json_result = json.loads(result)
 
-        continent_code_to_region = {
-            'NA': REGION_NORTH_AMERICA,
-            'EU': REGION_EUROPE,
-            'OC': REGION_OCEANIA_AUSTRALIA
-        }
-        try:
-            self.region = continent_code_to_region[json_result['data']['geo']['continent_code']]
-        except KeyError:
+            continent_code_to_region = {
+                'NA': REGION_NORTH_AMERICA,
+                'EU': REGION_EUROPE,
+                'OC': REGION_OCEANIA_AUSTRALIA
+            }
+            try:
+                self.region = continent_code_to_region[json_result['data']['geo']['continent_code']]
+            except KeyError:
+                self.region = REGION_EUROPE
+        else:
             self.region = REGION_EUROPE
 
-    def disconnect(self):
+    def disconnect(self, exception=None):
         for player in list(self.players.values()):
             player.set_state(AuthenticatedState)
-        super().disconnect()
+        super().disconnect(exception)
 
-    def set_info(self, port, description, motd):
+    def set_info(self, address_pair, port, description, motd):
+        self.address_pair = address_pair
         self.port = port
         self.description = description
         self.motd = motd
@@ -112,13 +117,17 @@ class GameServer(Peer):
         assert player.unique_id not in self.players
         self.players[player.unique_id] = player
         player.vote = None
-        msg = Login2LauncherAddPlayer(player.unique_id, player.ip)
+        player_ip = player.address_pair.get_preferred_destination(self.address_pair)
+        msg = Login2LauncherAddPlayer(player.unique_id,
+                                      str(player_ip) if player_ip is not None else '')
         self.send(msg)
 
     def remove_player(self, player):
         assert player.unique_id in self.players
         del self.players[player.unique_id]
-        msg = Login2LauncherRemovePlayer(player.unique_id, player.ip)
+        player_ip = player.address_pair.get_preferred_destination(self.address_pair)
+        msg = Login2LauncherRemovePlayer(player.unique_id,
+                                         str(player_ip) if player_ip is not None else '')
         self.send(msg)
 
     def send_all_players(self, data):
@@ -194,7 +203,7 @@ class GameServer(Peer):
                 self._do_kick(True)
 
     def _tally_votes(self):
-        eligible_voters_votes = {p.ip: p.vote for p in self.players.values()}
+        eligible_voters_votes = {p.detected_ip: p.vote for p in self.players.values()}
         votes = {v for v in eligible_voters_votes.values() if v is not None}
         yes_votes = [v for v in votes if v]
 
@@ -230,10 +239,13 @@ class GameServer(Peer):
             for msg in [a00b0(), a0035().setmainmenu(), a006f()]:
                 player_to_kick.send(msg)
             player_to_kick.set_state(UnauthenticatedState)
-            modify_firewall('blacklist', 'add', player_to_kick.ip)
+
+            # Because this is a firewall rule on the login server, it has to be the source IP of the player's
+            # incoming connection and not always the external or always the internal address in address_pair.
+            modify_firewall('blacklist', 'add', player_to_kick.detected_ip)
 
             def remove_blacklist_rule():
-                modify_firewall('blacklist', 'remove', player_to_kick.ip)
+                modify_firewall('blacklist', 'remove', player_to_kick.detected_ip)
 
             self.login_server.pending_callbacks.add(self.login_server, 8 * 3600, remove_blacklist_rule)
 
