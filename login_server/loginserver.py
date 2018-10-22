@@ -20,6 +20,7 @@
 
 from distutils.version import StrictVersion
 import gevent
+from ipaddress import IPv4Address
 import logging
 import random
 import string
@@ -36,7 +37,7 @@ from .pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
 from .player.player import Player
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
-from .utils import first_unused_number_above
+from .utils import first_unused_number_above, IPAddressPair
 
 @statetracer('game_servers', 'players')
 class LoginServer:
@@ -147,7 +148,7 @@ class LoginServer:
             game_server.login_server = self
             self.game_servers[serverid1] = game_server
 
-            self.logger.info('server: added game server %s (%s)' % (serverid1, game_server.ip))
+            self.logger.info('server: added game server %s (%s)' % (serverid1, game_server.detected_ip))
         elif isinstance(msg.peer, AuthCodeRequester):
             pass
         else:
@@ -164,7 +165,7 @@ class LoginServer:
         elif isinstance(msg.peer, GameServer):
             game_server = msg.peer
             self.logger.info('server: removed game server %s (%s:%s)' % (game_server.serverid1,
-                                                                         game_server.ip,
+                                                                         game_server.detected_ip,
                                                                          game_server.port))
             game_server.disconnect()
             self.pending_callbacks.remove_receiver(game_server)
@@ -196,7 +197,7 @@ class LoginServer:
                                 "not compatible with this login server's protocol version %s. "
                                 "Disconnecting game server..." %
                                 (game_server.serverid1,
-                                 game_server.ip,
+                                 game_server.detected_ip,
                                  launcher_version,
                                  my_version))
             msg.peer.send(Login2LauncherProtocolVersionMessage(str(my_version)))
@@ -204,9 +205,13 @@ class LoginServer:
 
     def handle_server_info_message(self, msg):
         game_server = msg.peer
-        game_server.set_info(msg.port, msg.description, msg.motd)
+        external_ip = IPv4Address(msg.external_ip) if msg.external_ip else None
+        internal_ip = IPv4Address(msg.internal_ip) if msg.internal_ip else None
+        address_pair = IPAddressPair(external_ip, internal_ip)
+
+        game_server.set_info(address_pair, msg.port, msg.description, msg.motd)
         self.logger.info('server: server info received for server %s (%s:%s)' % (game_server.serverid1,
-                                                                                 game_server.ip,
+                                                                                 game_server.detected_ip,
                                                                                  game_server.port))
 
     def handle_map_info_message(self, msg):

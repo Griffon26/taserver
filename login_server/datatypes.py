@@ -1338,7 +1338,7 @@ class m00e9(arrayofenumblockarrays):
     def __init__(self):
         super().__init__(0x00e9)
 
-    def setservers(self, servers):
+    def setservers(self, servers, player_address):
         self.arrays = []
         for server in servers:
             if not server.joinable:
@@ -1381,7 +1381,8 @@ class m00e9(arrayofenumblockarrays):
                 m02f4().set(server.get_time_remaining()),
                 m0035().set(server.be_score),
                 m0197().set(server.ds_score),
-                m0246().set(server.ip, PING_PORT)  # The value doesn't matter, the client uses the address in a0035
+                m0246().set(server.address_pair.get_preferred_destination(player_address), PING_PORT)
+                                                # The value doesn't matter, the client uses the address in a0035
             ])
         return self
 
@@ -2329,7 +2330,7 @@ class a0035(enumblockarray):
         self.findbytype(m00a3).set('TribesGame.TrEntryGame')
         return self
 
-    def setserverdata(self, server):
+    def setserverdata(self, server, player_address):
         self.content.extend([
             m02c7().set(0x00000000),
             m06ee(),
@@ -2340,8 +2341,8 @@ class a0035(enumblockarray):
             m0363(),
             m0615(),
             m06ef(),
-            m024f().set(server.ip, server.port),
-            m0246().set(server.ip, PING_PORT),
+            m024f().set(server.address_pair.get_preferred_destination(player_address), server.port),
+            m0246().set(server.address_pair.get_preferred_destination(player_address), PING_PORT),
             m0448().set(server.region),
             m02b5(),
             m03e0(),
@@ -2622,8 +2623,8 @@ class a00d5(enumblockarray):
             m0347().set(0x2f6b9f)
         ]
 
-    def setservers(self, servers):
-        self.findbytype(m00e9).setservers(servers)
+    def setservers(self, servers, player_address):
+        self.findbytype(m00e9).setservers(servers, player_address)
         return self
 
 

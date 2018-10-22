@@ -18,8 +18,11 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from ipaddress import IPv4Address
+
 from .friends import Friends
 from .loadouts import Loadouts
+from ..utils import IPAddressPair
 from common.connectionhandler import Peer
 from common.statetracer import statetracer
 
@@ -37,7 +40,7 @@ class Player(Peer):
         self.display_name = None
         self.password_hash = None
         self.tag = ''
-        self.ip = address[0]
+        self.detected_ip = IPv4Address(address[0])
         self.port = address[1]
         self.registered = False
         self.last_received_seq = 0
@@ -49,6 +52,12 @@ class Player(Peer):
         self.friends = Friends()
         self.team = None
         self.pings = {}
+
+        if self.detected_ip.is_global:
+            self.address_pair = IPAddressPair(self.detected_ip, None)
+        else:
+            assert self.detected_ip.is_private
+            self.address_pair = IPAddressPair(None, self.detected_ip)
 
     def set_state(self, state_class, *args, **kwargs):
         assert self.unique_id is not None
@@ -79,4 +88,4 @@ class Player(Peer):
 
     def __repr__(self):
         return '%s(%s, %s:%s, 0x%08X:"%s")' % (self.task_name, self.task_id,
-                                               self.ip, self.port, self.unique_id, self.display_name)
+                                               self.address_pair, self.port, self.unique_id, self.display_name)
