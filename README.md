@@ -8,7 +8,8 @@ multiplayer games.
 
 If you just want to join games on the login server hosted by me (Griffon26), then
 you don't need to download anything. All you need to do is create a Windows shortcut to
-`TribesAscend.exe` and add `-hostx=18.197.240.229` to the end of the target field, like this:
+`TribesAscend.exe` and add `-hostx=18.197.240.229` to the end of the target field.
+If there are quotes around the executable then add the `-hostx` part after the closing quotes.
 
 ![Shortcut dialog](/docs/images/tashortcut.png?raw=true)
 
