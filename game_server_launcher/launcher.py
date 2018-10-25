@@ -67,7 +67,7 @@ class Launcher:
         self.last_match_end_message = None
 
         try:
-            self.external_ip = IPv4Address(urlreq.urlopen('http://icanhazip.com/').read().decode('utf8').strip())
+            self.external_ip = IPv4Address(urlreq.urlopen('http://ipv4.icanhazip.com/').read().decode('utf8').strip())
             self.logger.info('launcher: detected external IP: %s' % self.external_ip)
         except Exception as e:
             self.external_ip = None
@@ -128,8 +128,8 @@ class Launcher:
             msg = Launcher2LoginProtocolVersionMessage(str(versions.launcher2loginserver_protocol_version))
             self.login_server.send(msg)
 
-            msg = Launcher2LoginServerInfoMessage(str(self.external_ip),
-                                                  str(self.internal_ip),
+            msg = Launcher2LoginServerInfoMessage(str(self.external_ip) if self.external_ip else '',
+                                                  str(self.internal_ip) if self.internal_ip else '',
                                                   int(self.game_server_config['port']),
                                                   self.game_server_config['description'],
                                                   self.game_server_config['motd'])
