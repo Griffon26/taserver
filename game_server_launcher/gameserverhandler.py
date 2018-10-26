@@ -62,6 +62,7 @@ def get_my_documents_folder():
         raise RuntimeError('For some reason requesting the location of the Documents folder failed')
     return buf.value
 
+
 def run_game_server(game_server_config):
     log_filename = os.path.join(get_my_documents_folder(),
                                 'My Games', 'Tribes Ascend',
