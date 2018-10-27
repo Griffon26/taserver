@@ -24,10 +24,11 @@ from .friends import Friends
 from .loadouts import Loadouts
 from ..utils import IPAddressPair
 from common.connectionhandler import Peer
-from common.statetracer import statetracer
+from common.statetracer import statetracer, RefOnly
 
 
-@statetracer('unique_id', 'login_name', 'display_name', 'tag', 'detected_ip', 'port', 'registered', 'vote', 'team')
+@statetracer('unique_id', 'login_name', 'display_name', 'tag', 'detected_ip', 'port', 'registered',
+             RefOnly('game_server'), 'vote', 'team')
 class Player(Peer):
 
     loadout_file_path = 'data/players/%s_loadouts.json'

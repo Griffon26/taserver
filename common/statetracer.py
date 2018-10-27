@@ -23,13 +23,21 @@ from datetime import datetime
 def _make_timestamp():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f')[:-3]
 
+class RefOnly:
+    def __init__(self, name):
+        self.name = name
+
+    def __str__(self):
+        return self.name
+
 class StateTracer:
     def __init__(self, obj, members_to_trace):
         #print('Creating %s with obj %s' % (self, obj))
         self.prefix = ''
         self.obj = obj
         self.enabled = False
-        self.members_to_trace = members_to_trace
+        self.members_to_trace = [str(name) for name in members_to_trace]
+        self.refonly_members = set(str(name) for name in members_to_trace if isinstance(name, RefOnly))
 
     def add_to_trace(self, member_name):
         #print('add_to_trace: %s' % member_name)
@@ -45,13 +53,16 @@ class StateTracer:
         #print('member_changed: %s from %s to %s (trace is %s, members to trace: %s)' % (member_name, old_value, new_value, self.enabled, self.members_to_trace))
         assert member_name in self.members_to_trace
         if self.enabled:
-            if hasattr(old_value, '_state_tracer'):
-                old_value._state_tracer._stop()
+            if member_name not in self.refonly_members:
+                if hasattr(old_value, '_state_tracer'):
+                    old_value._state_tracer._stop()
 
-            if hasattr(new_value, '_state_tracer'):
-                #print('calling _start on new_value %s\'s state_tracer %s' % (new_value, new_value._state_tracer))
-                #print('Starting trace and passing "%s.%s"' % (self.prefix, member_name))
-                new_value._state_tracer._start('%s.%s' % (self.prefix, member_name))
+                if hasattr(new_value, '_state_tracer'):
+                    #print('calling _start on new_value %s\'s state_tracer %s' % (new_value, new_value._state_tracer))
+                    #print('Starting trace and passing "%s.%s"' % (self.prefix, member_name))
+                    new_value._state_tracer._start('%s.%s' % (self.prefix, member_name))
+                else:
+                    self._trace(member_name, new_value)
             else:
                 self._trace(member_name, new_value)
 
@@ -64,7 +75,7 @@ class StateTracer:
         for member_name in self.members_to_trace:
             member_to_start = getattr(self.obj, member_name)
             #print('calling _start on %s\'s member %s\'s tracer %s' % (self.obj, member_to_start, member_to_start._state_tracer))
-            if hasattr(member_to_start, '_state_tracer'):
+            if hasattr(member_to_start, '_state_tracer') and member_name not in self.refonly_members:
                 #print('Starting trace2 and passing "%s:%s"' % (prefix, member_name))
                 member_to_start._state_tracer._start('%s.%s' % (prefix, member_name))
             else:
@@ -78,16 +89,17 @@ class StateTracer:
 
         for member_name in self.members_to_trace:
             member_to_stop = getattr(self.obj, member_name)
-            if hasattr(member_to_stop, '_state_tracer'):
+            if hasattr(member_to_stop, '_state_tracer') and member_name not in self.refonly_members:
                 member_to_stop._state_tracer._stop()
 
 
 class DictStateTracer:
-    def __init__(self, obj):
+    def __init__(self, obj, refsonly):
         #print('Creating %s with obj %s' % (self, obj))
         self.prefix = ''
         self.obj = obj
         self.enabled = False
+        self.refsonly = refsonly
 
     def _trace(self, member_name, value):
         print('%s - STATETRACE - %s[%s] = %s' % (_make_timestamp(), self.prefix, member_name, value))
@@ -98,12 +110,15 @@ class DictStateTracer:
     def member_changed(self, member_name, old_value, new_value):
         #print('member_changed: %s from %s to %s' % (member_name, old_value, new_value))
         if self.enabled:
-            if hasattr(old_value, '_state_tracer'):
-                old_value._state_tracer._stop()
+            if not self.refsonly:
+                if hasattr(old_value, '_state_tracer'):
+                    old_value._state_tracer._stop()
 
-            if hasattr(new_value, '_state_tracer'):
-                #print('calling _start on new_value %s\'s state_tracer %s' % (new_value, new_value._state_tracer))
-                new_value._state_tracer._start('%s[%s]' % (self.prefix, member_name))
+                if hasattr(new_value, '_state_tracer'):
+                    #print('calling _start on new_value %s\'s state_tracer %s' % (new_value, new_value._state_tracer))
+                    new_value._state_tracer._start('%s[%s]' % (self.prefix, member_name))
+                else:
+                    self._trace(member_name, new_value)
             else:
                 self._trace(member_name, new_value)
 
@@ -115,7 +130,7 @@ class DictStateTracer:
     def member_removed(self, member_name, old_value):
         #print('member_changed: %s from %s to %s' % (member_name, old_value, new_value))
         if self.enabled:
-            if hasattr(old_value, '_state_tracer'):
+            if hasattr(old_value, '_state_tracer') and not self.refsonly:
                 old_value._state_tracer._stop()
 
             self._trace_event(member_name, 'removed')
@@ -128,7 +143,7 @@ class DictStateTracer:
 
         for member_name, member_to_start in self.obj.items():
             #print('calling _start on %s\'s member %s\'s tracer %s' % (self.obj, member_to_start, member_to_start._state_tracer))
-            if hasattr(member_to_start, '_state_tracer'):
+            if hasattr(member_to_start, '_state_tracer') and not self.refsonly:
                 member_to_start._state_tracer._start('%s.%s' % (prefix, member_to_start))
             else:
                 self._trace(member_name, member_to_start)
@@ -140,13 +155,18 @@ class DictStateTracer:
         self.prefix = None
 
         for member_name, member_to_stop in self.obj.items():
-            if hasattr(member_to_stop, '_state_tracer'):
+            if hasattr(member_to_stop, '_state_tracer') and not self.refsonly:
                 member_to_stop._state_tracer._stop()
 
 class TracingDict(dict):
 
     def __init__(self, *args, **kwargs):
-        self._state_tracer = DictStateTracer(self)
+        if 'refsonly' in kwargs:
+            refsonly = kwargs['refsonly']
+            del kwargs['refsonly']
+        else:
+            refsonly = False
+        self._state_tracer = DictStateTracer(self, refsonly)
         super().__init__(*args, **kwargs)
 
     def __setitem__(self, key, new_value):
@@ -190,7 +210,7 @@ def setup_properties(cls, members):
 
 def statetracer(*member_name_list):
     def real_decorator(cls):
-        setup_properties(cls, member_name_list)
+        setup_properties(cls, [str(name) for name in member_name_list])
 
         cls._original_init = getattr(cls, '__init__', lambda self : None)
 
@@ -221,6 +241,9 @@ class ExampleClass:
         self.member1 = None
         self.member2 = None
 
+    def __str__(self):
+        return 'ExampleClass(member1 = %s, member2 = %s)' % (self.member1, self.member2)
+
 
 if __name__ == '__main__':
     print('Creating example class instance...')
@@ -236,7 +259,6 @@ if __name__ == '__main__':
     subobj.member1 = 'membervalue1'
     print('Assigning "{1: 2, 5: 6}" to member2 of second instance...')
     subobj.member2 = TracingDict({1: 2, 5: 6})
-    #subobj.member2 = {1: 2, 5: 6}
 
     print('Assigning second instance to member1 of first instance...')
     obj.member1 = subobj

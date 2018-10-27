@@ -34,7 +34,7 @@ from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherAddPlayer, \
                             Login2LauncherRemovePlayer, \
                             Login2LauncherPings
-from common.statetracer import statetracer
+from common.statetracer import statetracer, TracingDict
 from .datatypes import *
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .player.state.authenticated_state import AuthenticatedState
@@ -42,7 +42,7 @@ from .player.state.authenticated_state import AuthenticatedState
 PING_UPDATE_TIME = 3
 
 
-@statetracer('detected_ip', 'address_pair', 'port', 'joinable', 'players', 'player_being_kicked',
+@statetracer('serverid1', 'detected_ip', 'address_pair', 'port', 'joinable', 'players', 'player_being_kicked',
              'match_end_time', 'match_time_counting', 'be_score', 'ds_score', 'map_id')
 class GameServer(Peer):
     def __init__(self, detected_ip: IPv4Address):
@@ -58,7 +58,7 @@ class GameServer(Peer):
         self.region = None
 
         self.joinable = False
-        self.players = {}
+        self.players = TracingDict(refsonly = True)
         self.player_being_kicked = None
         self.match_end_time = None
         self.match_time_counting = False
@@ -82,6 +82,9 @@ class GameServer(Peer):
                 self.region = REGION_EUROPE
         else:
             self.region = REGION_EUROPE
+
+    def __str__(self):
+        return 'GameServer(%d)' % self.serverid1
 
     def disconnect(self, exception=None):
         for player in list(self.players.values()):
