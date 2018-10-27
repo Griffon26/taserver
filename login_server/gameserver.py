@@ -42,7 +42,7 @@ from .player.state.authenticated_state import AuthenticatedState
 PING_UPDATE_TIME = 3
 
 
-@statetracer('ip', 'port', 'joinable', 'players', 'player_being_kicked',
+@statetracer('detected_ip', 'address_pair', 'port', 'joinable', 'players', 'player_being_kicked',
              'match_end_time', 'match_time_counting', 'be_score', 'ds_score', 'map_id')
 class GameServer(Peer):
     def __init__(self, detected_ip: IPv4Address):

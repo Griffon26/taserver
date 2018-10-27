@@ -27,7 +27,7 @@ from common.connectionhandler import Peer
 from common.statetracer import statetracer
 
 
-@statetracer('unique_id', 'login_name', 'display_name', 'tag', 'ip', 'port', 'registered', 'vote', 'team')
+@statetracer('unique_id', 'login_name', 'display_name', 'tag', 'detected_ip', 'port', 'registered', 'vote', 'team')
 class Player(Peer):
 
     loadout_file_path = 'data/players/%s_loadouts.json'

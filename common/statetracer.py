@@ -197,6 +197,10 @@ def statetracer(*member_name_list):
         def new_init(self, *args, **kwargs):
             self._state_tracer = StateTracer(self, member_name_list)
             self._original_init(*args, **kwargs)
+            for member_name in member_name_list:
+                assert hasattr(self, '_%s' % member_name), \
+                       'Member \'%s\' mentioned in the statetracer decorator ' \
+                       'was not created in the __init__ of class %s' % (member_name, type(self).__name__)
 
         cls.__init__ = new_init
 
