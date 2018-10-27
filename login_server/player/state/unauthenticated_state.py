@@ -24,6 +24,22 @@ from ..state.player_state import PlayerState, handles
 from ...datatypes import *
 
 
+def choose_display_name(login_name, registered, names_in_use, max_name_length):
+
+    if registered:
+        display_name = login_name[:max_name_length]
+    else:
+        prefix = 'unvrf-'
+        display_name = prefix + login_name[:max_name_length - len(prefix)]
+        index = 2
+        while display_name in names_in_use:
+            display_name = 'unv%02d-%s' % (index, login_name[:max_name_length - len(prefix)])
+            index += 1
+            assert index < 100
+
+    return display_name
+
+
 class UnauthenticatedState(PlayerState):
     @handles(packet=a01bc)
     def handle_a01bc(self, request):
@@ -43,14 +59,19 @@ class UnauthenticatedState(PlayerState):
             self.player.login_name = request.findbytype(m0494).value
             self.player.password_hash = request.findbytype(m0056).content
             accounts = self.player.login_server.accounts
-            if (self.player.login_name in accounts and
+            if (len(self.player.login_name) <= self.player.max_name_length and
+                self.player.login_name in accounts and
                 self.player.password_hash == accounts[self.player.login_name].password_hash):
                 self.player.login_server.change_player_unique_id(self.player.unique_id,
                                                                  accounts[self.player.login_name].unique_id)
                 self.player.registered = True
 
-            name_prefix = '' if self.player.registered else 'unverif-'
-            self.player.display_name = name_prefix + self.player.login_name
+            names_in_use = [p.display_name for p in self.player.login_server.players.values()
+                            if p.display_name is not None]
+            self.player.display_name = choose_display_name(self.player.login_name,
+                                                           self.player.registered,
+                                                           names_in_use,
+                                                           self.player.max_name_length)
             self.player.load()
             self.player.send([
                 a003d().set_player(self.player.unique_id, self.player.display_name, '', self.player.loadouts),

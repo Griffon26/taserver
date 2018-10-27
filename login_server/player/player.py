@@ -31,6 +31,8 @@ from common.statetracer import statetracer, RefOnly
              RefOnly('game_server'), 'vote', 'team')
 class Player(Peer):
 
+    max_name_length = 15
+
     loadout_file_path = 'data/players/%s_loadouts.json'
     friends_file_path = 'data/players/%s_friends.json'
 

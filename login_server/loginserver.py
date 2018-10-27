@@ -119,12 +119,18 @@ class LoginServer:
     def handle_authcode_request_message(self, msg):
         authcode_requester = msg.peer
 
-        availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
-        authcode = ''.join([random.choice(availablechars) for i in range(8)])
-        self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
-        self.accounts.add_account(msg.login_name, authcode)
-        self.accounts.save()
-        authcode_requester.send(authcode)
+        if len(msg.login_name) > Player.max_name_length:
+            self.logger.warning('server: authcode requested for a user name (%s) that is longer than '
+                                '%d characters. Refused.' % (msg.login_name, Player.max_name_length))
+            authcode_requester.send('Error: account names are not allowed to be longer than %d characters.' %
+                                    Player.max_name_length)
+        else:
+            availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
+            authcode = ''.join([random.choice(availablechars) for i in range(8)])
+            self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
+            self.accounts.add_account(msg.login_name, authcode)
+            self.accounts.save()
+            authcode_requester.send(authcode)
 
     def handle_execute_callback_message(self, msg):
         callback_id = msg.callback_id
