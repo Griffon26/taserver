@@ -235,10 +235,14 @@ class OutgoingConnectionHandler(ConnectionHandler):
                         sock.connect((self.address, self.port))
                         self._handle(sock, (str(self.address), self.port))
                         break
-                except ConnectionRefusedError:
+                except (ConnectionRefusedError, TimeoutError) as e:
                     if retry_time is not None:
-                        self.logger.info('%s(%s): remote end is refusing connections. Reconnecting in %d seconds...' %
-                                         (self.task_name, task_id, retry_time))
+                        if isinstance(e, ConnectionRefusedError):
+                            reason = 'remote end is refusing connections'
+                        else:
+                            reason = 'connection timed out'
+                        self.logger.info('%s(%s): %s. Reconnecting in %d seconds...' %
+                                         (self.task_name, task_id, reason, retry_time))
                         gevent.sleep(retry_time)
                     else:
                         break
