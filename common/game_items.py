@@ -19,6 +19,7 @@
 #
 
 from typing import NamedTuple, Dict, Set, List, Tuple, Generator
+import itertools
 
 
 class GamePurchase:
@@ -335,17 +336,20 @@ _weapon_categories_goty: Dict[str, Dict[str, int]] = {
     'light': {
         'impact': 11126,
         'timed': 11142,
-        'speciality': 11128,
+        'speciality': 11128,  # Dummy tertiary
+        'bullet': 11127,  # Used for perks
     },
     'medium': {
         'impact': 11131,
         'timed': 11133,
-        'speciality': 11135,
+        'speciality': 11135,  # Dummy tertiary
+        'bullet': 11132,  # Used for perks
     },
     'heavy': {
         'impact': 11136,
         'timed': 11139,
-        'speciality': 11141,
+        'speciality': 11141,  # Dummy tertiary
+        'bullet': 11137,  # Used for perks
     },
 }
 
@@ -750,7 +754,7 @@ _hierarchical_definitions_goty = {
                     'other': {
                         'Technician_Secondary_RepairToolSD_MKD': 8405,
                     },
-                }
+                },
             },
             'belt': {
                 'ootb': {},
@@ -761,7 +765,7 @@ _hierarchical_definitions_goty = {
                     'Infiltrator_Belt_StickyGrenade': 7402,
                     'Infiltrator_Belt_StickyGrenade_MKD': 8398,
                     'Infiltrator_Belt_PrismMines': 7440,
-                    'Infiltrator_Belt_NinjaSmoke': 8248,
+                    # 'Infiltrator_Belt_NinjaSmoke': 8248,
                     'Sentinel_Belt_GrenadeT5': 7914,
                     'Sentinel_Belt_Claymore': 7421,
                     'Sentinel_Belt_ArmoredClaymore': 8240,
@@ -980,8 +984,42 @@ _hierarchical_definitions_goty = {
             'Perk Lightweight': 8646,
         },
     },
+    'perkA': {
+        'ootb': {},
+        'other': {
+            'No Perk A': 0,
+            'Perk Safe Fall': 8162,
+            'Perk Safety Third': 8163,
+            'Perk Reach': 7916,
+            'Perk Wheel Deal': 8169,
+            'Perk Bounty Hunter': 8153,
+            'Perk Close Combat': 8156,
+            'Perk Stealthy': 8164,
+            'Perk Super Capacitor': 8165,
+            'Perk Looter': 8158,
+            'Perk Rage': 8232,
+        },
+    },
+    'perkB': {
+        'ootb': {},
+        'other': {
+            'No Perk B': 0,
+            'Perk Survivalist': 8167,
+            'Perk Egocentric': 7917,
+            'Perk Pilot': 8159,
+            'Perk Super Heavy': 8166,
+            'Perk Ultra Capacitor': 8168,
+            'Perk Quickdraw': 8161,
+            'Perk Mechanic': 8170,
+            'Perk Determination': 8157,
+            'Perk Potential Energy': 8160,
+            'Perk Sonic Punch': 8231,
+            'Perk Lightweight': 8646,
+        },
+    },
     'voices': {
-        'ootb': {
+        'ootb': {},
+        'other': {
             'Voice Light': 8666,
             'Voice Medium': 8667,
             'Voice Heavy': 8668,
@@ -1004,13 +1042,26 @@ _hierarchical_definitions_goty = {
             'Voice T2 Derm03': 8726,
             'Voice Total Biscuit': 8747,
             'Voice Stowaway': 8749,
-        },
-        'other': {
             'Voice Basement Champion': 8750,  # Unreleased voice
         },
 
     }
 }
+
+
+def _encode_perks(perk_a: int, perk_b: int):
+    return (perk_a << 16) | perk_b
+
+
+# In GOTY mode, add all encoded perk combinations as "bullet" weapons
+for c in game_classes.keys():
+    _hierarchical_definitions_goty['classes'][c]['weapons']['bullet'] = {}
+    _hierarchical_definitions_goty['classes'][c]['weapons']['bullet']['other'] = {
+        str(_encode_perks(perk_a, perk_b)): _encode_perks(perk_a, perk_b)
+        for (perk_a, perk_b)
+        in list(itertools.product(*[_hierarchical_definitions_goty['perkA']['other'].values(),
+                                    _hierarchical_definitions_goty['perkB']['other'].values()]))
+    }
 
 # Definition of items that should not appear in the menu at all
 _items_to_remove: Set[str] = set()
