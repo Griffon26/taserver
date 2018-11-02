@@ -28,6 +28,7 @@ import urllib.request as urlreq
 from common.firewall import reset_firewall, modify_firewall
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
+from common.statetracer import statetracer, TracingDict
 from common import versions
 from .gamecontrollerhandler import GameController
 from .loginserverhandler import LoginServer
@@ -49,6 +50,7 @@ class IncompatibleVersionError(Exception):
     pass
 
 
+@statetracer('players')
 class Launcher:
     def __init__(self, game_server_config, incoming_queue):
         gevent.getcurrent().name = 'launcher'
@@ -56,7 +58,7 @@ class Launcher:
         self.logger = logging.getLogger(__name__)
         self.game_server_config = game_server_config
         self.incoming_queue = incoming_queue
-        self.players = {}
+        self.players = TracingDict()
         self.game_controller = None
         self.login_server = None
 
@@ -234,7 +236,8 @@ class Launcher:
         self.logger.info('launcher: received team info from game controller')
 
         for player_id, team_id in msg.player_to_team_id.items():
-            assert int(player_id) in self.players
+            if int(player_id) not in self.players:
+                return
 
         msg = Launcher2LoginTeamInfoMessage(msg.player_to_team_id)
         if self.login_server:
@@ -292,4 +295,5 @@ class Launcher:
 
 def handle_launcher(game_server_config, incoming_queue):
     launcher = Launcher(game_server_config, incoming_queue)
+    #launcher.trace_as('launcher')
     launcher.run()
