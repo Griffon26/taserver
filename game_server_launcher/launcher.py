@@ -25,6 +25,7 @@ import logging
 import socket
 import urllib.request as urlreq
 
+from common.errors import FatalError
 from common.firewall import reset_firewall, modify_firewall
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
@@ -46,8 +47,10 @@ def _get_local_ip():
         s.close()
     return IPv4Address(ip)
 
-class IncompatibleVersionError(Exception):
-    pass
+
+class IncompatibleVersionError(FatalError):
+    def __init__(self, message):
+        super().__init__('A version incompatibility was found: %s' % message)
 
 
 @statetracer('players')

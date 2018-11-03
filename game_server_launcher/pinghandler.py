@@ -21,7 +21,7 @@
 import gevent
 from gevent.server import DatagramServer
 
-from common.connectionhandler import PortInUseError
+from common.errors import PortInUseError
 
 
 class EchoServer(DatagramServer):

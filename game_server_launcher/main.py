@@ -24,10 +24,10 @@ import gevent.queue
 import logging
 import os
 
-from common.connectionhandler import PortInUseError
+from common.errors import FatalError
 from common.logging import set_up_logging
 from .gamecontrollerhandler import handle_game_controller
-from .gameserverhandler import run_game_server, ConfigurationError
+from .gameserverhandler import run_game_server
 from .launcher import handle_launcher, IncompatibleVersionError
 from .loginserverhandler import handle_login_server
 from .pinghandler import handle_ping
@@ -62,35 +62,13 @@ def main():
 
             logger.warning('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
 
-            configuration_errors = ['  %s' % g.exception for g in finished_greenlets
-                                    if isinstance(g.exception, ConfigurationError)]
-            if configuration_errors:
+            fatal_errors = ['  %s' % g.exception for g in finished_greenlets
+                            if isinstance(g.exception, FatalError)]
+            if fatal_errors:
                 logger.critical('\n' +
                     '\n-------------------------------------------\n' +
-                    'Found errors in configuration files:' +
-                    '\n'.join(configuration_errors) +
-                    '\n-------------------------------------------\n'
-                )
-                restart = False
-
-            incompatible_version_errors = ['  %s' % g.exception for g in finished_greenlets
-                                           if isinstance(g.exception, IncompatibleVersionError)]
-            if incompatible_version_errors:
-                logger.critical('\n' +
-                    '\n-------------------------------------------\n' +
-                    'A version incompatibility was found:' +
-                    '\n'.join(incompatible_version_errors) +
-                    '\n-------------------------------------------\n'
-                )
-                restart = False
-
-            port_in_use_errors = ['  %s' % g.exception for g in finished_greenlets
-                                    if isinstance(g.exception, PortInUseError)]
-            if port_in_use_errors:
-                logger.critical('\n' +
-                    '\n-------------------------------------------\n' +
-                    'Some ports are already in use on this computer:\n' +
-                    '\n'.join(port_in_use_errors) +
+                    'The following fatal errors occurred:\n' +
+                    '\n'.join(fatal_errors) +
                     '\n-------------------------------------------\n'
                 )
                 restart = False
