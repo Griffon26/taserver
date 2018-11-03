@@ -316,6 +316,11 @@ class enumblockarray():
 # onebyte
 # ------------------------------------------------------------
 
+class m0001(onebyte):
+    def __init__(self):
+        super().__init__(0x0001, 0x00)
+
+
 class m01fa(onebyte):
     def __init__(self):
         super().__init__(0x01fa, 0x00)
