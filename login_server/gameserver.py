@@ -42,14 +42,14 @@ from .player.state.authenticated_state import AuthenticatedState
 PING_UPDATE_TIME = 3
 
 
-@statetracer('serverid1', 'detected_ip', 'address_pair', 'port', 'joinable', 'players', 'player_being_kicked',
+@statetracer('server_id', 'detected_ip', 'address_pair', 'port', 'joinable', 'players', 'player_being_kicked',
              'match_end_time', 'match_time_counting', 'be_score', 'ds_score', 'map_id')
 class GameServer(Peer):
     def __init__(self, detected_ip: IPv4Address):
         super().__init__()
         self.login_server = None
-        self.serverid1 = None
-        self.serverid2 = None
+        self.server_id = None
+        self.match_id = None
         self.detected_ip = detected_ip
         self.address_pair = None
         self.port = None
@@ -84,7 +84,7 @@ class GameServer(Peer):
             self.region = REGION_EUROPE
 
     def __str__(self):
-        return 'GameServer(%d)' % self.serverid1
+        return 'GameServer(%d)' % self.server_id
 
     def disconnect(self, exception=None):
         for player in list(self.players.values()):
@@ -163,10 +163,10 @@ class GameServer(Peer):
             # Start a new vote
             reply = a018c()
             reply.content = [
-                m02c4().set(self.serverid2),
+                m02c4().set(self.match_id),
                 m034a().set(kicker.display_name),
                 m0348().set(kicker.unique_id),
-                m02fc().set(0x0001942F),
+                m02fc().set(STDMSG_VOTE_BY_X_KICK_PLAYER_X_YES_NO),
                 m0442(),
                 m0704().set(kickee.unique_id),
                 m0705().set(kickee.display_name)
@@ -223,13 +223,13 @@ class GameServer(Peer):
 
         if votekick_passed:
             reply.content.extend([
-                m02fc().set(0x00019430),
+                m02fc().set(STDMSG_PLAYER_X_HAS_BEEN_KICKED),
                 m0442().set(1)
             ])
 
         else:
             reply.content.extend([
-                m02fc().set(0x00019431),
+                m02fc().set(STDMSG_PLAYER_X_WAS_NOT_VOTED_OUT),
                 m0442().set(0)
             ])
 
