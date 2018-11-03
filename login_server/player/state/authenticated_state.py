@@ -124,7 +124,7 @@ class AuthenticatedState(PlayerState):
             self._send_private_msg_from_server(self.player, 'Quick match is not yet supported. '
                                                             'Please select a server to join instead.')
         else:
-            game_server = self.player.login_server.find_server_by_id1(server_field.value)
+            game_server = self.player.login_server.find_server_by_id(server_field.value)
 
             b0msg = a00b0().setlength(9).set_server(game_server).set_player(self.player.unique_id)
             b0msg.findbytype(m042a).set(2)
@@ -254,7 +254,7 @@ class AuthenticatedState(PlayerState):
     @handles(packet=a01c6)
     def handle_request_for_server_info(self, request):
         server_id = request.findbytype(m02c7).value
-        game_server = self.player.login_server.find_server_by_id1(server_id)
+        game_server = self.player.login_server.find_server_by_id(server_id)
         players = self.player.login_server.find_players_by(game_server = game_server)
         reply = a01c6()
         reply.content = [
