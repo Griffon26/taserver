@@ -41,7 +41,8 @@ approach to generating and distributing authentication codes.
    
 ### How to generate authentication codes
 
-Generating an authentication code is simple:
+Generating an authentication code is simple. Execute the following on the
+machine that is running the login server:
  
     getauthcode.py <accountname>
  
