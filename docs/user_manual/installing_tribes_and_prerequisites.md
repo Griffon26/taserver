@@ -6,9 +6,9 @@ it requires.
 
 For running Tribes Ascend as a server you will need:
 
-1. [Tribes Ascend Parting gifts version](#Tribes Ascend Parting gifts version)
-2. [DirectX End-User Runtimes (June 2010)](#DirectX End-User Runtimes (June 2010))
-3. [Visual C++ Redistributable for Visual Studio 2015 (x86 version)](#Visual C++ Redistributable for Visual Studio 2015 (x86 version)) 
+1. [Tribes Ascend Parting gifts version](#Tribes-Ascend-Parting-gifts-version)
+2. [DirectX End-User Runtimes (June 2010)](#DirectX-End-User-Runtimes-June-2010)
+3. [Visual C++ Redistributable for Visual Studio 2015 (x86 version)](#Visual-C++-Redistributable-for-Visual-Studio-2015-x86-version)
 
 If you actually want to use the Tribes Ascend installation that you 
 now have, follow the instructions in the [Hosting a dedicated server](../../README.md#Hosting a dedicated server)
