@@ -47,7 +47,6 @@ class OnGameServerState(AuthenticatedState):
     @handles(packet=a00b3)
     def handle_server_disconnect(self, request):  # server disconnect
         # TODO: check on the real server if there's a response to this msg
-        # serverid2 = request.findbytype(m02c4).value
         self.player.set_state(AuthenticatedState)
 
     @handles(packet=a018c)

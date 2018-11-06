@@ -92,6 +92,7 @@
 0x06DE,SizedContent,clan tag
 0x06E9,SizedContent,
 0x0705,SizedContent,player name to kick
+0x0001,OneByte,
 0x006F,OneByte,
 0x01FA,OneByte,
 0x02C9,OneByte,

@@ -35,7 +35,11 @@ def main(args):
     writer.send(args.username.encode('utf8'))
     authcode = reader.receive().decode('utf8')
 
-    print('Received authcode %s for username %s' % (authcode, args.username))
+    if authcode.startswith('Error'):
+        error_message = authcode
+        print(error_message)
+    else:
+        print('Received authcode %s for username %s' % (authcode, args.username))
 
 
 if __name__ == '__main__':

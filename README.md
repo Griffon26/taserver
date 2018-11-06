@@ -16,32 +16,36 @@ If there are quotes around the executable then add the `-hostx` part after the c
 Start the game through the shortcut and log in with any name and password. The servers
 listed in the server browser will be servers hosted by fellow players.
 
+See also: [Getting verified](/docs/user_manual/getting_verified.md)
+
 ### Hosting a dedicated server
 
 If you want to run a game server and have it show up in the server list for players who
 connect to the replacement login server, follow these steps:
 
-1. Get the code for [this project](https://github.com/Griffon26/taserver) from github
+1. Make sure [Tribes Ascend and its prerequisites have been installed](/docs/user_manual/installing_tribes_and_prerequisites.md)
 
-2. Run the `download_compatible_controller.py` script to download the latest compatible
+2. Get the code for [this project](https://github.com/Griffon26/taserver) from github
+
+3. Run the `download_compatible_controller.py` script to download the latest compatible
    version of `TAMods-Server.dll`. TAMods-Server is responsible for all game-related settings. 
    Consult the [TAMods-Server documentation](https://www.tamods.org/docs/doc_srv_api_overview.html)
    on how to change any of these.
    
-3. Install the **x86 version** of the
+4. Install the **x86 version** of the
    [Visual C++ Redistributable for Visual Studio 2015](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
    It contains `msvcp140.dll`, which is needed by TAMods-Server.
 
-4. Modify `dir` under the `[gameserver]` section in `data/gameserverlauncher.ini` to point to 
+5. Modify `dir` under the `[gameserver]` section in `data/gameserverlauncher.ini` to point to 
    the directory where your TribesAscend.exe is located. For instance:
 
     ```
     C:\Games\Tribes Ascend\Binaries\Win32
     ```
     
-5. Install python 3
+6. Install python 3
 
-6. Install the gevent module for python. From an administrator command prompt you should be able 
+7. Install the gevent module for python. From an administrator command prompt you should be able 
    to do it with:
 
     ```
@@ -54,16 +58,16 @@ connect to the replacement login server, follow these steps:
     C:\Program Files (x86)\Python36\Scripts\pip install gevent
     ```
 
-7. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
+8. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
    important. This script will manage firewall rules to keep kicked players out and only allow 
    logged in players on the game server. Without this script running you will not be able to get
    rid of hackers that are normally "unkickable".
 
-8. If the game server is running behind a router you'll need to forward ports 7777/UDP and 
+9. If the game server is running behind a router you'll need to forward ports 7777/UDP and 
    9002/UDP to the game server.
 
-9. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
-   root of this repository.
+10. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
+    root of this repository.
 
 Your server should now show up in the list for anyone connecting to the login server.
 Try it out by following the instructions under [Joining games](#joining-games)

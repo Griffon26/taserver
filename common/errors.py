@@ -18,25 +18,11 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import gevent
-from gevent.server import DatagramServer
 
-from common.errors import PortInUseError
-
-
-class EchoServer(DatagramServer):
-    def handle(self, data, address):
-        self.socket.sendto(data, address)
+class FatalError(Exception):
+    pass
 
 
-def handle_ping():
-    gevent.getcurrent().name = 'pinghandler'
-    address = '0.0.0.0'
-    port = 9002
-    try:
-        EchoServer('%s:%d' % (address, port)).serve_forever()
-    except OSError as e:
-        if e.errno == 10048:
-            raise PortInUseError('udp', address, port)
-        else:
-            raise
+class PortInUseError(FatalError):
+    def __init__(self, protocol: str, address: str, port: int):
+        super().__init__('Port %s:%d/%s is already in use on this machine' % (address, port, protocol))

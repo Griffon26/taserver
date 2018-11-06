@@ -37,6 +37,14 @@ TEAM_SPEC = 255
 MESSAGE_PUBLIC = 2
 MESSAGE_TEAM = 3
 MESSAGE_PRIVATE = 6
+MESSAGE_UNKNOWNTYPE = 9
+
+STDMSG_JOINED_A_MATCH_QUEUE = 0x00004782
+STDMSG_MISSION_READY_DO_YOU_WANT_TO_JOIN = 0x00004B72
+STDMSG_NOT_A_VALID_PROMOTION_CODE = 0x00019646
+STDMSG_VOTE_BY_X_KICK_PLAYER_X_YES_NO = 0x0001942F
+STDMSG_PLAYER_X_HAS_BEEN_KICKED = 0x00019430
+STDMSG_PLAYER_X_WAS_NOT_VOTED_OUT = 0x00019431
 
 MENU_AREA_SETTINGS = 0x0192C9D3
 
@@ -308,6 +316,11 @@ class enumblockarray():
 # onebyte
 # ------------------------------------------------------------
 
+class m0001(onebyte):
+    def __init__(self):
+        super().__init__(0x0001, 0x00)
+
+
 class m01fa(onebyte):
     def __init__(self):
         super().__init__(0x01fa, 0x00)
@@ -419,6 +432,11 @@ class m008d(fourbytes):
 class m0095(fourbytes):
     def __init__(self):
         super().__init__(0x0095, 0x00000000)
+
+
+class m009d(fourbytes):
+    def __init__(self):
+        super().__init__(0x009d, 0x00000000)
 
 
 class m009e(fourbytes):
@@ -618,7 +636,7 @@ class m02be(fourbytes):
 
 class m02c4(fourbytes):
     def __init__(self):
-        super().__init__(0x02c4, 0x0094883b)
+        super().__init__(0x02c4, 0x00000000)
 
 
 class m02c7(fourbytes):
@@ -788,7 +806,7 @@ class m042a(fourbytes):
 
 class m042b(fourbytes):
     def __init__(self):
-        super().__init__(0x042b, 0x00004782)
+        super().__init__(0x042b, 0x00000000)
 
 
 class m042e(fourbytes):
@@ -1347,7 +1365,7 @@ class m00e9(arrayofenumblockarrays):
             self.arrays.append([
                 m0385(),
                 m06ee(),
-                m02c7().set(server.serverid1),
+                m02c7().set(server.server_id),
                 m0008(),
                 m02ff(),
                 m02ed(),
@@ -2332,9 +2350,9 @@ class a0035(enumblockarray):
 
     def setserverdata(self, server, player_address):
         self.content.extend([
-            m02c7().set(0x00000000),
+            m02c7().set(server.server_id),
             m06ee(),
-            m02c4(),
+            m02c4().set(server.match_id),
             m037c(),
             m0452(),
             m0225(),
@@ -2558,7 +2576,7 @@ class a00b0(enumblockarray):
             self.content.extend([
                 m02ff(),
                 m06ee(),
-                m042b()
+                m042b().set(STDMSG_JOINED_A_MATCH_QUEUE)
             ])
         else:
             self.content.extend([
@@ -2569,8 +2587,19 @@ class a00b0(enumblockarray):
             ])
         return self
 
-    def setserverid1(self, serverid1):
-        self.findbytype(m02c7).set(serverid1)
+    def set_server(self, server):
+        server_id = self.findbytype(m02c7)
+        if server_id:
+            server_id.set(server.server_id)
+
+        match_id = self.findbytype(m02c4)
+        if match_id:
+            match_id.set(server.match_id)
+
+        return self
+
+    def set_player(self, player_id):
+        self.findbytype(m0348).set(player_id)
         return self
 
 
@@ -2593,7 +2622,7 @@ class a00b4(enumblockarray):
     def __init__(self):
         super().__init__(0x00b4)
         self.content = [
-            m042b(),
+            m042b().set(STDMSG_MISSION_READY_DO_YOU_WANT_TO_JOIN),
             m01c4(),
             m0556(),
             m035b(),
@@ -2609,8 +2638,19 @@ class a00b4(enumblockarray):
             m0225()
         ]
 
-    def setserverid2(self, serverid2):
-        self.findbytype(m02c4).set(serverid2)
+    def set_server(self, server):
+        server_id = self.findbytype(m02c7)
+        if server_id:
+            server_id.set(server.server_id)
+
+        match_id = self.findbytype(m02c4)
+        if match_id:
+            match_id.set(server.match_id)
+
+        return self
+
+    def set_player(self, player_id):
+        self.findbytype(m0348).set(player_id)
         return self
 
 

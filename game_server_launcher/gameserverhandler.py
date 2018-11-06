@@ -24,12 +24,15 @@ import gevent
 import gevent.subprocess as sp
 import logging
 import os
+import time
 
 from .inject import inject
+from common.errors import FatalError
 
 
 class ConfigurationError(Exception):
-    pass
+    def __init__(self, message):
+        super().__init__('Configuration error: %s' % message)
 
 
 def wait_until_file_contains_string(filename, string):
@@ -61,7 +64,6 @@ def get_my_documents_folder():
     if _SHGetFolderPath(0, CSIDL_MYDOCUMENTS, 0, SHGFP_TYPE_CURRENT, buf) != S_OK:
         raise RuntimeError('For some reason requesting the location of the Documents folder failed')
     return buf.value
-
 
 def run_game_server(game_server_config):
     log_filename = os.path.join(get_my_documents_folder(),
@@ -111,6 +113,13 @@ def run_game_server(game_server_config):
     process = sp.Popen(args, cwd=working_dir)
     try:
         logger.info('gameserver: Started process with pid: %s' % process.pid)
+
+        # Check if it doesn't exit right away
+        time.sleep(2)
+        ret_code = process.poll()
+        if ret_code:
+            raise FatalError('The game server process terminated almost immediately with exit code %08X' %
+                             ret_code)
 
         logger.info('gameserver: Waiting until game server has finished starting up...')
         wait_until_file_contains_string(log_filename, 'Log: Bringing up level for play took:')

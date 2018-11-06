@@ -23,17 +23,8 @@ import gevent.queue
 from gevent import socket
 import logging
 
+from common.errors import PortInUseError
 from common.tcpmessage import TcpMessageReader, TcpMessageWriter
-
-
-class PortInUseError(Exception):
-    def __init__(self, protocol: str, address: str, port: int):
-        self.protocol = protocol
-        self.address = address
-        self.port = port
-
-    def __str__(self):
-        return 'Port %s:%d/%s is already in use' % (self.address, self.port, self.protocol)
 
 
 class PeerConnectedMessage:
@@ -235,10 +226,14 @@ class OutgoingConnectionHandler(ConnectionHandler):
                         sock.connect((self.address, self.port))
                         self._handle(sock, (str(self.address), self.port))
                         break
-                except ConnectionRefusedError:
+                except (ConnectionRefusedError, TimeoutError) as e:
                     if retry_time is not None:
-                        self.logger.info('%s(%s): remote end is refusing connections. Reconnecting in %d seconds...' %
-                                         (self.task_name, task_id, retry_time))
+                        if isinstance(e, ConnectionRefusedError):
+                            reason = 'remote end is refusing connections'
+                        else:
+                            reason = 'connection timed out'
+                        self.logger.info('%s(%s): %s. Reconnecting in %d seconds...' %
+                                         (self.task_name, task_id, reason, retry_time))
                         gevent.sleep(retry_time)
                     else:
                         break

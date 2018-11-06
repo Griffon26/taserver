@@ -25,9 +25,11 @@ import logging
 import socket
 import urllib.request as urlreq
 
+from common.errors import FatalError
 from common.firewall import reset_firewall, modify_firewall
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
+from common.statetracer import statetracer, TracingDict
 from common import versions
 from .gamecontrollerhandler import GameController
 from .loginserverhandler import LoginServer
@@ -45,10 +47,13 @@ def _get_local_ip():
         s.close()
     return IPv4Address(ip)
 
-class IncompatibleVersionError(Exception):
-    pass
+
+class IncompatibleVersionError(FatalError):
+    def __init__(self, message):
+        super().__init__('A version incompatibility was found: %s' % message)
 
 
+@statetracer('players')
 class Launcher:
     def __init__(self, game_server_config, incoming_queue):
         gevent.getcurrent().name = 'launcher'
@@ -56,7 +61,7 @@ class Launcher:
         self.logger = logging.getLogger(__name__)
         self.game_server_config = game_server_config
         self.incoming_queue = incoming_queue
-        self.players = {}
+        self.players = TracingDict()
         self.game_controller = None
         self.login_server = None
 
@@ -235,7 +240,7 @@ class Launcher:
 
         for player_id, team_id in msg.player_to_team_id.items():
             if int(player_id) not in self.players:
-                self.logger.warning('launcher: unexpected player in game server')
+                return
 
         msg = Launcher2LoginTeamInfoMessage(msg.player_to_team_id)
         if self.login_server:
@@ -273,6 +278,10 @@ class Launcher:
     def handle_loadout_request_message(self, msg):
         self.logger.info('launcher: received loadout request from game controller')
 
+        if msg.player_unique_id not in self.players:
+            self.logger.warning('launcher: Unable to find player 0x%08X\'s loadouts. Ignoring request.' % msg.player_unique_id)
+            return
+
         # Class and loadout keys are strings because they came in as json.
         # There's not much point in converting all keys in the loadouts
         # dictionary from strings back to ints if we are just going to
@@ -281,19 +290,13 @@ class Launcher:
         class_key = str(msg.class_id)
         loadout_key = str(msg.loadout_number)
 
-        if msg.player_unique_id in self.players:
-            retrieved_loadout = self.players[player_key][class_key][loadout_key]
-        else:
-            self.logger.warning('launcher: Unable to find player 0x%08X\'s loadouts. Returning empty loadout.'
-                                % msg.player_unique_id)
-            retrieved_loadout = dict()
-
         msg = Launcher2GameLoadoutMessage(msg.player_unique_id,
                                           msg.class_id,
-                                          retrieved_loadout)
+                                          self.players[player_key][class_key][loadout_key])
         self.game_controller.send(msg)
 
 
 def handle_launcher(game_server_config, incoming_queue):
     launcher = Launcher(game_server_config, incoming_queue)
+    #launcher.trace_as('launcher')
     launcher.run()
