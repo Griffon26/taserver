@@ -124,20 +124,38 @@ class AuthenticatedState(PlayerState):
             self._send_private_msg_from_server(self.player, 'Quick match is not yet supported. '
                                                             'Please select a server to join instead.')
         else:
-            serverid1 = server_field.value
-            game_server = self.player.login_server.find_server_by_id1(serverid1)
-            serverid2 = game_server.serverid2
-            self.player.send(a00b0().setlength(9).setserverid1(serverid1))
-            self.player.send(a00b4().setserverid2(serverid2))
+            game_server = self.player.login_server.find_server_by_id(server_field.value)
+
+            b0msg = a00b0().setlength(9).set_server(game_server).set_player(self.player.unique_id)
+            b0msg.findbytype(m042a).set(2)
+            self.player.send(b0msg)
+
+            self.player.send(a0070().set([
+                 m0348().set(self.player.unique_id),
+                 m0095(),
+                 m009e().set(MESSAGE_UNKNOWNTYPE),
+                 m009d().set(self.player.unique_id),
+                 m02fc().set(STDMSG_JOINED_A_MATCH_QUEUE)
+            ]))
+
+            b0msg = a00b0().setlength(10).set_server(game_server).set_player(self.player.unique_id)
+            b0msg.findbytype(m042a).set(2)
+            self.player.send(b0msg)
+
+            b4msg = a00b4().set_server(game_server).set_player(self.player.unique_id)
+            b4msg.findbytype(m042a).set(3)
+            self.player.send(b4msg)
 
     @handles(packet=a00b2)
     def handle_server_join_second_step(self, request):
         # Import here to avoid a circular import dependency
         from .on_game_server_state import OnGameServerState
 
-        serverid2 = request.findbytype(m02c4).value
-        game_server = self.player.login_server.find_server_by_id2(serverid2)
-        self.player.send(a00b0().setlength(10))
+        match_id = request.findbytype(m02c4).value
+        game_server = self.player.login_server.find_server_by_match_id(match_id)
+        b0msg = a00b0().setlength(10).set_server(game_server).set_player(self.player.unique_id)
+        b0msg.findbytype(m042a).set(7)
+        self.player.send(b0msg)
         self.player.send(a0035().setserverdata(game_server, self.player.address_pair))
 
         self.player.set_state(OnGameServerState, game_server)
@@ -197,7 +215,7 @@ class AuthenticatedState(PlayerState):
                 self.player.login_server.accounts.save()
             else:
                 invalid_code_msg = a0175()
-                invalid_code_msg.findbytype(m02fc).set(0x00019646)  # message type
+                invalid_code_msg.findbytype(m02fc).set(STDMSG_NOT_A_VALID_PROMOTION_CODE)  # message type
                 invalid_code_msg.findbytype(m0669).set(authcode)
                 self.player.send(invalid_code_msg)
 
@@ -235,12 +253,12 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a01c6)
     def handle_request_for_server_info(self, request):
-        serverid1 = request.findbytype(m02c7).value
-        game_server = self.player.login_server.find_server_by_id1(serverid1)
+        server_id = request.findbytype(m02c7).value
+        game_server = self.player.login_server.find_server_by_id(server_id)
         players = self.player.login_server.find_players_by(game_server = game_server)
         reply = a01c6()
         reply.content = [
-            m02c7().set(serverid1),
+            m02c7().set(server_id),
             m0228().set(0x00000002),
             m00e9().setservers([game_server], self.player.address_pair).setplayers(players)
         ]

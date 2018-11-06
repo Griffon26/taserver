@@ -81,17 +81,17 @@ class LoginServer:
                     else:
                         raise
 
-    def find_server_by_id1(self, id1):
+    def find_server_by_id(self, server_id):
         for game_server in self.game_servers.values():
-            if game_server.serverid1 == id1:
+            if game_server.server_id == server_id:
                 return game_server
-        raise ProtocolViolationError('No server found with specified serverid1')
+        raise ProtocolViolationError('No server found with specified server ID')
 
-    def find_server_by_id2(self, id2):
+    def find_server_by_match_id(self, match_id):
         for game_server in self.game_servers.values():
-            if game_server.serverid2 == id2:
+            if game_server.match_id == match_id:
                 return game_server
-        raise ProtocolViolationError('No server found with specified serverid2')
+        raise ProtocolViolationError('No server found with specified match ID')
 
     def find_player_by(self, **kwargs):
         matching_players = self.find_players_by(**kwargs)
@@ -119,12 +119,18 @@ class LoginServer:
     def handle_authcode_request_message(self, msg):
         authcode_requester = msg.peer
 
-        availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
-        authcode = ''.join([random.choice(availablechars) for i in range(8)])
-        self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
-        self.accounts.add_account(msg.login_name, authcode)
-        self.accounts.save()
-        authcode_requester.send(authcode)
+        if len(msg.login_name) > Player.max_name_length:
+            self.logger.warning('server: authcode requested for a user name (%s) that is longer than '
+                                '%d characters. Refused.' % (msg.login_name, Player.max_name_length))
+            authcode_requester.send('Error: account names are not allowed to be longer than %d characters.' %
+                                    Player.max_name_length)
+        else:
+            availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
+            authcode = ''.join([random.choice(availablechars) for i in range(8)])
+            self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
+            self.accounts.add_account(msg.login_name, authcode)
+            self.accounts.save()
+            authcode_requester.send(authcode)
 
     def handle_execute_callback_message(self, msg):
         callback_id = msg.callback_id
@@ -140,15 +146,15 @@ class LoginServer:
             player.set_state(UnauthenticatedState)
             self.players[unique_id] = player
         elif isinstance(msg.peer, GameServer):
-            serverid1 = first_unused_number_above(self.game_servers.keys(), 1)
+            server_id = first_unused_number_above(self.game_servers.keys(), 1)
 
             game_server = msg.peer
-            game_server.serverid1 = serverid1
-            game_server.serverid2 = serverid1 + 0x10000000
+            game_server.server_id = server_id
+            game_server.match_id = server_id + 0x10000000
             game_server.login_server = self
-            self.game_servers[serverid1] = game_server
+            self.game_servers[server_id] = game_server
 
-            self.logger.info('server: added game server %s (%s)' % (serverid1, game_server.detected_ip))
+            self.logger.info('server: added game server %s (%s)' % (server_id, game_server.detected_ip))
         elif isinstance(msg.peer, AuthCodeRequester):
             pass
         else:
@@ -164,12 +170,12 @@ class LoginServer:
 
         elif isinstance(msg.peer, GameServer):
             game_server = msg.peer
-            self.logger.info('server: removed game server %s (%s:%s)' % (game_server.serverid1,
+            self.logger.info('server: removed game server %s (%s:%s)' % (game_server.server_id,
                                                                          game_server.detected_ip,
                                                                          game_server.port))
             game_server.disconnect()
             self.pending_callbacks.remove_receiver(game_server)
-            del (self.game_servers[game_server.serverid1])
+            del (self.game_servers[game_server.server_id])
 
         elif isinstance(msg.peer, AuthCodeRequester):
             msg.peer.disconnect()
@@ -196,7 +202,7 @@ class LoginServer:
             self.logger.warning("server: game server %s (%s) uses launcher protocol %s which is " 
                                 "not compatible with this login server's protocol version %s. "
                                 "Disconnecting game server..." %
-                                (game_server.serverid1,
+                                (game_server.server_id,
                                  game_server.detected_ip,
                                  launcher_version,
                                  my_version))
@@ -210,7 +216,7 @@ class LoginServer:
         address_pair = IPAddressPair(external_ip, internal_ip)
 
         game_server.set_info(address_pair, msg.port, msg.description, msg.motd)
-        self.logger.info('server: server info received for server %s (%s:%s)' % (game_server.serverid1,
+        self.logger.info('server: server info received for server %s (%s:%s)' % (game_server.server_id,
                                                                                  game_server.detected_ip,
                                                                                  game_server.port))
 
@@ -227,7 +233,7 @@ class LoginServer:
             else:
                 self.logger.warning('server: received an invalid message from server %s about player 0x%08X '
                                     'while that player is not on that server' %
-                                    (game_server.serverid1, player_id))
+                                    (game_server.server_id, player_id))
 
     def handle_score_info_message(self, msg):
         game_server = msg.peer
@@ -237,12 +243,12 @@ class LoginServer:
     def handle_match_time_message(self, msg):
         game_server = msg.peer
         self.logger.info('server: received match time for server %s: %s seconds remaining (counting = %s)' %
-              (game_server.serverid1,
+              (game_server.server_id,
                msg.seconds_remaining,
                msg.counting))
         game_server.set_match_time(msg.seconds_remaining, msg.counting)
 
     def handle_match_end_message(self, msg):
         game_server = msg.peer
-        self.logger.info('server: match ended on server %s. Starting next map in 5 seconds.' % game_server.serverid1)
+        self.logger.info('server: match ended on server %s. Starting next map in 5 seconds.' % game_server.server_id)
         self.pending_callbacks.add(game_server, 5, game_server.start_next_map)
