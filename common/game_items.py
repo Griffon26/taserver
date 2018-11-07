@@ -987,7 +987,7 @@ _hierarchical_definitions_goty = {
     'perkA': {
         'ootb': {},
         'other': {
-            'No Perk A': 0,
+            # 'No Perk A': 0,
             'Perk Safe Fall': 8162,
             'Perk Safety Third': 8163,
             'Perk Reach': 7916,
@@ -1003,7 +1003,7 @@ _hierarchical_definitions_goty = {
     'perkB': {
         'ootb': {},
         'other': {
-            'No Perk B': 0,
+            # 'No Perk B': 0,
             'Perk Survivalist': 8167,
             'Perk Egocentric': 7917,
             'Perk Pilot': 8159,
