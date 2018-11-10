@@ -93,5 +93,6 @@ class Player(Peer):
         super().send((data, self.last_received_seq))
 
     def __repr__(self):
-        return '%s(%s, %s:%s, 0x%08X:"%s")' % (self.task_name, self.task_id,
-                                               self.address_pair, self.port, self.unique_id, self.display_name)
+        return '%s(%s, %s:%s, %d:"%s")' % (self.task_name, self.task_id,
+                                           self.address_pair, self.port,
+                                           self.unique_id, self.display_name)

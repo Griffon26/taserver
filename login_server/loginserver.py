@@ -138,7 +138,7 @@ class LoginServer:
 
     def handle_client_connected_message(self, msg):
         if isinstance(msg.peer, Player):
-            unique_id = first_unused_number_above(self.players.keys(), 0x10000000)
+            unique_id = first_unused_number_above(self.players.keys(), 10000000)
 
             player = msg.peer
             player.unique_id = unique_id
@@ -150,7 +150,7 @@ class LoginServer:
 
             game_server = msg.peer
             game_server.server_id = server_id
-            game_server.match_id = server_id + 0x10000000
+            game_server.match_id = server_id + 10000000
             game_server.login_server = self
             self.game_servers[server_id] = game_server
 
@@ -231,8 +231,8 @@ class LoginServer:
             if player_id in self.players and self.players[player_id].game_server is game_server:
                 self.players[player_id].team = team_id
             else:
-                self.logger.warning('server: received an invalid message from server %s about player 0x%08X '
-                                    'while that player is not on that server' %
+                self.logger.warning('server: received an invalid message from server %s about '
+                                    'player %d while that player is not on that server' %
                                     (game_server.server_id, player_id))
 
     def handle_score_info_message(self, msg):

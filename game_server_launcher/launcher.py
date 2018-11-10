@@ -189,26 +189,26 @@ class Launcher:
         self.game_controller.send(Launcher2GameNextMapMessage())
 
     def handle_set_player_loadouts_message(self, msg):
-        self.logger.info('launcher: loadouts changed for player 0x%08X' % msg.unique_id)
+        self.logger.info('launcher: loadouts changed for player %d' % msg.unique_id)
         self.players[msg.unique_id] = msg.loadouts
 
     def handle_remove_player_loadouts_message(self, msg):
-        self.logger.info('launcher: loadouts removed for player 0x%08X' % msg.unique_id)
+        self.logger.info('launcher: loadouts removed for player %d' % msg.unique_id)
         del(self.players[msg.unique_id])
 
     def handle_add_player_message(self, msg):
         if msg.ip:
-            self.logger.info('launcher: login server added player 0x%08X with ip %s' % (msg.unique_id, msg.ip))
+            self.logger.info('launcher: login server added player %d with ip %s' % (msg.unique_id, msg.ip))
             modify_firewall('whitelist', 'add', msg.ip)
         else:
-            self.logger.info('launcher: login server added local player 0x%08X' % msg.unique_id)
+            self.logger.info('launcher: login server added local player %d' % msg.unique_id)
 
     def handle_remove_player_message(self, msg):
         if msg.ip:
-            self.logger.info('launcher: login server removed player 0x%08X with ip %s' % (msg.unique_id, msg.ip))
+            self.logger.info('launcher: login server removed player %d with ip %s' % (msg.unique_id, msg.ip))
             modify_firewall('whitelist', 'remove', msg.ip)
         else:
-            self.logger.info('launcher: login server removed local player 0x%08X' % msg.unique_id)
+            self.logger.info('launcher: login server removed local player %d' % msg.unique_id)
 
     def handle_pings_message(self, msg):
         if self.game_controller:
@@ -279,7 +279,7 @@ class Launcher:
         self.logger.info('launcher: received loadout request from game controller')
 
         if msg.player_unique_id not in self.players:
-            self.logger.warning('launcher: Unable to find player 0x%08X\'s loadouts. Ignoring request.' % msg.player_unique_id)
+            self.logger.warning('launcher: Unable to find player %d\'s loadouts. Ignoring request.' % msg.player_unique_id)
             return
 
         # Class and loadout keys are strings because they came in as json.
