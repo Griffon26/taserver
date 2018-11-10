@@ -18,7 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from common.game_items import class_menu_data, GamePurchase, GameClass, UnlockableGameClass, UnlockableItem, \
+from common.game_items import GamePurchase, GameClass, UnlockableGameClass, UnlockableItem, \
     UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
 from typing import Set, Iterable
 import struct
@@ -2384,6 +2384,7 @@ class a003d(enumblockarray):
     def __init__(self):
         super().__init__(0x003d)
 
+    def set_menu_data(self, class_menu_data):
         ids_to_unlock = [item.item_id for item in class_menu_data.get_every_item() if item.unlocked]
 
         general_unlocks_arrays = []
@@ -2403,30 +2404,30 @@ class a003d(enumblockarray):
         ])
 
         skin_unlocks_arrays = [[
-                                   m0095().set(0x00ba8dc7 + idx),
-                                   m0363().set(game_class.class_id),
-                                   m00a2().set(str(game_class.secondary_id)),
-                                   m0138(),
-                                   m02fe(),
-                                   m02b2(),
-                                   m021f(),
-                                   m057d(),
-                                   m057e(),
-                                   m057f().set(0x27a4),
-                                   m05e2(),
-                                   m0684(),
-                                   m05dc(),
-                                   m04cb(),
-                                   m00d4(),
-                                   m025c(),
-                                   m025d(),
-                                   m025e(),
-                                   m025f().set(0xFFFFF448),
-                                   m0596(),
-                                   m0597()
-                               ]
-                               for idx, (name, game_class)
-                               in enumerate(class_menu_data.classes.items())]
+            m0095().set(0x00ba8dc7 + idx),
+            m0363().set(game_class.class_id),
+            m00a2().set(str(game_class.secondary_id)),
+            m0138(),
+            m02fe(),
+            m02b2(),
+            m021f(),
+            m057d(),
+            m057e(),
+            m057f().set(0x27a4),
+            m05e2(),
+            m0684(),
+            m05dc(),
+            m04cb(),
+            m00d4(),
+            m025c(),
+            m025d(),
+            m025e(),
+            m025f().set(0xFFFFF448),
+            m0596(),
+            m0597()
+        ]
+            for idx, (name, game_class)
+            in enumerate(class_menu_data.classes.items())]
 
         self.content = [
             m03e3(),
@@ -2466,6 +2467,8 @@ class a003d(enumblockarray):
             m0663(),
             m068b(),
             m0681().set_original_bytes(0x8822, 0x8898)]
+
+        return self
 
     def set_player(self, unique_id, name, tag, loadouts):
         self.findbytype(m0348).set(unique_id)

@@ -36,8 +36,11 @@ class Player(Peer):
     loadout_file_path = 'data/players/%s_loadouts.json'
     friends_file_path = 'data/players/%s_friends.json'
 
-    def __init__(self, address):
+    def __init__(self, address, use_goty_mode: bool):
         super().__init__()
+
+        self.use_goty_mode = use_goty_mode
+
         self.unique_id = None
         self.login_name = None
         self.display_name = None
@@ -51,7 +54,7 @@ class Player(Peer):
         self.state = None
         self.login_server = None
         self.game_server = None
-        self.loadouts = Loadouts()
+        self.loadouts = Loadouts(use_goty_mode)
         self.friends = Friends()
         self.team = None
         self.pings = {}

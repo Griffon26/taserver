@@ -582,10 +582,10 @@ _hierarchical_definitions_ootb = {
                 'speciality': {
                     'ootb': {
                         'Doombringer_Secondary_SaberLauncher': 7398,
-                        'Brute_Primary_SpikeLauncher': 8401,
+                        'Brute_Primary_SpikeLauncher': 8357,
                     },
                     'other': {
-                        'Doombringer_Secondary_SaberLauncher_MKD': 8357,
+                        'Doombringer_Secondary_SaberLauncher_MKD': 8401,
                     },
                 },
                 'bullet': {
@@ -1069,13 +1069,11 @@ _items_to_remove: Set[str] = set()
 # Definition of items that should appear in the menu, but should be by default locked
 _items_to_lock: Set[str] = set()
 
-# Should probably be moved into a config file at some point
-do_use_goty_defs = False
-
-_weapon_categories = _weapon_categories_goty if do_use_goty_defs else _weapon_categories_ootb
-_hierarchical_definitions = _hierarchical_definitions_goty if do_use_goty_defs else _hierarchical_definitions_ootb
 
 # Processed form containing the information needed to build the menu content
-class_menu_data: Unlockables = build_class_menu_data(game_classes, _weapon_categories,
-                                                     _hierarchical_definitions, _items_to_remove, _items_to_lock,
-                                                     do_use_goty_defs, do_use_goty_defs)
+def get_class_menu_data(do_use_goty_defs: bool) -> Unlockables:
+    _weapon_categories = _weapon_categories_goty if do_use_goty_defs else _weapon_categories_ootb
+    _hierarchical_definitions = _hierarchical_definitions_goty if do_use_goty_defs else _hierarchical_definitions_ootb
+    return build_class_menu_data(game_classes, _weapon_categories,
+                                 _hierarchical_definitions, _items_to_remove, _items_to_lock,
+                                 do_use_goty_defs, do_use_goty_defs)

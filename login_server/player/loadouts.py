@@ -21,7 +21,7 @@
 import json
 import string
 
-from common.game_items import game_classes, do_use_goty_defs
+from common.game_items import game_classes
 from ..datatypes import *
 
 SLOT_LOADOUT_NAME = 1341
@@ -167,7 +167,8 @@ class Loadouts:
 
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
-    def __init__(self):
+    def __init__(self, use_goty_default_loadouts: bool):
+        self.use_goty_default_loadouts = use_goty_default_loadouts
         self.loadout_dict = self.defaults()
 
     def defaults(self):
@@ -176,7 +177,7 @@ class Loadouts:
             complete_loadout[SLOT_LOADOUT_NAME] = 'LOADOUT %s' % string.ascii_uppercase[i]
             return complete_loadout
 
-        default_loadouts = default_loadouts_goty if do_use_goty_defs else default_loadouts_ootb
+        default_loadouts = default_loadouts_goty if self.use_goty_default_loadouts else default_loadouts_ootb
         return {game_classes[name].class_id:
                 {i: finish_default_loadout(default_loadout, i) for i in range(self.max_loadouts)}
                 for name, default_loadout
