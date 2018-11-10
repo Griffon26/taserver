@@ -4,6 +4,8 @@ A replacement implementation of the Tribes Ascend login server
 This software allows anyone to host the servers that are needed to play Tribes Ascend 
 multiplayer games. 
 
+To talk about this project join the [discord server](https://discordapp.com/invite/8enekHQ).
+
 ### Joining games
 
 If you just want to join games on the login server hosted by me (Griffon26), then
