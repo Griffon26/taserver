@@ -21,7 +21,7 @@
 import json
 import string
 
-from common.game_items import game_classes, do_use_goty_defs
+from common.game_items import game_classes
 from ..datatypes import *
 
 SLOT_LOADOUT_NAME = 1341
@@ -67,6 +67,8 @@ EQUIPMENT_MEDIUM_VOICE = 8667
 EQUIPMENT_HEAVY_VOICE = 8668
 EQUIPMENT_LIGHT_GRENADE_LAUNCHER = 8761
 
+EQUIPMENT_PERKS_ULTRACAP_DETERMINATION = 535109597
+
 default_loadouts_ootb = {
     'light': {
         SLOT_PRIMARY_WEAPON: EQUIPMENT_LIGHT_SPINFUSOR,
@@ -101,7 +103,7 @@ default_loadouts_goty = {
     'light': {
         SLOT_PRIMARY_WEAPON: EQUIPMENT_LIGHT_SPINFUSOR,
         SLOT_SECONDARY_WEAPON: EQUIPMENT_LIGHT_ASSAULT_RIFLE,
-        SLOT_TERTIARY_WEAPON: EQUIPMENT_LONG_RANGE_REPAIR_TOOL,
+        SLOT_TERTIARY_WEAPON: EQUIPMENT_PERKS_ULTRACAP_DETERMINATION,
         SLOT_PACK: EQUIPMENT_THRUST_PACK,
         SLOT_BELT: EQUIPMENT_IMPACT_NITRON,
         SLOT_SKIN: EQUIPMENT_PATHFINDER_SKIN,
@@ -110,7 +112,7 @@ default_loadouts_goty = {
     'medium': {
         SLOT_PRIMARY_WEAPON: EQUIPMENT_ASSAULT_RIFLE,
         SLOT_SECONDARY_WEAPON: EQUIPMENT_THUMPERD,
-        SLOT_TERTIARY_WEAPON: EQUIPMENT_LONG_RANGE_REPAIR_TOOL,
+        SLOT_TERTIARY_WEAPON: EQUIPMENT_PERKS_ULTRACAP_DETERMINATION,
         SLOT_PACK: EQUIPMENT_SLD_ENERGY_PACK,
         SLOT_BELT: EQUIPMENT_FRAGXL_GRENADES,
         SLOT_SKIN: EQUIPMENT_SOLDIER_SKIN,
@@ -119,7 +121,7 @@ default_loadouts_goty = {
     'heavy': {
         SLOT_PRIMARY_WEAPON: EQUIPMENT_FUSION_MORTAR,
         SLOT_SECONDARY_WEAPON: EQUIPMENT_SPINFUSOR_MKD,
-        SLOT_TERTIARY_WEAPON: EQUIPMENT_LONG_RANGE_REPAIR_TOOL,
+        SLOT_TERTIARY_WEAPON: EQUIPMENT_PERKS_ULTRACAP_DETERMINATION,
         SLOT_PACK: EQUIPMENT_JUG_REGEN_PACK,
         SLOT_BELT: EQUIPMENT_HEAVYAP_GRENADES,
         SLOT_SKIN: EQUIPMENT_JUGGERNAUT_SKIN,
@@ -165,7 +167,8 @@ class Loadouts:
 
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
-    def __init__(self):
+    def __init__(self, use_goty_default_loadouts: bool):
+        self.use_goty_default_loadouts = use_goty_default_loadouts
         self.loadout_dict = self.defaults()
 
     def defaults(self):
@@ -174,7 +177,7 @@ class Loadouts:
             complete_loadout[SLOT_LOADOUT_NAME] = 'LOADOUT %s' % string.ascii_uppercase[i]
             return complete_loadout
 
-        default_loadouts = default_loadouts_goty if do_use_goty_defs else default_loadouts_ootb
+        default_loadouts = default_loadouts_goty if self.use_goty_default_loadouts else default_loadouts_ootb
         return {game_classes[name].class_id:
                 {i: finish_default_loadout(default_loadout, i) for i in range(self.max_loadouts)}
                 for name, default_loadout
