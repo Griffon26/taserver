@@ -24,6 +24,7 @@ from gevent.server import StreamServer
 import gevent.subprocess as sp
 import json
 import logging
+import sys
 
 from common.logging import set_up_logging
 from common.tcpmessage import TcpMessageReader
@@ -251,7 +252,7 @@ class Firewall():
             'whitelist' : {
                 'name' : 'TAserverfirewall-whitelist',
                 'ruletype' : 'allow',
-                'port' : 7777,
+                'port' : 7778,
                 'protocol' : 'udp',
                 'IPs' : set(),
             },
@@ -298,6 +299,16 @@ class Firewall():
 
 
 def main():
+    try:
+        udp_proxy_proc = sp.Popen('udpproxy.exe')
+
+    except OSError as e:
+        print('Failed to run udpproxy.exe. Run download_udpproxy.py to download it\n'
+              'or build it yourself using the Visual Studio solution in the udpproxy\n'
+              'subdirectory and place it in the taserver directory.\n',
+              file=sys.stderr)
+        return
+
     server_queue = gevent.queue.Queue()
     firewall = Firewall()
     gevent.spawn(firewall.run, server_queue)
@@ -312,3 +323,5 @@ def main():
         server.serve_forever()
     except KeyboardInterrupt:
         firewall.removeallrules()
+
+    udp_proxy_proc.terminate()

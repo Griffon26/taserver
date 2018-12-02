@@ -18,13 +18,16 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import gevent
 from gevent import socket
+from ipaddress import IPv4Address
 import json
 import logging
 
 from .tcpmessage import TcpMessageWriter
 
 server_address = ("127.0.0.1", 9801)
+proxy_address = ("127.0.0.1", 9802)
 
 
 def _send_command(command):
@@ -33,6 +36,18 @@ def _send_command(command):
             sock.connect(server_address)
             TcpMessageWriter(sock).send(json.dumps(command).encode('utf8'))
 
+        if command['list'] == 'whitelist':
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect(proxy_address)
+                if command['action'] == 'reset':
+                    message = b'reset'
+                else:
+                    address = IPv4Address(command['ip'])
+                    action = b'a' if command['action'] == 'add' else b'r'
+                    message = action + address.packed
+                sock.sendall(message)
+                sock.shutdown(socket.SHUT_RDWR)
+
     except ConnectionRefusedError:
         logger = logging.getLogger(__name__)
         logger.warning('\n'
@@ -40,6 +55,8 @@ def _send_command(command):
                        'Warning: Failed to connect to taserver firewall for modifying \n'
                        'the firewall rules.\n'
                        'Did you forget to run start_taserver_firewall.py (as admin)?\n'
+                       'If you want to run without the firewall and udpproxy you will need\n'
+                       'to change the gameserver port to 7777 in gameserverlauncher.ini.\n'
                        '--------------------------------------------------------------')
 
 

@@ -31,8 +31,10 @@ class AuthCodeWriter(TcpMessageConnectionWriter):
     def encode(self, msg):
         return msg.encode('utf8')
 
+
 class AuthCodeRequester(Peer):
     pass
+
 
 class AuthCodeHandler(IncomingConnectionHandler):
     def __init__(self, incoming_queue):
