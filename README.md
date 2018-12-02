@@ -65,8 +65,8 @@ connect to the replacement login server, follow these steps:
    logged in players on the game server. Without this script running you will not be able to get
    rid of hackers that are normally "unkickable".
 
-9. If the game server is running behind a router you'll need to forward ports 7777/UDP,
-   7778/UDP and 9002/UDP to the game server.
+9. If the game server is running behind a router you'll need to forward ports 7778/UDP and
+   9002/UDP to the game server.
 
 10. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
     root of this repository.
