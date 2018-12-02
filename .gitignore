@@ -1,8 +1,8 @@
 __pycache__/
 \.idea/
 .mypy_cache/
-/game_server_launcher.log
-/login_server.log
+/*.log
 /taserverdump.carrays_parsed.txt
 /taserverdump.carrays
 /TAMods-Server.dll
+/udpproxy.exe
