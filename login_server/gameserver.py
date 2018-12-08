@@ -22,6 +22,7 @@ import gevent.monkey
 gevent.monkey.patch_all()
 
 import json
+import logging
 import time
 import urllib.request
 
@@ -47,6 +48,8 @@ PING_UPDATE_TIME = 3
 class GameServer(Peer):
     def __init__(self, detected_ip: IPv4Address):
         super().__init__()
+
+        self.logger = logging.getLogger(__name__)
         self.login_server = None
         self.server_id = None
         self.match_id = None
