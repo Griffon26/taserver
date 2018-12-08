@@ -43,7 +43,7 @@ PING_UPDATE_TIME = 3
 
 
 @statetracer('server_id', 'detected_ip', 'address_pair', 'port', 'joinable', 'players', 'player_being_kicked',
-             'match_end_time', 'match_time_counting', 'be_score', 'ds_score', 'map_id')
+             'match_end_time_rel_or_abs', 'match_time_counting', 'be_score', 'ds_score', 'map_id')
 class GameServer(Peer):
     def __init__(self, detected_ip: IPv4Address):
         super().__init__()
@@ -60,7 +60,7 @@ class GameServer(Peer):
         self.joinable = False
         self.players = TracingDict(refsonly = True)
         self.player_being_kicked = None
-        self.match_end_time = None
+        self.match_end_time_rel_or_abs = None
         self.match_time_counting = False
         self.be_score = 0
         self.ds_score = 0
@@ -99,15 +99,22 @@ class GameServer(Peer):
         self.send_pings()
 
     def set_match_time(self, seconds_remaining, counting):
-        self.match_end_time = int(time.time() + seconds_remaining)
         self.match_time_counting = counting
+        if counting:
+            self.match_end_time_rel_or_abs = int(time.time() + seconds_remaining)
+        else:
+            self.match_end_time_rel_or_abs = seconds_remaining
+
         # The game controller sends the match time only after it's properly up
         # and joinable by players
         self.joinable = True
 
     def get_time_remaining(self):
-        if self.match_end_time is not None:
-            time_remaining = int(self.match_end_time - time.time())
+        if self.match_end_time_rel_or_abs is not None:
+            if self.match_time_counting:
+                time_remaining = int(self.match_end_time_rel_or_abs - time.time())
+            else:
+                time_remaining = self.match_end_time_rel_or_abs
         else:
             time_remaining = 0
 
