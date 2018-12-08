@@ -1,25 +1,20 @@
 
-#include <assert.h>
 #include <map>
+#include <stdio.h>
 #include <string.h>
 #include <utility>
-#include <stdio.h>
 #include <vector>
-#include <Ws2tcpip.h>
 #include <WinSock2.h>
+#include <Ws2tcpip.h>
 
 #pragma comment(lib, "Ws2_32.lib")
 
-#define CONTROL_MESSAGE_SIZE 5
+#define GAME_SERVER_PORT 7777
+#define CLIENT_PORT 7778
+#define CONTROL_PORT 9802
 
-/*
- * Performance measurement on a t2-micro showed that with 30 clients in the generator sending 32 bytes and sleeping 1 ms in between,
- * the CPU usage of the proxy was between 5% and 11% and the traffic was 1.8Mbps in both directions.
- */
-
-char socketBuffer[1024 * 1024];
+char socketBuffer[64 * 1024];
 SOCKET clientSocket;
-SOCKET gameServerSockets[1024];
 
 class AllowedClients
 {
@@ -56,6 +51,8 @@ public:
     }
     void removeClient(unsigned long playerId, unsigned long address)
     {
+        (void)address;
+
         EnterCriticalSection(&criticalSection);
         for (auto iter = clientList.begin(); iter != clientList.end(); iter++)
         {
@@ -140,17 +137,37 @@ int recvall(SOCKET socket, char *pBuffer, int len)
     while (bytesReceived < len)
     {
         int bytesReceivedThisTime = recv(socket, &pBuffer[bytesReceived], len - bytesReceived, 0);
-        assert(bytesReceivedThisTime != SOCKET_ERROR);
-        if (bytesReceivedThisTime == 0)
+        switch (bytesReceivedThisTime)
         {
+        case SOCKET_ERROR:
+            return SOCKET_ERROR;
+        case 0:
             return bytesReceived;
+        default:
+            bytesReceived += bytesReceivedThisTime;
+            break;
         }
-        bytesReceived += bytesReceivedThisTime;
     }
 
-    assert(bytesReceived == len);
     return bytesReceived;
 }
+
+class SocketCloser
+{
+public:
+    SocketCloser(SOCKET socket):
+        mSocket(socket)
+    {
+    }
+
+    ~SocketCloser()
+    {
+        closesocket(mSocket);
+    }
+
+private:
+    SOCKET mSocket;
+};
 
 DWORD WINAPI allowedClientsHandler(void *pParam)
 {
@@ -163,14 +180,16 @@ DWORD WINAPI allowedClientsHandler(void *pParam)
         int addressSize = sizeof(sockaddr_in);
 
         SOCKET controllerSocket = accept(pControlData->listenSocket, (sockaddr *)&sockaddr_in, &addressSize);
-        assert(controllerSocket != INVALID_SOCKET);
+        if (controllerSocket == INVALID_SOCKET) continue;
+        SocketCloser socketCloser(controllerSocket);
 
         unsigned long messageSize;
         ret = recvall(controllerSocket, (char *)&messageSize, sizeof(unsigned long));
-        assert(ret == sizeof(unsigned long));
+        if (ret != sizeof(unsigned long)) continue;
+
         char pBuffer[32];
         ret = recvall(controllerSocket, pBuffer, messageSize);
-        assert(ret == messageSize);
+        if (ret != (int)messageSize) continue;
 
         closesocket(controllerSocket);
 
@@ -178,9 +197,9 @@ DWORD WINAPI allowedClientsHandler(void *pParam)
         {
             pControlData->allowedClients.removeAll();
         }
-        else
+        else if((messageSize == 2 * sizeof(unsigned long) + 1) && 
+                (pBuffer[0] == 'r' || pBuffer[0] == 'a'))
         {
-            assert(pBuffer[0] == 'r' || pBuffer[0] == 'a');
             unsigned long player_id = *(unsigned long *)&pBuffer[1];
             unsigned long address = *(unsigned long *)&pBuffer[1 + sizeof(unsigned long)];
 
@@ -193,17 +212,27 @@ DWORD WINAPI allowedClientsHandler(void *pParam)
                 pControlData->allowedClients.removeClient(player_id, address);
             }
         }
+        else
+        {
+            // ignore invalid command
+        }
     }
 }
 
 DWORD WINAPI gameserverToClientHandler(void *pParam)
 {
-    ClientData *pClientData = (ClientData *)pParam;
+    SOCKADDR_IN clientAddress = ((ClientData *)pParam)->clientAddress;
+    SOCKET gameserverSocket = ((ClientData *)pParam)->gameserverSocket;
+
+    // Don't access the data through the pointer passed to this function after this point,
+    // because it may have been removed before this thread has terminated.
+    pParam = NULL;
+
     char buffer[64 * 1024];
 
     while (true)
     {
-        int ret = recv(pClientData->gameserverSocket, buffer, sizeof(buffer), 0);
+        int ret = recv(gameserverSocket, buffer, sizeof(buffer), 0);
         if (ret == SOCKET_ERROR)
         {
             int lastError = WSAGetLastError();
@@ -213,29 +242,38 @@ DWORD WINAPI gameserverToClientHandler(void *pParam)
             // communication with the client; no need to log an error.
             if (lastError != WSAENOTSOCK)
             {
-                printf("Recv from game server failed with error %d\n", lastError);
+                fprintf(stderr, "Receive from game server failed, error %d\n", lastError);
             }
             break;
         }
-        assert(ret != 0);
+        else if (ret == 0)
+        {
+            break;
+        }
 
         int bytesToSend = ret;
         //printf("Received %d bytes from game server\n", bytesToSend);
 
         while (bytesToSend > 0)
         {
-            int bytesSent = sendto(clientSocket, buffer, bytesToSend, 0, (sockaddr *)&pClientData->clientAddress, sizeof(pClientData->clientAddress));
+            int bytesSent = sendto(clientSocket, buffer, bytesToSend, 0, (sockaddr *)&clientAddress, sizeof(clientAddress));
             if (bytesSent == SOCKET_ERROR)
             {
-                printf("Send to client failed with error %d\n", WSAGetLastError());
+                // Only report this error, but otherwise ignore it because losing
+                // packets is ok for UDP
+                fprintf(stderr, "Send to client failed, error %d\n", WSAGetLastError());
             }
-            assert(bytesSent != SOCKET_ERROR);
             //printf("Sent %d bytes to client\n", bytesSent);
             bytesToSend -= bytesSent;
         }
     }
 
-    printf("Exiting gameserver-to-client thread\n");
+    printf("Exiting gameserver-to-client thread for client %d.%d.%d.%d:%d\n",
+        clientAddress.sin_addr.S_un.S_un_b.s_b1,
+        clientAddress.sin_addr.S_un.S_un_b.s_b2,
+        clientAddress.sin_addr.S_un.S_un_b.s_b3,
+        clientAddress.sin_addr.S_un.S_un_b.s_b4,
+        clientAddress.sin_port);
     return 0;
 }
 
@@ -249,23 +287,50 @@ int main()
     std::map<std::pair<unsigned long, int>, ClientData> clientDataMap;
 
     ret = WSAStartup((2, 2), &wsaData);
-    assert(ret == 0);
+    if (ret != 0)
+    {
+        fprintf(stderr, "Failed to initialize winsock, error %d\n", ret);
+        return -1;
+    }
 
     SOCKADDR_IN controlListenAddress;
     controlListenAddress.sin_family = AF_INET;
     ret = InetPtonA(AF_INET, "127.0.0.1", &(controlListenAddress.sin_addr));
-    assert(ret == 1);
-    controlListenAddress.sin_port = htons(9802);
+    if(ret != 1)
+    {
+        fprintf(stderr, "InetPtonA failed with error code %d, extended error %d\n", ret, WSAGetLastError());
+        return -1;
+    }
+    controlListenAddress.sin_port = htons(CONTROL_PORT);
 
     controlData.listenSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (controlData.listenSocket == INVALID_SOCKET)
+    {
+        fprintf(stderr, "Failed to create socket for control connections, error %d\n", WSAGetLastError());
+        return -1;
+    }
+    SocketCloser controlSocketCloser(controlData.listenSocket);
+
     ret = bind(controlData.listenSocket, (sockaddr *)&controlListenAddress, sizeof(controlListenAddress));
-    assert(ret != SOCKET_ERROR);
+    if (ret == SOCKET_ERROR)
+    {
+        fprintf(stderr, "Failed to bind to listen address localhost:%d for control connections, error %d\n", CONTROL_PORT, WSAGetLastError());
+        return -1;
+    }
 
     ret = listen(controlData.listenSocket, SOMAXCONN);
-    assert(ret != SOCKET_ERROR);
+    if (ret == SOCKET_ERROR)
+    {
+        fprintf(stderr, "Failed to listen on control port, error %d\n", WSAGetLastError());
+        return -1;
+    }
 
-    HANDLE threadHandle = CreateThread(NULL, 0, allowedClientsHandler, &controlData, 0, NULL);
-    assert(threadHandle != NULL);
+    HANDLE controlThreadHandle = CreateThread(NULL, 0, allowedClientsHandler, &controlData, 0, NULL);
+    if (controlThreadHandle == NULL)
+    {
+        fprintf(stderr, "Failed to start thread for the control channel, error %d\n", GetLastError());
+        return -1;
+    }
 
 
 
@@ -273,17 +338,32 @@ int main()
     SOCKADDR_IN clientListenAddress;
     clientListenAddress.sin_family = AF_INET;
     clientListenAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-    clientListenAddress.sin_port = htons(7778);
+    clientListenAddress.sin_port = htons(CLIENT_PORT);
 
     clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (clientSocket == INVALID_SOCKET)
+    {
+        fprintf(stderr, "Failed to create socket for client connections, error %d\n", WSAGetLastError());
+        return -1;
+    }
+    SocketCloser clientSocketCloser(clientSocket);
+
     ret = bind(clientSocket, (sockaddr *)&clientListenAddress, sizeof(clientListenAddress));
-    assert(ret != SOCKET_ERROR);
+    if (ret == SOCKET_ERROR)
+    {
+        fprintf(stderr, "Failed to bind to listen address 0.0.0.0:%d for client connections, error %d\n", CLIENT_PORT, WSAGetLastError());
+        return -1;
+    }
 
     SOCKADDR_IN gameserverAddress;
     gameserverAddress.sin_family = AF_INET;
     ret = InetPtonA(AF_INET, "127.0.0.1", &(gameserverAddress.sin_addr));;
-    assert(ret == 1);
-    gameserverAddress.sin_port = htons(7777);
+    if (ret != 1)
+    {
+        fprintf(stderr, "InetPtonA failed with error code %d, extended error %d\n", ret, WSAGetLastError());
+        return -1;
+    }
+    gameserverAddress.sin_port = htons(GAME_SERVER_PORT);
 
     ULONGLONG timeOfLastSocketCleanup = GetTickCount64();
     while (true)
@@ -291,7 +371,11 @@ int main()
         SOCKADDR_IN clientAddress;
         int clientAddressSize = sizeof(clientAddress);
         int bytesToSend = recvfrom(clientSocket, socketBuffer, sizeof(socketBuffer), 0, (sockaddr *)&clientAddress, &clientAddressSize);
-        assert(bytesToSend != SOCKET_ERROR);
+        if (bytesToSend == SOCKET_ERROR)
+        {
+            fprintf(stderr, "Failed to receive from the client socket, error %d. Exiting...\n", WSAGetLastError());
+            break;
+        }
 
         //printf("Received %d bytes from client\n", bytesToSend);
 
@@ -311,7 +395,10 @@ int main()
                 if (it->second.timeOfLastMessage <= timeOfLastSocketCleanup)
                 {
                     ret = closesocket(it->second.gameserverSocket);
-                    assert(ret == 0);
+                    if (ret != 0)
+                    {
+                        fprintf(stderr, "Failed to close the game server socket for a client during inactivity cleanup, error %d. Ignoring...\n", WSAGetLastError());
+                    }
                     it = clientDataMap.erase(it);
                 }
                 else
@@ -323,41 +410,65 @@ int main()
             timeOfLastSocketCleanup = currentTickCount;
         }
 
-        unsigned long clientIPInHostOrder = clientAddress.sin_addr.S_un.S_addr;
-        unsigned short clientPort = clientAddress.sin_port;
-        bool allowed = controlData.allowedClients.checkAllowedAndStorePort(clientIPInHostOrder, clientAddress.sin_port);
+        unsigned long clientIPInNetworkOrder = clientAddress.sin_addr.S_un.S_addr;
+        bool allowed = controlData.allowedClients.checkAllowedAndStorePort(clientIPInNetworkOrder, clientAddress.sin_port);
         auto key = std::make_pair(clientAddress.sin_addr.S_un.S_addr, clientAddress.sin_port);
-        if (allowed || isPrivateAddress(clientIPInHostOrder))
+        if (allowed || isPrivateAddress(clientIPInNetworkOrder))
         {
             auto it = clientDataMap.find(key);
-            SOCKET gameserverSocket;
             ClientData *pClientData;
             if (it != clientDataMap.end())
             {
                 pClientData = &it->second;
-                gameserverSocket = pClientData->gameserverSocket;
             }
             else
             {
-                pClientData = &clientDataMap[key];
+                ClientData clientData;
 
-                gameserverSocket = socket(AF_INET, SOCK_DGRAM, 0);
+                SOCKET gameserverSocket = socket(AF_INET, SOCK_DGRAM, 0);
+                if (gameserverSocket == INVALID_SOCKET)
+                {
+                    fprintf(stderr, "Failed to create a game server socket for allowed client %d.%d.%d.%d:%d, error %d\n",
+                        clientAddress.sin_addr.S_un.S_un_b.s_b1,
+                        clientAddress.sin_addr.S_un.S_un_b.s_b2,
+                        clientAddress.sin_addr.S_un.S_un_b.s_b3,
+                        clientAddress.sin_addr.S_un.S_un_b.s_b4,
+                        clientAddress.sin_port,
+                        WSAGetLastError());
+                    break;
+                }
+
                 ret = connect(gameserverSocket, (sockaddr *)&gameserverAddress, sizeof(gameserverAddress));
-                assert(ret == 0);
+                if (ret != 0)
+                {
+                    fprintf(stderr, "Failed to connect to game server address, error %d\n", WSAGetLastError());
+                    break;
+                }
 
-                pClientData->gameserverSocket = gameserverSocket;
-                pClientData->clientAddress = clientAddress;
+                clientData.gameserverSocket = gameserverSocket;
+                clientData.clientAddress = clientAddress;
 
-                HANDLE threadHandle = CreateThread(NULL, 0, gameserverToClientHandler, &clientDataMap[key], 0, NULL);
-                assert(threadHandle != NULL);
+                HANDLE clientThreadHandle = CreateThread(NULL, 0, gameserverToClientHandler, &clientDataMap[key], 0, NULL);
+                if (clientThreadHandle == NULL)
+                {
+                    fprintf(stderr, "Failed to start thread for game server to client communication, error %d\n", GetLastError());
+                    break;
+                }
+
+                clientDataMap[key] = clientData;
+                pClientData = &clientDataMap[key];
             }
             pClientData->timeOfLastMessage = currentTickCount;
 
             int bytesSent = 0;
             while (bytesSent < bytesToSend)
             {
-                int bytesSentThisTime = send(gameserverSocket, &socketBuffer[bytesSent], bytesToSend - bytesSent, 0);
-                assert(bytesSentThisTime != SOCKET_ERROR);
+                int bytesSentThisTime = send(pClientData->gameserverSocket, &socketBuffer[bytesSent], bytesToSend - bytesSent, 0);
+                if (bytesSentThisTime == SOCKET_ERROR)
+                {
+                    fprintf(stderr, "Failed to send client data to game server, error %d. Ignoring...\n", WSAGetLastError());
+                    break;
+                }
                 //printf("Sent %d bytes to game server\n", bytesSentThisTime);
                 bytesSent += bytesSentThisTime;
             }
@@ -368,12 +479,26 @@ int main()
             if (it != clientDataMap.end())
             {
                 ret = closesocket(it->second.gameserverSocket);
-                assert(ret == 0);
+                if (ret != 0)
+                {
+                    // Ignoring this error would leave the gameserver-to-client thread running.
+                    // I definitely want to know (through bug reports) if this ever fails so I can
+                    // find a better way to handle this situation.
+                    fprintf(stderr, "Failed to close game server socket for removed client, error %d.\n", WSAGetLastError());
+                    break;
+                }
                 it = clientDataMap.erase(it);
             }
         }
     }
-    assert(false);
+
+    ret = WSACleanup();
+    if (ret == SOCKET_ERROR)
+    {
+        fprintf(stderr, "Failed to cleanup winsock, error %d\n", WSAGetLastError());
+    }
+    
+    fprintf(stderr, "*********** UDP proxy is exiting! ***********\n");
     return 0;
 }
 
