@@ -206,7 +206,15 @@ DWORD WINAPI gameserverToClientHandler(void *pParam)
         int ret = recv(pClientData->gameserverSocket, buffer, sizeof(buffer), 0);
         if (ret == SOCKET_ERROR)
         {
-            printf("Recv from game server failed with error %d\n", WSAGetLastError());
+            int lastError = WSAGetLastError();
+
+            // When a client is removed from the server the proxy closes the 
+            // game server socket to signal this thread that it should stop 
+            // communication with the client; no need to log an error.
+            if (lastError != WSAENOTSOCK)
+            {
+                printf("Recv from game server failed with error %d\n", lastError);
+            }
             break;
         }
         assert(ret != 0);
@@ -288,13 +296,11 @@ int main()
         //printf("Received %d bytes from client\n", bytesToSend);
 
         /*
-         * Automatic cleanup after inactivity will not only clean up sockets
-         * for clients that have disconnected, but also for clients for which
-         * forwarding has stopped because they have been removed from the
-         * allowed clients list (although the latter only works for non-local
-         * clients; traffic from local clients is always forwarded because we
-         * can't know a local client's LAN IP in the login server when the login
-         * server is not on the LAN).
+         * Automatic cleanup after inactivity will clean up sockets for
+         * clients who willingly stop sending packets to the game server
+         * and clients with private IP addresses. Other clients' sockets
+         * will be removed when they send the first packet after being
+         * blocked.
          */
         ULONGLONG currentTickCount = GetTickCount64();
         ULONGLONG oneMinute = 1 * 60 * 1000;
@@ -320,9 +326,9 @@ int main()
         unsigned long clientIPInHostOrder = clientAddress.sin_addr.S_un.S_addr;
         unsigned short clientPort = clientAddress.sin_port;
         bool allowed = controlData.allowedClients.checkAllowedAndStorePort(clientIPInHostOrder, clientAddress.sin_port);
+        auto key = std::make_pair(clientAddress.sin_addr.S_un.S_addr, clientAddress.sin_port);
         if (allowed || isPrivateAddress(clientIPInHostOrder))
         {
-            auto key = std::make_pair(clientAddress.sin_addr.S_un.S_addr, clientAddress.sin_port);
             auto it = clientDataMap.find(key);
             SOCKET gameserverSocket;
             ClientData *pClientData;
@@ -354,6 +360,16 @@ int main()
                 assert(bytesSentThisTime != SOCKET_ERROR);
                 //printf("Sent %d bytes to game server\n", bytesSentThisTime);
                 bytesSent += bytesSentThisTime;
+            }
+        }
+        else
+        {
+            auto it = clientDataMap.find(key);
+            if (it != clientDataMap.end())
+            {
+                ret = closesocket(it->second.gameserverSocket);
+                assert(ret == 0);
+                it = clientDataMap.erase(it);
             }
         }
     }
