@@ -245,10 +245,10 @@ class GameServer(Peer):
 
             # Because this is a firewall rule on the login server, it has to be the source IP of the player's
             # incoming connection and not always the external or always the internal address in address_pair.
-            modify_firewall('blacklist', 'add', player_to_kick.detected_ip)
+            modify_firewall('blacklist', 'add', player_to_kick.unique_id, player_to_kick.detected_ip)
 
             def remove_blacklist_rule():
-                modify_firewall('blacklist', 'remove', player_to_kick.detected_ip)
+                modify_firewall('blacklist', 'remove', player_to_kick.unique_id, player_to_kick.detected_ip)
 
             self.login_server.pending_callbacks.add(self.login_server, 8 * 3600, remove_blacklist_rule)
 

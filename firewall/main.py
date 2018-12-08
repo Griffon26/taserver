@@ -254,14 +254,14 @@ class Firewall():
                 'ruletype' : 'allow',
                 'port' : 7778,
                 'protocol' : 'udp',
-                'IPs' : set(),
+                'IPs' : list(),
             },
             'blacklist' : {
                 'name' : 'TAserverfirewall-blacklist',
                 'ruletype' : 'block',
                 'port' : 9000,
                 'protocol' : 'tcp',
-                'IPs' : set()
+                'IPs' : list()
             }
         }
 
@@ -282,19 +282,33 @@ class Firewall():
                     self.reset_whitelist()
                 else:
                     self.reset_blacklist()
+                thelist['IPs'] = list()
             elif command['action'] == 'add':
                 ip = command['ip']
                 if ip not in thelist['IPs']:
-                    self.logger.info('add %sing firewall rule for %s to %s port %d' %
-                                     (thelist['ruletype'], ip, thelist['protocol'], thelist['port']))
-                    thelist['IPs'].add(ip)
-                    self.addrule(thelist['name'], ip, thelist['port'], thelist['protocol'], thelist['ruletype'])
+                    ip_is_new = ip not in thelist['IPs']
+                    thelist['IPs'].append(ip)
+                    if ip_is_new:
+                        self.logger.info('add %sing firewall rule for %s to %s port %d' %
+                                         (thelist['ruletype'], ip, thelist['protocol'],
+                                          thelist['port']))
+                        self.addrule(thelist['name'], ip, thelist['port'], thelist['protocol'], thelist['ruletype'])
             elif command['action'] == 'remove':
                 ip = command['ip']
                 if ip in thelist['IPs']:
-                    self.logger.info('remove %sing firewall rule for %s to %s port %d' %
-                                     (thelist['ruletype'], ip, thelist['protocol'], thelist['port']))
                     thelist['IPs'].remove(ip)
+                    if ip not in thelist['IPs']:
+                        self.logger.info('remove %sing firewall rule for %s to %s port %d' %
+                                         (thelist['ruletype'], ip, thelist['protocol'],
+                                          thelist['port']))
+                        self.removerule(thelist['name'], ip, thelist['port'], thelist['protocol'])
+            elif command['action'] == 'removeall':
+                ip = command['ip']
+                if ip in thelist['IPs']:
+                    thelist['IPs'] = [x for x in thelist['IPs'] if x != ip]
+                    self.logger.info('remove %sing firewall rule for %s to %s port %d' %
+                                     (thelist['ruletype'], ip, thelist['protocol'],
+                                      thelist['port']))
                     self.removerule(thelist['name'], ip, thelist['port'], thelist['protocol'])
 
 

@@ -21,6 +21,7 @@
 import argparse
 from ipaddress import ip_address
 import socket
+import struct
 
 proxy_address = ("127.0.0.1", 9802)
 
@@ -29,7 +30,8 @@ def main(args):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect(proxy_address)
         action = b'a' if args.action == 'add' else b'r'
-        message = action + args.IPaddress.packed
+        message = action + struct.pack('<L', 10000000) + args.IPaddress.packed
+        sock.sendall(struct.pack('<L', len(message)))
         sock.sendall(message)
         sock.shutdown(socket.SHUT_RDWR)
 

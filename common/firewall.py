@@ -18,11 +18,11 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import gevent
 from gevent import socket
 from ipaddress import IPv4Address
 import json
 import logging
+import struct
 
 from .tcpmessage import TcpMessageWriter
 
@@ -44,7 +44,8 @@ def _send_command(command):
                 else:
                     address = IPv4Address(command['ip'])
                     action = b'a' if command['action'] == 'add' else b'r'
-                    message = action + address.packed
+                    message = action + struct.pack('<L', command['player_id']) + address.packed
+                sock.sendall(struct.pack('<L', len(message)))
                 sock.sendall(message)
                 sock.shutdown(socket.SHUT_RDWR)
 
@@ -68,10 +69,11 @@ def reset_firewall(list_type):
     _send_command(command)
 
 
-def modify_firewall(list_type, action, ip):
+def modify_firewall(list_type, action, player_id, ip):
     command = {
         'list' : list_type,
         'action' : action,
+        'player_id' : player_id,
         'ip' : ip
     }
     _send_command(command)

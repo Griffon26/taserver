@@ -1,10 +1,10 @@
 
 #include <assert.h>
 #include <map>
-#include <set>
 #include <string.h>
 #include <utility>
 #include <stdio.h>
+#include <vector>
 #include <Ws2tcpip.h>
 #include <WinSock2.h>
 
@@ -24,8 +24,16 @@ SOCKET gameServerSockets[1024];
 class AllowedClients
 {
 private:
+    struct ClientInfo
+    {
+        unsigned long playerId;
+        unsigned long address;
+        unsigned long port;
+    };
+
     CRITICAL_SECTION criticalSection;
-    std::set<unsigned long> clientList;
+
+    std::vector<ClientInfo> clientList;
 
 public:
     AllowedClients()
@@ -38,18 +46,25 @@ public:
         DeleteCriticalSection(&criticalSection);
     }
 
-    void addClient(unsigned long address)
+    void addClient(unsigned long playerId, unsigned long address)
     {
         EnterCriticalSection(&criticalSection);
-        assert(!hasClient(address));
-        clientList.insert(address);
+        // When allowing a new player the clientList entry has no port yet;
+        // that will be filled in once we receive the first packet.
+        clientList.push_back({ playerId, address, 0 });
         LeaveCriticalSection(&criticalSection);
     }
-    void removeClient(unsigned long address)
+    void removeClient(unsigned long playerId, unsigned long address)
     {
         EnterCriticalSection(&criticalSection);
-        assert(hasClient(address));
-        clientList.erase(address);
+        for (auto iter = clientList.begin(); iter != clientList.end(); iter++)
+        {
+            if (iter->playerId == playerId)
+            {
+                clientList.erase(iter);
+                break;
+            }
+        }
         LeaveCriticalSection(&criticalSection);
     }
     void removeAll()
@@ -59,13 +74,38 @@ public:
         LeaveCriticalSection(&criticalSection);
     }
 
-    bool hasClient(unsigned long address)
+    bool checkAllowedAndStorePort(unsigned long address, unsigned long port)
     {
+        bool allowed = false;
         EnterCriticalSection(&criticalSection);
-        bool found = clientList.find(address) != clientList.end();
+        
+        ClientInfo *pNewClient = NULL;
+        for (auto iter = clientList.begin(); iter != clientList.end(); iter++)
+        {
+            if (iter->address == address)
+            {
+                if (iter->port == port)
+                {
+                    allowed = true;
+                    break;
+                }
+                else if (iter->port == 0)
+                {
+                    pNewClient = &*iter;
+                }
+            }
+        }
+
+        // If there's no entry with our port in the clientList but there is
+        // a matching entry without a port, then claim that for ourselves.
+        if (!allowed && pNewClient)
+        {
+            pNewClient->port = port;
+            allowed = true;
+        }
         LeaveCriticalSection(&criticalSection);
 
-        return found;
+        return allowed;
     }
 };
 
@@ -79,6 +119,7 @@ struct ClientData
 {
     SOCKADDR_IN clientAddress;
     SOCKET gameserverSocket;
+    ULONGLONG timeOfLastMessage;
 };
 
 bool isPrivateAddress(unsigned long addressInNetworkOrder)
@@ -102,7 +143,7 @@ int recvall(SOCKET socket, char *pBuffer, int len)
         assert(bytesReceivedThisTime != SOCKET_ERROR);
         if (bytesReceivedThisTime == 0)
         {
-            return 0;
+            return bytesReceived;
         }
         bytesReceived += bytesReceivedThisTime;
     }
@@ -124,28 +165,32 @@ DWORD WINAPI allowedClientsHandler(void *pParam)
         SOCKET controllerSocket = accept(pControlData->listenSocket, (sockaddr *)&sockaddr_in, &addressSize);
         assert(controllerSocket != INVALID_SOCKET);
 
-        char pBuffer[CONTROL_MESSAGE_SIZE];
-        ret = recvall(controllerSocket, pBuffer, CONTROL_MESSAGE_SIZE);
-        assert(ret == CONTROL_MESSAGE_SIZE);
+        unsigned long messageSize;
+        ret = recvall(controllerSocket, (char *)&messageSize, sizeof(unsigned long));
+        assert(ret == sizeof(unsigned long));
+        char pBuffer[32];
+        ret = recvall(controllerSocket, pBuffer, messageSize);
+        assert(ret == messageSize);
 
         closesocket(controllerSocket);
 
-        if (!strncmp("reset", pBuffer, CONTROL_MESSAGE_SIZE))
+        if (!strncmp("reset", pBuffer, 5))
         {
             pControlData->allowedClients.removeAll();
         }
         else
         {
             assert(pBuffer[0] == 'r' || pBuffer[0] == 'a');
-            unsigned long address = *(unsigned long *)&pBuffer[1];
+            unsigned long player_id = *(unsigned long *)&pBuffer[1];
+            unsigned long address = *(unsigned long *)&pBuffer[1 + sizeof(unsigned long)];
 
             if (pBuffer[0] == 'a')
             {
-                pControlData->allowedClients.addClient(address);
+                pControlData->allowedClients.addClient(player_id, address);
             }
             else
             {
-                pControlData->allowedClients.removeClient(address);
+                pControlData->allowedClients.removeClient(player_id, address);
             }
         }
     }
@@ -232,7 +277,7 @@ int main()
     assert(ret == 1);
     gameserverAddress.sin_port = htons(7777);
 
-
+    ULONGLONG timeOfLastSocketCleanup = GetTickCount64();
     while (true)
     {
         SOCKADDR_IN clientAddress;
@@ -242,30 +287,65 @@ int main()
 
         //printf("Received %d bytes from client\n", bytesToSend);
 
+        /*
+         * Automatic cleanup after inactivity will not only clean up sockets
+         * for clients that have disconnected, but also for clients for which
+         * forwarding has stopped because they have been removed from the
+         * allowed clients list (although the latter only works for non-local
+         * clients; traffic from local clients is always forwarded because we
+         * can't know a local client's LAN IP in the login server when the login
+         * server is not on the LAN).
+         */
+        ULONGLONG currentTickCount = GetTickCount64();
+        ULONGLONG oneMinute = 1 * 60 * 1000;
+        if (currentTickCount > timeOfLastSocketCleanup + oneMinute)
+        {
+            for (auto it = clientDataMap.begin(); it != clientDataMap.end();)
+            {
+                if (it->second.timeOfLastMessage <= timeOfLastSocketCleanup)
+                {
+                    ret = closesocket(it->second.gameserverSocket);
+                    assert(ret == 0);
+                    it = clientDataMap.erase(it);
+                }
+                else
+                {
+                    it++;
+                }
+            }
+
+            timeOfLastSocketCleanup = currentTickCount;
+        }
 
         unsigned long clientIPInHostOrder = clientAddress.sin_addr.S_un.S_addr;
-        if (isPrivateAddress(clientIPInHostOrder) ||
-            controlData.allowedClients.hasClient(clientIPInHostOrder))
+        unsigned short clientPort = clientAddress.sin_port;
+        bool allowed = controlData.allowedClients.checkAllowedAndStorePort(clientIPInHostOrder, clientAddress.sin_port);
+        if (allowed || isPrivateAddress(clientIPInHostOrder))
         {
             auto key = std::make_pair(clientAddress.sin_addr.S_un.S_addr, clientAddress.sin_port);
             auto it = clientDataMap.find(key);
             SOCKET gameserverSocket;
+            ClientData *pClientData;
             if (it != clientDataMap.end())
             {
-                gameserverSocket = it->second.gameserverSocket;
+                pClientData = &it->second;
+                gameserverSocket = pClientData->gameserverSocket;
             }
             else
             {
+                pClientData = &clientDataMap[key];
+
                 gameserverSocket = socket(AF_INET, SOCK_DGRAM, 0);
                 ret = connect(gameserverSocket, (sockaddr *)&gameserverAddress, sizeof(gameserverAddress));
                 assert(ret == 0);
 
-                clientDataMap[key].gameserverSocket = gameserverSocket;
-                clientDataMap[key].clientAddress = clientAddress;
+                pClientData->gameserverSocket = gameserverSocket;
+                pClientData->clientAddress = clientAddress;
 
                 HANDLE threadHandle = CreateThread(NULL, 0, gameserverToClientHandler, &clientDataMap[key], 0, NULL);
                 assert(threadHandle != NULL);
             }
+            pClientData->timeOfLastMessage = currentTickCount;
 
             int bytesSent = 0;
             while (bytesSent < bytesToSend)
