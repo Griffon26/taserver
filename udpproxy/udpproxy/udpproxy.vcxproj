@@ -154,6 +154,12 @@
   <ItemGroup>
     <ClCompile Include="udpproxy.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="udpproxy.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
