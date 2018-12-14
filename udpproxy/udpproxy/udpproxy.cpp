@@ -97,6 +97,13 @@ public:
         // a matching entry without a port, then claim that for ourselves.
         if (!allowed && pNewClient)
         {
+            fprintf(stderr, "forwarder: associating new connection on port %d with client at %d.%d.%d.%d\n",
+                port,
+                (pNewClient->address >> 0) & 0xFF,
+                (pNewClient->address >> 8) & 0xFF,
+                (pNewClient->address >> 16) & 0xFF,
+                (pNewClient->address >> 24) & 0xFF);
+                        
             pNewClient->port = port;
             allowed = true;
         }
@@ -195,21 +202,34 @@ DWORD WINAPI allowedClientsHandler(void *pParam)
 
         if (!strncmp("reset", pBuffer, 5))
         {
+            fprintf(stderr, "control: Received reset command\n");
             pControlData->allowedClients.removeAll();
         }
         else if((messageSize == 2 * sizeof(unsigned long) + 1) && 
                 (pBuffer[0] == 'r' || pBuffer[0] == 'a'))
         {
-            unsigned long player_id = *(unsigned long *)&pBuffer[1];
+            unsigned long playerId = *(unsigned long *)&pBuffer[1];
             unsigned long address = *(unsigned long *)&pBuffer[1 + sizeof(unsigned long)];
 
             if (pBuffer[0] == 'a')
             {
-                pControlData->allowedClients.addClient(player_id, address);
+                fprintf(stderr, "control: adding client %d with IP %d.%d.%d.%d\n",
+                    playerId,
+                    (address >> 0) & 0xFF,
+                    (address >> 8) & 0xFF,
+                    (address >> 16) & 0xFF,
+                    (address >> 24) & 0xFF);
+                pControlData->allowedClients.addClient(playerId, address);
             }
             else
             {
-                pControlData->allowedClients.removeClient(player_id, address);
+                fprintf(stderr, "control: removing client %d with IP %d.%d.%d.%d\n",
+                    playerId,
+                    (address >> 0) & 0xFF,
+                    (address >> 8) & 0xFF,
+                    (address >> 16) & 0xFF,
+                    (address >> 24) & 0xFF);
+                pControlData->allowedClients.removeClient(playerId, address);
             }
         }
         else
@@ -240,7 +260,7 @@ DWORD WINAPI gameserverToClientHandler(void *pParam)
             // When a client is removed from the server the proxy closes the 
             // game server socket to signal this thread that it should stop 
             // communication with the client; no need to log an error.
-            if (lastError != WSAENOTSOCK)
+            if (lastError != WSAEINTR)
             {
                 fprintf(stderr, "Receive from game server failed, error %d\n", lastError);
             }
@@ -394,6 +414,12 @@ int main()
             {
                 if (it->second.timeOfLastMessage <= timeOfLastSocketCleanup)
                 {
+                    fprintf(stderr, "forwarder: cleaning up... closing socket for client %d.%d.%d.%d:%d\n",
+                            it->second.clientAddress.sin_addr.S_un.S_un_b.s_b1,
+                            it->second.clientAddress.sin_addr.S_un.S_un_b.s_b2,
+                            it->second.clientAddress.sin_addr.S_un.S_un_b.s_b3,
+                            it->second.clientAddress.sin_addr.S_un.S_un_b.s_b4,
+                            it->second.clientAddress.sin_port);
                     ret = closesocket(it->second.gameserverSocket);
                     if (ret != 0)
                     {
@@ -478,6 +504,12 @@ int main()
             auto it = clientDataMap.find(key);
             if (it != clientDataMap.end())
             {
+                fprintf(stderr, "forwarder: client not allowed, closing socket for client %d.%d.%d.%d:%d\n",
+                    it->second.clientAddress.sin_addr.S_un.S_un_b.s_b1,
+                    it->second.clientAddress.sin_addr.S_un.S_un_b.s_b2,
+                    it->second.clientAddress.sin_addr.S_un.S_un_b.s_b3,
+                    it->second.clientAddress.sin_addr.S_un.S_un_b.s_b4,
+                    it->second.clientAddress.sin_port);
                 ret = closesocket(it->second.gameserverSocket);
                 if (ret != 0)
                 {

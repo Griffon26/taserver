@@ -30,7 +30,7 @@ def main(args):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.connect(proxy_address)
         action = b'a' if args.action == 'add' else b'r'
-        message = action + struct.pack('<L', 10000000) + args.IPaddress.packed
+        message = action + struct.pack('<L', args.playerID) + args.IPaddress.packed
         sock.sendall(struct.pack('<L', len(message)))
         sock.sendall(message)
         sock.shutdown(socket.SHUT_RDWR)
@@ -40,6 +40,8 @@ if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser(description='Helper utility for testing the udpproxy')
     arg_parser.add_argument('action', choices = ['add', 'remove'],
                             help='the action to perform')
+    arg_parser.add_argument('playerID', type=int,
+                            help='the ID of the player that is being added/removed')
     arg_parser.add_argument('IPaddress', type=ip_address,
                             help='the address to add to or remove from the list of allowed clients')
 
