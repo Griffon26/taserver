@@ -9,6 +9,8 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
+#define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR, 12)
+
 #define GAME_SERVER_PORT 7777
 #define CLIENT_PORT 7778
 #define CONTROL_PORT 9802
@@ -165,10 +167,12 @@ public:
     SocketCloser(SOCKET socket):
         mSocket(socket)
     {
+        //fprintf(stderr, "Initializing closer for socket %u\n", mSocket);
     }
 
     ~SocketCloser()
     {
+        //fprintf(stderr, "Closing socket %u\n", mSocket);
         closesocket(mSocket);
     }
 
@@ -197,8 +201,6 @@ DWORD WINAPI allowedClientsHandler(void *pParam)
         char pBuffer[32];
         ret = recvall(controllerSocket, pBuffer, messageSize);
         if (ret != (int)messageSize) continue;
-
-        closesocket(controllerSocket);
 
         if (!strncmp("reset", pBuffer, 5))
         {
@@ -368,6 +370,13 @@ int main()
     }
     SocketCloser clientSocketCloser(clientSocket);
 
+    u_long falseValue = false;
+    if (ioctlsocket(clientSocket, SIO_UDP_CONNRESET, &falseValue) == SOCKET_ERROR)
+    {
+        fprintf(stderr, "Failed to set SIO_UDP_CONNRESET to False on client socket, error %d\n", WSAGetLastError());
+        return -1;
+    }
+
     ret = bind(clientSocket, (sockaddr *)&clientListenAddress, sizeof(clientListenAddress));
     if (ret == SOCKET_ERROR)
     {
@@ -420,6 +429,7 @@ int main()
                             it->second.clientAddress.sin_addr.S_un.S_un_b.s_b3,
                             it->second.clientAddress.sin_addr.S_un.S_un_b.s_b4,
                             it->second.clientAddress.sin_port);
+                    //fprintf(stderr, "Closing gameserver socket %u\n", it->second.gameserverSocket);
                     ret = closesocket(it->second.gameserverSocket);
                     if (ret != 0)
                     {
@@ -474,15 +484,15 @@ int main()
                 clientData.gameserverSocket = gameserverSocket;
                 clientData.clientAddress = clientAddress;
 
-                HANDLE clientThreadHandle = CreateThread(NULL, 0, gameserverToClientHandler, &clientDataMap[key], 0, NULL);
+                clientDataMap[key] = clientData;
+                pClientData = &clientDataMap[key];
+
+                HANDLE clientThreadHandle = CreateThread(NULL, 0, gameserverToClientHandler, pClientData, 0, NULL);
                 if (clientThreadHandle == NULL)
                 {
                     fprintf(stderr, "Failed to start thread for game server to client communication, error %d\n", GetLastError());
                     break;
                 }
-
-                clientDataMap[key] = clientData;
-                pClientData = &clientDataMap[key];
             }
             pClientData->timeOfLastMessage = currentTickCount;
 
@@ -510,6 +520,7 @@ int main()
                     it->second.clientAddress.sin_addr.S_un.S_un_b.s_b3,
                     it->second.clientAddress.sin_addr.S_un.S_un_b.s_b4,
                     it->second.clientAddress.sin_port);
+                //fprintf(stderr, "Closing gameserver socket %u\n", it->second.gameserverSocket);
                 ret = closesocket(it->second.gameserverSocket);
                 if (ret != 0)
                 {
