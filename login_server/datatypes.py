@@ -1676,10 +1676,32 @@ class m0662(arrayofenumblockarrays):
 
             m0661().set(0x0191C7E0),
             m01e3().set(0x00002718),
-            m065f().set(0x00000001),
+            m065f().set(0x000000025),
             m02fe(),
-            m0144()
-        ]
+            m0144().set([
+                [
+                    m0369().set(0x000004C3),
+                    m0261().set("1"),
+                ],
+                [
+                    m0369().set(0x000004CA),
+                    m0261().set("0"),
+                ]
+            ])
+        ],
+        # [
+        #
+        #     m0661().set(0x0191C7E1),
+        #     m01e3().set(0x00002719),
+        #     m065f().set(0x00000025), # if this value is 1 like the others, the settings aren't picked up
+        #     m02fe(),
+        #     m0144().set([
+        #         [
+        #             m0369().set(0x000004C3),
+        #             m0261().set("1"),
+        #         ]
+        #     ])
+        # ]
     ]
     physics_presets = [
         [

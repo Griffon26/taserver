@@ -22,6 +22,7 @@ from ipaddress import IPv4Address
 
 from .friends import Friends
 from .loadouts import Loadouts
+#from .menusettings import MenuSettings
 from ..utils import IPAddressPair
 from common.connectionhandler import Peer
 from common.statetracer import statetracer, RefOnly
@@ -55,6 +56,7 @@ class Player(Peer):
         self.login_server = None
         self.game_server = None
         self.loadouts = Loadouts(use_goty_mode)
+        #self.settings = MenuSettings()
         self.friends = Friends()
         self.team = None
         self.pings = {}

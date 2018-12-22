@@ -223,28 +223,36 @@ class AuthenticatedState(PlayerState):
     def handle_menuchange(self, request):
         # Request to change the player's region
         if len(request.content) == 1 and type(request.content[0]) is m0448:
+            print('1')
             pass
         else:
+            print('2')
             loadout_changed = False
             for arr in request.findbytype(m0144).arrays:
+                print('3')
                 setting = findbytype(arr, m0369).value
                 int_field = findbytype(arr, m0261)
                 string_field = findbytype(arr, m0437)
 
+                menu_area = findbytype(arr, m01e3).value
                 menu_area_field = findbytype(arr, m0661)
 
                 if menu_area_field:
                     if self.player.loadouts.is_loadout_menu_item(menu_area_field.value):
+                        print('loadout: %08X' % menu_area)
                         equip_value = int(int_field.value) if int_field else string_field.value
                         self.player.loadouts.modify(menu_area_field.value, setting, equip_value)
                         loadout_changed = True
                     elif menu_area_field.value == MENU_AREA_SETTINGS:
+                        print('setting: %08X' % menu_area)
                         # Ignore user settings. They'll have to store them themselves
                         pass
                     else:
+                        print('other: %08X' % menu_area)
                         value = int_field.value if int_field else string_field.value
                         self.logger.debug('******* Setting %08X of menu area %s to value %s' % (setting, menu_area_field.value, value))
                 else:
+                    print('still other: %08X' % menu_area)
                     value = int_field.value if int_field else string_field.value
                     self.logger.debug('******* Setting %08X to value %s' % (setting, value))
 
