@@ -94,9 +94,8 @@ class GameServer(Peer):
             player.set_state(AuthenticatedState)
         super().disconnect(exception)
 
-    def set_info(self, address_pair, port, description, motd):
+    def set_info(self, address_pair, description, motd):
         self.address_pair = address_pair
-        self.port = port
         self.description = description
         self.motd = motd
         self.send_pings()
@@ -108,9 +107,15 @@ class GameServer(Peer):
         else:
             self.match_end_time_rel_or_abs = seconds_remaining
 
-        # The game controller sends the match time only after it's properly up
-        # and joinable by players
+    def set_ready(self, port):
+        self.be_score = 0
+        self.ds_score = 0
+        self.port = port
         self.joinable = True
+
+        # TODO: move all players to the server on the new port
+
+        self.send(Login2LauncherNextMapMessage())
 
     def get_time_remaining(self):
         if self.match_end_time_rel_or_abs is not None:
@@ -161,11 +166,6 @@ class GameServer(Peer):
         assert player.unique_id in self.players
         msg = Login2LauncherRemovePlayerLoadoutsMessage(player.unique_id)
         self.send(msg)
-
-    def start_next_map(self):
-        self.be_score = 0
-        self.ds_score = 0
-        self.send(Login2LauncherNextMapMessage())
 
     def start_votekick(self, kicker, kickee):
         if kickee.unique_id in self.players and self.player_being_kicked is None:

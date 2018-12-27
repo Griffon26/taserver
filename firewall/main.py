@@ -314,7 +314,8 @@ class Firewall():
 
 def main():
     try:
-        udp_proxy_proc = sp.Popen('udpproxy.exe')
+        udp_proxy_proc1 = sp.Popen('udpproxy.exe 7777')
+        udp_proxy_proc2 = sp.Popen('udpproxy.exe 7778')
 
     except OSError as e:
         print('Failed to run udpproxy.exe. Run download_udpproxy.py to download it\n'
@@ -338,4 +339,5 @@ def main():
     except KeyboardInterrupt:
         firewall.removeallrules()
 
-    udp_proxy_proc.terminate()
+    udp_proxy_proc1.terminate()
+    udp_proxy_proc2.terminate()
