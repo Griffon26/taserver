@@ -138,7 +138,9 @@ class GameServerHandler:
             pass
 
         self.logger.info('gameserver: Starting a new TribesAscend server on port %d...' % port)
-        args = [self.exe_path, 'server', '-Log=tagameserver%d.log' % port, '-port=%d' % port]
+        # Add 100 to the port, because it's the udpproxy that's actually listening on the port itself
+        # and it forwards traffic to port + 100
+        args = [self.exe_path, 'server', '-Log=tagameserver%d.log' % port, '-port=%d' % (port + 100)]
         if self.dll_config_path is not None:
             args.extend(['-tamodsconfig', self.dll_config_path])
         process = sp.Popen(args, cwd=self.working_dir)

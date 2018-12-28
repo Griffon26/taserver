@@ -35,7 +35,7 @@ from .gamecontrollerhandler import GameController
 from .gameserverhandler import StartGameServerMessage, StopGameServerMessage, GameServerTerminatedMessage
 from .loginserverhandler import LoginServer
 
-game_server_ports = [7877, 7878]
+game_server_ports = [7777, 7778]
 
 
 def get_other_port(port):
@@ -299,7 +299,7 @@ class Launcher:
                 self.last_server_ready_message = msg
 
     def handle_match_end_message(self, msg):
-        self.logger.info('launcher: received match end from game controller')
+        self.logger.info('launcher: received match end from game controller (controller context = %s)' % msg.controller_context)
 
         self.game_controller = None
         self.controller_context = msg.controller_context
