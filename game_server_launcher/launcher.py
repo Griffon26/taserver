@@ -291,11 +291,12 @@ class Launcher:
         else:
             self.last_match_time_message = msg
 
-        msg = Launcher2LoginServerReadyMessage(self.pending_server_port)
-        if self.login_server:
-            self.login_server.send(msg)
-        else:
-            self.last_server_ready_message = msg
+        if self.pending_server_port != self.active_server_port:
+            msg = Launcher2LoginServerReadyMessage(self.pending_server_port)
+            if self.login_server:
+                self.login_server.send(msg)
+            else:
+                self.last_server_ready_message = msg
 
     def handle_match_end_message(self, msg):
         self.logger.info('launcher: received match end from game controller')

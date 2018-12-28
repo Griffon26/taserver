@@ -113,7 +113,11 @@ class GameServer(Peer):
         self.port = port
         self.joinable = True
 
-        # TODO: move all players to the server on the new port
+        for unique_id, player in self.players.items():
+            b4msg = a00b4().set_server(self).set_player(unique_id)
+            b4msg.findbytype(m042a).set(3)
+            b4msg.content.append(m02ff())
+            player.send(b4msg)
 
         self.send(Login2LauncherNextMapMessage())
 

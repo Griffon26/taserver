@@ -164,12 +164,14 @@ class GameServerHandler:
     def stop_server_process(self, port):
         if port in self.servers:
             process = self.servers[port]
+            self.logger.info('gameserver: Terminating game server on port %u, process %u' % (port, process.pid))
             process.terminate()
 
     def terminate_all_servers(self):
         processes = self.servers.values()
         self.servers = {}
         for process in processes:
+            self.logger.info('gameserver: Terminating game server process %u' % process.pid)
             process.terminate()
 
     def run(self):
