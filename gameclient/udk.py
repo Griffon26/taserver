@@ -29,6 +29,58 @@ class ParseError(Exception):
 
 class ParserState():
     def __init__(self):
+        TrInventoryStationCollisionProps = {
+            '101100' : { 'name' : 'RelativeLocation2',
+                         'type' : bitarray,
+                         'size' : 2 },
+            '001001' : { 'name' : 'RelativeLocation',
+                         'type' : bitarray,
+                         'size' : 10 },
+            '011111' : { 'name': 'Base',
+                         'type': bitarray,
+                         'size': 30},
+        }
+        TrPowerGeneratorProps = {
+            '111110' : { 'name' : 'r_MaxHealth',
+                         'type' : bitarray,
+                         'size' : 31 }
+        }
+
+        TrPlayerControllerProps = {
+            '101010' : { 'name' : 'PlayerReplicationInfo',
+                         'type' : bitarray,
+                         'size' : 13 }
+        }
+
+        TrBaseTurretProps = {
+            '110001' : { 'name' : 'r_FlashCount',
+                         'type' : bitarray,
+                         'size' : 8 }
+        }
+
+        TrProj_BaseTurretProps = {
+            '011100' : { 'name' : 'Rotation',
+                         'type' : bitarray,
+                         'size' : 18 },
+            '000001' : { 'name' : 'Velocity',
+                         'type' : bitarray,
+                         'size' : 42 }
+        }
+
+        TrDroppedPickupProps = {
+            '101101' : { 'name' : 'InventoryClass',
+                         'type' : bitarray,
+                         'size' : 31 },
+            '011101' : { 'name' : 'Base',
+                         'type' : bitarray,
+                         'size' : 30 },
+            '110011' : { 'name' : 'Rotation',
+                         'type' : bitarray,
+                         'size' : 10 },
+            '101011' : { 'name' : 'bFadeOut',
+                         'type' : 'flag' }
+        }
+
         TrGameReplicationInfoProps = {
             '000000' : { 'name' : 'prefix?',
                          'type' : bitarray,
@@ -72,15 +124,42 @@ class ParserState():
         }
 
         TrFlagCTFProps = {
+            '110000' : { 'name' : 'bHardAttach', 'type' : 'flag'},
+            '000100' : { 'name' : 'Physics',
+                         'type' : bitarray,
+                         'size' : 3 },
+            '000010' : { 'name' : 'Location',
+                         'type' : bitarray,
+                         'size' : 51 },
+            '110010' : { 'name' : 'Rotation',
+                         'type' : bitarray,
+                         'size' : 10 },
+            '001010' : { 'name' : 'Velocity',
+                         'type' : bitarray,
+                         'size' : 39 },
+            '101110' : { 'name' : 'Base',
+                         'type' : bitarray,
+                         'size' : 9 },
+            '100001' : { 'name' : 'bCollideActors', 'type' : 'flag'},
+            '010001' : { 'name' : 'bCollideWorld', 'type' : 'flag'},
             '111011' : { 'name' : 'Team',
                          'type' : bitarray,
                          'size' : 10 },
+            '000111' : { 'name' : 'HolderPRI',
+                         'type' : bitarray,
+                         'size' : 10 }
         }
 
         TrPlayerReplicationInfoProps = {
             '000000' : { 'name' : 'prefix?',
                          'type' : bitarray,
                          'size' : 5 },
+            '000010' : { 'name' : 'Location',
+                         'type' : bitarray,
+                         'size' : 51 },
+            '110010' : { 'name' : 'Rotation',
+                         'type' : bitarray,
+                         'size' : 10 },
             '101010' : { 'name' : 'UniqueId',
                          'type' : bitarray,
                          'size' : 64 },
@@ -95,11 +174,20 @@ class ParserState():
             '000001' : { 'name' : 'PlayerID', 'type' : int },
             '100001' : { 'name' : 'PlayerName', 'type' : str },
             '110001' : { 'name' : 'Deaths', 'type' : int },
+            '001001' : { 'name' : 'Score', 'type' : int },
             '011001' : { 'name' : 'CharClassInfo', 'type' : int },
-            '000011' : { 'name' : 'r_VoiceClass', 'type' : int },
-            '000111' : { 'name' : 'm_nPlayerIconIndex', 'type' : int },
-            '001111' : { 'name' : 'm_PendingBaseClass', 'type' : int },
-            '101111' : { 'name' : 'm_CurrentBaseClass', 'type' : int },
+            '010101' : { 'name' : 'bHasFlag', 'type': bool},
+            '101101' : { 'name' : 'r_bSkinId', 'type': int},
+            '111101' : { 'name' : 'r_EquipLevels',
+                         'type' : bitarray,
+                         'size' : 48},
+            '000011' : { 'name' : 'r_VoiceClass', 'type': int},
+            '001011' : { 'name' : 'm_nPlayerClassId', 'type': int},
+            '101011' : { 'name' : 'm_nCreditsEarned', 'type': int},
+            '000111' : { 'name' : 'm_nPlayerIconIndex', 'type': int},
+            '001111' : { 'name' : 'm_PendingBaseClass', 'type': int},
+            '101111' : { 'name' : 'm_CurrentBaseClass', 'type': int},
+
         }
 
         FirstClientObjectProps = {
@@ -114,6 +202,10 @@ class ParserState():
         }                
 
         self.class_dict = {
+            '01111010010000101100000000000000' : { 'name' : 'TrProj_BaseTurret',
+                                                   'props' : TrProj_BaseTurretProps },
+            '01001011001001010100000000000000' : { 'name' : 'TrDroppedPickup',
+                                                   'props' : TrDroppedPickupProps },
             '00110100101111010100000000000000' : { 'name' : 'TrFlagCTF_DiamondSword',
                                                    'props' : TrFlagCTFProps },
             '00100111010010011000000000000000' : { 'name' : 'UTTeamInfo',
@@ -123,7 +215,7 @@ class ParserState():
             '00000110101111001100000000000000' : { 'name' : 'TrPlayerReplicationInfo',
                                                    'props' : TrPlayerReplicationInfoProps },
             '00110001010000010100000000000000' : { 'name' : 'TrPlayerController',
-                                                   'props' : {} },
+                                                   'props' : TrPlayerControllerProps },
             '01110001101110110100000000000000' : { 'name' : 'TrGameReplicationInfo',
                                                    'props' : TrGameReplicationInfoProps },
             '00000101100101011110000000000000' : { 'name' : 'WorldInfo',
@@ -131,15 +223,17 @@ class ParserState():
             '00010011100001101100000000000000' : { 'name' : 'TrServerSettingsInfo',
                                                    'props' : {} },
             '00111100001100100100000000000000' : { 'name' : 'TrBaseTurret_DiamondSword',
-                                                   'props' : {} },
+                                                   'props' : TrBaseTurretProps },
             '01001010100010101100000000000000' : { 'name' : 'TrRadarStation_DiamondSword',
                                                    'props' : {} },
             '00110111000101011110000000000000' : { 'name' : 'TrCTFBase_DiamondSword',
                                                    'props' : {} },
             '01100110100101011110000000000000' : { 'name' : 'TrVehicleStation_DiamondSword',
                                                    'props' : {} },
+            '01111100100101011110000000000000' : { 'name' : 'TrPowerGenerator_DiamondSword',
+                                                   'props' : TrPowerGeneratorProps },
             '01001011110100001100000000000000' : { 'name' : 'TrInventoryStationCollision',
-                                                   'props' : {} },
+                                                   'props' : TrInventoryStationCollisionProps },
             '00000000110010101100000000000000' : { 'name' : 'TrRepairStationCollision',
                                                    'props' : {} },
             '00111010100001100100000000000000' : { 'name' : 'TrPlayerPawn',
@@ -163,7 +257,7 @@ class ParserState():
             '00000011110100001100000000000000' : { 'name' : 'TrStationCollision',
                                                    'props' : {} },
             '00011100001100100100000000000000' : { 'name' : 'TrBaseTurret_BloodEagle',
-                                                   'props' : {} },
+                                                   'props' : TrBaseTurretProps },
             '01110010100010101100000000000000' : { 'name' : 'TrRadarStation_BloodEagle',
                                                    'props' : {} },
             '00100110100101011110000000000000' : { 'name' : 'TrVehicleStation_BloodEagle',
@@ -391,6 +485,22 @@ class PropertyValueBool():
         else:
             text = '%sempty\n' % indent_prefix
         return text
+
+class PropertyValueFlag():
+    def __init__(self):
+        pass
+
+    @debugbits
+    def frombitarray(self, bits, debug = False):
+        return bits
+
+    def tobitarray(self):
+        return bitarray()
+
+    def tostring(self, indent = 0):
+        indent_prefix = ' ' * indent
+        text = '%s(flag is set)\n' % indent_prefix
+        return text
         
 class PropertyValueBitarray():
     def __init__(self):
@@ -491,6 +601,9 @@ class ObjectProperty():
             elif propertytype is bool:
                 self.value = PropertyValueBool()
                 bits = self.value.frombitarray(bits, debug = debug)
+            elif propertytype is 'flag':
+                self.value = PropertyValueFlag()
+                bits = self.value.frombitarray(bits, debug = debug)
             elif propertytype is bitarray:
                 self.value = PropertyValueBitarray()
                 bits = self.value.frombitarray(bits, propertysize, debug = debug)
@@ -582,6 +695,7 @@ class PayloadData():
     def __init__(self):
         self.size = None
         self.object_class = None
+        self.object_deleted = False
         self.instancename = None
         self.instance = None
         self.bitsleftreason = None
@@ -618,6 +732,10 @@ class PayloadData():
             if payloadbits:
                 raise ParseError('Bits of payload left over',
                                  payloadbits)
+
+            if self.size == 0:
+                self.object_deleted = True
+                del state.channels[channel]
             
         except ParseError as e:
             self.bitsleftreason = str(e)
@@ -654,6 +772,10 @@ class PayloadData():
                                                 self.object_class.tobitarray().to01(),
                                                 self.instancename)
             indent += 32
+        elif self.object_deleted:
+            text += '%sx (destroyed object = %s)\n' % (' ' * indent,
+                                                       self.instancename)
+            indent += 1
         else:
             text += '%sx (object = %s)\n' % (' ' * indent,
                                              self.instancename)
