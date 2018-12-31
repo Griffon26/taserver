@@ -111,49 +111,54 @@ class ParserState():
         # TODO: It looks like RPC identifiers are only 6 bits when sent along with properties.
         # When sent along with a counter, we need more bits to distinguish between them.
         TrPlayerControllerProps = {
-            '111000': {'name': 'RPC ClientSeekingMissileTargetingSelfEvent',
+            '11100011': {'name': 'RPC ClientSeekingMissileTargetingSelfEvent',
                        'type': bitarray,
-                       'size': 35},
-            '101100': {'name': 'RPC ClientSetViewTarget',
+                       'size': 33},
+            '10110010': {'name': 'RPC ClientSetViewTarget',
                        'type': bitarray,
-                       'size': 83},
-            '100010': {'name': 'RPC ClientPlayerResettingAndRespawning',
+                       'size': 81},
+            '10001000': {'name': 'RPC ClientPlayerResettingAndRespawning',
                        'type': bitarray,
-                       'size': 3},
-            '010010': {'name': 'RPC PlayStartupMessage',
+                       'size': 1},
+            '01001001': {'name': 'RPC PlayStartupMessage',
                        'type': bitarray,
-                       'size': 11},
-            '001010': {'name': 'RPC ClientSetBehindView',
+                       'size': 9},
+            '00101001': {'name': 'RPC ClientSetBehindView',
                        'type': bitarray,
-                       'size': 3},
+                       'size': 1},
             '101010': {'name': 'PlayerReplicationInfo',
                        'type': bitarray,
                        'size': 13},
             '011010': {'name': 'Pawn',
                        'type': bitarray,
                        'size': 13},
-            '110110': {'name': 'RPC ClientPawnDied',
-                       'type': bitarray,
-                       'size': 2},
+            '11011001': {'name': 'RPC ClientPawnDied',
+                       'type': 'flag'},
             # variable length, so currently it screws up what follows
-            '100101': {'name': 'RPC ReceiveLocalizedMessage',
+            '10010100': {'name': 'RPC ReceiveLocalizedMessage',
                        'type': bitarray,
-                       'size': 82},
-            '110101': {'name': 'RPC ClientHearSound',
+                       'size': 80},
+            '11010100': {'name': 'RPC ClientHearSound',
                        'type': bitarray,
-                       'size': 50},
-            '100011': {'name': 'RPC ShortClientAdjustPosition',
-                       'type': bitarray,
-                       'size': 180},
+                       'size': 48},
+            #'100011': {'name': 'RPC ShortClientAdjustPosition',
+            #           'type': bitarray,
+            #           'size': 180},
             '101111': {'name': 'r_nCurrentCredits',
                        'type': bitarray,
                        'size': 34},
+            '01111100': {'name': 'RPC ClientAckGoodMove',
+                       'type': bitarray,
+                       'size': 33},
+            # ClientAckGoodMove occurs both with and without counter. It looks like its ID should be
+            # 8 bits in both cases, but I don't know how to decide whether to look for 6 or 8 bits when
+            # parsing a property. For now I'll work around it by putting the RPC in the list under both IDs.
             '011111': {'name': 'RPC ClientAckGoodMove',
                        'type': bitarray,
                        'size': 35},
-            '111111': {'name': 'RPC ClientAdjustPosition',
+            '11111100': {'name': 'RPC ClientAdjustPosition',
                        'type': bitarray,
-                       'size': 251},
+                       'size': 249},
         }
 
         TrBaseTurretProps = {
@@ -306,11 +311,15 @@ class ParserState():
             '000100' : { 'name' : 'prop8',
                          'type' : bitarray,
                          'size' : 162 },
-        }                
+        }
 
         FirstServerObjectProps = {
-            '111000' : { 'name' : 'mysteryproperty',
-                         'type' : PropertyValueMystery },
+            '10000000': {'name': 'mysteryproperty3',
+                         'type': PropertyValueMystery3},
+            '11100000': {'name': 'mysteryproperty1',
+                         'type': PropertyValueMystery1},
+            '11010000': {'name': 'mysteryproperty2',
+                         'type': PropertyValueMystery2},
         }
 
         MatineeActorProps = {
@@ -620,62 +629,119 @@ class PropertyValueBitarray():
             text = '%sempty\n' % indent_prefix
         return text
 
-class PropertyValueMystery():
+class PropertyValueMystery1():
     def __init__(self):
-        self.bitarray = PropertyValueBitarray()
-        self.string1 = PropertyValueString()
-        self.determinator = PropertyValueInt()
         self.int1 = PropertyValueInt()
         self.int2 = PropertyValueInt()
-        self.vector = PropertyValueVector()
+        self.int3 = PropertyValueInt()
+        self.int4 = PropertyValueInt()
+        self.string1 = PropertyValueString()
         self.string2 = PropertyValueString()
-            
+        self.int5 = PropertyValueInt()
+        self.int6 = PropertyValueInt()
+        self.string3 = PropertyValueString()
+
     @debugbits
     def frombitarray(self, bits, debug = False):
-        bits = self.bitarray.frombitarray(bits, 130, debug = debug)
-        bits = self.string1.frombitarray(bits, debug = debug)
-        bits = self.determinator.frombitarray(bits, debug = debug)
-        if self.determinator.value == 0:
-            bits = self.int1.frombitarray(bits, debug = debug)
-        else:
-            bits = self.vector.frombitarray(bits, debug = debug)
+        bits = self.int1.frombitarray(bits, debug = debug)
         bits = self.int2.frombitarray(bits, debug = debug)
+        bits = self.int3.frombitarray(bits, debug = debug)
+        bits = self.int4.frombitarray(bits, debug = debug)
+        bits = self.string1.frombitarray(bits, debug = debug)
         bits = self.string2.frombitarray(bits, debug = debug)
-        
+        bits = self.int5.frombitarray(bits, debug = debug)
+        bits = self.int6.frombitarray(bits, debug = debug)
+        bits = self.string3.frombitarray(bits, debug = debug)
         return bits
 
     def tobitarray(self):
-        return (self.bitarray.tobitarray() +
-                self.string1.tobitarray() +
-                self.determinator.tobitarray() +
-                (self.int1.tobitarray() if self.determinator.value == 0 else self.vector.tobitarray()) +
+        return (self.int1.tobitarray() +
                 self.int2.tobitarray() +
+                self.int3.tobitarray() +
+                self.int4.tobitarray() +
+                self.string1.tobitarray() +
+                self.string2.tobitarray() +
+                self.int5.tobitarray() +
+                self.int6.tobitarray() +
+                self.string3.tobitarray())
+
+    def tostring(self, indent = 0):
+            indent_prefix = ' ' * indent
+            items = []
+            items.append(self.int1.tostring(indent))
+            items.append(self.int2.tostring(indent))
+            items.append(self.int3.tostring(indent))
+            items.append(self.int4.tostring(indent))
+            items.append(self.string1.tostring(indent))
+            items.append(self.string2.tostring(indent))
+            items.append(self.int5.tostring(indent))
+            items.append(self.int6.tostring(indent))
+            items.append(self.string3.tostring(indent))
+            text = ''.join(items)
+            return text
+
+class PropertyValueMystery2():
+    def __init__(self):
+        self.string1 = PropertyValueString()
+        self.string2 = PropertyValueString()
+        self.string3 = PropertyValueString()
+
+    @debugbits
+    def frombitarray(self, bits, debug = False):
+        bits = self.string1.frombitarray(bits, debug = debug)
+        bits = self.string2.frombitarray(bits, debug = debug)
+        bits = self.string3.frombitarray(bits, debug = debug)
+        return bits
+
+    def tobitarray(self):
+        return (self.string1.tobitarray() +
+                self.string2.tobitarray() +
+                self.string3.tobitarray())
+
+    def tostring(self, indent = 0):
+            indent_prefix = ' ' * indent
+            items = []
+            items.append(self.string1.tostring(indent))
+            items.append(self.string2.tostring(indent))
+            items.append(self.string3.tostring(indent))
+            text = ''.join(items)
+            return text
+
+class PropertyValueMystery3():
+    def __init__(self):
+        self.string1 = PropertyValueString()
+        self.string2 = PropertyValueString()
+
+    @debugbits
+    def frombitarray(self, bits, debug = False):
+        bits = self.string1.frombitarray(bits, debug = debug)
+        bits = self.string2.frombitarray(bits, debug = debug)
+        return bits
+
+    def tobitarray(self):
+        return (self.string1.tobitarray() +
                 self.string2.tobitarray())
 
     def tostring(self, indent = 0):
-        indent_prefix = ' ' * indent
-        items = []
-        items.append(self.bitarray.tostring(indent))
-        items.append(self.string1.tostring(indent))
-        items.append(self.determinator.tostring(indent))
-        if self.determinator.value == 0:
-            items.append(self.int1.tostring(indent))
-        else:
-            items.append(self.vector.tostring(indent))
-        items.append(self.int2.tostring(indent))
-        items.append(self.string2.tostring(indent))
-        text = ''.join(items)
-        return text
-        
+            indent_prefix = ' ' * indent
+            items = []
+            items.append(self.string1.tostring(indent))
+            items.append(self.string2.tostring(indent))
+            text = ''.join(items)
+            return text
+
+
 class ObjectProperty():
-    def __init__(self):
+    def __init__(self, is_rpc = False):
+        self.propertyid_size = 8 if is_rpc else 6
         self.propertyid = None
         self.property_ = { 'name' : 'Unknown' }
         self.value = None
+        self.is_rpc = is_rpc
 
     @debugbits
     def frombitarray(self, bits, class_, debug = False):
-        propertyidbits, bits = getnbits(6, bits)
+        propertyidbits, bits = getnbits(self.propertyid_size, bits)
         self.propertyid = toint(propertyidbits)
         
         propertykey = propertyidbits.to01()
@@ -705,9 +771,15 @@ class ObjectProperty():
             elif propertytype is bitarray:
                 self.value = PropertyValueBitarray()
                 bits = self.value.frombitarray(bits, propertysize, debug = debug)
-            elif propertytype == PropertyValueMystery:
-                self.value = PropertyValueMystery()
-                bits = self.value.frombitarray(bits, debug = debug)                
+            elif propertytype == PropertyValueMystery1:
+                self.value = PropertyValueMystery1()
+                bits = self.value.frombitarray(bits, debug = debug)
+            elif propertytype == PropertyValueMystery2:
+                self.value = PropertyValueMystery2()
+                bits = self.value.frombitarray(bits, debug=debug)
+            elif propertytype == PropertyValueMystery3:
+                self.value = PropertyValueMystery3()
+                bits = self.value.frombitarray(bits, debug=debug)
             else:
                 raise RuntimeError('Coding error')
             
@@ -721,7 +793,7 @@ class ObjectProperty():
     def tobitarray(self):
         bits = bitarray(endian='little')
         if self.propertyid is not None:
-            bits.extend(int2bitarray(self.propertyid, 6))
+            bits.extend(int2bitarray(self.propertyid, self.propertyid_size))
         if self.value is not None:
             bits.extend(self.value.tobitarray())
         return bits
@@ -730,7 +802,7 @@ class ObjectProperty():
         indent_prefix = ' ' * indent
         text = ''
         if self.propertyid is not None:
-            propertykey = int2bitarray(self.propertyid, 6).to01()
+            propertykey = int2bitarray(self.propertyid, self.propertyid_size).to01()
             text += '%s%s (property = %s)\n' % (indent_prefix,
                                                propertykey,
                                                self.property_['name'])
@@ -739,15 +811,16 @@ class ObjectProperty():
         return text
 
 class ObjectInstance():
-    def __init__(self):
+    def __init__(self, is_rpc = False):
         self.class_ = None
         self.properties = []
+        self.is_rpc = is_rpc
     
     @debugbits
     def frombitarray(self, bits, class_, state, debug = False):
         
         while bits:
-            property_ = ObjectProperty()
+            property_ = ObjectProperty(is_rpc = self.is_rpc)
             self.properties.append(property_)
             bits = property_.frombitarray(bits, class_, debug = debug)
 
@@ -790,7 +863,8 @@ class ObjectClass():
         return bits
 
 class PayloadData():
-    def __init__(self):
+    def __init__(self, reliable = False):
+        self.reliable = reliable
         self.size = None
         self.object_class = None
         self.object_deleted = False
@@ -809,6 +883,7 @@ class PayloadData():
 
         try:
             if channel not in state.channels:
+                newinstance = True
                 self.object_class = ObjectClass()
                 payloadbits = self.object_class.frombitarray(payloadbits, state, debug = debug)
 
@@ -820,11 +895,12 @@ class PayloadData():
                 state.channels[channel] = { 'class' : class_,
                                             'instancename' : instancename }
             else:
+                newinstance = False
                 class_ = state.channels[channel]['class']
                 instancename = state.channels[channel]['instancename']
 
             self.instancename = instancename
-            self.instance = ObjectInstance()
+            self.instance = ObjectInstance(is_rpc = self.reliable and not newinstance)
             payloadbits = self.instance.frombitarray(payloadbits, class_, state, debug = debug)
             
             if payloadbits:
@@ -905,7 +981,7 @@ class ChannelData():
 
             self.unknownbits, bits = getnbits(8, bits)
 
-        self.payload = PayloadData()
+        self.payload = PayloadData(reliable = with_counter)
         bits = self.payload.frombitarray(bits, self.channel, state, debug = debug)
         return bits
 
