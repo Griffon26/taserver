@@ -50,8 +50,9 @@ class PlayerState:
     def __init__(self, player: Player):
         self.logger = logging.getLogger(__name__)
         self.player = player
-        self.class_menu_data = get_class_menu_data(self.player.use_goty_mode)
 
+    def class_menu_data(self):
+        return get_class_menu_data(self.player.player_settings.is_goty)
 
     def handle_request(self, request):
         methods = [

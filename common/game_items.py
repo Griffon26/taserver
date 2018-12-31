@@ -811,10 +811,13 @@ _items_to_remove: Set[str] = set()
 # Definition of items that should appear in the menu, but should be by default locked
 _items_to_lock: Set[str] = set()
 
+_built_ootb_class_menu_data = build_class_menu_data(game_classes, _weapon_categories_ootb,
+                                                   _hierarchical_definitions_ootb, _items_to_remove, _items_to_lock)
+
+_built_goty_class_menu_data = build_class_menu_data(game_classes, _weapon_categories_goty,
+                                                    _hierarchical_definitions_goty, _items_to_remove, _items_to_lock)
+
 
 # Processed form containing the information needed to build the menu content
 def get_class_menu_data(do_use_goty_defs: bool) -> Unlockables:
-    _weapon_categories = _weapon_categories_goty if do_use_goty_defs else _weapon_categories_ootb
-    _hierarchical_definitions = _hierarchical_definitions_goty if do_use_goty_defs else _hierarchical_definitions_ootb
-    return build_class_menu_data(game_classes, _weapon_categories,
-                                 _hierarchical_definitions, _items_to_remove, _items_to_lock)
+    return _built_goty_class_menu_data if do_use_goty_defs else _built_ootb_class_menu_data

@@ -154,7 +154,8 @@ class GameServer(Peer):
 
     def set_player_loadouts(self, player):
         assert player.unique_id in self.players
-        msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id, player.loadouts.loadout_dict)
+        msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id,
+                                                     player.loadouts.get_loadouts(player.player_settings.is_goty))
         self.send(msg)
 
     def remove_player_loadouts(self, player):

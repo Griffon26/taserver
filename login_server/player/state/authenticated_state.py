@@ -45,7 +45,7 @@ class AuthenticatedState(PlayerState):
     @handles(packet=a0014)
     def handle_a0014(self, request):
         # self.player.send(originalfragment(0x20A18, 0x20B3F))  # 0014 (class list)
-        self.player.send(a0014().setclasses(self.class_menu_data.classes.values()))
+        self.player.send(a0014().setclasses(self.class_menu_data().classes.values()))
 
     @handles(packet=a018b)
     def handle_a018b(self, request):
@@ -64,23 +64,23 @@ class AuthenticatedState(PlayerState):
         menu_part = request.findbytype(m02ab).value
         menu_fragments = {
             0x01de: originalfragment(0x38d17, 0x3d0fe),
-            0x01ed: a0177().setdata(0x01ed, self.class_menu_data.class_purchases, False),  # Classes
+            0x01ed: a0177().setdata(0x01ed, self.class_menu_data().class_purchases, False),  # Classes
             0x01f0: a0177().setdata(0x01f0, {item
                                              for _, class_items
-                                             in self.class_menu_data.class_items.items()
+                                             in self.class_menu_data().class_items.items()
                                              for item
                                              in class_items.weapons},
                                     False),  # Weapons with categories
             0x01f1: originalfragment(0x54bc6, 0x54db0),  # Purpose not fully known, needed or weapons are locked
             0x01f2: a0177().setdata(0x01f2, {item
                                              for _, class_items
-                                             in self.class_menu_data.class_items.items()
+                                             in self.class_menu_data().class_items.items()
                                              for item
                                              in class_items.belt_items},
                                     False),  # Belt items
             0x01f3: a0177().setdata(0x01f3, {item
                                              for _, class_items
-                                             in self.class_menu_data.class_items.items()
+                                             in self.class_menu_data().class_items.items()
                                              for item
                                              in class_items.packs},
                                     False),  # Packs
@@ -88,13 +88,13 @@ class AuthenticatedState(PlayerState):
             # 0x01f6: originalfragment(0x5965a, 0x5a72b),  # Perks
             0x01f6: a0177().setdata(0x01f6, {item
                                              for item
-                                             in self.class_menu_data.perks},
+                                             in self.class_menu_data().perks},
                                     False),  # Perks
             0x01f7: originalfragment(0x5a733, 0x5a76e),
             0x01f8: originalfragment(0x5737d, 0x579af),  # Armor Upgrades
             0x01f9: a0177().setdata(0x01f9, {item
                                              for _, class_items
-                                             in self.class_menu_data.class_items.items()
+                                             in self.class_menu_data().class_items.items()
                                              for item
                                              in class_items.skins},
                                     False),  # Skins
@@ -109,7 +109,7 @@ class AuthenticatedState(PlayerState):
             0x021c: originalfragment(0x6fdeb, 0x6fecf),
             0x0220: a0177().setdata(0x0220, {item
                                              for item
-                                             in self.class_menu_data.voices},
+                                             in self.class_menu_data().voices},
                                     False),  # Voices
             0x0221: originalfragment(0x2f4df, 0x2f69f),  # Modify Clantag
             0x0227: originalfragment(0x2f6a7, 0x38d0f),  # GOTY
@@ -236,7 +236,7 @@ class AuthenticatedState(PlayerState):
                 if menu_area_field:
                     if self.player.loadouts.is_loadout_menu_item(menu_area_field.value):
                         equip_value = int(int_field.value) if int_field else string_field.value
-                        self.player.loadouts.modify(menu_area_field.value, setting, equip_value)
+                        self.player.loadouts.modify(self.player.player_settings.is_goty, menu_area_field.value, setting, equip_value)
                         loadout_changed = True
                     elif menu_area_field.value == MENU_AREA_SETTINGS:
                         # Ignore user settings. They'll have to store them themselves

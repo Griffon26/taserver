@@ -129,7 +129,6 @@ default_loadouts_goty = {
     }
 }
 
-
 class Loadouts:
     max_loadouts = 9
 
@@ -167,17 +166,20 @@ class Loadouts:
 
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
-    def __init__(self, use_goty_default_loadouts: bool):
-        self.use_goty_default_loadouts = use_goty_default_loadouts
-        self.loadout_dict = self.defaults()
+    def __init__(self):
+        self.ootb_loadout_dict = self.defaults(False)
+        self.goty_loadout_dict = self.defaults(True)
 
-    def defaults(self):
+    def get_loadouts(self, is_goty: bool):
+        return self.goty_loadout_dict if is_goty else self.ootb_loadout_dict
+
+    def defaults(self, use_goty_defaults: bool):
         def finish_default_loadout(default_loadout, i):
             complete_loadout = default_loadout.copy()
             complete_loadout[SLOT_LOADOUT_NAME] = 'LOADOUT %s' % string.ascii_uppercase[i]
             return complete_loadout
 
-        default_loadouts = default_loadouts_goty if self.use_goty_default_loadouts else default_loadouts_ootb
+        default_loadouts = default_loadouts_goty if use_goty_defaults else default_loadouts_ootb
         return {game_classes[name].class_id:
                 {i: finish_default_loadout(default_loadout, i) for i in range(self.max_loadouts)}
                 for name, default_loadout
@@ -186,21 +188,31 @@ class Loadouts:
     def is_loadout_menu_item(self, value):
         return value in self.loadout_id2key
 
-    def modify(self, loadout_id, slot, equipment):
+    def modify(self, is_goty: bool, loadout_id, slot, equipment):
         class_id, loadout_index = self.loadout_id2key[loadout_id]
-        self.loadout_dict[class_id][loadout_index][slot] = equipment
+        d = self.goty_loadout_dict if is_goty else self.ootb_loadout_dict
+        d[class_id][loadout_index][slot] = equipment
 
     def load(self, filename):
         def json_keys_to_int(x):
             if isinstance(x, dict):
-                return {int(k): v for k, v in x.items()}
+                return {(int(k) if k != 'ootb' and k != 'goty' else k): v
+                        for k, v
+                        in x.items()}
 
         try:
             with open(filename, 'rt') as infile:
-                self.loadout_dict = json.load(infile, object_hook=json_keys_to_int)
-        except OSError:
-            self.loadout_dict = self.defaults()
+                d = json.load(infile, object_hook=json_keys_to_int)
+                self.ootb_loadout_dict = d['ootb']
+                self.goty_loadout_dict = d['goty']
+        except (OSError, KeyError):
+            self.ootb_loadout_dict = self.defaults(False)
+            self.goty_loadout_dict = self.defaults(True)
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:
-            json.dump(self.loadout_dict, outfile, indent=4, sort_keys=True)
+            d = {
+                'ootb': self.ootb_loadout_dict,
+                'goty': self.goty_loadout_dict,
+            }
+            json.dump(d, outfile, indent=4, sort_keys=True)

@@ -22,6 +22,7 @@ from ipaddress import IPv4Address
 
 from .friends import Friends
 from .loadouts import Loadouts
+from .settings import PlayerSettings
 from ..utils import IPAddressPair
 from common.connectionhandler import Peer
 from common.statetracer import statetracer, RefOnly
@@ -35,11 +36,10 @@ class Player(Peer):
 
     loadout_file_path = 'data/players/%s_loadouts.json'
     friends_file_path = 'data/players/%s_friends.json'
+    settings_file_path = 'data/players/%s_settings.json'
 
-    def __init__(self, address, use_goty_mode: bool):
+    def __init__(self, address):
         super().__init__()
-
-        self.use_goty_mode = use_goty_mode
 
         self.unique_id = None
         self.login_name = None
@@ -54,8 +54,9 @@ class Player(Peer):
         self.state = None
         self.login_server = None
         self.game_server = None
-        self.loadouts = Loadouts(use_goty_mode)
+        self.loadouts = Loadouts()
         self.friends = Friends()
+        self.player_settings = PlayerSettings()
         self.team = None
         self.pings = {}
 
@@ -80,11 +81,13 @@ class Player(Peer):
         if self.registered:
             self.loadouts.load(self.loadout_file_path % self.login_name)
             self.friends.load(self.friends_file_path % self.login_name)
+            self.player_settings.load(self.settings_file_path % self.login_name)
 
     def save(self):
         if self.registered:
             self.loadouts.save(self.loadout_file_path % self.login_name)
             self.friends.save(self.friends_file_path % self.login_name)
+            self.player_settings.save(self.settings_file_path % self.login_name)
 
     def handle_request(self, request):
         self.state.handle_request(request)
