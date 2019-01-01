@@ -60,6 +60,8 @@ class GameServer(Peer):
         self.motd = None
         self.region = None
 
+        self.is_goty = False
+
         self.joinable = False
         self.players = TracingDict(refsonly = True)
         self.player_being_kicked = None

@@ -39,14 +39,15 @@ from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
 from .utils import first_unused_number_above, IPAddressPair
 
-@statetracer('game_servers', 'players')
+@statetracer('ootb_game_servers', 'goty_game_servers', 'players')
 class LoginServer:
     def __init__(self, server_queue, client_queues, accounts, configuration):
         self.logger = logging.getLogger(__name__)
         self.server_queue = server_queue
         self.client_queues = client_queues
 
-        self.game_servers = TracingDict()
+        self.ootb_game_servers = TracingDict()
+        self.goty_game_servers = TracingDict()
 
         self.players = TracingDict()
         self.accounts = accounts
@@ -81,14 +82,20 @@ class LoginServer:
                     else:
                         raise
 
+    def relevant_game_servers(self, is_goty: bool):
+        return self.goty_game_servers if is_goty else self.ootb_game_servers
+
+    def all_game_servers(self):
+        return {**self.ootb_game_servers, **self.goty_game_servers}
+
     def find_server_by_id(self, server_id):
-        for game_server in self.game_servers.values():
+        for game_server in self.all_game_servers().values():
             if game_server.server_id == server_id:
                 return game_server
         raise ProtocolViolationError('No server found with specified server ID')
 
     def find_server_by_match_id(self, match_id):
-        for game_server in self.game_servers.values():
+        for game_server in self.all_game_servers().values():
             if game_server.match_id == match_id:
                 return game_server
         raise ProtocolViolationError('No server found with specified match ID')
@@ -146,13 +153,19 @@ class LoginServer:
             player.set_state(UnauthenticatedState)
             self.players[unique_id] = player
         elif isinstance(msg.peer, GameServer):
-            server_id = first_unused_number_above(self.game_servers.keys(), 1)
+            server_id = first_unused_number_above(self.all_game_servers().keys(), 1)
 
             game_server = msg.peer
             game_server.server_id = server_id
             game_server.match_id = server_id + 10000000
+            # TODO: Goty server registration
+            game_server.is_goty = False
             game_server.login_server = self
-            self.game_servers[server_id] = game_server
+
+            if game_server.is_goty:
+                self.goty_game_servers[server_id] = game_server
+            else:
+                self.ootb_game_servers[server_id] = game_server
 
             self.logger.info('server: added game server %s (%s)' % (server_id, game_server.detected_ip))
         elif isinstance(msg.peer, AuthCodeRequester):
@@ -175,7 +188,10 @@ class LoginServer:
                                                                          game_server.port))
             game_server.disconnect()
             self.pending_callbacks.remove_receiver(game_server)
-            del (self.game_servers[game_server.server_id])
+            if game_server.is_goty:
+                del (self.goty_game_servers[game_server.server_id])
+            else:
+                del (self.ootb_game_servers[game_server.server_id])
 
         elif isinstance(msg.peer, AuthCodeRequester):
             msg.peer.disconnect()

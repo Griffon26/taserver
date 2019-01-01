@@ -39,7 +39,9 @@ class AuthenticatedState(PlayerState):
         if request.findbytype(m0228).value == 1:
             self.player.send(originalfragment(0x1EEB3, 0x20A10))  # 00d5 (map list)
         else:
-            self.player.send(a00d5().setservers(self.player.login_server.game_servers.values(),
+            self.player.send(a00d5().setservers(self.player.login_server
+                                                    .relevant_game_servers(self.player.player_settings.is_goty)
+                                                    .values(),
                                                 self.player.address_pair))  # 00d5 (server list)
 
     @handles(packet=a0014)
