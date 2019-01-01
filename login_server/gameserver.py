@@ -96,9 +96,10 @@ class GameServer(Peer):
             player.set_state(AuthenticatedState)
         super().disconnect(exception)
 
-    def set_info(self, address_pair, port, description, motd):
+    def set_info(self, address_pair, port: int, is_goty: bool, description: str, motd: str):
         self.address_pair = address_pair
         self.port = port
+        self.is_goty = is_goty
         self.description = description
         self.motd = motd
         self.send_pings()

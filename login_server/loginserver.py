@@ -39,15 +39,14 @@ from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
 from .utils import first_unused_number_above, IPAddressPair
 
-@statetracer('ootb_game_servers', 'goty_game_servers', 'players')
+@statetracer('game_servers', 'players')
 class LoginServer:
     def __init__(self, server_queue, client_queues, accounts, configuration):
         self.logger = logging.getLogger(__name__)
         self.server_queue = server_queue
         self.client_queues = client_queues
 
-        self.ootb_game_servers = TracingDict()
-        self.goty_game_servers = TracingDict()
+        self.game_servers = TracingDict()
 
         self.players = TracingDict()
         self.accounts = accounts
@@ -83,10 +82,10 @@ class LoginServer:
                         raise
 
     def relevant_game_servers(self, is_goty: bool):
-        return self.goty_game_servers if is_goty else self.ootb_game_servers
+        return {k: v for k, v in self.game_servers.items() if v.is_goty == is_goty}
 
     def all_game_servers(self):
-        return {**self.ootb_game_servers, **self.goty_game_servers}
+        return self.game_servers
 
     def find_server_by_id(self, server_id):
         for game_server in self.all_game_servers().values():
@@ -158,14 +157,10 @@ class LoginServer:
             game_server = msg.peer
             game_server.server_id = server_id
             game_server.match_id = server_id + 10000000
-            # TODO: Goty server registration
             game_server.is_goty = False
             game_server.login_server = self
 
-            if game_server.is_goty:
-                self.goty_game_servers[server_id] = game_server
-            else:
-                self.ootb_game_servers[server_id] = game_server
+            self.game_servers[server_id] = game_server
 
             self.logger.info('server: added game server %s (%s)' % (server_id, game_server.detected_ip))
         elif isinstance(msg.peer, AuthCodeRequester):
@@ -188,10 +183,7 @@ class LoginServer:
                                                                          game_server.port))
             game_server.disconnect()
             self.pending_callbacks.remove_receiver(game_server)
-            if game_server.is_goty:
-                del (self.goty_game_servers[game_server.server_id])
-            else:
-                del (self.ootb_game_servers[game_server.server_id])
+            del (self.game_servers[game_server.server_id])
 
         elif isinstance(msg.peer, AuthCodeRequester):
             msg.peer.disconnect()
@@ -231,8 +223,11 @@ class LoginServer:
         internal_ip = IPv4Address(msg.internal_ip) if msg.internal_ip else None
         address_pair = IPAddressPair(external_ip, internal_ip)
 
-        game_server.set_info(address_pair, msg.port, msg.description, msg.motd)
-        self.logger.info('server: server info received for server %s (%s:%s)' % (game_server.server_id,
+        game_server.set_info(address_pair, msg.port, msg.is_goty, msg.description, msg.motd)
+        self.logger.info('server: server info received for %s server %s (%s:%s)' % ('GOTY'
+                                                                                    if game_server.is_goty
+                                                                                    else 'OOTB',
+                                                                                 game_server.server_id,
                                                                                  game_server.detected_ip,
                                                                                  game_server.port))
 
