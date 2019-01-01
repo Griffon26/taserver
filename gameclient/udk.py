@@ -29,6 +29,13 @@ class ParseError(Exception):
 
 class ParserState():
     def __init__(self):
+        # ID sizes are per-class (probably depends on how many members a class has)
+        # - it is guaranteed to be 8 for the FirstServerObject_0
+        # - it is guaranteed to be 8 for the TrPlayerController_0
+        # - it is guaranteed to be 6 for the TrPlayerReplicationInfo_0
+        # - it appears to be 6 for TrGameReplicationInfo_0
+        # - it appears to be 7 for TrPlayerPawn_0
+
         TrInventoryManagerProps = {
             '011110': {'name': 'Instigator',
                        'type': bitarray,
@@ -40,23 +47,25 @@ class ParserState():
                        'type': bitarray,
                        'size': 10},
         }
+
         TrPlayerPawnProps = {
-            '100100' : { 'name' : 'CurrentWeaponAttachmentClass',
-                         'type' : bitarray,
-                         'size' : 33 },
-            '101010' : { 'name' : 'r_fCurrentPowerPool',
-                         'type' : bitarray,
-                         'size' : 33 },
-            '100110' : { 'name' : 'InvManager',
-                         'type' : bitarray,
-                         'size' : 12 },
-            '110001' : { 'name' : 'r_bIsInvulnerable',
-                         'type' : bitarray,
-                         'size' : 2 },
-            '111001' : { 'name' : 'r_bIsSkiing',
-                         'type' : bitarray,
-                         'size' : 2}
+            '1001001': {'name': 'CurrentWeaponAttachmentClass',
+                        'type': bitarray,
+                        'size': 33},
+            '1010101': {'name': 'r_fCurrentPowerPool',
+                        'type': bitarray,
+                        'size': 32},
+            '1001100': {'name': 'InvManager',
+                        'type': bitarray,
+                        'size': 12},
+            '1100011': {'name': 'r_bIsInvulnerable',
+                        'type': bitarray,
+                        'size': 1},
+            '1110011': {'name': 'r_bIsSkiing',
+                        'type': bitarray,
+                        'size': 1}
         }
+
         TrDeviceProps = {
             '001001' : { 'name' : 'r_eEquipAt',
                          'type' : bitarray,
@@ -92,15 +101,15 @@ class ParserState():
 
         # unsure
         TrInventoryStationCollisionProps = {
-            '101100' : { 'name' : 'RelativeLocation2',
-                         'type' : bitarray,
-                         'size' : 2 },
-            '001001' : { 'name' : 'RelativeLocation',
-                         'type' : bitarray,
-                         'size' : 10 },
-            '011111' : { 'name': 'Base',
-                         'type': bitarray,
-                         'size': 30},
+            # '101100' : { 'name' : 'RelativeLocation2',
+            #              'type' : bitarray,
+            #              'size' : 2 },
+            # '001001' : { 'name' : 'RelativeLocation',
+            #              'type' : bitarray,
+            #              'size' : 10 },
+            # '011111' : { 'name': 'Base',
+            #              'type': bitarray,
+            #              'size': 30},
         }
         TrPowerGeneratorProps = {
             '111110' : { 'name' : 'r_MaxHealth',
@@ -111,54 +120,63 @@ class ParserState():
         # TODO: It looks like RPC identifiers are only 6 bits when sent along with properties.
         # When sent along with a counter, we need more bits to distinguish between them.
         TrPlayerControllerProps = {
-            '11100011': {'name': 'RPC ClientSeekingMissileTargetingSelfEvent',
+            # '10000000': {'name': 'r_bNeedLoadout',
+            #            'type': bitarray,
+            #            'size': 1},
+            # '10001000': {'name': 'RPC ClientPlayerResettingAndRespawning',
+            #            'type': bitarray,
+            #            'size': 1},
+            # '11001000': {'name': 'r_bNeedTeam',
+            #            'type': bitarray,
+            #            'size': 1},
+            '10101000': {'name': 'PlayerReplicationInfo',
                        'type': bitarray,
-                       'size': 33},
-            '10110010': {'name': 'RPC ClientSetViewTarget',
-                       'type': bitarray,
-                       'size': 81},
-            '10001000': {'name': 'RPC ClientPlayerResettingAndRespawning',
-                       'type': bitarray,
-                       'size': 1},
-            '01001001': {'name': 'RPC PlayStartupMessage',
-                       'type': bitarray,
-                       'size': 9},
-            '00101001': {'name': 'RPC ClientSetBehindView',
-                       'type': bitarray,
-                       'size': 1},
-            '101010': {'name': 'PlayerReplicationInfo',
-                       'type': bitarray,
-                       'size': 13},
-            '011010': {'name': 'Pawn',
-                       'type': bitarray,
-                       'size': 13},
-            '11011001': {'name': 'RPC ClientPawnDied',
-                       'type': 'flag'},
-            # variable length, so currently it screws up what follows
-            '10010100': {'name': 'RPC ReceiveLocalizedMessage',
-                       'type': bitarray,
-                       'size': 80},
-            '11010100': {'name': 'RPC ClientHearSound',
-                       'type': bitarray,
-                       'size': 48},
-            #'100011': {'name': 'RPC ShortClientAdjustPosition',
-            #           'type': bitarray,
-            #           'size': 180},
-            '101111': {'name': 'r_nCurrentCredits',
-                       'type': bitarray,
-                       'size': 34},
+                       'size': 11},
+            # '01101000': {'name': 'Pawn',
+            #            'type': bitarray,
+            #            'size': 11},
+            # # variable length, so currently it screws up what follows
+            # '10010100': {'name': 'RPC ReceiveLocalizedMessage',
+            #            'type': bitarray,
+            #            'size': 80},
+            # '11010100': {'name': 'RPC ClientHearSound',
+            #            'type': bitarray,
+            #            'size': 48},
             '01111100': {'name': 'RPC ClientAckGoodMove',
                        'type': bitarray,
                        'size': 33},
-            # ClientAckGoodMove occurs both with and without counter. It looks like its ID should be
-            # 8 bits in both cases, but I don't know how to decide whether to look for 6 or 8 bits when
-            # parsing a property. For now I'll work around it by putting the RPC in the list under both IDs.
-            '011111': {'name': 'RPC ClientAckGoodMove',
-                       'type': bitarray,
-                       'size': 35},
             '11111100': {'name': 'RPC ClientAdjustPosition',
                        'type': bitarray,
                        'size': 249},
+            # '10110010': {'name': 'RPC ClientSetViewTarget',
+            #            'type': bitarray,
+            #            'size': 81},
+            # '00111010': {'name': 'bNetOwner',
+            #            'type': bitarray,
+            #            'size': 2},
+            # '01110001': {'name': 'Rotation',
+            #              'type': bitarray,
+            #              'size': 12},
+            # '01001001': {'name': 'RPC PlayStartupMessage',
+            #              'type': bitarray,
+            #              'size': 9},
+            # '00101001': {'name': 'RPC ClientSetBehindView',
+            #              'type': bitarray,
+            #              'size': 1},
+            # '11011001': {'name': 'RPC ClientPawnDied',
+            #              'type': 'flag'},
+            # '00000101': {'name': 'bCollideWorld',
+            #              'type': bitarray,
+            #              'size': 2},
+            # '00011101': {'name': 'RemoteRole',
+            #              'type': bitarray,
+            #              'size': 3},
+            '10111101': {'name': 'r_nCurrentCredits',
+                         'type': bitarray,
+                         'size': 32},
+            # '11100011': {'name': 'RPC ClientSeekingMissileTargetingSelfEvent',
+            #              'type': bitarray,
+            #              'size': 33},
         }
 
         TrBaseTurretProps = {
@@ -360,7 +378,7 @@ class ParserState():
             '00110001010000010100000000000000': {'name': 'TrPlayerController', 'props': TrPlayerControllerProps},
             '00111010100001100100000000000000': {'name': 'TrPlayerPawn', 'props': TrPlayerPawnProps},
             '00000110101111001100000000000000': {'name': 'TrPlayerReplicationInfo', 'props': TrPlayerReplicationInfoProps},
-            '00111100100101011110000000000000': {'name': 'TrPowerGenerator_BloodEagle', 'props': {}},
+            '00111100100101011110000000000000': {'name': 'TrPowerGenerator_BloodEagle', 'props': TrPowerGeneratorProps},
             '01111100100101011110000000000000': {'name': 'TrPowerGenerator_DiamondSword', 'props': TrPowerGeneratorProps},
             '01111010010000101100000000000000': {'name': 'TrProj_BaseTurret', 'props': TrProj_BaseTurretProps},
             '01110010100010101100000000000000': {'name': 'TrRadarStation_BloodEagle', 'props': TrRadarStationProps},
@@ -732,12 +750,11 @@ class PropertyValueMystery3():
 
 
 class ObjectProperty():
-    def __init__(self, is_rpc = False):
-        self.propertyid_size = 8 if is_rpc else 6
+    def __init__(self, id_size = 6):
+        self.propertyid_size = id_size
         self.propertyid = None
         self.property_ = { 'name' : 'Unknown' }
         self.value = None
-        self.is_rpc = is_rpc
 
     @debugbits
     def frombitarray(self, bits, class_, debug = False):
@@ -820,7 +837,7 @@ class ObjectInstance():
     def frombitarray(self, bits, class_, state, debug = False):
         
         while bits:
-            property_ = ObjectProperty(is_rpc = self.is_rpc)
+            property_ = ObjectProperty(id_size = class_['idsize'])
             self.properties.append(property_)
             bits = property_.frombitarray(bits, class_, debug = debug)
 
@@ -889,6 +906,9 @@ class PayloadData():
 
                 class_ = state.class_dict[self.object_class.getclasskey()]
                 classname = class_['name']
+
+                prop_keys = list(class_['props'].keys())
+                class_['idsize'] = len(prop_keys[0]) if prop_keys else 6
 
                 state.instance_count[classname] = state.instance_count.get(classname, -1) + 1
                 instancename = '%s_%d' % (classname, state.instance_count[classname])
