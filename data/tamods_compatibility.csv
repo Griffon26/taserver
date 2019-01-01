@@ -5,4 +5,5 @@
 # of this file from github when it runs.
 
 # protocol version, TAmods-Server version
-0.1, 0.1
+0.1.0, 0.1.0
+1.0.0, 0.3.0
