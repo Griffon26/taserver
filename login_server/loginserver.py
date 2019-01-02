@@ -189,7 +189,7 @@ class LoginServer:
         current_player.last_received_seq = msg.clientseq
 
         requests = '\n'.join(['  %04X' % req.ident for req in msg.requests])
-        self.logger.info('server: %s sent:\n%s' % (current_player, requests))
+        self.logger.info('server: %s sent: %s' % (current_player, requests))
 
         for request in msg.requests:
             current_player.handle_request(request)
