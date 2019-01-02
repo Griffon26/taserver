@@ -316,10 +316,6 @@ class Launcher:
     def handle_loadout_request_message(self, msg):
         self.logger.info('launcher: received loadout request from game controller')
 
-        if msg.player_unique_id not in self.players:
-            self.logger.warning('launcher: Unable to find player %d\'s loadouts. Ignoring request.' % msg.player_unique_id)
-            return
-
         # Class and loadout keys are strings because they came in as json.
         # There's not much point in converting all keys in the loadouts
         # dictionary from strings back to ints if we are just going to
@@ -328,9 +324,15 @@ class Launcher:
         class_key = str(msg.class_id)
         loadout_key = str(msg.loadout_number)
 
+        if msg.player_unique_id in self.players:
+            loadout = self.players[player_key][class_key][loadout_key]
+        else:
+            self.logger.warning('launcher: Unable to find player %d\'s loadouts. Sending empty loadout.' % msg.player_unique_id)
+            loadout = {}
+
         msg = Launcher2GameLoadoutMessage(msg.player_unique_id,
                                           msg.class_id,
-                                          self.players[player_key][class_key][loadout_key])
+                                          loadout)
         self.game_controller.send(msg)
 
     def handle_game_server_terminated_message(self, msg):
