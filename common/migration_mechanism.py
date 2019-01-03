@@ -28,7 +28,7 @@ import copy
 import glob
 
 
-_SCHEMA_VERSION_KEY = 'schema_version'
+SCHEMA_VERSION_KEY = 'schema_version'
 
 # Known migrations
 _registered_migrations = OrderedDict()
@@ -46,7 +46,7 @@ def _does_file_match_schema(schema_name: str, file_path: str) -> bool:
 
 
 def _needs_migration(schema_name: str, data: Dict) -> bool:
-    schema_version = data.get(_SCHEMA_VERSION_KEY, 0)
+    schema_version = data.get(SCHEMA_VERSION_KEY, 0)
     return schema_version + 1 in _registered_migrations.get(schema_name, OrderedDict())
 
 
@@ -61,15 +61,15 @@ def _perform_migrations(schema_name: str, data: Dict) -> Dict:
     # Deep copy the data, migration should be a pure function
     data = copy.deepcopy(data)
     # Determine the version of the data (0 if none available)
-    schema_version = data.get(_SCHEMA_VERSION_KEY, 0)
+    schema_version = data.get(SCHEMA_VERSION_KEY, 0)
     current_version = schema_version + 1
     while _needs_migration(schema_name, data):
         # Run the current migration
         # First remove the version key, the migration code shouldn't touch it
-        if _SCHEMA_VERSION_KEY in data:
-            del data[_SCHEMA_VERSION_KEY]
+        if SCHEMA_VERSION_KEY in data:
+            del data[SCHEMA_VERSION_KEY]
         data = _registered_migrations[schema_name][current_version](data)
-        data[_SCHEMA_VERSION_KEY] = current_version
+        data[SCHEMA_VERSION_KEY] = current_version
         current_version += 1
     # No migration to the next version up, so stop migrating
     return data

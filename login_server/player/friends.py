@@ -19,6 +19,7 @@
 #
 
 import json
+from common.migration_mechanism import SCHEMA_VERSION_KEY
 
 FRIEND_STATE_VISIBLE = 0x00000001
 FRIEND_STATE_ONLINE = 0x00001000
@@ -39,11 +40,13 @@ class Friends:
         try:
             with open(filename, 'rt') as infile:
                 friend_dict_with_string_keys = json.load(infile)
+                if SCHEMA_VERSION_KEY in friend_dict_with_string_keys:
+                    del friend_dict_with_string_keys[SCHEMA_VERSION_KEY]
                 self.friends_dict = {int(k): v for k, v in friend_dict_with_string_keys.items()}
         except OSError:
             self.friends_dict = {}
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:
-            json.dump(self.friends_dict, outfile, indent=4, sort_keys=True)
+            json.dump({**{str(k): v for k, v in self.friends_dict.items()}, SCHEMA_VERSION_KEY: 0}, outfile, indent=4, sort_keys=True)
 

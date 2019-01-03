@@ -21,6 +21,7 @@
 import json
 import string
 
+from common.migration_mechanism import SCHEMA_VERSION_KEY
 from common.game_items import game_classes
 from ..datatypes import *
 
@@ -198,9 +199,12 @@ class Loadouts:
         try:
             with open(filename, 'rt') as infile:
                 self.loadout_dict = json.load(infile, object_hook=json_keys_to_int)
+                if SCHEMA_VERSION_KEY in self.loadout_dict:
+                    del self.loadout_dict[SCHEMA_VERSION_KEY]
         except OSError:
             self.loadout_dict = self.defaults()
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:
-            json.dump(self.loadout_dict, outfile, indent=4, sort_keys=True)
+            out_dict = {**{str(k): v for k, v in self.loadout_dict.items()}, SCHEMA_VERSION_KEY: 0}
+            json.dump(out_dict, outfile, indent=4, sort_keys=True)
