@@ -140,9 +140,15 @@ def run_migrations(data_root_path: str) -> None:
     # Migrate each player's datastores in turn
     for player in _get_players_to_migrate(data_root_path):
         # Back up
-        _perform_backups(existing_version, _get_datastores_for_player(data_root_path, player))
-        # Load, run the migrations and save
+        datastores_to_migrate = _get_datastores_for_player(data_root_path, player)
+        _perform_backups(existing_version, datastores_to_migrate)
+
+        # Load current data, and delete the on-disk copy in case we rename/remove a datastore in migration
         current_datastores = _load_datastores(data_root_path, player)
+        for ds in datastores_to_migrate:
+            os.remove(ds)
+
+        # Run migrations and save
         upgraded_datatores = _perform_migrations(existing_version, upgraded_version, current_datastores)
         _save_datastores(data_root_path, player, upgraded_datatores)
 
