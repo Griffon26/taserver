@@ -66,7 +66,11 @@ def main():
         run_migrations('data')
     except ValueError as e:
         # If a migration failed, it will raise a ValueError
-        logger.fatal('Failed to run data migrations with error: %s' % str(e))
+        logger.fatal('Failed to run data migrations with format error: %s' % str(e))
+        sys.exit(2)
+    except OSError as e:
+        # If a migration failed, it will raise a ValueError
+        logger.fatal('Failed to run data migrations with OS error: %s' % str(e))
         sys.exit(2)
     
     client_queues = {}
