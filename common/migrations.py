@@ -20,16 +20,20 @@
 
 import copy
 
-from .migration_mechanism import taserver_migration
+from .migration_mechanism import taserver_migration, upgrades_all_players
 
-# Contract for a migration function:
+# Writing a migration function
 #
-# 1) Function has the taserver_migration decorator, with appropriate schema_version it upgrades to
-# 2) Function takes the data as a dict where the keys are each existing schemas, under which is data from that schema
-# 3) Function returns the data as a dict with keys being the new schemas, under which data is in the new schema format
-# 4) If the format of the original data is invalid, function raises a ValueError
-# 5) Function must be a pure function, except that it may mutate its argument for convenience
-#    (but in that case, it must also return its now-mutated argument)
+# A migration function should be decorated with @taserver_migration(schema_version=n),
+# where n = the version this migration will upgrade to
+#
+# If a migration fails, it should raise a ValueError (if it encounters a format error in existing data)
+# or an OSError (if file system manipulation fails)
+#
+# The function it decorates is an arbitrary script that should perform whatever operations are needed for this migration
+#
+# A helper decoration, @upgrades_all_players, is provided to simplify migrations which upgrade
+# the format of player datastores. See the docstring for that decorator for details of its contract
 #
 # Contract for the code running migrations:
 # 1) If migrations succeed, then the code may rely on all datastores being at the schema version for which

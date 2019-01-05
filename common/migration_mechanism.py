@@ -33,31 +33,11 @@ import glob
 _registered_migrations = OrderedDict()
 
 
-def _perform_migrations(from_version: int, to_version: int, data: Dict[str, Dict]) -> Dict[str, Dict]:
-    """
-    Run required migrations on the given a dict, where the keys of the dict are the schema names,
-    and under each is the data from that schema
-
-    :param from_version: the initial schema version of the data
-    :param to_version: the schema version to finish at
-    :param data: a dict containing the data to migrate
-    :return: a dict containing the upgraded data
-    """
-    # Deep copy the data as migration should be a pure function
-    data = copy.deepcopy(data)
-    for i in range(from_version + 1, to_version + 1):
-        data = _registered_migrations[i](data)
-    return data
-
-
-def _perform_backups(schema_version: int, datastore_paths: List[str]) -> None:
-    for datastore in datastore_paths:
-        backup_path = os.path.join(os.path.dirname(datastore), 'backups')
-        if not os.path.exists(backup_path):
-            os.makedirs(backup_path)
-        filename = os.path.splitext(os.path.basename(datastore))[0]
-        new_file_path = os.path.join(backup_path, '%s.backup.%d.json' % (filename, schema_version))
-        shutil.copyfile(datastore, new_file_path)
+def _perform_backups(data_root: str, schema_version: int) -> None:
+    backup_path = data_root + ('.%d.bkp' % schema_version)
+    if os.path.exists(backup_path):
+        shutil.rmtree(backup_path)
+    shutil.copytree(data_root, backup_path)
 
 
 def _load_schema_version(data_root: str) -> int:
@@ -137,20 +117,12 @@ def run_migrations(data_root_path: str) -> None:
     if upgraded_version == existing_version:
         return
 
-    # Migrate each player's datastores in turn
-    for player in _get_players_to_migrate(data_root_path):
-        # Back up
-        datastores_to_migrate = _get_datastores_for_player(data_root_path, player)
-        _perform_backups(existing_version, datastores_to_migrate)
+    # Back up all datastores
+    _perform_backups(data_root_path, existing_version)
 
-        # Load current data, and delete the on-disk copy in case we rename/remove a datastore in migration
-        current_datastores = _load_datastores(data_root_path, player)
-        for ds in datastores_to_migrate:
-            os.remove(ds)
-
-        # Run migrations and save
-        upgraded_datatores = _perform_migrations(existing_version, upgraded_version, current_datastores)
-        _save_datastores(data_root_path, player, upgraded_datatores)
+    # Perform each migration in turn
+    for i in range(existing_version + 1, upgraded_version + 1):
+        _registered_migrations[i]()
 
     # Write the new schema version
     _save_schema_version(data_root_path, upgraded_version)
@@ -160,7 +132,8 @@ def run_migrations(data_root_path: str) -> None:
 def taserver_migration(schema_version: int):
     """
     Decorator denoting a TAServer schema migration
-    Should decorate a function taking one argument, being a dict to be upgraded, and returning the upgraded dict
+    Should decorate a function taking no arguments and returning nothing. The migration function is essentially a script
+    performing whatever migration required
 
     Migrations should raise a ValueError if the data they attempt to upgrade is invalid
 
@@ -170,9 +143,50 @@ def taserver_migration(schema_version: int):
     """
     def decorator(func):
         @wraps(func)
-        def wrapped_func(data: Dict):
-            return func(data)
+        def wrapped_func():
+            return func()
         # Register the migration
         _registered_migrations[schema_version] = func
+        return wrapped_func
+    return decorator
+
+
+def upgrades_all_players(data_root_path: str):
+    """
+    Decorator denoting a function which manipulates player-specific datastores.
+
+    Should decorate a function taking two arguments:
+        - a dict of all datastores belonging to one player, with keys being the store name, and values being dicts
+        - the player's login name
+    and returning a dict of all datastores belonging to that player after the transformation
+
+    The decorator handles loading, saving, and applying the function across all players.
+
+    Will generally be used in conjunction with @taserver_migration in order to allow migrations which are
+    transformations of player data
+
+    Contract for a migration function using this decorator:
+
+    1) Function takes the data as a dict where the keys are each existing schemas, under which is data from that schema
+    2) Function returns the data as a dict with keys being the new schemas, under which data is in the new schema format
+    3) If the format of the original data is invalid, function raises a ValueError
+    4) Function must be referentially transparent, except that it may mutate its argument for convenience
+       (but must still return its now-mutated argument), and in that it may raise ValueError if format is invalid
+
+    :param data_root_path: the root path for datastores
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapped_func():
+            # Apply this to all known players
+            for player in _get_players_to_migrate(data_root_path):
+                datastores_to_migrate = _get_datastores_for_player(data_root_path, player)
+                # Load current data, and delete the on-disk copy in case we rename/remove a datastore in migration
+                data = _load_datastores(data_root_path, player)
+                for ds in datastores_to_migrate:
+                    os.remove(ds)
+                # Perform the function, then save
+                upgraded = func(data, player)
+                _save_datastores(data_root_path, player, upgraded)
         return wrapped_func
     return decorator
