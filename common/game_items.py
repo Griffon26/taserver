@@ -56,7 +56,7 @@ class GameClass:
 
     def __repr__(self):
         return f'GameClass({self.class_id}, {self.secondary_id}, "{self.family_info_name}", ' \
-               f'"{self.short_name}", "{self.purchase_name}")'
+            f'"{self.short_name}", "{self.purchase_name}")'
 
 
 class UnlockableGameClass(GamePurchase):
@@ -101,7 +101,7 @@ class UnlockableClassSpecificItem(UnlockableItem):
 
     def __repr__(self):
         return f'UnlockableClassSpecificItem("{self.name}", {self.item_id}, ' \
-               f'{self.game_class.class_id}, {self.shown}, {self.unlocked})'
+            f'{self.game_class.class_id}, {self.shown}, {self.unlocked})'
 
 
 class UnlockableWeapon(UnlockableClassSpecificItem):
@@ -116,7 +116,7 @@ class UnlockableWeapon(UnlockableClassSpecificItem):
 
     def __repr__(self):
         return f'UnlockableWeapon("{self.name}", {self.item_id}, ' \
-               f'{self.game_class.class_id}, {self.category}, {self.shown}, {self.unlocked})'
+            f'{self.game_class.class_id}, {self.category}, {self.shown}, {self.unlocked})'
 
 
 class UnlockablePack(UnlockableClassSpecificItem):
@@ -811,13 +811,14 @@ _items_to_remove: Set[str] = set()
 # Definition of items that should appear in the menu, but should be by default locked
 _items_to_lock: Set[str] = set()
 
-_built_ootb_class_menu_data = build_class_menu_data(game_classes, _weapon_categories_ootb,
-                                                   _hierarchical_definitions_ootb, _items_to_remove, _items_to_lock)
-
-_built_goty_class_menu_data = build_class_menu_data(game_classes, _weapon_categories_goty,
-                                                    _hierarchical_definitions_goty, _items_to_remove, _items_to_lock)
+_built_class_menu_data = {
+    'ootb': build_class_menu_data(game_classes, _weapon_categories_ootb,
+                                  _hierarchical_definitions_ootb, _items_to_remove, _items_to_lock),
+    'goty': build_class_menu_data(game_classes, _weapon_categories_goty,
+                                  _hierarchical_definitions_goty, _items_to_remove, _items_to_lock)
+}
 
 
 # Processed form containing the information needed to build the menu content
-def get_class_menu_data(do_use_goty_defs: bool) -> Unlockables:
-    return _built_goty_class_menu_data if do_use_goty_defs else _built_ootb_class_menu_data
+def get_class_menu_data(game_setting_mode: str) -> Unlockables:
+    return _built_class_menu_data[game_setting_mode]

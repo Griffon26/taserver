@@ -81,8 +81,8 @@ class LoginServer:
                     else:
                         raise
 
-    def relevant_game_servers(self, is_goty: bool):
-        return {k: v for k, v in self.game_servers.items() if v.is_goty == is_goty}
+    def relevant_game_servers(self, game_setting_mode: str):
+        return {k: v for k, v in self.game_servers.items() if v.game_setting_mode == game_setting_mode}
 
     def all_game_servers(self):
         return self.game_servers
@@ -157,7 +157,7 @@ class LoginServer:
             game_server = msg.peer
             game_server.server_id = server_id
             game_server.match_id = server_id + 10000000
-            game_server.is_goty = False
+            game_server.game_setting_mode = 'ootb'
             game_server.login_server = self
 
             self.game_servers[server_id] = game_server
@@ -223,13 +223,11 @@ class LoginServer:
         internal_ip = IPv4Address(msg.internal_ip) if msg.internal_ip else None
         address_pair = IPAddressPair(external_ip, internal_ip)
 
-        game_server.set_info(address_pair, msg.port, msg.is_goty, msg.description, msg.motd)
-        self.logger.info('server: server info received for %s server %s (%s:%s)' % ('GOTY'
-                                                                                    if game_server.is_goty
-                                                                                    else 'OOTB',
-                                                                                 game_server.server_id,
-                                                                                 game_server.detected_ip,
-                                                                                 game_server.port))
+        game_server.set_info(address_pair, msg.port, msg.game_setting_mode, msg.description, msg.motd)
+        self.logger.info('server: server info received for %s server %s (%s:%s)' % (game_server.game_setting_mode,
+                                                                                    game_server.server_id,
+                                                                                    game_server.detected_ip,
+                                                                                    game_server.port))
 
     def handle_map_info_message(self, msg):
         game_server = msg.peer

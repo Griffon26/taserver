@@ -24,15 +24,15 @@ import json
 class PlayerSettings:
 
     def __init__(self):
-        self.is_goty = False
+        self.game_setting_mode = 'ootb'
 
     def load(self, filename):
         try:
             with open(filename, 'rt') as infile:
                 d = json.load(infile)
-                self.is_goty = d.get('is_goty', False)
+                self.game_setting_mode = d.get('game_setting_mode', 'ootb')
         except OSError:
-            self.is_goty = False
+            self.game_setting_mode = 'ootb'
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:

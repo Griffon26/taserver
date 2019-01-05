@@ -52,7 +52,7 @@ class PlayerState:
         self.player = player
 
     def class_menu_data(self):
-        return get_class_menu_data(self.player.player_settings.is_goty)
+        return get_class_menu_data(self.player.player_settings.game_setting_mode)
 
     def handle_request(self, request):
         methods = [

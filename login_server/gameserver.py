@@ -60,7 +60,7 @@ class GameServer(Peer):
         self.motd = None
         self.region = None
 
-        self.is_goty = False
+        self.game_setting_mode = 'ootb'
 
         self.joinable = False
         self.players = TracingDict(refsonly = True)
@@ -96,10 +96,10 @@ class GameServer(Peer):
             player.set_state(AuthenticatedState)
         super().disconnect(exception)
 
-    def set_info(self, address_pair, port: int, is_goty: bool, description: str, motd: str):
+    def set_info(self, address_pair, port: int, game_setting_mode: str, description: str, motd: str):
         self.address_pair = address_pair
         self.port = port
-        self.is_goty = is_goty
+        self.game_setting_mode = game_setting_mode
         self.description = description
         self.motd = motd
         self.send_pings()
@@ -158,7 +158,8 @@ class GameServer(Peer):
     def set_player_loadouts(self, player):
         assert player.unique_id in self.players
         msg = Login2LauncherSetPlayerLoadoutsMessage(player.unique_id,
-                                                     player.loadouts.get_loadouts(player.player_settings.is_goty))
+                                                     player.loadouts
+                                                     .get_loadouts(player.player_settings.game_setting_mode))
         self.send(msg)
 
     def remove_player_loadouts(self, player):

@@ -76,7 +76,7 @@ class UnauthenticatedState(PlayerState):
                 a003d()
                     .set_menu_data(self.class_menu_data())
                     .set_player(self.player.unique_id, self.player.display_name, '',
-                                self.player.loadouts, self.player.player_settings.is_goty),
+                                self.player.loadouts, self.player.player_settings.game_setting_mode),
                 m0662().set_original_bytes(0x8898, 0xdaff),
                 m0633().set_original_bytes(0xdaff, 0x19116),
                 m063e().set_original_bytes(0x19116, 0x1c6ee),

@@ -129,6 +129,12 @@ default_loadouts_goty = {
     }
 }
 
+default_loadouts_all = {
+    'ootb': default_loadouts_ootb,
+    'goty': default_loadouts_goty
+}
+
+
 class Loadouts:
     max_loadouts = 9
 
@@ -167,52 +173,49 @@ class Loadouts:
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
     def __init__(self):
-        self.ootb_loadout_dict = self.defaults(False)
-        self.goty_loadout_dict = self.defaults(True)
+        self.loadout_dict = self.fill_in_defaults(dict())
 
-    def get_loadouts(self, is_goty: bool):
-        return self.goty_loadout_dict if is_goty else self.ootb_loadout_dict
+    def get_loadouts(self, game_setting_mode: str):
+        return self.loadout_dict[game_setting_mode]
 
-    def defaults(self, use_goty_defaults: bool):
+    def fill_in_defaults(self, existing_loadouts):
         def finish_default_loadout(default_loadout, i):
             complete_loadout = default_loadout.copy()
             complete_loadout[SLOT_LOADOUT_NAME] = 'LOADOUT %s' % string.ascii_uppercase[i]
             return complete_loadout
 
-        default_loadouts = default_loadouts_goty if use_goty_defaults else default_loadouts_ootb
-        return {game_classes[name].class_id:
-                {i: finish_default_loadout(default_loadout, i) for i in range(self.max_loadouts)}
-                for name, default_loadout
-                in default_loadouts.items()}
+        result = dict()
+        for game_setting_mode, default_loadouts_set in default_loadouts_all.items():
+            if len(existing_loadouts.get(game_setting_mode, dict())) == 0:
+                # No existing loadouts for this game setting mode, set defaults
+                result[game_setting_mode] = {game_classes[name].class_id:
+                                                 {i: finish_default_loadout(default_loadout, i) for i in
+                                                  range(self.max_loadouts)}
+                                             for name, default_loadout
+                                             in default_loadouts_set.items()}
+        return result
 
     def is_loadout_menu_item(self, value):
         return value in self.loadout_id2key
 
-    def modify(self, is_goty: bool, loadout_id, slot, equipment):
+    def modify(self, game_setting_mode: str, loadout_id, slot, equipment):
         class_id, loadout_index = self.loadout_id2key[loadout_id]
-        d = self.goty_loadout_dict if is_goty else self.ootb_loadout_dict
+        d = self.loadout_dict[game_setting_mode]
         d[class_id][loadout_index][slot] = equipment
 
     def load(self, filename):
         def json_keys_to_int(x):
             if isinstance(x, dict):
-                return {(int(k) if k != 'ootb' and k != 'goty' else k): v
+                return {(int(k) if k not in default_loadouts_all else k): v
                         for k, v
                         in x.items()}
 
         try:
             with open(filename, 'rt') as infile:
-                d = json.load(infile, object_hook=json_keys_to_int)
-                self.ootb_loadout_dict = d['ootb']
-                self.goty_loadout_dict = d['goty']
+                self.loadout_dict = self.fill_in_defaults(json.load(infile, object_hook=json_keys_to_int))
         except (OSError, KeyError):
-            self.ootb_loadout_dict = self.defaults(False)
-            self.goty_loadout_dict = self.defaults(True)
+            self.loadout_dict = self.fill_in_defaults(dict())
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:
-            d = {
-                'ootb': self.ootb_loadout_dict,
-                'goty': self.goty_loadout_dict,
-            }
-            json.dump(d, outfile, indent=4, sort_keys=True)
+            json.dump(self.loadout_dict, outfile, indent=4, sort_keys=True)

@@ -123,11 +123,12 @@ class Login2LauncherPings(Message):
 class Launcher2LoginServerInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SERVERINFO
 
-    def __init__(self, external_ip: str, internal_ip: str, port: int, is_goty: bool, description: str, motd: str):
+    def __init__(self, external_ip: str, internal_ip: str, port: int, game_setting_mode: str,
+                 description: str, motd: str):
         self.external_ip = external_ip
         self.internal_ip = internal_ip
         self.port = port
-        self.is_goty = is_goty
+        self.game_setting_mode = game_setting_mode
         self.description = description
         self.motd = motd
 

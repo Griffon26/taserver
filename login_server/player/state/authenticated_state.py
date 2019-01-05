@@ -40,7 +40,8 @@ class AuthenticatedState(PlayerState):
             self.player.send(originalfragment(0x1EEB3, 0x20A10))  # 00d5 (map list)
         else:
             self.player.send(a00d5().setservers(self.player.login_server
-                                                    .relevant_game_servers(self.player.player_settings.is_goty)
+                                                    .relevant_game_servers(self.player
+                                                                           .player_settings.game_setting_mode)
                                                     .values(),
                                                 self.player.address_pair))  # 00d5 (server list)
 
@@ -238,7 +239,8 @@ class AuthenticatedState(PlayerState):
                 if menu_area_field:
                     if self.player.loadouts.is_loadout_menu_item(menu_area_field.value):
                         equip_value = int(int_field.value) if int_field else string_field.value
-                        self.player.loadouts.modify(self.player.player_settings.is_goty, menu_area_field.value, setting, equip_value)
+                        self.player.loadouts.modify(self.player.player_settings.game_setting_mode,
+                                                    menu_area_field.value, setting, equip_value)
                         loadout_changed = True
                     elif menu_area_field.value == MENU_AREA_SETTINGS:
                         # Ignore user settings. They'll have to store them themselves
