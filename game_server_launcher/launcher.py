@@ -341,6 +341,7 @@ class Launcher:
             self.server_stopping = False
         else:
             self.pending_server_port = get_other_port(self.active_server_port)
+            self.active_server_port = None
             self.logger.info('launcher: game server process terminated unexpectedly. Starting a new one on port %d.' %
                              self.pending_server_port)
             self.server_handler_queue.put(StartGameServerMessage(self.pending_server_port))
