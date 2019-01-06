@@ -27,7 +27,8 @@ import struct
 from .tcpmessage import TcpMessageWriter
 
 server_address = ("127.0.0.1", 9801)
-proxy_address = ("127.0.0.1", 9802)
+proxy_addresses = (("127.0.0.1", 7977),
+                   ("127.0.0.1", 7978))
 
 
 def _send_command(command):
@@ -37,17 +38,18 @@ def _send_command(command):
             TcpMessageWriter(sock).send(json.dumps(command).encode('utf8'))
 
         if command['list'] == 'whitelist':
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.connect(proxy_address)
-                if command['action'] == 'reset':
-                    message = b'reset'
-                else:
-                    address = IPv4Address(command['ip'])
-                    action = b'a' if command['action'] == 'add' else b'r'
-                    message = action + struct.pack('<L', command['player_id']) + address.packed
-                sock.sendall(struct.pack('<L', len(message)))
-                sock.sendall(message)
-                sock.shutdown(socket.SHUT_RDWR)
+            for proxy_address in proxy_addresses:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.connect(proxy_address)
+                    if command['action'] == 'reset':
+                        message = b'reset'
+                    else:
+                        address = IPv4Address(command['ip'])
+                        action = b'a' if command['action'] == 'add' else b'r'
+                        message = action + struct.pack('<L', command['player_id']) + address.packed
+                    sock.sendall(struct.pack('<L', len(message)))
+                    sock.sendall(message)
+                    sock.shutdown(socket.SHUT_RDWR)
 
     except ConnectionRefusedError:
         logger = logging.getLogger(__name__)

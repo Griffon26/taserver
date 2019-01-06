@@ -11,9 +11,8 @@
 
 #define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR, 12)
 
-#define GAME_SERVER_PORT 7777
-#define CLIENT_PORT 7778
-#define CONTROL_PORT 9802
+#define MIN_PORT 2000
+#define MAX_PORT 9000
 
 char socketBuffer[64 * 1024];
 SOCKET clientSocket;
@@ -299,7 +298,15 @@ DWORD WINAPI gameserverToClientHandler(void *pParam)
     return 0;
 }
 
-int main()
+void printUsage(char *pProgram)
+{
+	fprintf(stderr, "Usage: %s <port>\n\n", pProgram);
+	fprintf(stderr, "Start a udpproxy that will forward from the specified port to the specified port + 100 on localhost;\n");
+	fprintf(stderr, "The proxy will be listening for control connections on port + 200.\n");
+	fprintf(stderr, "Valid values for port range from %d to %d.\n", MIN_PORT, MAX_PORT);
+}
+
+int main(int argc, char *argv[])
 {
     int ret = 0;
     WSADATA wsaData;
@@ -307,6 +314,31 @@ int main()
     ControlData controlData;
 
     std::map<std::pair<unsigned long, int>, ClientData> clientDataMap;
+
+	if (argc != 2)
+	{
+		fprintf(stderr, "Invalid number of parameters specified.\n\n");
+		printUsage(argv[0]);
+		return -1;
+	}
+
+	int port;
+	if (sscanf_s(argv[1], "%d", &port) != 1)
+	{
+		fprintf(stderr, "Invalid value specified for port (must be a decimal value).\n\n");
+		printUsage(argv[0]);
+		return -1;
+	}
+
+	if ((port < MIN_PORT) || (port > MAX_PORT))
+	{
+		fprintf(stderr, "Invalid value specified for port (must be in the range %d-%d).\n\n", MIN_PORT, MAX_PORT);
+		printUsage(argv[0]);
+		return -1;
+	}
+	u_short clientPort = static_cast<u_short>(port);
+	u_short gameServerPort = clientPort + 100;
+	u_short controlPort = clientPort + 200;
 
     ret = WSAStartup((2, 2), &wsaData);
     if (ret != 0)
@@ -323,7 +355,7 @@ int main()
         fprintf(stderr, "InetPtonA failed with error code %d, extended error %d\n", ret, WSAGetLastError());
         return -1;
     }
-    controlListenAddress.sin_port = htons(CONTROL_PORT);
+    controlListenAddress.sin_port = htons(controlPort);
 
     controlData.listenSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (controlData.listenSocket == INVALID_SOCKET)
@@ -336,7 +368,7 @@ int main()
     ret = bind(controlData.listenSocket, (sockaddr *)&controlListenAddress, sizeof(controlListenAddress));
     if (ret == SOCKET_ERROR)
     {
-        fprintf(stderr, "Failed to bind to listen address localhost:%d for control connections, error %d\n", CONTROL_PORT, WSAGetLastError());
+        fprintf(stderr, "Failed to bind to listen address localhost:%d for control connections, error %d\n", controlPort, WSAGetLastError());
         return -1;
     }
 
@@ -360,7 +392,7 @@ int main()
     SOCKADDR_IN clientListenAddress;
     clientListenAddress.sin_family = AF_INET;
     clientListenAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-    clientListenAddress.sin_port = htons(CLIENT_PORT);
+    clientListenAddress.sin_port = htons(clientPort);
 
     clientSocket = socket(AF_INET, SOCK_DGRAM, 0);
     if (clientSocket == INVALID_SOCKET)
@@ -380,7 +412,7 @@ int main()
     ret = bind(clientSocket, (sockaddr *)&clientListenAddress, sizeof(clientListenAddress));
     if (ret == SOCKET_ERROR)
     {
-        fprintf(stderr, "Failed to bind to listen address 0.0.0.0:%d for client connections, error %d\n", CLIENT_PORT, WSAGetLastError());
+        fprintf(stderr, "Failed to bind to listen address 0.0.0.0:%d for client connections, error %d\n", clientPort, WSAGetLastError());
         return -1;
     }
 
@@ -392,7 +424,7 @@ int main()
         fprintf(stderr, "InetPtonA failed with error code %d, extended error %d\n", ret, WSAGetLastError());
         return -1;
     }
-    gameserverAddress.sin_port = htons(GAME_SERVER_PORT);
+    gameserverAddress.sin_port = htons(gameServerPort);
 
     ULONGLONG timeOfLastSocketCleanup = GetTickCount64();
     while (true)

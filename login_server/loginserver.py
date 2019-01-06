@@ -62,6 +62,7 @@ class LoginServer:
             Launcher2LoginTeamInfoMessage: self.handle_team_info_message,
             Launcher2LoginScoreInfoMessage: self.handle_score_info_message,
             Launcher2LoginMatchTimeMessage: self.handle_match_time_message,
+            Launcher2LoginServerReadyMessage: self.handle_server_ready_message,
             Launcher2LoginMatchEndMessage: self.handle_match_end_message,
         }
         self.pending_callbacks = PendingCallbacks(server_queue)
@@ -188,7 +189,7 @@ class LoginServer:
         current_player.last_received_seq = msg.clientseq
 
         requests = '\n'.join(['  %04X' % req.ident for req in msg.requests])
-        self.logger.info('server: %s sent:\n%s' % (current_player, requests))
+        self.logger.info('server: %s sent: %s' % (current_player, requests))
 
         for request in msg.requests:
             current_player.handle_request(request)
@@ -215,10 +216,9 @@ class LoginServer:
         internal_ip = IPv4Address(msg.internal_ip) if msg.internal_ip else None
         address_pair = IPAddressPair(external_ip, internal_ip)
 
-        game_server.set_info(address_pair, msg.port, msg.description, msg.motd)
-        self.logger.info('server: server info received for server %s (%s:%s)' % (game_server.server_id,
-                                                                                 game_server.detected_ip,
-                                                                                 game_server.port))
+        game_server.set_info(address_pair, msg.description, msg.motd)
+        self.logger.info('server: server info received for server %s (%s)' % (game_server.server_id,
+                                                                              game_server.detected_ip))
 
     def handle_map_info_message(self, msg):
         game_server = msg.peer
@@ -248,7 +248,13 @@ class LoginServer:
                msg.counting))
         game_server.set_match_time(msg.seconds_remaining, msg.counting)
 
+    def handle_server_ready_message(self, msg):
+        game_server = msg.peer
+        game_server.set_ready(msg.port)
+        self.logger.info('server: server %s (%s:%s) reports ready' % (game_server.server_id,
+                                                                      game_server.detected_ip,
+                                                                      game_server.port))
+
     def handle_match_end_message(self, msg):
         game_server = msg.peer
-        self.logger.info('server: match ended on server %s. Starting next map in 5 seconds.' % game_server.server_id)
-        self.pending_callbacks.add(game_server, 5, game_server.start_next_map)
+        self.logger.info('server: match ended on server %s.' % game_server.server_id)

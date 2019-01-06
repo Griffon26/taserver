@@ -29,6 +29,9 @@ import sys
 from common.logging import set_up_logging
 from common.tcpmessage import TcpMessageReader
 
+GAME_PORT1 = 7777
+GAME_PORT2 = 7778
+
 
 class Firewall():
     def __init__(self):
@@ -145,7 +148,6 @@ class Firewall():
         except sp.CalledProcessError as e:
             self.logger.error('Failed to add initial rule to firewall:\n%s' % e.output)
 
-
     def removerule(self, name, ip, port, protocol):
         args = [
             'c:\\windows\\system32\\Netsh.exe',
@@ -157,14 +159,13 @@ class Firewall():
             'protocol=%s' % protocol,
             'dir=in',
             'profile=any',
-            'localport=%d' % port,
+            'localport=%s' % port,
             'remoteip=%s' % ip
         ]
         try:
             sp.check_output(args, text = True)
         except sp.CalledProcessError as e:
             self.logger.error('Failed to remove rule from firewall:\n%s' % e.output)
-
 
     def addrule(self, name, ip, port, protocol, allow_or_block):
         if allow_or_block not in ('allow', 'block'):
@@ -180,7 +181,7 @@ class Firewall():
             'dir=in',
             'enable=yes',
             'profile=any',
-            'localport=%d' % port,
+            'localport=%s' % port,
             'action=%s' % allow_or_block,
             'remoteip=%s' % ip
         ]
@@ -252,7 +253,7 @@ class Firewall():
             'whitelist' : {
                 'name' : 'TAserverfirewall-whitelist',
                 'ruletype' : 'allow',
-                'port' : 7778,
+                'port' : '%d,%d' % (GAME_PORT1, GAME_PORT2),
                 'protocol' : 'udp',
                 'IPs' : list(),
             },
@@ -289,7 +290,7 @@ class Firewall():
                     ip_is_new = ip not in thelist['IPs']
                     thelist['IPs'].append(ip)
                     if ip_is_new:
-                        self.logger.info('add %sing firewall rule for %s to %s port %d' %
+                        self.logger.info('add %sing firewall rule for %s to %s port %s' %
                                          (thelist['ruletype'], ip, thelist['protocol'],
                                           thelist['port']))
                         self.addrule(thelist['name'], ip, thelist['port'], thelist['protocol'], thelist['ruletype'])
@@ -298,7 +299,7 @@ class Firewall():
                 if ip in thelist['IPs']:
                     thelist['IPs'].remove(ip)
                     if ip not in thelist['IPs']:
-                        self.logger.info('remove %sing firewall rule for %s to %s port %d' %
+                        self.logger.info('remove %sing firewall rule for %s to %s port %s' %
                                          (thelist['ruletype'], ip, thelist['protocol'],
                                           thelist['port']))
                         self.removerule(thelist['name'], ip, thelist['port'], thelist['protocol'])
@@ -306,7 +307,7 @@ class Firewall():
                 ip = command['ip']
                 if ip in thelist['IPs']:
                     thelist['IPs'] = [x for x in thelist['IPs'] if x != ip]
-                    self.logger.info('remove %sing firewall rule for %s to %s port %d' %
+                    self.logger.info('remove %sing firewall rule for %s to %s port %s' %
                                      (thelist['ruletype'], ip, thelist['protocol'],
                                       thelist['port']))
                     self.removerule(thelist['name'], ip, thelist['port'], thelist['protocol'])
@@ -314,7 +315,8 @@ class Firewall():
 
 def main():
     try:
-        udp_proxy_proc = sp.Popen('udpproxy.exe')
+        udp_proxy_proc1 = sp.Popen('udpproxy.exe %d' % GAME_PORT1)
+        udp_proxy_proc2 = sp.Popen('udpproxy.exe %d' % GAME_PORT2)
 
     except OSError as e:
         print('Failed to run udpproxy.exe. Run download_udpproxy.py to download it\n'
@@ -338,4 +340,5 @@ def main():
     except KeyboardInterrupt:
         firewall.removeallrules()
 
-    udp_proxy_proc.terminate()
+    udp_proxy_proc1.terminate()
+    udp_proxy_proc2.terminate()

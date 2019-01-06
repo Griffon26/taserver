@@ -70,8 +70,11 @@ connect to the replacement login server, follow these steps:
    logged in players on the game server. Without this script running you will not be able to get
    rid of hackers that are normally "unkickable".
 
-10. If the game server is running behind a router you'll need to forward ports 7778/UDP and
-   9002/UDP to the game server.
+10. If the game server is running behind a router you'll need to forward ports 7777/UDP, 7778/UDP
+    and 9002/UDP to the game server.
+    
+    **Do not manually open these ports in the firewall on the machine where the game server runs,
+      otherwise votekick may not work correctly. taserver itself will manage the firewall rules**
 
 11. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
     root of this repository.
@@ -119,6 +122,9 @@ on a LAN disconnected from the internet. In that case, follow these steps to set
    
 6. If the login server is running behind a router you'll need to forward ports 9000/TCP and
    9001/TCP to the login server.
+   
+   **Do not manually open these ports in the firewall on the machine where the login server runs,
+     otherwise votekick may not work correctly. taserver itself will manage the firewall rules**
 
 7. Start the login server by running the `start_login_server.py` script in the root of this 
    repository (preferably from a command window so you can read the errors if it exits for 
