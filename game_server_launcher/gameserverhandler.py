@@ -86,17 +86,19 @@ class GameServerHandler:
             raise ConfigurationError(
                 "Invalid 'controller_dll' specified under [gameserver]: the specified file does not exist.")
 
-    def wait_until_file_contains_string(self, filename, string):
+    def wait_until_file_contains_string(self, filename, string, timeout = 0):
         i = 0
-        while i < 10:
+        period = 3
+        while not timeout or (i < timeout / period):
             try:
                 with open(filename, 'rt') as f:
                     if string in f.read():
-                        break
-                    gevent.sleep(3)
+                        return True
+                    gevent.sleep(period)
             except FileNotFoundError:
-                gevent.sleep(3)
+                gevent.sleep(period)
             i += 1
+        return False
 
 
     def get_my_documents_folder(self):
@@ -155,7 +157,8 @@ class GameServerHandler:
                              ret_code)
 
         self.logger.info('gameserver: Waiting until game server has finished starting up...')
-        self.wait_until_file_contains_string(log_filename, 'Log: Bringing up level for play took:')
+        if not self.wait_until_file_contains_string(log_filename, 'Log: Bringing up level for play took:', timeout = 30):
+            self.logger.warning('gameserver: timeout waiting for log entry, continuing with injection...')
 
         self.logger.info('gameserver: Injecting game controller DLL into game server...')
         inject(process.pid, self.dll_to_inject)
