@@ -45,5 +45,5 @@ class Friends:
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:
-            json.dump({str(k): v for k, v in self.friends_dict.items()}, outfile, indent=4, sort_keys=True)
+            json.dump(self.friends_dict, outfile, indent=4, sort_keys=True)
 

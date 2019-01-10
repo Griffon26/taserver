@@ -34,9 +34,6 @@ from .gameclienthandler import handle_game_client
 from .trafficdumper import TrafficDumper, dumpfilename
 from .loginserver import LoginServer
 
-# common.migrations is imported so that migration decorators register correctly
-import common.migrations
-
 
 def handle_dump(dumpqueue):
     gevent.getcurrent().name = 'trafficdumper'

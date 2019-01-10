@@ -203,4 +203,4 @@ class Loadouts:
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:
-            json.dump({str(k): v for k, v in self.loadout_dict.items()}, outfile, indent=4, sort_keys=True)
+            json.dump(self.loadout_dict, outfile, indent=4, sort_keys=True)

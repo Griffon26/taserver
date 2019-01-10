@@ -20,7 +20,7 @@
 
 import copy
 
-from .migration_mechanism import taserver_migration, upgrades_all_players
+from common.migration_mechanism import taserver_migration, upgrades_all_players
 
 # Writing a migration function
 #
@@ -30,7 +30,8 @@ from .migration_mechanism import taserver_migration, upgrades_all_players
 # If a migration fails, it should raise a ValueError (if it encounters a format error in existing data)
 # or an OSError (if file system manipulation fails)
 #
-# The function it decorates is an arbitrary script that should perform whatever operations are needed for this migration
+# The function it decorates should take one parameter, the path to where the data is stored. It is an arbitrary script
+# that should perform whatever operations are needed for this migration
 #
 # A helper decoration, @upgrades_all_players, is provided to simplify migrations which upgrade
 # the format of player datastores. See the docstring for that decorator for details of its contract
@@ -40,3 +41,15 @@ from .migration_mechanism import taserver_migration, upgrades_all_players
 #    there is the latest defined migration
 # 2) Code must handle ValueErrors (format violations in the data) and OSErrors (assorted IO errors)
 #
+# Examples:
+# @taserver_migration(schema_version=1)
+# def _migration_1(data_root: str):
+#     print('Performing migration on data root: %s' % data_root)
+#     # Do migration
+#
+# @taserver_migration(schema_version=2)
+# @upgrades_all_players()
+# def _migration_2(data, player: str):
+#     print('Performing pure migration for player: %s' % player)
+#     # Transform data in some sway
+#     return data

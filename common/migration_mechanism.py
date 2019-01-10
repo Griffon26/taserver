@@ -28,15 +28,16 @@ import json
 import copy
 import glob
 
-
 # Known migrations
 _registered_migrations = OrderedDict()
 
 
-def _perform_backups(data_root: str, schema_version: int) -> None:
-    backup_path = data_root + ('.%d.bkp' % schema_version)
-    if os.path.exists(backup_path):
-        shutil.rmtree(backup_path)
+def _perform_backups(data_root: str) -> None:
+    backup_num = 0
+    backup_path = data_root + ('.%d.bkp' % backup_num)
+    while os.path.exists(backup_path):
+        backup_num += 1
+        backup_path = data_root + ('.%d.bkp' % backup_num)
     shutil.copytree(data_root, backup_path)
 
 
@@ -70,7 +71,7 @@ def _get_players_to_migrate(data_root: str) -> List[str]:
         return []
     with open(os.path.join(data_root, 'accountdatabase.json'), 'rt') as f:
         accounts = json.load(f)
-    return [acc['login_name'] for acc in accounts if 'login_name' in acc]
+    return [acc['login_name'] for acc in accounts]
 
 
 def _get_datastores_for_player(data_root: str, player_name: str) -> List[str]:
@@ -118,11 +119,11 @@ def run_migrations(data_root_path: str) -> None:
         return
 
     # Back up all datastores
-    _perform_backups(data_root_path, existing_version)
+    _perform_backups(data_root_path)
 
     # Perform each migration in turn
     for i in range(existing_version + 1, upgraded_version + 1):
-        _registered_migrations[i]()
+        _registered_migrations[i](data_root_path)
 
     # Write the new schema version
     _save_schema_version(data_root_path, upgraded_version)
@@ -143,15 +144,15 @@ def taserver_migration(schema_version: int):
     """
     def decorator(func):
         @wraps(func)
-        def wrapped_func():
-            return func()
+        def wrapped_func(data_root: str):
+            return func(data_root)
         # Register the migration
         _registered_migrations[schema_version] = func
         return wrapped_func
     return decorator
 
 
-def upgrades_all_players(data_root_path: str):
+def upgrades_all_players():
     """
     Decorator denoting a function which manipulates player-specific datastores.
 
@@ -167,26 +168,29 @@ def upgrades_all_players(data_root_path: str):
 
     Contract for a migration function using this decorator:
 
-    1) Function takes the data as a dict where the keys are each existing schemas, under which is data from that schema
+    1) Function takes the data as a dict where the keys are each existing schemas, under which is data from that schema.
+       As a second argument it takes the name of the player currently being migrated
     2) Function returns the data as a dict with keys being the new schemas, under which data is in the new schema format
     3) If the format of the original data is invalid, function raises a ValueError
     4) Function must be referentially transparent, except that it may mutate its argument for convenience
        (but must still return its now-mutated argument), and in that it may raise ValueError if format is invalid
-
-    :param data_root_path: the root path for datastores
     """
     def decorator(func):
         @wraps(func)
-        def wrapped_func():
+        def wrapped_func(data_root: str):
             # Apply this to all known players
-            for player in _get_players_to_migrate(data_root_path):
-                datastores_to_migrate = _get_datastores_for_player(data_root_path, player)
+            for player in _get_players_to_migrate(data_root):
+                datastores_to_migrate = _get_datastores_for_player(data_root, player)
                 # Load current data, and delete the on-disk copy in case we rename/remove a datastore in migration
-                data = _load_datastores(data_root_path, player)
+                data = _load_datastores(data_root, player)
                 for ds in datastores_to_migrate:
                     os.remove(ds)
                 # Perform the function, then save
                 upgraded = func(data, player)
-                _save_datastores(data_root_path, player, upgraded)
+                _save_datastores(data_root, player, upgraded)
         return wrapped_func
     return decorator
+
+
+# Migrations imported at the bottom of the file to work around circular dependency
+import common.migrations
