@@ -70,6 +70,19 @@ class Firewall():
         # fail if there are no left-over rules from a previous run.
         sp.call(args, stdout=sp.DEVNULL)
 
+    def reset_tcp_whitelist(self):
+        self.logger.info('Resetting TAserverfirewall TCP whitelist to initial state')
+        args = [
+            'c:\\windows\\system32\\Netsh.exe',
+            'advfirewall',
+            'firewall',
+            'delete',
+            'rule',
+            'name="TAserverfirewall-whitelist-tcp"'
+        ]
+        # Don't check for failure here, because it is expected to
+        # fail if there are no left-over rules from a previous run.
+        sp.call(args, stdout=sp.DEVNULL)
 
     def reset_blacklist(self):
         self.logger.info('Resetting TAserverfirewall blacklist to initial state')
@@ -263,6 +276,13 @@ class Firewall():
                 'port' : 9000,
                 'protocol' : 'tcp',
                 'IPs' : list()
+            },
+            'whitelist-tcp' : {
+                'name': 'TAserverfirewall-whitelist-tcp',
+                'ruletype': 'allow',
+                'port': '%d,%d' % (GAME_PORT1, GAME_PORT2),
+                'protocol': 'tcp',
+                'IPs': list(),
             }
         }
 
@@ -281,6 +301,8 @@ class Firewall():
             if command['action'] == 'reset':
                 if command['list'] == 'whitelist':
                     self.reset_whitelist()
+                elif command['list'] == 'whitelist-tcp':
+                    self.reset_tcp_whitelist()
                 else:
                     self.reset_blacklist()
                 thelist['IPs'] = list()

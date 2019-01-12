@@ -132,6 +132,7 @@ class Launcher:
 
     def run(self):
         reset_firewall('whitelist')
+        reset_firewall('whitelist-tcp')
         self.pending_server_port = game_server_ports[0]
         self.server_handler_queue.put(StartGameServerMessage(self.pending_server_port))
         while True:
@@ -221,6 +222,7 @@ class Launcher:
         if msg.ip:
             self.logger.info('launcher: login server added player %d with ip %s' % (msg.unique_id, msg.ip))
             modify_firewall('whitelist', 'add', msg.unique_id, msg.ip)
+            modify_firewall('whitelist-tcp', 'add', msg.unique_id, msg.ip)
         else:
             self.logger.info('launcher: login server added local player %d' % msg.unique_id)
 
@@ -228,6 +230,7 @@ class Launcher:
         if msg.ip:
             self.logger.info('launcher: login server removed player %d with ip %s' % (msg.unique_id, msg.ip))
             modify_firewall('whitelist', 'remove', msg.unique_id, msg.ip)
+            modify_firewall('whitelist-tcp', 'remove', msg.unique_id, msg.ip)
         else:
             self.logger.info('launcher: login server removed local player %d' % msg.unique_id)
 
