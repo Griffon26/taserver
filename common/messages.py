@@ -20,6 +20,7 @@
 
 import json
 import struct
+from typing import Optional
 
 # These IDs should only be extended, not changed, to allow for some
 # backward compatibility
@@ -181,7 +182,7 @@ class Launcher2LoginProtocolVersionMessage(Message):
 class Launcher2LoginServerReadyMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SERVERREADY
 
-    def __init__(self, port: int):
+    def __init__(self, port: Optional[int]):
         self.port = port
 
 

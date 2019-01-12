@@ -39,12 +39,30 @@ MESSAGE_TEAM = 3
 MESSAGE_PRIVATE = 6
 MESSAGE_UNKNOWNTYPE = 9
 
-STDMSG_JOINED_A_MATCH_QUEUE = 0x00004782
-STDMSG_MISSION_READY_DO_YOU_WANT_TO_JOIN = 0x00004B72
-STDMSG_NOT_A_VALID_PROMOTION_CODE = 0x00019646
-STDMSG_VOTE_BY_X_KICK_PLAYER_X_YES_NO = 0x0001942F
-STDMSG_PLAYER_X_HAS_BEEN_KICKED = 0x00019430
-STDMSG_PLAYER_X_WAS_NOT_VOTED_OUT = 0x00019431
+STDMSG_ALREADY_IN_MATCH_QUEUE               = 0x0000477c  # 'You are already in the match queue'
+STDMSG_NOT_LEADER_CANT_MANAGE_QUEUE         = 0x00004781 # 'You are not the team leader, only leader can manage the match queue'
+STDMSG_JOINED_A_MATCH_QUEUE                 = 0x00004782 # 'You have joined a match queue'
+STDMSG_NOT_IN_THE_MATCH_QUEUE               = 0x00004783 # 'You are not in the match queue'
+STDMSG_LEFT_MATCH_QUEUE                     = 0x00004783 # 'You have left the match queue'
+STDMSG_MISSION_READY_DO_YOU_WANT_TO_JOIN    = 0x00004B72 # 'A mission is ready for you to join, do you want to accept?'
+STDMSG_TEST_CONFIRM_POPUP                   = 0x00004b95 # 'Are you sure you would like to test the functionality of the confirm popup?'
+# Lots of other strings in the range that follows
+STDMSG_MUST_UPGRADE_TO_VIP                  = 0x00019338 # 'You must upgrade your account to VIP Status'
+STDMSG_VOTE_BY_X_KICK_PLAYER_X_YES_NO       = 0x0001942F # 'Vote by @@kicker_player_name@@: kick @@player_name@@? (No: F5) (Yes: F6)
+STDMSG_PLAYER_X_HAS_BEEN_KICKED             = 0x00019430 # '@@player_name@@ has been kicked'
+STDMSG_PLAYER_X_WAS_NOT_VOTED_OUT           = 0x00019431 # '@@player_name@@ was not voted out'
+STDMSG_PLAYER_X_NOT_FOUND_IN_MATCH          = 0x00019432 # '@@player_name@@ was not found in your match'
+STDMSG_PLAYER_X_MUTED                       = 0x00019440 # '@@PLAYER_NAME@@ muted.'
+STDMSG_PLAYER_X_NOT_FOUND                   = 0x00019441 # 'Player @@PLAYER_NAME@@ not found.'
+STDMSG_PLAYER_X_NO_LONGER_MUTED             = 0x00019442 # '@@player_name@@ is no longer muted.'
+STDMSG_PLAYER_X_IS_NOT_MUTED                = 0x00019444 # 'That player is not muted.'
+STDMSG_PLAYER_REPORT_RECEIVED               = 0x000194c6 # 'Player report received.'
+STDMSG_PLACED_BACK_IN_QUEUE                 = 0x000194d3 # '@@PLAYER_NAME@@ has left the match lobby. You have been placed back in the queue.'
+STDMSG_NO_MORE_VOTEKICKS                    = 0x000194ff # 'You may not initiate any more votekicks.'
+STDMSG_PROMOTION_NOT_AVAILABLE              = 0x00019645 # 'This promotion is not available'
+STDMSG_NOT_A_VALID_PROMOTION_CODE           = 0x00019646 # 'The code entered is not a valid promotion code'
+STDMSG_ITEM_PRICE_HAS_CHANGED               = 0x0001966e # 'Item price has changed'
+STDMSG_CANNOT_CONNECT_TO_SERVER             = 0x000197c7 # 'Cannot connect to server. Please wait and try again shortly.'
 
 MENU_AREA_SETTINGS = 0x0192C9D3
 

@@ -346,6 +346,13 @@ class Launcher:
                              self.pending_server_port)
             self.server_handler_queue.put(StartGameServerMessage(self.pending_server_port))
 
+            msg = Launcher2LoginServerReadyMessage(None)
+            if self.login_server:
+                self.login_server.send(msg)
+            else:
+                self.last_server_ready_message = msg
+
+
 
 def handle_launcher(game_server_config, incoming_queue, server_handler_queue):
     launcher = Launcher(game_server_config, incoming_queue, server_handler_queue)

@@ -251,9 +251,11 @@ class LoginServer:
     def handle_server_ready_message(self, msg):
         game_server = msg.peer
         game_server.set_ready(msg.port)
-        self.logger.info('server: server %s (%s:%s) reports ready' % (game_server.server_id,
-                                                                      game_server.detected_ip,
-                                                                      game_server.port))
+        status = 'ready' if msg.port else 'not ready'
+        self.logger.info('server: server %s (%s:%s) reports %s' % (game_server.server_id,
+                                                                   game_server.detected_ip,
+                                                                   game_server.port,
+                                                                   status))
 
     def handle_match_end_message(self, msg):
         game_server = msg.peer

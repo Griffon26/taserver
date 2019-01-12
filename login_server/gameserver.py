@@ -108,18 +108,21 @@ class GameServer(Peer):
             self.match_end_time_rel_or_abs = seconds_remaining
 
     def set_ready(self, port):
-        self.be_score = 0
-        self.ds_score = 0
-        self.port = port
-        self.joinable = True
+        if port is not None:
+            self.be_score = 0
+            self.ds_score = 0
+            self.port = port
+            self.joinable = True
 
-        for unique_id, player in self.players.items():
-            b4msg = a00b4().set_server(self).set_player(unique_id)
-            b4msg.findbytype(m042a).set(3)
-            b4msg.content.append(m02ff())
-            player.send(b4msg)
+            for unique_id, player in self.players.items():
+                b4msg = a00b4().set_server(self).set_player(unique_id)
+                b4msg.findbytype(m042a).set(3)
+                b4msg.content.append(m02ff())
+                player.send(b4msg)
 
-        self.send(Login2LauncherNextMapMessage())
+            self.send(Login2LauncherNextMapMessage())
+        else:
+            self.joinable = False
 
     def get_time_remaining(self):
         if self.match_end_time_rel_or_abs is not None:
