@@ -70,8 +70,14 @@ connect to the replacement login server, follow these steps:
    logged in players on the game server. Without this script running you will not be able to get
    rid of hackers that are normally "unkickable".
 
-10. If the game server is running behind a router you'll need to forward ports 7777/UDP, 7778/UDP
-    and 9002/UDP to the game server.
+10. If the game server is running behind a router you'll need to forward the following ports to
+    the game server:
+    
+    * 7777/UDP
+    * 7777/TCP
+    * 7778/UDP
+    * 7778/TCP
+    * 9002/UDP
     
     **Do not manually open these ports in the firewall on the machine where the game server runs,
       otherwise votekick may not work correctly. taserver itself will manage the firewall rules**
@@ -120,8 +126,12 @@ on a LAN disconnected from the internet. In that case, follow these steps to set
    important if you want to make votekick work against "unkickable" hackers, but can be skipped
    if that does not interest you.
    
-6. If the login server is running behind a router you'll need to forward ports 9000/TCP and
-   9001/TCP to the login server.
+
+6. If the login server is running behind a router you'll need to forward the following ports to
+   the login server:
+    
+   * 9000/TCP
+   * 9001/TCP 
    
    **Do not manually open these ports in the firewall on the machine where the login server runs,
      otherwise votekick may not work correctly. taserver itself will manage the firewall rules**

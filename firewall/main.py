@@ -118,11 +118,13 @@ class Whitelist(Rulelist):
 
     def add(self, ip):
         if super().add(ip):
-            self.utils.add_rule(self.name, ip, '%d,%d' % (GAME_PORT1, GAME_PORT2), 'udp', 'allow')
+            for protocol in ('udp', 'tcp'):
+                self.utils.add_rule(self.name, ip, '%d,%d' % (GAME_PORT1, GAME_PORT2), protocol, 'allow')
 
     def remove(self, ip):
         if super().remove(ip):
-            self.utils.remove_rule(self.name, ip, '%d,%d' % (GAME_PORT1, GAME_PORT2), 'udp', 'allow')
+            for protocol in ('udp', 'tcp'):
+                self.utils.remove_rule(self.name, ip, '%d,%d' % (GAME_PORT1, GAME_PORT2), protocol, 'allow')
 
 
 class Firewall:
