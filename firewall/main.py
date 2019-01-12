@@ -29,288 +29,144 @@ import sys
 from common.logging import set_up_logging
 from common.tcpmessage import TcpMessageReader
 
+from .utils import FirewallUtils
+
 GAME_PORT1 = 7777
 GAME_PORT2 = 7778
 
 
-class Firewall():
+class Rulelist:
+    def __init__(self):
+        self.IPs = set()
+
+    def has_ip(self, ip):
+        return ip in self.IPs
+
+    def add(self, ip):
+        if ip not in self.IPs:
+            self.IPs.add(ip)
+            return True
+        else:
+            return False
+
+    def remove(self, ip):
+        if ip in self.IPs:
+            self.IPs.remove(ip)
+            return True
+        else:
+            return False
+
+
+class Blacklist(Rulelist):
+    name = 'TAserverfirewall-blacklist'
+
+    def __init__(self, utils, logger):
+        super().__init__()
+        self.utils = utils
+        self.logger = logger
+
+    def remove_all(self):
+        self.utils.remove_rules_by_name(self.name)
+
+    def reset(self):
+        self.logger.info('Resetting blacklist to initial state')
+        self.remove_all()
+
+        args = [
+            'c:\\windows\\system32\\Netsh.exe',
+            'advfirewall',
+            'firewall',
+            'add',
+            'rule',
+            'name="%s"' % self.name,
+            'protocol=tcp',
+            'dir=in',
+            'enable=yes',
+            'profile=any',
+            'localport=9000',
+            'action=allow'
+        ]
+        try:
+            sp.check_output(args, text = True)
+        except sp.CalledProcessError as e:
+            self.logger.error('Failed to add initial rule to firewall during reset of blacklist:\n'
+                              '%s' % e.output)
+
+    def add(self, ip):
+        if super().add(ip):
+            self.utils.add_rule(self.name, ip, 9000, 'tcp', 'block')
+
+    def remove(self, ip):
+        if super().remove(ip):
+            self.utils.remove_rule(self.name, ip, 9000, 'tcp', 'block')
+
+
+class Whitelist(Rulelist):
+    name = 'TAserverfirewall-whitelist'
+
+    def __init__(self, utils, logger):
+        super().__init__()
+        self.utils = utils
+        self.logger = logger
+
+    def remove_all(self):
+        self.utils.remove_rules_by_name(self.name)
+
+    def reset(self):
+        self.logger.info('Resetting whitelist to initial state')
+        self.remove_all()
+
+    def add(self, ip):
+        if super().add(ip):
+            self.utils.add_rule(self.name, ip, '%d,%d' % (GAME_PORT1, GAME_PORT2), 'udp', 'allow')
+
+    def remove(self, ip):
+        if super().remove(ip):
+            self.utils.remove_rule(self.name, ip, '%d,%d' % (GAME_PORT1, GAME_PORT2), 'udp', 'allow')
+
+
+class Firewall:
     def __init__(self):
         set_up_logging('taserver_firewall.log')
         self.logger = logging.getLogger('firewall')
+        self.utils = FirewallUtils(self.logger)
+        self.blacklist = Blacklist(self.utils, self.logger)
+        self.whitelist = Whitelist(self.utils, self.logger)
 
-    def removeallrules(self):
+    def remove_all_rules(self):
         self.logger.info('Removing any previous TAserverfirewall rules')
-        for name in ('TAserverfirewall-blacklist',
-                     'TAserverfirewall-whitelist',
-                     'TAserverfirewall-general'):
-            args = [
-                'c:\\windows\\system32\\Netsh.exe',
-                'advfirewall',
-                'firewall',
-                'delete',
-                'rule',
-                'name="%s"' % name
-            ]
-            # Don't check for failure here, because it is expected to
-            # fail if there are no left-over rules from a previous run.
-            sp.call(args, stdout=sp.DEVNULL)
-
-
-    def reset_whitelist(self):
-        self.logger.info('Resetting TAserverfirewall whitelist to initial state')
-        args = [
-            'c:\\windows\\system32\\Netsh.exe',
-            'advfirewall',
-            'firewall',
-            'delete',
-            'rule',
-            'name="TAserverfirewall-whitelist"'
-        ]
-        # Don't check for failure here, because it is expected to
-        # fail if there are no left-over rules from a previous run.
-        sp.call(args, stdout=sp.DEVNULL)
-
-
-    def reset_blacklist(self):
-        self.logger.info('Resetting TAserverfirewall blacklist to initial state')
-        args = [
-            'c:\\windows\\system32\\Netsh.exe',
-            'advfirewall',
-            'firewall',
-            'delete',
-            'rule',
-            'name="TAserverfirewall-blacklist"'
-        ]
-        # Don't check for failure here, because it is expected to
-        # fail if there are no left-over rules from a previous run.
-        sp.call(args, stdout=sp.DEVNULL)
-
-        args = [
-            'c:\\windows\\system32\\Netsh.exe',
-            'advfirewall',
-            'firewall',
-            'add',
-            'rule',
-            'name="TAserverfirewall-blacklist"',
-            'protocol=tcp',
-            'dir=in',
-            'enable=yes',
-            'profile=any',
-            'localport=9000',
-            'action=allow'
-        ]
-        try:
-            sp.check_output(args, text = True)
-        except sp.CalledProcessError as e:
-            self.logger.error('Failed to add initial rule to firewall during reset of blacklist:\n%s' % e.output)
-
-
-    def createinitialrules(self):
-        self.logger.info('Adding initial set of TAserverfirewall rules')
-
-        # The only initial rules we need are a allow rules for
-        # the login server for both clients and game servers
-        args = [
-            'c:\\windows\\system32\\Netsh.exe',
-            'advfirewall',
-            'firewall',
-            'add',
-            'rule',
-            'name="TAserverfirewall-blacklist"',
-            'protocol=tcp',
-            'dir=in',
-            'enable=yes',
-            'profile=any',
-            'localport=9000',
-            'action=allow'
-        ]
-        try:
-            sp.check_output(args, text = True)
-        except sp.CalledProcessError as e:
-            self.logger.error('Failed to add initial rule to firewall:\n%s' % e.output)
-
-        args = [
-            'c:\\windows\\system32\\Netsh.exe',
-            'advfirewall',
-            'firewall',
-            'add',
-            'rule',
-            'name="TAserverfirewall-general"',
-            'protocol=tcp',
-            'dir=in',
-            'enable=yes',
-            'profile=any',
-            'localport=9001',
-            'action=allow'
-        ]
-        try:
-            sp.check_output(args, text=True)
-        except sp.CalledProcessError as e:
-            self.logger.error('Failed to add initial rule to firewall:\n%s' % e.output)
-
-    def removerule(self, name, ip, port, protocol):
-        args = [
-            'c:\\windows\\system32\\Netsh.exe',
-            'advfirewall',
-            'firewall',
-            'delete',
-            'rule',
-            'name="%s"' % name,
-            'protocol=%s' % protocol,
-            'dir=in',
-            'profile=any',
-            'localport=%s' % port,
-            'remoteip=%s' % ip
-        ]
-        try:
-            sp.check_output(args, text = True)
-        except sp.CalledProcessError as e:
-            self.logger.error('Failed to remove rule from firewall:\n%s' % e.output)
-
-    def addrule(self, name, ip, port, protocol, allow_or_block):
-        if allow_or_block not in ('allow', 'block'):
-            raise RuntimeError('Invalid argument provided: %s' % allow_or_block)
-        args = [
-            'c:\\windows\\system32\\Netsh.exe',
-            'advfirewall',
-            'firewall',
-            'add',
-            'rule',
-            'name="%s"' % name,
-            'protocol=%s' % protocol,
-            'dir=in',
-            'enable=yes',
-            'profile=any',
-            'localport=%s' % port,
-            'action=%s' % allow_or_block,
-            'remoteip=%s' % ip
-        ]
-        try:
-            sp.check_output(args, text = True)
-        except sp.CalledProcessError as e:
-            self.logger.error('Failed to add rule to firewall:\n%s' % e.output)
-
-
-    def findtribesascendrules(self):
-        args = [
-            'c:\\windows\\system32\\Netsh.exe',
-            'advfirewall',
-            'firewall',
-            'show',
-            'rule',
-            'name=all',
-            'dir=in',
-            'status=enabled',
-            'verbose'
-        ]
-        try:
-            output = sp.check_output(args, text = True)
-        except sp.CalledProcessError as e:
-            self.logger.error('Failed to request firewall rules.')
-            output = ''
-
-        tarules = []
-        for line in output.splitlines():
-            if line.startswith('Rule Name:'):
-                newrule = {}
-            elif ':' in line:
-                key, value = line.split(':', maxsplit=1)
-                key = key.strip()
-                value = value.strip()
-
-                newrule[key] = value
-
-                if key == 'Program' and value.lower().endswith('tribesascend.exe'):
-                    tarules.append(newrule)
-
-        return tarules
-
-
-    def disablerulesforprogramname(self, programname):
-        args = [
-            'c:\\windows\\system32\\Netsh.exe',
-            'advfirewall',
-            'firewall',
-            'set',
-            'rule',
-            'name=all',
-            'dir=in',
-            'program="%s"' % programname,
-            'new',
-            'enable=no'
-        ]
-
-        try:
-            self.logger.info('Disabling rule for %s' % programname)
-            sp.check_output(args, text = True)
-        except sp.CalledProcessError as e:
-            self.logger.error('Failed to remove firewall rules for program %s. Output:\n%s' %
-                              (programname, e.output))
-
+        self.utils.remove_rules_by_name('TAserverfirewall-general')
+        self.blacklist.remove_all()
+        self.whitelist.remove_all()
 
     def run(self, server_queue):
         lists = {
-            'whitelist' : {
-                'name' : 'TAserverfirewall-whitelist',
-                'ruletype' : 'allow',
-                'port' : '%d,%d' % (GAME_PORT1, GAME_PORT2),
-                'protocol' : 'udp',
-                'IPs' : list(),
-            },
-            'blacklist' : {
-                'name' : 'TAserverfirewall-blacklist',
-                'ruletype' : 'block',
-                'port' : 9000,
-                'protocol' : 'tcp',
-                'IPs' : list()
-            }
+            'whitelist' : self.whitelist,
+            'blacklist' : self.blacklist
         }
 
         # First disable the rules that are created by Windows itself when you run tribesascend.exe
-        tribesascendprograms = set(rule['Program'] for rule in self.findtribesascendrules())
-        for program in tribesascendprograms:
-            self.disablerulesforprogramname(program)
+        tribes_ascend_programs = set(rule['Program'] for rule in self.utils.find_tribes_ascend_rules())
+        for program in tribes_ascend_programs:
+            self.utils.disable_rules_for_program_name(program)
 
-        self.removeallrules()
-        self.createinitialrules()
+        self.whitelist.reset()
+        self.blacklist.reset()
 
         while True:
             command = server_queue.get()
             thelist = lists[command['list']]
 
             if command['action'] == 'reset':
-                if command['list'] == 'whitelist':
-                    self.reset_whitelist()
-                else:
-                    self.reset_blacklist()
-                thelist['IPs'] = list()
+                thelist.reset()
             elif command['action'] == 'add':
                 ip = command['ip']
-                if ip not in thelist['IPs']:
-                    ip_is_new = ip not in thelist['IPs']
-                    thelist['IPs'].append(ip)
-                    if ip_is_new:
-                        self.logger.info('add %sing firewall rule for %s to %s port %s' %
-                                         (thelist['ruletype'], ip, thelist['protocol'],
-                                          thelist['port']))
-                        self.addrule(thelist['name'], ip, thelist['port'], thelist['protocol'], thelist['ruletype'])
+                thelist.add(ip)
             elif command['action'] == 'remove':
                 ip = command['ip']
-                if ip in thelist['IPs']:
-                    thelist['IPs'].remove(ip)
-                    if ip not in thelist['IPs']:
-                        self.logger.info('remove %sing firewall rule for %s to %s port %s' %
-                                         (thelist['ruletype'], ip, thelist['protocol'],
-                                          thelist['port']))
-                        self.removerule(thelist['name'], ip, thelist['port'], thelist['protocol'])
-            elif command['action'] == 'removeall':
-                ip = command['ip']
-                if ip in thelist['IPs']:
-                    thelist['IPs'] = [x for x in thelist['IPs'] if x != ip]
-                    self.logger.info('remove %sing firewall rule for %s to %s port %s' %
-                                     (thelist['ruletype'], ip, thelist['protocol'],
-                                      thelist['port']))
-                    self.removerule(thelist['name'], ip, thelist['port'], thelist['protocol'])
+                thelist.remove(ip)
+            else:
+                self.logger.error('Invalid action received: %s' % command['action'])
 
 
 def main():
@@ -338,7 +194,7 @@ def main():
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        firewall.removeallrules()
+        firewall.remove_all_rules()
 
     udp_proxy_proc1.terminate()
     udp_proxy_proc2.terminate()
