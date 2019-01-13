@@ -7,14 +7,14 @@ of the protocol.
 The structure of the protocol has already been reverse engineered, so I will not describe
 that here. Take a look at the code of the parse.py script if you want to know more about that.
 
-#### Capture with wireshark
+### Capture with wireshark
 
 First capture the traffic between your client and the login server with 
 [Wireshark](https://www.wireshark.org/). They communicate over TCP on port 9000.
 
 ![Wireshark start capture](/docs/images/wireshark_start_capture.png?raw=true)
 
-#### Export to C arrays
+### Export to C arrays
 
 Then follow the TCP stream:
 
@@ -24,7 +24,7 @@ In the window that pops up you can save the entire conversation to a file as C a
 
 ![Wireshark save as C arrays](/docs/images/wireshark_saveas_carrays.png?raw=true)
 
-#### Convert to readable text with parse.py
+### Convert to readable text with parse.py
 
 Now run parse.py on the saved file to convert it to something readable:
 
@@ -72,7 +72,7 @@ will look similar to this:
     000000CA`  seq 00000000 ack 00000000
         --------------------------------------------------------------------------
 
-#### Extending parse.py
+### Extending parse.py
 
 When you figure out the meaning of fields or values, add them to `enumfields.csv` and
 `fieldvalues.csv` and the next time you run `parse.py` it will annotate the fields with
