@@ -20,7 +20,9 @@ Then follow the TCP stream:
 
 ![Wireshark follow TCP stream](/docs/images/wireshark_follow_tcp_stream.png?raw=true)
 
-In the window that pops up you can save the entire conversation to a file as C arrays:
+In the window that pops up you can save the entire conversation to a file as C arrays, 
+but be sure to wait for the packet counters on the left to stop counting up before pressing
+save, otherwise you'll only have part of the data.
 
 ![Wireshark save as C arrays](/docs/images/wireshark_saveas_carrays.png?raw=true)
 
@@ -74,7 +76,12 @@ will look similar to this:
 
 ### Extending parse.py
 
-When you figure out the meaning of fields or values, add them to `enumfields.csv` and
-`fieldvalues.csv` and the next time you run `parse.py` it will annotate the fields with
-your added descriptions.
- 
+When you figure out the meaning of fields or values, add them to 
+`scripts\known_field_data\enumfields.csv` and `scripts\known_field_data\fieldvalues.csv`
+and the next time you run `parse.py` it will annotate the fields with your added 
+descriptions.
+
+### Troubleshooting
+
+Sometimes the file saved by Wireshark contains improperly terminated C arrays. When
+that happens use a text editor to delete them and run `parse.py` again.
