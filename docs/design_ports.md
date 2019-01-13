@@ -7,4 +7,4 @@ is behind a router.
 The source of the diagram is contained in the PNG file. To edit it go to https://www.draw.io/
 and load the PNG file.
 
-![Shortcut dialog](/docs/design_ports.png?raw=true)
+![Ports design](/docs/design_ports.png?raw=true)
