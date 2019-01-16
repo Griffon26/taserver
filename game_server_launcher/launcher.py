@@ -22,7 +22,7 @@ from distutils.version import StrictVersion
 import gevent
 from ipaddress import IPv4Address
 import logging
-import socket
+from gevent import socket
 import urllib.request as urlreq
 
 from common.errors import FatalError
