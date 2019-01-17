@@ -20,6 +20,7 @@
 
 import json
 import struct
+from typing import Optional
 
 # These IDs should only be extended, not changed, to allow for some
 # backward compatibility
@@ -39,6 +40,7 @@ _MSGID_LAUNCHER2LOGIN_SCOREINFO = 0x2003
 _MSGID_LAUNCHER2LOGIN_MATCHTIME = 0x2004
 _MSGID_LAUNCHER2LOGIN_MATCHEND = 0x2005
 _MSGID_LAUNCHER2LOGIN_PROTOCOL_VERSION = 0x2006
+_MSGID_LAUNCHER2LOGIN_SERVERREADY = 0x2007
 
 _MSGID_GAME2LAUNCHER_PROTOCOL_VERSION = 0x3000
 _MSGID_GAME2LAUNCHER_TEAMINFO = 0x3001
@@ -51,6 +53,7 @@ _MSGID_GAME2LAUNCHER_MAPINFO = 0x3006
 _MSGID_LAUNCHER2GAME_LOADOUT = 0x4000
 _MSGID_LAUNCHER2GAME_NEXTMAP = 0x4001
 _MSGID_LAUNCHER2GAME_PINGS = 0x4002
+_MSGID_LAUNCHER2GAME_INIT = 0x4003
 
 
 class Message:
@@ -123,11 +126,10 @@ class Login2LauncherPings(Message):
 class Launcher2LoginServerInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SERVERINFO
 
-    def __init__(self, external_ip: str, internal_ip: str, port: int, game_setting_mode: str,
+    def __init__(self, external_ip: str, internal_ip: str, game_setting_mode: str,
                  description: str, motd: str):
         self.external_ip = external_ip
         self.internal_ip = internal_ip
-        self.port = port
         self.game_setting_mode = game_setting_mode
         self.description = description
         self.motd = motd
@@ -178,6 +180,14 @@ class Launcher2LoginProtocolVersionMessage(Message):
         self.version = version
 
 
+# Example json: { 'port' : 7777 }
+class Launcher2LoginServerReadyMessage(Message):
+    msg_id = _MSGID_LAUNCHER2LOGIN_SERVERREADY
+
+    def __init__(self, port: Optional[int]):
+        self.port = port
+
+
 # Example json: { 'version' : '0.1.0' }
 class Game2LauncherProtocolVersionMessage(Message):
     msg_id = _MSGID_GAME2LAUNCHER_PROTOCOL_VERSION
@@ -223,12 +233,14 @@ class Game2LauncherMatchTimeMessage(Message):
         self.counting = counting
 
 
-# Example json: {}
+# Example json: { 'controller_context' : opaque_json_structure }
+# Where 'opaque_json_structure' is a structure chosen by the controller and that will
+#       be passed to the next controller instance after map change
 class Game2LauncherMatchEndMessage(Message):
     msg_id = _MSGID_GAME2LAUNCHER_MATCHEND
 
-    def __init__(self):
-        pass
+    def __init__(self, controller_context):
+        self.controller_context = controller_context
 
 
 # Example json: { 'player_unique_id' : 123, 'class_id' : 1683, 'loadout_number' : 0 }
@@ -292,6 +304,17 @@ class Launcher2GamePings(Message):
         self.player_pings = player_pings
 
 
+# Example json: { 'controller_context': opaque_json_structure }
+# Where: opaque_json_structure is the same data that the controller passed as parameter of the match end message.
+#        This allows the controller to communicate state to another instance of itself. The first controller
+#        instance will receive an empty structure {}
+class Launcher2GameInit(Message):
+    msg_id = _MSGID_LAUNCHER2GAME_INIT
+
+    def __init__(self, controller_context):
+        self.controller_context = controller_context
+
+
 _message_classes = [
 
     Login2LauncherProtocolVersionMessage,
@@ -309,6 +332,7 @@ _message_classes = [
     Launcher2LoginMatchTimeMessage,
     Launcher2LoginMatchEndMessage,
     Launcher2LoginProtocolVersionMessage,
+    Launcher2LoginServerReadyMessage,
 
     Game2LauncherProtocolVersionMessage,
     Game2LauncherMapInfoMessage,
@@ -320,7 +344,8 @@ _message_classes = [
 
     Launcher2GameLoadoutMessage,
     Launcher2GameNextMapMessage,
-    Launcher2GamePings
+    Launcher2GamePings,
+    Launcher2GameInit
 ]
 
 _message_map = { msg_class.msg_id : msg_class for msg_class in _message_classes }

@@ -129,25 +129,29 @@ class AuthenticatedState(PlayerState):
         else:
             game_server = self.player.login_server.find_server_by_id(server_field.value)
 
-            b0msg = a00b0().setlength(9).set_server(game_server).set_player(self.player.unique_id)
-            b0msg.findbytype(m042a).set(2)
-            self.player.send(b0msg)
+            if game_server.joinable:
+                b0msg = a00b0().setlength(9).set_server(game_server).set_player(self.player.unique_id)
+                b0msg.findbytype(m042a).set(2)
+                self.player.send(b0msg)
 
-            self.player.send(a0070().set([
-                 m0348().set(self.player.unique_id),
-                 m0095(),
-                 m009e().set(MESSAGE_UNKNOWNTYPE),
-                 m009d().set(self.player.unique_id),
-                 m02fc().set(STDMSG_JOINED_A_MATCH_QUEUE)
-            ]))
+                self.player.send(a0070().set([
+                     m0348().set(self.player.unique_id),
+                     m0095(),
+                     m009e().set(MESSAGE_UNKNOWNTYPE),
+                     m009d().set(self.player.unique_id),
+                     m02fc().set(STDMSG_JOINED_A_MATCH_QUEUE)
+                ]))
 
-            b0msg = a00b0().setlength(10).set_server(game_server).set_player(self.player.unique_id)
-            b0msg.findbytype(m042a).set(2)
-            self.player.send(b0msg)
+                b0msg = a00b0().setlength(10).set_server(game_server).set_player(self.player.unique_id)
+                b0msg.findbytype(m042a).set(2)
+                self.player.send(b0msg)
 
-            b4msg = a00b4().set_server(game_server).set_player(self.player.unique_id)
-            b4msg.findbytype(m042a).set(3)
-            self.player.send(b4msg)
+                b4msg = a00b4().set_server(game_server).set_player(self.player.unique_id)
+                b4msg.findbytype(m042a).set(3)
+                self.player.send(b4msg)
+            else:
+                # TODO: figure out how to display a "failed to join" dialog
+                pass
 
     @handles(packet=a00b2)
     def handle_server_join_second_step(self, request):
@@ -156,12 +160,14 @@ class AuthenticatedState(PlayerState):
 
         match_id = request.findbytype(m02c4).value
         game_server = self.player.login_server.find_server_by_match_id(match_id)
-        b0msg = a00b0().setlength(10).set_server(game_server).set_player(self.player.unique_id)
-        b0msg.findbytype(m042a).set(7)
-        self.player.send(b0msg)
-        self.player.send(a0035().setserverdata(game_server, self.player.address_pair))
 
-        self.player.set_state(OnGameServerState, game_server)
+        if game_server.joinable:
+            b0msg = a00b0().setlength(10).set_server(game_server).set_player(self.player.unique_id)
+            b0msg.findbytype(m042a).set(7)
+            self.player.send(b0msg)
+            self.player.send(a0035().setserverdata(game_server, self.player.address_pair))
+
+            self.player.set_state(OnGameServerState, game_server)
 
     @handles(packet=a0070)
     def handle_chat(self, request):
@@ -190,6 +196,28 @@ class AuthenticatedState(PlayerState):
         else:  # MESSAGE_PUBLIC
             request.content.append(m02fe().set(self.player.display_name))
             request.content.append(m06de().set(self.player.tag))
+
+            # Uncomment this to easily print a mapping between message IDs and message texts
+            # (only works when a map is loaded)
+            # text = request.findbytype(m02e6).value
+            # if text.startswith('msg'):
+            #     _, idtext = text.split(' ')
+            #     msgid = int(idtext, 16)
+            #     for i in range(msgid, msgid + 64):
+            #         self.player.send(a0070().set([
+            #             m0348().set(self.player.unique_id),
+            #             m0095(),
+            #             m009e().set(MESSAGE_PUBLIC),
+            #             m009d().set(self.player.unique_id),
+            #             m02e6().set('msg = %X' % i),
+            #         ]))
+            #         self.player.send(a0070().set([
+            #             m0348().set(self.player.unique_id),
+            #             m0095(),
+            #             m009e().set(MESSAGE_UNKNOWNTYPE),
+            #             m009d().set(self.player.unique_id),
+            #             m02fc().set(i)
+            #         ]))
 
             if self.player.game_server:
                 self.player.game_server.send_all_players(request)
@@ -259,14 +287,15 @@ class AuthenticatedState(PlayerState):
     def handle_request_for_server_info(self, request):
         server_id = request.findbytype(m02c7).value
         game_server = self.player.login_server.find_server_by_id(server_id)
-        players = self.player.login_server.find_players_by(game_server = game_server)
-        reply = a01c6()
-        reply.content = [
-            m02c7().set(server_id),
-            m0228().set(0x00000002),
-            m00e9().setservers([game_server], self.player.address_pair).setplayers(players)
-        ]
-        self.player.send(reply)
+        if game_server.joinable:
+            players = self.player.login_server.find_players_by(game_server = game_server)
+            reply = a01c6()
+            reply.content = [
+                m02c7().set(server_id),
+                m0228().set(0x00000002),
+                m00e9().setservers([game_server], self.player.address_pair).setplayers(players)
+            ]
+            self.player.send(reply)
 
     @handles(packet=a011b)
     def handle_edit_friend_list(self, request):

@@ -29,6 +29,185 @@ class ParseError(Exception):
 
 class ParserState():
     def __init__(self):
+        # ID sizes are per-class (probably depends on how many members a class has)
+        # - it is guaranteed to be 8 for the FirstServerObject_0
+        # - it is guaranteed to be 8 for the TrPlayerController_0
+        # - it is guaranteed to be 6 for the TrPlayerReplicationInfo_0
+        # - it appears to be 6 for TrGameReplicationInfo_0
+        # - it appears to be 7 for TrPlayerPawn_0
+
+        TrInventoryManagerProps = {
+            '011110': {'name': 'Instigator',
+                       'type': bitarray,
+                       'size': 9},
+            '111110': {'name': 'Owner',
+                       'type': bitarray,
+                       'size': 9},
+            '101011': {'name': 'InventoryChain',
+                       'type': bitarray,
+                       'size': 10},
+        }
+
+        TrPlayerPawnProps = {
+            '1001001': {'name': 'CurrentWeaponAttachmentClass',
+                        'type': bitarray,
+                        'size': 33},
+            '1010101': {'name': 'r_fCurrentPowerPool',
+                        'type': bitarray,
+                        'size': 32},
+            '1001100': {'name': 'InvManager',
+                        'type': bitarray,
+                        'size': 12},
+            '1100011': {'name': 'r_bIsInvulnerable',
+                        'type': bitarray,
+                        'size': 1},
+            '1110011': {'name': 'r_bIsSkiing',
+                        'type': bitarray,
+                        'size': 1}
+        }
+
+        TrDeviceProps = {
+            '001001' : { 'name' : 'r_eEquipAt',
+                         'type' : bitarray,
+                         'size' : 4 },
+            '111101' : { 'name' : 'Owner',
+                         'type' : bitarray,
+                         'size' : 10 },
+            '101011' : { 'name' : 'InvManager',
+                         'type' : bitarray,
+                         'size' : 10 },
+            '011011' : { 'name' : 'Inventory',
+                         'type' : bitarray,
+                         'size' : 10 },
+        }
+
+        TrRadarStationProps = {
+            '000111': {'name': 'r_bReset',
+                       'type': bitarray,
+                       'size': 7},
+        }
+
+        TrInventoryStationProps = {
+            '000111': {'name': 'r_bReset',
+                       'type': bitarray,
+                       'size': 7},
+        }
+
+        TrRepairStationProps = {
+            '000111': {'name': 'r_bReset',
+                       'type': bitarray,
+                       'size': 7},
+        }
+
+        # unsure
+        TrInventoryStationCollisionProps = {
+            # '101100' : { 'name' : 'RelativeLocation2',
+            #              'type' : bitarray,
+            #              'size' : 2 },
+            # '001001' : { 'name' : 'RelativeLocation',
+            #              'type' : bitarray,
+            #              'size' : 10 },
+            # '011111' : { 'name': 'Base',
+            #              'type': bitarray,
+            #              'size': 30},
+        }
+        TrPowerGeneratorProps = {
+            '111110' : { 'name' : 'r_MaxHealth',
+                         'type' : bitarray,
+                         'size' : 31 }
+        }
+
+        # TODO: It looks like RPC identifiers are only 6 bits when sent along with properties.
+        # When sent along with a counter, we need more bits to distinguish between them.
+        TrPlayerControllerProps = {
+            # '10000000': {'name': 'r_bNeedLoadout',
+            #            'type': bitarray,
+            #            'size': 1},
+            # '10001000': {'name': 'RPC ClientPlayerResettingAndRespawning',
+            #            'type': bitarray,
+            #            'size': 1},
+            # '11001000': {'name': 'r_bNeedTeam',
+            #            'type': bitarray,
+            #            'size': 1},
+            '10101000': {'name': 'PlayerReplicationInfo',
+                       'type': bitarray,
+                       'size': 11},
+            # '01101000': {'name': 'Pawn',
+            #            'type': bitarray,
+            #            'size': 11},
+            # # variable length, so currently it screws up what follows
+            # '10010100': {'name': 'RPC ReceiveLocalizedMessage',
+            #            'type': bitarray,
+            #            'size': 80},
+            # '11010100': {'name': 'RPC ClientHearSound',
+            #            'type': bitarray,
+            #            'size': 48},
+            '01111100': {'name': 'RPC ClientAckGoodMove',
+                       'type': bitarray,
+                       'size': 33},
+            '11111100': {'name': 'RPC ClientAdjustPosition',
+                       'type': bitarray,
+                       'size': 249},
+            # '10110010': {'name': 'RPC ClientSetViewTarget',
+            #            'type': bitarray,
+            #            'size': 81},
+            # '00111010': {'name': 'bNetOwner',
+            #            'type': bitarray,
+            #            'size': 2},
+            # '01110001': {'name': 'Rotation',
+            #              'type': bitarray,
+            #              'size': 12},
+            # '01001001': {'name': 'RPC PlayStartupMessage',
+            #              'type': bitarray,
+            #              'size': 9},
+            # '00101001': {'name': 'RPC ClientSetBehindView',
+            #              'type': bitarray,
+            #              'size': 1},
+            # '11011001': {'name': 'RPC ClientPawnDied',
+            #              'type': 'flag'},
+            # '00000101': {'name': 'bCollideWorld',
+            #              'type': bitarray,
+            #              'size': 2},
+            # '00011101': {'name': 'RemoteRole',
+            #              'type': bitarray,
+            #              'size': 3},
+            '10111101': {'name': 'r_nCurrentCredits',
+                         'type': bitarray,
+                         'size': 32},
+            # '11100011': {'name': 'RPC ClientSeekingMissileTargetingSelfEvent',
+            #              'type': bitarray,
+            #              'size': 33},
+        }
+
+        TrBaseTurretProps = {
+            '110001' : { 'name' : 'r_FlashCount',
+                         'type' : bitarray,
+                         'size' : 8 }
+        }
+
+        TrProj_BaseTurretProps = {
+            '011100' : { 'name' : 'Rotation',
+                         'type' : bitarray,
+                         'size' : 18 },
+            '000001' : { 'name' : 'Velocity',
+                         'type' : bitarray,
+                         'size' : 42 }
+        }
+
+        TrDroppedPickupProps = {
+            '101101' : { 'name' : 'InventoryClass',
+                         'type' : bitarray,
+                         'size' : 31 },
+            '011101' : { 'name' : 'Base',
+                         'type' : bitarray,
+                         'size' : 30 },
+            '110011' : { 'name' : 'Rotation',
+                         'type' : bitarray,
+                         'size' : 10 },
+            '101011' : { 'name' : 'bFadeOut',
+                         'type' : 'flag' }
+        }
+
         TrGameReplicationInfoProps = {
             '000000' : { 'name' : 'prefix?',
                          'type' : bitarray,
@@ -72,15 +251,50 @@ class ParserState():
         }
 
         TrFlagCTFProps = {
+            '100000' : { 'name' : 'bCollideActors1', 'type' : 'flag'},
+            '110000' : { 'name' : 'bHardAttach', 'type' : 'flag'},
+            '000100' : { 'name' : 'Physics',
+                         'type' : bitarray,
+                         'size' : 3 },
+            '000010' : { 'name' : 'Location',
+                         'type' : bitarray,
+                         'size' : 51 },
+            '100010' : { 'name' : 'RelativeLocation',
+                         'type' : bitarray,
+                         'size' : 21 },
+            '110010' : { 'name' : 'Rotation',
+                         'type' : bitarray,
+                         'size' : 10 },
+            '001010' : { 'name' : 'Velocity',
+                         'type' : bitarray,
+                         'size' : 39 },
+            '101110' : { 'name' : 'Base',
+                         'type' : bitarray,
+                         'size' : 9 },
+            '100001' : { 'name' : 'bCollideActors2', 'type' : 'flag'},
+            '010001' : { 'name' : 'bCollideWorld', 'type' : 'flag'},
+            '011010' : { 'name' : 'bHome', 'type' : 'flag'},
+            '010011' : { 'name' : 'RelativeRotation',
+                         'type' : bitarray,
+                         'size' : 26 },
             '111011' : { 'name' : 'Team',
                          'type' : bitarray,
                          'size' : 10 },
+            '000111' : { 'name' : 'HolderPRI',
+                         'type' : bitarray,
+                         'size' : 10 }
         }
 
         TrPlayerReplicationInfoProps = {
             '000000' : { 'name' : 'prefix?',
                          'type' : bitarray,
                          'size' : 5 },
+            '000010' : { 'name' : 'Location',
+                         'type' : bitarray,
+                         'size' : 51 },
+            '110010' : { 'name' : 'Rotation',
+                         'type' : bitarray,
+                         'size' : 10 },
             '101010' : { 'name' : 'UniqueId',
                          'type' : bitarray,
                          'size' : 64 },
@@ -95,87 +309,92 @@ class ParserState():
             '000001' : { 'name' : 'PlayerID', 'type' : int },
             '100001' : { 'name' : 'PlayerName', 'type' : str },
             '110001' : { 'name' : 'Deaths', 'type' : int },
+            '001001' : { 'name' : 'Score', 'type' : int },
             '011001' : { 'name' : 'CharClassInfo', 'type' : int },
-            '000011' : { 'name' : 'r_VoiceClass', 'type' : int },
-            '000111' : { 'name' : 'm_nPlayerIconIndex', 'type' : int },
-            '001111' : { 'name' : 'm_PendingBaseClass', 'type' : int },
-            '101111' : { 'name' : 'm_CurrentBaseClass', 'type' : int },
+            '010101' : { 'name' : 'bHasFlag', 'type': bool},
+            '101101' : { 'name' : 'r_bSkinId', 'type': int},
+            '111101' : { 'name' : 'r_EquipLevels',
+                         'type' : bitarray,
+                         'size' : 48},
+            '000011' : { 'name' : 'r_VoiceClass', 'type': int},
+            '001011' : { 'name' : 'm_nPlayerClassId', 'type': int},
+            '101011' : { 'name' : 'm_nCreditsEarned', 'type': int},
+            '000111' : { 'name' : 'm_nPlayerIconIndex', 'type': int},
+            '001111' : { 'name' : 'm_PendingBaseClass', 'type': int},
+            '101111' : { 'name' : 'm_CurrentBaseClass', 'type': int},
+
         }
 
         FirstClientObjectProps = {
             '000100' : { 'name' : 'prop8',
                          'type' : bitarray,
                          'size' : 162 },
-        }                
+        }
 
         FirstServerObjectProps = {
-            '111000' : { 'name' : 'mysteryproperty',
-                         'type' : PropertyValueMystery },
-        }                
+            '10000000': {'name': 'mysteryproperty3',
+                         'type': PropertyValueMystery3},
+            '11100000': {'name': 'mysteryproperty1',
+                         'type': PropertyValueMystery1},
+            '11010000': {'name': 'mysteryproperty2',
+                         'type': PropertyValueMystery2},
+        }
+
+        MatineeActorProps = {
+            '111010': {'name': 'Position',
+                       'type': bitarray,
+                       'size': 31},
+            '110110': {'name': 'bIsPlaying',
+                       'type': 'flag'},
+        }
 
         self.class_dict = {
-            '00110100101111010100000000000000' : { 'name' : 'TrFlagCTF_DiamondSword',
-                                                   'props' : TrFlagCTFProps },
-            '00100111010010011000000000000000' : { 'name' : 'UTTeamInfo',
-                                                   'props' : {} },
-            '00100100101111010100000000000000' : { 'name' : 'TrFlagCTF_BloodEagle',
-                                                   'props' : TrFlagCTFProps },
-            '00000110101111001100000000000000' : { 'name' : 'TrPlayerReplicationInfo',
-                                                   'props' : TrPlayerReplicationInfoProps },
-            '00110001010000010100000000000000' : { 'name' : 'TrPlayerController',
-                                                   'props' : {} },
-            '01110001101110110100000000000000' : { 'name' : 'TrGameReplicationInfo',
-                                                   'props' : TrGameReplicationInfoProps },
-            '00000101100101011110000000000000' : { 'name' : 'WorldInfo',
-                                                   'props' : {} },
-            '00010011100001101100000000000000' : { 'name' : 'TrServerSettingsInfo',
-                                                   'props' : {} },
-            '00111100001100100100000000000000' : { 'name' : 'TrBaseTurret_DiamondSword',
-                                                   'props' : {} },
-            '01001010100010101100000000000000' : { 'name' : 'TrRadarStation_DiamondSword',
-                                                   'props' : {} },
-            '00110111000101011110000000000000' : { 'name' : 'TrCTFBase_DiamondSword',
-                                                   'props' : {} },
-            '01100110100101011110000000000000' : { 'name' : 'TrVehicleStation_DiamondSword',
-                                                   'props' : {} },
-            '01001011110100001100000000000000' : { 'name' : 'TrInventoryStationCollision',
-                                                   'props' : {} },
-            '00000000110010101100000000000000' : { 'name' : 'TrRepairStationCollision',
-                                                   'props' : {} },
-            '00111010100001100100000000000000' : { 'name' : 'TrPlayerPawn',
-                                                   'props' : {} },
-            '01111100101110010100000000000000' : { 'name' : 'TrDevice_LightSpinfusor',
-                                                   'props' : {} },
-            '01101100101110010100000000000000' : { 'name' : 'TrDevice_LightAssaultRifle',
-                                                   'props' : {} },
-            '01100101110110010100000000000000' : { 'name' : 'TrDevice_GrenadeLauncher_Light',
-                                                   'props' : {} },
-            '01001000101110010100000000000000' : { 'name' : 'TrDevice_LaserTargeter',
-                                                   'props' : {} },
-            '01111000100110010100000000000000' : { 'name' : 'TrDevice_Blink',
-                                                   'props' : {} },
-            '01000011100110010100000000000000' : { 'name' : 'TrDevice_ConcussionGrenade',
-                                                   'props' : {} },
-            '00100111101110010100000000000000' : { 'name' : 'TrDevice_Melee_DS',
-                                                   'props' : {} },
-            '01101101010100001100000000000000' : { 'name' : 'TrInventoryManager',
-                                                   'props' : {} },
-            '00000011110100001100000000000000' : { 'name' : 'TrStationCollision',
-                                                   'props' : {} },
-            '00011100001100100100000000000000' : { 'name' : 'TrBaseTurret_BloodEagle',
-                                                   'props' : {} },
-            '01110010100010101100000000000000' : { 'name' : 'TrRadarStation_BloodEagle',
-                                                   'props' : {} },
-            '00100110100101011110000000000000' : { 'name' : 'TrVehicleStation_BloodEagle',
-                                                   'props' : {} },
-            '00111100100101011110000000000000' : { 'name' : 'TrPowerGenerator_BloodEagle',
-                                                   'props' : {} },
-            '01010111000101011110000000000000' : { 'name' : 'TrCTFBase_BloodEagle',
-                                                   'props' : {} },
-            '00001000100000000111111011011000' : { 'name' : 'FirstClientObject',
-                                                   'props' : FirstClientObjectProps },
-            '10001000000000000000000000000000' : { 'name' : 'FirstServerObject',
-                                                   'props' : FirstServerObjectProps },
+            '00001000100000000111111011011000': {'name': 'FirstClientObject', 'props': FirstClientObjectProps},
+            '10001000000000000000000000000000': {'name': 'FirstServerObject', 'props': FirstServerObjectProps},
+            '00101100100100010000000000000000': {'name': 'MatineeActor', 'props': MatineeActorProps},
+            '00011100001100100100000000000000': {'name': 'TrBaseTurret_BloodEagle', 'props': TrBaseTurretProps},
+            '00111100001100100100000000000000': {'name': 'TrBaseTurret_DiamondSword', 'props': TrBaseTurretProps},
+            '01010111000101011110000000000000': {'name': 'TrCTFBase_BloodEagle', 'props': {}},
+            '00110111000101011110000000000000': {'name': 'TrCTFBase_DiamondSword', 'props': {}},
+            '01111000100110010100000000000000': {'name': 'TrDevice_Blink', 'props': TrDeviceProps},
+            '01000011100110010100000000000000': {'name': 'TrDevice_ConcussionGrenade', 'props': TrDeviceProps},
+            '01100101110110010100000000000000': {'name': 'TrDevice_GrenadeLauncher_Light', 'props': TrDeviceProps},
+            '01001000101110010100000000000000': {'name': 'TrDevice_LaserTargeter', 'props': TrDeviceProps},
+            '01101100101110010100000000000000': {'name': 'TrDevice_LightAssaultRifle', 'props': TrDeviceProps},
+            '01111100101110010100000000000000': {'name': 'TrDevice_LightSpinfusor', 'props': TrDeviceProps},
+            '00100111101110010100000000000000': {'name': 'TrDevice_Melee_DS', 'props': TrDeviceProps},
+            '01001011001001010100000000000000': {'name': 'TrDroppedPickup', 'props': TrDroppedPickupProps},
+            '00100100101111010100000000000000': {'name': 'TrFlagCTF_BloodEagle', 'props': TrFlagCTFProps},
+            '00110100101111010100000000000000': {'name': 'TrFlagCTF_DiamondSword', 'props': TrFlagCTFProps},
+            '01110001101110110100000000000000': {'name': 'TrGameReplicationInfo', 'props': TrGameReplicationInfoProps},
+            '01101101010100001100000000000000': {'name': 'TrInventoryManager', 'props': TrInventoryManagerProps},
+            '01010000100101011110000000000000': {'name': 'TrInventoryStation_BloodEagle0101?', 'props': TrInventoryStationProps},
+            '01000000100101011110000000000000': {'name': 'TrInventoryStation_BloodEagle0100?', 'props': TrInventoryStationProps},
+            '01100000100101011110000000000000': {'name': 'TrInventoryStation_BloodEagle0110?', 'props': TrInventoryStationProps},
+            '00100000100101011110000000000000': {'name': 'TrInventoryStation_BloodEagle0010?', 'props': TrInventoryStationProps},
+            #'00010010100101011110000000000000': {'name': 'TrInventoryStation_BloodEagle0001?', 'props': TrInventoryStationProps},
+            '01001000100101011110000000000000': {'name': 'TrInventoryStation_DiamondSword', 'props': TrInventoryStationProps},
+            '01001011110100001100000000000000': {'name': 'TrInventoryStationCollision', 'props': TrInventoryStationCollisionProps},
+            '00110001010000010100000000000000': {'name': 'TrPlayerController', 'props': TrPlayerControllerProps},
+            '00111010100001100100000000000000': {'name': 'TrPlayerPawn', 'props': TrPlayerPawnProps},
+            '00000110101111001100000000000000': {'name': 'TrPlayerReplicationInfo', 'props': TrPlayerReplicationInfoProps},
+            '00111100100101011110000000000000': {'name': 'TrPowerGenerator_BloodEagle', 'props': TrPowerGeneratorProps},
+            '01111100100101011110000000000000': {'name': 'TrPowerGenerator_DiamondSword', 'props': TrPowerGeneratorProps},
+            '01111010010000101100000000000000': {'name': 'TrProj_BaseTurret', 'props': TrProj_BaseTurretProps},
+            '01110010100010101100000000000000': {'name': 'TrRadarStation_BloodEagle', 'props': TrRadarStationProps},
+            '01001010100010101100000000000000': {'name': 'TrRadarStation_DiamondSword', 'props': TrRadarStationProps},
+            '00100010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0010?', 'props': TrRepairStationProps},
+            '01010010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0101?', 'props': TrRepairStationProps},
+            '00110010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0011?', 'props': TrRepairStationProps},
+            '01100010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0110?', 'props': TrRepairStationProps},
+            '01011010100101011110000000000000': {'name': 'TrRepairStation_DiamondSword', 'props': TrRepairStationProps},
+            '00000000110010101100000000000000': {'name': 'TrRepairStationCollision', 'props': TrRepairStationProps},
+            '00010011100001101100000000000000': {'name': 'TrServerSettingsInfo', 'props': {}},
+            '00000011110100001100000000000000': {'name': 'TrStationCollision', 'props': {}},
+            '00100110100101011110000000000000': {'name': 'TrVehicleStation_BloodEagle', 'props': {}},
+            '01100110100101011110000000000000': {'name': 'TrVehicleStation_DiamondSword', 'props': {}},
+            '00100111010010011000000000000000': {'name': 'UTTeamInfo', 'props': {}},
+            '00000101100101011110000000000000': {'name': 'WorldInfo', 'props': {}},
         }
 
         self.instance_count = {}
@@ -391,6 +610,22 @@ class PropertyValueBool():
         else:
             text = '%sempty\n' % indent_prefix
         return text
+
+class PropertyValueFlag():
+    def __init__(self):
+        pass
+
+    @debugbits
+    def frombitarray(self, bits, debug = False):
+        return bits
+
+    def tobitarray(self):
+        return bitarray()
+
+    def tostring(self, indent = 0):
+        indent_prefix = ' ' * indent
+        text = '%s(flag is set)\n' % indent_prefix
+        return text
         
 class PropertyValueBitarray():
     def __init__(self):
@@ -412,62 +647,118 @@ class PropertyValueBitarray():
             text = '%sempty\n' % indent_prefix
         return text
 
-class PropertyValueMystery():
+class PropertyValueMystery1():
     def __init__(self):
-        self.bitarray = PropertyValueBitarray()
-        self.string1 = PropertyValueString()
-        self.determinator = PropertyValueInt()
         self.int1 = PropertyValueInt()
         self.int2 = PropertyValueInt()
-        self.vector = PropertyValueVector()
+        self.int3 = PropertyValueInt()
+        self.int4 = PropertyValueInt()
+        self.string1 = PropertyValueString()
         self.string2 = PropertyValueString()
-            
+        self.int5 = PropertyValueInt()
+        self.int6 = PropertyValueInt()
+        self.string3 = PropertyValueString()
+
     @debugbits
     def frombitarray(self, bits, debug = False):
-        bits = self.bitarray.frombitarray(bits, 130, debug = debug)
-        bits = self.string1.frombitarray(bits, debug = debug)
-        bits = self.determinator.frombitarray(bits, debug = debug)
-        if self.determinator.value == 0:
-            bits = self.int1.frombitarray(bits, debug = debug)
-        else:
-            bits = self.vector.frombitarray(bits, debug = debug)
+        bits = self.int1.frombitarray(bits, debug = debug)
         bits = self.int2.frombitarray(bits, debug = debug)
+        bits = self.int3.frombitarray(bits, debug = debug)
+        bits = self.int4.frombitarray(bits, debug = debug)
+        bits = self.string1.frombitarray(bits, debug = debug)
         bits = self.string2.frombitarray(bits, debug = debug)
-        
+        bits = self.int5.frombitarray(bits, debug = debug)
+        bits = self.int6.frombitarray(bits, debug = debug)
+        bits = self.string3.frombitarray(bits, debug = debug)
         return bits
 
     def tobitarray(self):
-        return (self.bitarray.tobitarray() +
-                self.string1.tobitarray() +
-                self.determinator.tobitarray() +
-                (self.int1.tobitarray() if self.determinator.value == 0 else self.vector.tobitarray()) +
+        return (self.int1.tobitarray() +
                 self.int2.tobitarray() +
+                self.int3.tobitarray() +
+                self.int4.tobitarray() +
+                self.string1.tobitarray() +
+                self.string2.tobitarray() +
+                self.int5.tobitarray() +
+                self.int6.tobitarray() +
+                self.string3.tobitarray())
+
+    def tostring(self, indent = 0):
+            indent_prefix = ' ' * indent
+            items = []
+            items.append(self.int1.tostring(indent))
+            items.append(self.int2.tostring(indent))
+            items.append(self.int3.tostring(indent))
+            items.append(self.int4.tostring(indent))
+            items.append(self.string1.tostring(indent))
+            items.append(self.string2.tostring(indent))
+            items.append(self.int5.tostring(indent))
+            items.append(self.int6.tostring(indent))
+            items.append(self.string3.tostring(indent))
+            text = ''.join(items)
+            return text
+
+class PropertyValueMystery2():
+    def __init__(self):
+        self.string1 = PropertyValueString()
+        self.string2 = PropertyValueString()
+        self.string3 = PropertyValueString()
+
+    @debugbits
+    def frombitarray(self, bits, debug = False):
+        bits = self.string1.frombitarray(bits, debug = debug)
+        bits = self.string2.frombitarray(bits, debug = debug)
+        bits = self.string3.frombitarray(bits, debug = debug)
+        return bits
+
+    def tobitarray(self):
+        return (self.string1.tobitarray() +
+                self.string2.tobitarray() +
+                self.string3.tobitarray())
+
+    def tostring(self, indent = 0):
+            indent_prefix = ' ' * indent
+            items = []
+            items.append(self.string1.tostring(indent))
+            items.append(self.string2.tostring(indent))
+            items.append(self.string3.tostring(indent))
+            text = ''.join(items)
+            return text
+
+class PropertyValueMystery3():
+    def __init__(self):
+        self.string1 = PropertyValueString()
+        self.string2 = PropertyValueString()
+
+    @debugbits
+    def frombitarray(self, bits, debug = False):
+        bits = self.string1.frombitarray(bits, debug = debug)
+        bits = self.string2.frombitarray(bits, debug = debug)
+        return bits
+
+    def tobitarray(self):
+        return (self.string1.tobitarray() +
                 self.string2.tobitarray())
 
     def tostring(self, indent = 0):
-        indent_prefix = ' ' * indent
-        items = []
-        items.append(self.bitarray.tostring(indent))
-        items.append(self.string1.tostring(indent))
-        items.append(self.determinator.tostring(indent))
-        if self.determinator.value == 0:
-            items.append(self.int1.tostring(indent))
-        else:
-            items.append(self.vector.tostring(indent))
-        items.append(self.int2.tostring(indent))
-        items.append(self.string2.tostring(indent))
-        text = ''.join(items)
-        return text
-        
+            indent_prefix = ' ' * indent
+            items = []
+            items.append(self.string1.tostring(indent))
+            items.append(self.string2.tostring(indent))
+            text = ''.join(items)
+            return text
+
+
 class ObjectProperty():
-    def __init__(self):
+    def __init__(self, id_size = 6):
+        self.propertyid_size = id_size
         self.propertyid = None
         self.property_ = { 'name' : 'Unknown' }
         self.value = None
 
     @debugbits
     def frombitarray(self, bits, class_, debug = False):
-        propertyidbits, bits = getnbits(6, bits)
+        propertyidbits, bits = getnbits(self.propertyid_size, bits)
         self.propertyid = toint(propertyidbits)
         
         propertykey = propertyidbits.to01()
@@ -491,12 +782,21 @@ class ObjectProperty():
             elif propertytype is bool:
                 self.value = PropertyValueBool()
                 bits = self.value.frombitarray(bits, debug = debug)
+            elif propertytype is 'flag':
+                self.value = PropertyValueFlag()
+                bits = self.value.frombitarray(bits, debug = debug)
             elif propertytype is bitarray:
                 self.value = PropertyValueBitarray()
                 bits = self.value.frombitarray(bits, propertysize, debug = debug)
-            elif propertytype == PropertyValueMystery:
-                self.value = PropertyValueMystery()
-                bits = self.value.frombitarray(bits, debug = debug)                
+            elif propertytype == PropertyValueMystery1:
+                self.value = PropertyValueMystery1()
+                bits = self.value.frombitarray(bits, debug = debug)
+            elif propertytype == PropertyValueMystery2:
+                self.value = PropertyValueMystery2()
+                bits = self.value.frombitarray(bits, debug=debug)
+            elif propertytype == PropertyValueMystery3:
+                self.value = PropertyValueMystery3()
+                bits = self.value.frombitarray(bits, debug=debug)
             else:
                 raise RuntimeError('Coding error')
             
@@ -510,7 +810,7 @@ class ObjectProperty():
     def tobitarray(self):
         bits = bitarray(endian='little')
         if self.propertyid is not None:
-            bits.extend(int2bitarray(self.propertyid, 6))
+            bits.extend(int2bitarray(self.propertyid, self.propertyid_size))
         if self.value is not None:
             bits.extend(self.value.tobitarray())
         return bits
@@ -519,7 +819,7 @@ class ObjectProperty():
         indent_prefix = ' ' * indent
         text = ''
         if self.propertyid is not None:
-            propertykey = int2bitarray(self.propertyid, 6).to01()
+            propertykey = int2bitarray(self.propertyid, self.propertyid_size).to01()
             text += '%s%s (property = %s)\n' % (indent_prefix,
                                                propertykey,
                                                self.property_['name'])
@@ -528,15 +828,16 @@ class ObjectProperty():
         return text
 
 class ObjectInstance():
-    def __init__(self):
+    def __init__(self, is_rpc = False):
         self.class_ = None
         self.properties = []
+        self.is_rpc = is_rpc
     
     @debugbits
     def frombitarray(self, bits, class_, state, debug = False):
         
         while bits:
-            property_ = ObjectProperty()
+            property_ = ObjectProperty(id_size = class_['idsize'])
             self.properties.append(property_)
             bits = property_.frombitarray(bits, class_, debug = debug)
 
@@ -579,9 +880,11 @@ class ObjectClass():
         return bits
 
 class PayloadData():
-    def __init__(self):
+    def __init__(self, reliable = False):
+        self.reliable = reliable
         self.size = None
         self.object_class = None
+        self.object_deleted = False
         self.instancename = None
         self.instance = None
         self.bitsleftreason = None
@@ -597,27 +900,36 @@ class PayloadData():
 
         try:
             if channel not in state.channels:
+                newinstance = True
                 self.object_class = ObjectClass()
                 payloadbits = self.object_class.frombitarray(payloadbits, state, debug = debug)
 
                 class_ = state.class_dict[self.object_class.getclasskey()]
                 classname = class_['name']
 
+                prop_keys = list(class_['props'].keys())
+                class_['idsize'] = len(prop_keys[0]) if prop_keys else 6
+
                 state.instance_count[classname] = state.instance_count.get(classname, -1) + 1
                 instancename = '%s_%d' % (classname, state.instance_count[classname])
                 state.channels[channel] = { 'class' : class_,
                                             'instancename' : instancename }
             else:
+                newinstance = False
                 class_ = state.channels[channel]['class']
                 instancename = state.channels[channel]['instancename']
 
             self.instancename = instancename
-            self.instance = ObjectInstance()
+            self.instance = ObjectInstance(is_rpc = self.reliable and not newinstance)
             payloadbits = self.instance.frombitarray(payloadbits, class_, state, debug = debug)
             
             if payloadbits:
                 raise ParseError('Bits of payload left over',
                                  payloadbits)
+
+            if self.size == 0:
+                self.object_deleted = True
+                del state.channels[channel]
             
         except ParseError as e:
             self.bitsleftreason = str(e)
@@ -654,6 +966,10 @@ class PayloadData():
                                                 self.object_class.tobitarray().to01(),
                                                 self.instancename)
             indent += 32
+        elif self.object_deleted:
+            text += '%sx (destroyed object = %s)\n' % (' ' * indent,
+                                                       self.instancename)
+            indent += 1
         else:
             text += '%sx (object = %s)\n' % (' ' * indent,
                                              self.instancename)
@@ -685,7 +1001,7 @@ class ChannelData():
 
             self.unknownbits, bits = getnbits(8, bits)
 
-        self.payload = PayloadData()
+        self.payload = PayloadData(reliable = with_counter)
         bits = self.payload.frombitarray(bits, self.channel, state, debug = debug)
         return bits
 

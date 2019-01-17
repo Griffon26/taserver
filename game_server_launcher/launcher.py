@@ -22,7 +22,7 @@ from distutils.version import StrictVersion
 import gevent
 from ipaddress import IPv4Address
 import logging
-import socket
+from gevent import socket
 import urllib.request as urlreq
 
 from common.errors import FatalError
@@ -32,7 +32,17 @@ from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessa
 from common.statetracer import statetracer, TracingDict
 from common import versions
 from .gamecontrollerhandler import GameController
+from .gameserverhandler import StartGameServerMessage, StopGameServerMessage, GameServerTerminatedMessage
 from .loginserverhandler import LoginServer
+
+game_server_ports = [7777, 7778]
+
+
+def get_other_port(port):
+    for other_port in game_server_ports:
+        if other_port != port:
+            return other_port
+    assert(False)
 
 
 def _get_local_ip():
@@ -55,20 +65,27 @@ class IncompatibleVersionError(FatalError):
 
 @statetracer('players')
 class Launcher:
-    def __init__(self, game_server_config, incoming_queue):
+    def __init__(self, game_server_config, incoming_queue, server_handler_queue):
         gevent.getcurrent().name = 'launcher'
 
         self.logger = logging.getLogger(__name__)
         self.game_server_config = game_server_config
         self.incoming_queue = incoming_queue
+        self.server_handler_queue = server_handler_queue
         self.players = TracingDict()
         self.game_controller = None
         self.login_server = None
+
+        self.active_server_port = None
+        self.pending_server_port = None
+        self.server_stopping = False
+        self.controller_context = {}
 
         self.last_map_info_message = None
         self.last_team_info_message = None
         self.last_score_info_message = None
         self.last_match_time_message = None
+        self.last_server_ready_message = None
         self.last_match_end_message = None
 
         try:
@@ -110,10 +127,13 @@ class Launcher:
             Game2LauncherMatchTimeMessage: self.handle_match_time_message,
             Game2LauncherMatchEndMessage: self.handle_match_end_message,
             Game2LauncherLoadoutRequest: self.handle_loadout_request_message,
+            GameServerTerminatedMessage: self.handle_game_server_terminated_message,
         }
 
     def run(self):
         reset_firewall('whitelist')
+        self.pending_server_port = game_server_ports[0]
+        self.server_handler_queue.put(StartGameServerMessage(self.pending_server_port))
         while True:
             for message in self.incoming_queue:
                 handler = self.message_handlers[type(message)]
@@ -121,9 +141,7 @@ class Launcher:
 
     def handle_peer_connected(self, msg):
         if isinstance(msg.peer, GameController):
-            if self.game_controller is not None:
-                raise RuntimeError('There should only be one game controller at a time')
-            self.game_controller = msg.peer
+            pass
 
         elif isinstance(msg.peer, LoginServer):
             if self.login_server is not None:
@@ -135,7 +153,6 @@ class Launcher:
 
             msg = Launcher2LoginServerInfoMessage(str(self.external_ip) if self.external_ip else '',
                                                   str(self.internal_ip) if self.internal_ip else '',
-                                                  int(self.game_server_config['port']),
                                                   self.game_server_config['game_setting_mode'],
                                                   self.game_server_config['description'],
                                                   self.game_server_config['motd'])
@@ -154,6 +171,9 @@ class Launcher:
             if self.last_match_time_message:
                 self.login_server.send(self.last_match_time_message)
                 self.last_match_time_message = None
+            if self.last_server_ready_message:
+                self.login_server.send(self.last_server_ready_message)
+                self.last_server_ready_message = None
             if self.last_match_end_message:
                 self.login_server.send(self.last_match_end_message)
                 self.last_match_end_message = None
@@ -163,10 +183,7 @@ class Launcher:
 
     def handle_peer_disconnected(self, msg):
         if isinstance(msg.peer, GameController):
-            if self.game_controller is None:
-                raise RuntimeError('How can a game controller disconnect if it\'s not there?')
-            self.game_controller.disconnect()
-            self.game_controller = None
+            msg.peer.disconnect()
         elif isinstance(msg.peer, LoginServer):
             if self.login_server is None:
                 raise RuntimeError('How can a login server disconnect if it\'s not there?')
@@ -186,8 +203,12 @@ class Launcher:
                                         StrictVersion(msg.version)))
 
     def handle_next_map_message(self, msg):
-        self.logger.info('launcher: login server requested next map')
-        self.game_controller.send(Launcher2GameNextMapMessage())
+        self.logger.info('launcher: switching to new server instance on port %d' % self.pending_server_port)
+        if self.active_server_port:
+            self.server_handler_queue.put(StopGameServerMessage(self.active_server_port))
+            self.server_stopping = True
+
+        self.active_server_port = self.pending_server_port
 
     def handle_set_player_loadouts_message(self, msg):
         self.logger.info('launcher: loadouts changed for player %d' % msg.unique_id)
@@ -226,6 +247,10 @@ class Launcher:
                                            'with the version supported by this game server launcher (%s)' %
                                            (controller_version,
                                             my_version))
+
+        self.game_controller = msg.peer
+        msg = Launcher2GameInit(self.controller_context)
+        self.game_controller.send(msg)
 
     def handle_map_info_message(self, msg):
         self.logger.info('launcher: received map info from game controller')
@@ -267,8 +292,18 @@ class Launcher:
         else:
             self.last_match_time_message = msg
 
+        if self.pending_server_port != self.active_server_port:
+            msg = Launcher2LoginServerReadyMessage(self.pending_server_port)
+            if self.login_server:
+                self.login_server.send(msg)
+            else:
+                self.last_server_ready_message = msg
+
     def handle_match_end_message(self, msg):
-        self.logger.info('launcher: received match end from game controller')
+        self.logger.info('launcher: received match end from game controller (controller context = %s)' % msg.controller_context)
+
+        self.game_controller = None
+        self.controller_context = msg.controller_context
 
         msg = Launcher2LoginMatchEndMessage()
         if self.login_server:
@@ -276,12 +311,11 @@ class Launcher:
         else:
             self.last_match_end_message = msg
 
+        self.pending_server_port = get_other_port(self.active_server_port)
+        self.server_handler_queue.put(StartGameServerMessage(self.pending_server_port))
+
     def handle_loadout_request_message(self, msg):
         self.logger.info('launcher: received loadout request from game controller')
-
-        if msg.player_unique_id not in self.players:
-            self.logger.warning('launcher: Unable to find player %d\'s loadouts. Ignoring request.' % msg.player_unique_id)
-            return
 
         # Class and loadout keys are strings because they came in as json.
         # There's not much point in converting all keys in the loadouts
@@ -291,13 +325,37 @@ class Launcher:
         class_key = str(msg.class_id)
         loadout_key = str(msg.loadout_number)
 
+        if msg.player_unique_id in self.players:
+            loadout = self.players[player_key][class_key][loadout_key]
+        else:
+            self.logger.warning('launcher: Unable to find player %d\'s loadouts. Sending empty loadout.' % msg.player_unique_id)
+            loadout = {}
+
         msg = Launcher2GameLoadoutMessage(msg.player_unique_id,
                                           msg.class_id,
-                                          self.players[player_key][class_key][loadout_key])
+                                          loadout)
         self.game_controller.send(msg)
 
+    def handle_game_server_terminated_message(self, msg):
+        if self.server_stopping:
+            self.logger.info('launcher: game server process terminated.')
+            self.server_stopping = False
+        else:
+            self.pending_server_port = get_other_port(self.active_server_port)
+            self.active_server_port = None
+            self.logger.info('launcher: game server process terminated unexpectedly. Starting a new one on port %d.' %
+                             self.pending_server_port)
+            self.server_handler_queue.put(StartGameServerMessage(self.pending_server_port))
 
-def handle_launcher(game_server_config, incoming_queue):
-    launcher = Launcher(game_server_config, incoming_queue)
+            msg = Launcher2LoginServerReadyMessage(None)
+            if self.login_server:
+                self.login_server.send(msg)
+            else:
+                self.last_server_ready_message = msg
+
+
+
+def handle_launcher(game_server_config, incoming_queue, server_handler_queue):
+    launcher = Launcher(game_server_config, incoming_queue, server_handler_queue)
     #launcher.trace_as('launcher')
     launcher.run()

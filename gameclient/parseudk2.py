@@ -26,22 +26,28 @@ import time
 import traceback
 import udk
 
-def findshiftedstrings(bindata, i):
+def findshiftedstrings(bindata, bitoffset):
     emptychar = ' '
     continuationchar = '.'
-    shiftedbytes = bindata[i:].tobytes()
+    stringstart = None
+    strings = []
+    shiftedbytes = bindata[bitoffset:].tobytes()
     linechars = []
     stringchars = []
-    for b in shiftedbytes:
+    for byteoffset, b in enumerate(shiftedbytes):
         if b == 0:
             if len(stringchars) > 3:
                 linechars.extend(stringchars + [continuationchar] * ((len(stringchars) + 1) * 7 + 1))
+                stringend = bitoffset + byteoffset * 8
+                strings.append((stringstart, stringend, stringchars))
                 stringchars = []
             else:
                 linechars.extend([emptychar] * (len(stringchars) + 1) * 8)
                 stringchars = []
             
         elif chr(b) in string.ascii_letters + string.digits + string.punctuation + ' ':
+            if len(stringchars) == 0:
+                stringstart = bitoffset + byteoffset * 8
             stringchars.append(chr(b))
             
         else:
@@ -58,7 +64,7 @@ def findshiftedstrings(bindata, i):
     if result.strip() == '':
         return None
     else:
-        return result
+        return result, strings
 
 def binfile2packetbits(infile):
     for linenr, line in enumerate(infile.readlines()):
@@ -84,9 +90,21 @@ def outputshiftedstrings(outfile, bindata):
     if any(shiftedstrings):
         outfile.write('    String overview:\n')
         outfile.write('    %s\n' % bindata.to01())
-        for i, shiftedstring in enumerate(shiftedstrings):
-            if shiftedstring:
+        for i, result in enumerate(shiftedstrings):
+            if result:
+                shiftedstring, strings = result
+                #outfile.write('-------------------------\n')
                 outfile.write('    %s%s (shifted by %d bits)\n' % (' ' * i, shiftedstring, i))
+
+                #bitoffset = 0
+                #for stringstart, stringend, stringchars in strings:
+                #    outfile.write('    : (size = %d) %s\n' % (stringstart - bitoffset, bindata[bitoffset:stringstart].to01()))
+                #    outfile.write('    : (size = %d, "%s") %s\n' % (stringend - stringstart, ''.join(stringchars), bindata[stringstart:stringend].to01()))
+                #    bitoffset = stringend
+                #if len(bindata) > bitoffset:
+                #    outfile.write('    : (size = %d) %s\n' % (len(bindata) - bitoffset, bindata[bitoffset:].to01()))
+
+        #outfile.write('-------------------------\n')
         outfile.write('\n')
 
 def main(infilename, debug):

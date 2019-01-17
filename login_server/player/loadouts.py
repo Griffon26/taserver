@@ -69,71 +69,6 @@ EQUIPMENT_LIGHT_GRENADE_LAUNCHER = 8761
 
 EQUIPMENT_PERKS_ULTRACAP_DETERMINATION = 535109597
 
-default_loadouts_ootb = {
-    'light': {
-        SLOT_PRIMARY_WEAPON: EQUIPMENT_LIGHT_SPINFUSOR,
-        SLOT_SECONDARY_WEAPON: EQUIPMENT_LIGHT_ASSAULT_RIFLE,
-        SLOT_TERTIARY_WEAPON: EQUIPMENT_LIGHT_GRENADE_LAUNCHER,
-        SLOT_PACK: EQUIPMENT_THRUST_PACK,
-        SLOT_BELT: EQUIPMENT_IMPACT_NITRON,
-        SLOT_SKIN: EQUIPMENT_PATHFINDER_SKIN,
-        SLOT_VOICE: EQUIPMENT_LIGHT_VOICE
-    },
-    'medium': {
-        SLOT_PRIMARY_WEAPON: EQUIPMENT_SPINFUSOR,
-        SLOT_SECONDARY_WEAPON: EQUIPMENT_ASSAULT_RIFLE,
-        SLOT_TERTIARY_WEAPON: EQUIPMENT_GRENADE_LAUNCHER,
-        SLOT_PACK: EQUIPMENT_SHIELD_PACK,
-        SLOT_BELT: EQUIPMENT_AP_GRENADES,
-        SLOT_SKIN: EQUIPMENT_SOLDIER_SKIN,
-        SLOT_VOICE: EQUIPMENT_MEDIUM_VOICE
-    },
-    'heavy': {
-        SLOT_PRIMARY_WEAPON: EQUIPMENT_HEAVY_SPINFUSOR,
-        SLOT_SECONDARY_WEAPON: EQUIPMENT_FUSION_MORTAR,
-        SLOT_TERTIARY_WEAPON: EQUIPMENT_CHAINGUN,
-        SLOT_PACK: EQUIPMENT_HEAVY_SHIELD_PACK,
-        SLOT_BELT: EQUIPMENT_FRAG_GRENADES,
-        SLOT_SKIN: EQUIPMENT_JUGGERNAUT_SKIN,
-        SLOT_VOICE: EQUIPMENT_HEAVY_VOICE
-    }
-}
-
-default_loadouts_goty = {
-    'light': {
-        SLOT_PRIMARY_WEAPON: EQUIPMENT_LIGHT_SPINFUSOR,
-        SLOT_SECONDARY_WEAPON: EQUIPMENT_LIGHT_ASSAULT_RIFLE,
-        SLOT_TERTIARY_WEAPON: EQUIPMENT_PERKS_ULTRACAP_DETERMINATION,
-        SLOT_PACK: EQUIPMENT_THRUST_PACK,
-        SLOT_BELT: EQUIPMENT_IMPACT_NITRON,
-        SLOT_SKIN: EQUIPMENT_PATHFINDER_SKIN,
-        SLOT_VOICE: EQUIPMENT_LIGHT_VOICE
-    },
-    'medium': {
-        SLOT_PRIMARY_WEAPON: EQUIPMENT_ASSAULT_RIFLE,
-        SLOT_SECONDARY_WEAPON: EQUIPMENT_THUMPERD,
-        SLOT_TERTIARY_WEAPON: EQUIPMENT_PERKS_ULTRACAP_DETERMINATION,
-        SLOT_PACK: EQUIPMENT_SLD_ENERGY_PACK,
-        SLOT_BELT: EQUIPMENT_FRAGXL_GRENADES,
-        SLOT_SKIN: EQUIPMENT_SOLDIER_SKIN,
-        SLOT_VOICE: EQUIPMENT_MEDIUM_VOICE
-    },
-    'heavy': {
-        SLOT_PRIMARY_WEAPON: EQUIPMENT_FUSION_MORTAR,
-        SLOT_SECONDARY_WEAPON: EQUIPMENT_SPINFUSOR_MKD,
-        SLOT_TERTIARY_WEAPON: EQUIPMENT_PERKS_ULTRACAP_DETERMINATION,
-        SLOT_PACK: EQUIPMENT_JUG_REGEN_PACK,
-        SLOT_BELT: EQUIPMENT_HEAVYAP_GRENADES,
-        SLOT_SKIN: EQUIPMENT_JUGGERNAUT_SKIN,
-        SLOT_VOICE: EQUIPMENT_HEAVY_VOICE
-    }
-}
-
-default_loadouts_all = {
-    'ootb': default_loadouts_ootb,
-    'goty': default_loadouts_goty
-}
-
 
 class Loadouts:
     max_loadouts = 9
@@ -179,20 +114,13 @@ class Loadouts:
         return self.loadout_dict[game_setting_mode]
 
     def fill_in_defaults(self, existing_loadouts):
-        def finish_default_loadout(default_loadout, i):
-            complete_loadout = default_loadout.copy()
-            complete_loadout[SLOT_LOADOUT_NAME] = 'LOADOUT %s' % string.ascii_uppercase[i]
-            return complete_loadout
-
         result = dict()
         for game_setting_mode, default_loadouts_set in default_loadouts_all.items():
             if len(existing_loadouts.get(game_setting_mode, dict())) == 0:
                 # No existing loadouts for this game setting mode, set defaults
-                result[game_setting_mode] = {game_classes[name].class_id:
-                                                 {i: finish_default_loadout(default_loadout, i) for i in
-                                                  range(self.max_loadouts)}
-                                             for name, default_loadout
-                                             in default_loadouts_set.items()}
+
+                default_loadouts_file = 'data/defaults/default_loadouts_%s.json' % game_setting_mode
+                result[game_setting_mode] = self._load_loadout_data(default_loadouts_file)
         return result
 
     def is_loadout_menu_item(self, value):
@@ -203,17 +131,20 @@ class Loadouts:
         d = self.loadout_dict[game_setting_mode]
         d[class_id][loadout_index][slot] = equipment
 
-    def load(self, filename):
+    def _load_loadout_data(self, filename):
         def json_keys_to_int(x):
             if isinstance(x, dict):
                 return {(int(k) if k not in default_loadouts_all else k): v
                         for k, v
                         in x.items()}
 
+        with open(filename, 'rt') as infile:
+            return json.load(infile, object_hook=json_keys_to_int)
+
+    def load(self, filename):
         try:
-            with open(filename, 'rt') as infile:
-                self.loadout_dict = self.fill_in_defaults(json.load(infile, object_hook=json_keys_to_int))
-        except (OSError, KeyError):
+            self.loadout_dict = self.fill_in_defaults(self._load_loadout_data(filename))
+        except OSError:
             self.loadout_dict = self.fill_in_defaults(dict())
 
     def save(self, filename):

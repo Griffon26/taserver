@@ -19,11 +19,13 @@
 #
 
 import argparse
+import sys
 import gevent
 import gevent.queue
 import logging
 
 from common.logging import set_up_logging
+from common.migration_mechanism import run_migrations
 from .accounts import Accounts
 from .authcodehandler import handle_authcodes
 from .configuration import Configuration
@@ -42,7 +44,7 @@ def handle_dump(dumpqueue):
 
 def handle_server(server_queue, client_queues, accounts, configuration):
     server = LoginServer(server_queue, client_queues, accounts, configuration)
-    #server.trace_as('loginserver')
+    # server.trace_as('loginserver')
     server.run()
 
 
@@ -55,6 +57,18 @@ def main():
                              'for parsing with the parse.py utility.' %
                              dumpfilename)
     args = parser.parse_args()
+
+    # Perform data migrations on startup
+    try:
+        run_migrations('data')
+    except ValueError as e:
+        # If a migration failed, it will raise a ValueError
+        logger.fatal('Failed to run data migrations with format error: %s' % str(e))
+        sys.exit(2)
+    except OSError as e:
+        # If a migration failed, it will raise a ValueError
+        logger.fatal('Failed to run data migrations with OS error: %s' % str(e))
+        sys.exit(2)
     
     client_queues = {}
     server_queue = gevent.queue.Queue()

@@ -27,7 +27,7 @@ import os
 from common.errors import FatalError
 from common.logging import set_up_logging
 from .gamecontrollerhandler import handle_game_controller
-from .gameserverhandler import run_game_server
+from .gameserverhandler import handle_game_server
 from .launcher import handle_launcher, IncompatibleVersionError
 from .loginserverhandler import handle_login_server
 from .pinghandler import handle_ping
@@ -48,13 +48,14 @@ def main():
     try:
         while restart:
             incoming_queue = gevent.queue.Queue()
+            server_handler_queue = gevent.queue.Queue()
 
             tasks = [
                 gevent.spawn(handle_ping),
-                gevent.spawn(run_game_server, config['gameserver']),
+                gevent.spawn(handle_game_server, config['gameserver'], server_handler_queue, incoming_queue),
                 gevent.spawn(handle_login_server, config['loginserver'], incoming_queue),
                 gevent.spawn(handle_game_controller, config['gamecontroller'], incoming_queue),
-                gevent.spawn(handle_launcher, config['gameserver'], incoming_queue)
+                gevent.spawn(handle_launcher, config['gameserver'], incoming_queue, server_handler_queue)
             ]
 
             # Wait for any of the tasks to terminate
