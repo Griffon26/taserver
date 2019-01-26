@@ -39,6 +39,12 @@ MESSAGE_TEAM = 3
 MESSAGE_PRIVATE = 6
 MESSAGE_UNKNOWNTYPE = 9
 
+WATCHNOW_HIREZNEWS = 1
+WATCHNOW_TWITCH = 2
+WATCHNOW_TRAINING = 3
+WATCHNOW_COMMUNITY = 4
+WATCHNOW_TICKER = 5
+
 STDMSG_ALREADY_IN_MATCH_QUEUE               = 0x0000477c  # 'You are already in the match queue'
 STDMSG_NOT_LEADER_CANT_MANAGE_QUEUE         = 0x00004781 # 'You are not the team leader, only leader can manage the match queue'
 STDMSG_JOINED_A_MATCH_QUEUE                 = 0x00004782 # 'You have joined a match queue'
@@ -1097,6 +1103,21 @@ class m068c(fourbytes):
         super().__init__(0x068c, 0x00000000)
 
 
+class m06b7(fourbytes):
+    def __init__(self):
+        super().__init__(0x06b7, 0x00000000)
+
+
+class m06b9(fourbytes):
+    def __init__(self):
+        super().__init__(0x06b9, 0x00000000)
+
+
+class m06ba(fourbytes):
+    def __init__(self):
+        super().__init__(0x06ba, 0x00000000)
+
+
 class m06bd(fourbytes):
     def __init__(self):
         super().__init__(0x06bd, 0x0000001e)
@@ -1349,6 +1370,11 @@ class m0494(stringenum):
 class m0669(stringenum):
     def __init__(self):
         super().__init__(0x0669, '')
+
+
+class m06b8(stringenum):
+    def __init__(self):
+        super().__init__(0x06b8, '')
 
 
 class m06de(stringenum):
@@ -2318,6 +2344,36 @@ class m068b(arrayofenumblockarrays):
         ]
 
 
+class m06bb(arrayofenumblockarrays):
+    def __init__(self):
+        super().__init__(0x06bb)
+
+        entries = [
+            # section, featured, title, url
+            [WATCHNOW_TRAINING, True, 'How to join GOTY games', ''],
+            [WATCHNOW_TRAINING, True, 'Go to the url mentioned below', ''],
+            [WATCHNOW_TRAINING, True, 'http://kfk4ever.com/goty', ''],
+            [WATCHNOW_TRAINING, True, 'and just follow the steps.', ''],
+            [WATCHNOW_TRAINING, True, '', ''],
+            [WATCHNOW_TRAINING, True, 'For help join the discord:', ''],
+            [WATCHNOW_TRAINING, True, 'https://discord.gg/8enekHQ', ''],
+            [WATCHNOW_TRAINING, True, '', ''],
+            [WATCHNOW_TRAINING, True, '', ''],
+            [WATCHNOW_TICKER,   True, "Join taserver's discord at https://discord.gg/8enekHQ", ''],
+        ]
+
+        for entry_index, entry in enumerate(entries):
+            sub_array = [
+                m06b7().set(entry_index),
+                m06b9().set(entry[0]),
+                m02fe().set(entry[2]),
+                m06b8().set(entry[3]),
+                m06ba().set(entry[1]),
+                m0013()
+            ]
+            self.arrays.append(sub_array)
+
+
 # ------------------------------------------------------------
 # enumblockarrays
 # ------------------------------------------------------------
@@ -2787,6 +2843,12 @@ class a019a(enumblockarray):
 class a01b5(enumblockarray):
     def __init__(self):
         super().__init__(0x01b5)
+
+    def add_watch_now_menu(self):
+        self.content = [
+            m06bb()
+        ]
+        return self
 
 
 class a01bc(enumblockarray):

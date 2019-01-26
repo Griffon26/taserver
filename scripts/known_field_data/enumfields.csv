@@ -286,8 +286,8 @@
 0x069E,FourBytes,
 0x069F,FourBytes,
 0x06B7,FourBytes,
-0x06B9,FourBytes,
-0x06BA,FourBytes,
+0x06B9,FourBytes,"watch now section (1 = hirez news, 2 = twitch, 3 = training, 4 = community, 5 = ticker)"
+0x06BA,FourBytes,"1 = featured, otherwise not featured"
 0x06BD,FourBytes,
 0x06BF,FourBytes,
 0x06C0,FourBytes,

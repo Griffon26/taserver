@@ -44,7 +44,6 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a0014)
     def handle_a0014(self, request):
-        # self.player.send(originalfragment(0x20A18, 0x20B3F))  # 0014 (class list)
         self.player.send(a0014().setclasses(self.class_menu_data.classes.values()))
 
     @handles(packet=a018b)
@@ -53,7 +52,7 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a01b5)
     def handle_a01b5(self, request):
-        self.player.send(originalfragment(0x20B53, 0x218F7))  # 01b5 (watch now)
+        self.player.send(a01b5().add_watch_now_menu())
 
     @handles(packet=a0176)
     def handle_a0176(self, request):
