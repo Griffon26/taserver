@@ -49,10 +49,10 @@ class IPAddressPair:
     def validate_against_detected_address(self, detected_ip: IPv4Address):
         assert detected_ip == self.external_ip or detected_ip == self.internal_ip
 
-    def get_preferred_destination(self, source_address_pair):
+    def get_address_seen_from(self, source_address_pair):
         if (self.external_ip is None or
-                source_address_pair._external_ip is None or
-                self.external_ip == source_address_pair._external_ip):
+                source_address_pair.external_ip is None or
+                self.external_ip == source_address_pair.external_ip):
             return self.internal_ip
         else:
             return self.external_ip

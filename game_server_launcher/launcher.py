@@ -50,7 +50,7 @@ class IncompatibleVersionError(FatalError):
         super().__init__('A version incompatibility was found: %s' % message)
 
 
-@statetracer('players')
+@statetracer('address_pair', 'players')
 class Launcher:
     def __init__(self, game_server_config, incoming_queue, server_handler_queue):
         gevent.getcurrent().name = 'launcher'
@@ -133,8 +133,8 @@ class Launcher:
             msg = Launcher2LoginProtocolVersionMessage(str(versions.launcher2loginserver_protocol_version))
             self.login_server.send(msg)
 
-            msg = Launcher2LoginServerInfoMessage(str(self.external_ip) if self.external_ip else '',
-                                                  str(self.internal_ip) if self.internal_ip else '',
+            msg = Launcher2LoginServerInfoMessage(str(self.address_pair.external_ip) if self.address_pair.external_ip else '',
+                                                  str(self.address_pair.internal_ip) if self.address_pair.internal_ip else '',
                                                   self.game_server_config['description'],
                                                   self.game_server_config['motd'])
             self.login_server.send(msg)
@@ -338,5 +338,5 @@ class Launcher:
 
 def handle_launcher(game_server_config, incoming_queue, server_handler_queue):
     launcher = Launcher(game_server_config, incoming_queue, server_handler_queue)
-    #launcher.trace_as('launcher')
+    # launcher.trace_as('launcher')
     launcher.run()

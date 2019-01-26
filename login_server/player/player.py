@@ -27,7 +27,7 @@ from common.ipaddresspair import IPAddressPair
 from common.statetracer import statetracer, RefOnly
 
 
-@statetracer('unique_id', 'login_name', 'display_name', 'tag', 'detected_ip', 'port', 'registered',
+@statetracer('unique_id', 'login_name', 'display_name', 'tag', 'address_pair', 'port', 'registered',
              RefOnly('game_server'), 'vote', 'team')
 class Player(Peer):
 
@@ -46,7 +46,6 @@ class Player(Peer):
         self.display_name = None
         self.password_hash = None
         self.tag = ''
-        self.detected_ip = IPv4Address(address[0])
         self.port = address[1]
         self.registered = False
         self.last_received_seq = 0
@@ -59,11 +58,12 @@ class Player(Peer):
         self.team = None
         self.pings = {}
 
-        if self.detected_ip.is_global:
-            self.address_pair = IPAddressPair(self.detected_ip, None)
+        detected_ip = IPv4Address(address[0])
+        if detected_ip.is_global:
+            self.address_pair = IPAddressPair(detected_ip, None)
         else:
-            assert self.detected_ip.is_private
-            self.address_pair = IPAddressPair(None, self.detected_ip)
+            assert detected_ip.is_private
+            self.address_pair = IPAddressPair(None, detected_ip)
 
     def complement_address_pair(self, login_server_address_pair):
         # Take over login server external address in case login server and player

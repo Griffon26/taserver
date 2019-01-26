@@ -1417,7 +1417,7 @@ class m00e9(arrayofenumblockarrays):
                 m02f4().set(server.get_time_remaining()),
                 m0035().set(server.be_score),
                 m0197().set(server.ds_score),
-                m0246().set(server.address_pair.get_preferred_destination(player_address), PING_PORT)
+                m0246().set(server.address_pair.get_address_seen_from(player_address), PING_PORT)
                                                 # The value doesn't matter, the client uses the address in a0035
             ])
         return self
@@ -2377,8 +2377,8 @@ class a0035(enumblockarray):
             m0363(),
             m0615(),
             m06ef(),
-            m024f().set(server.address_pair.get_preferred_destination(player_address), server.port),
-            m0246().set(server.address_pair.get_preferred_destination(player_address), PING_PORT),
+            m024f().set(server.address_pair.get_address_seen_from(player_address), server.port),
+            m0246().set(server.address_pair.get_address_seen_from(player_address), PING_PORT),
             m0448().set(server.region),
             m02b5(),
             m03e0(),

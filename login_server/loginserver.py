@@ -40,7 +40,7 @@ from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
 from .utils import first_unused_number_above
 
-@statetracer('game_servers', 'players')
+@statetracer('address_pair', 'game_servers', 'players')
 class LoginServer:
     def __init__(self, server_queue, client_queues, accounts, configuration):
         self.logger = logging.getLogger(__name__)

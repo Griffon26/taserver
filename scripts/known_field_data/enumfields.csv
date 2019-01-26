@@ -91,7 +91,7 @@
 0x06B8,SizedContent,
 0x06DE,SizedContent,clan tag
 0x06E9,SizedContent,
-0x0705,SizedContent,player name to kick
+0x0705,SizedContent,player name of kicker
 0x0001,OneByte,
 0x006F,OneByte,
 0x01FA,OneByte,
@@ -298,7 +298,7 @@
 0x06F5,FourBytes,
 0x06FA,FourBytes,
 0x0701,FourBytes,
-0x0704,FourBytes,player id to kick
+0x0704,FourBytes,player id of kicker
 0x0008,EightBytes,
 0x00B7,EightBytes,
 0x01D7,EightBytes,
