@@ -22,6 +22,7 @@
 from ...datatypes import *
 from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles
+from common.game_items import get_game_setting_modes
 
 
 class AuthenticatedState(PlayerState):
@@ -40,8 +41,7 @@ class AuthenticatedState(PlayerState):
             self.player.send(originalfragment(0x1EEB3, 0x20A10))  # 00d5 (map list)
         else:
             self.player.send(a00d5().setservers(self.player.login_server
-                                                    .relevant_game_servers(self.player
-                                                                           .player_settings.game_setting_mode)
+                                                    .all_game_servers()
                                                     .values(),
                                                 self.player.address_pair))  # 00d5 (server list)
 
@@ -128,6 +128,13 @@ class AuthenticatedState(PlayerState):
                                                             'Please select a server to join instead.')
         else:
             game_server = self.player.login_server.find_server_by_id(server_field.value)
+
+            if game_server.game_setting_mode != self.player.player_settings.game_setting_mode:
+                # Cannot join a goty server in ootb mode or vice versa
+                self._send_private_msg_from_server(self.player, 'You are in %s mode; you cannot join a %s mode server' %
+                                                   (self.player.player_settings.game_setting_mode,
+                                                    game_server.game_setting_mode))
+                return
 
             if game_server.joinable:
                 b0msg = a00b0().setlength(9).set_server(game_server).set_player(self.player.unique_id)
@@ -237,18 +244,37 @@ class AuthenticatedState(PlayerState):
     def handle_promotion_code_redemption(self, request):
         promotion_code = request.findbytype(m0669)
         if promotion_code:
-            authcode = promotion_code.value
-            if (self.player.login_name in self.player.login_server.accounts and
-                    self.player.login_server.accounts[self.player.login_name].authcode == authcode):
-
-                self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
-                self.player.login_server.accounts[self.player.login_name].authcode = None
-                self.player.login_server.accounts.save()
+            if promotion_code.value.startswith('!'):
+                self._handle_promotion_code_message(promotion_code.value)
             else:
-                invalid_code_msg = a0175()
-                invalid_code_msg.findbytype(m02fc).set(STDMSG_NOT_A_VALID_PROMOTION_CODE)  # message type
-                invalid_code_msg.findbytype(m0669).set(authcode)
-                self.player.send(invalid_code_msg)
+                self._handle_verification_code(promotion_code.value)
+
+    def _handle_promotion_code_message(self, msg):
+        if msg == '!game_mode_switch':
+            modes = list(get_game_setting_modes())
+            next_mode = modes[(modes.index(self.player.player_settings.game_setting_mode) + 1) % len(modes)]
+            self.logger.info('Switching player %s to game setting mode %s' % (self.player.login_name, next_mode))
+            self.player.player_settings.game_setting_mode = next_mode
+            self._send_private_msg_from_server(self.player, 'You are now in %s mode'
+                                               % self.player.player_settings.game_setting_mode)
+        else:
+            invalid_code_msg = a0175()
+            invalid_code_msg.findbytype(m02fc).set(STDMSG_NOT_A_VALID_PROMOTION_CODE)  # message type
+            invalid_code_msg.findbytype(m0669).set(msg)
+            self.player.send(invalid_code_msg)
+
+    def _handle_verification_code(self, authcode):
+        if (self.player.login_name in self.player.login_server.accounts and
+                self.player.login_server.accounts[self.player.login_name].authcode == authcode):
+
+            self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
+            self.player.login_server.accounts[self.player.login_name].authcode = None
+            self.player.login_server.accounts.save()
+        else:
+            invalid_code_msg = a0175()
+            invalid_code_msg.findbytype(m02fc).set(STDMSG_NOT_A_VALID_PROMOTION_CODE)  # message type
+            invalid_code_msg.findbytype(m0669).set(authcode)
+            self.player.send(invalid_code_msg)
 
     @handles(packet=a006d)
     def handle_menuchange(self, request):

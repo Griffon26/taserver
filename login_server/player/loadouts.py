@@ -21,7 +21,7 @@
 import json
 import string
 
-from common.game_items import game_classes
+from common.game_items import game_classes, get_game_setting_modes
 from ..datatypes import *
 
 SLOT_LOADOUT_NAME = 1341
@@ -115,12 +115,15 @@ class Loadouts:
 
     def fill_in_defaults(self, existing_loadouts):
         result = dict()
-        for game_setting_mode, default_loadouts_set in default_loadouts_all.items():
+        for game_setting_mode in get_game_setting_modes():
+            print('Setting up loadouts for... %s' % game_setting_mode)
             if len(existing_loadouts.get(game_setting_mode, dict())) == 0:
                 # No existing loadouts for this game setting mode, set defaults
-
+                print('No loadouts found for %s' % game_setting_mode)
                 default_loadouts_file = 'data/defaults/default_loadouts_%s.json' % game_setting_mode
                 result[game_setting_mode] = self._load_loadout_data(default_loadouts_file)
+            else:
+                result[game_setting_mode] = existing_loadouts[game_setting_mode]
         return result
 
     def is_loadout_menu_item(self, value):
@@ -134,7 +137,7 @@ class Loadouts:
     def _load_loadout_data(self, filename):
         def json_keys_to_int(x):
             if isinstance(x, dict):
-                return {(int(k) if k not in default_loadouts_all else k): v
+                return {(int(k) if k not in get_game_setting_modes() else k): v
                         for k, v
                         in x.items()}
 

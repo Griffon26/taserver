@@ -19,6 +19,7 @@
 #
 
 from typing import NamedTuple, Dict, Set, List, Tuple, Generator
+from collections import OrderedDict
 import itertools
 
 
@@ -811,12 +812,16 @@ _items_to_remove: Set[str] = set()
 # Definition of items that should appear in the menu, but should be by default locked
 _items_to_lock: Set[str] = set()
 
-_built_class_menu_data = {
+_built_class_menu_data = OrderedDict({
     'ootb': build_class_menu_data(game_classes, _weapon_categories_ootb,
                                   _hierarchical_definitions_ootb, _items_to_remove, _items_to_lock),
     'goty': build_class_menu_data(game_classes, _weapon_categories_goty,
                                   _hierarchical_definitions_goty, _items_to_remove, _items_to_lock)
-}
+})
+
+
+def get_game_setting_modes():
+    return _built_class_menu_data.keys()
 
 
 # Processed form containing the information needed to build the menu content
