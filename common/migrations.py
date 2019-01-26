@@ -53,3 +53,24 @@ from common.migration_mechanism import taserver_migration, upgrades_all_players
 #     print('Performing pure migration for player: %s' % player)
 #     # Transform data in some sway
 #     return data
+
+
+@taserver_migration(schema_version=1)
+@upgrades_all_players()
+def _migration_ootb_and_goty_loadouts(data, player: str):
+    if 'loadouts' not in data:
+        # Uninitialised loadouts, don't migrate
+        return data
+
+    new_loadouts = dict()
+    # Test to determine whether existing loadouts are 'ootb' or 'goty'
+    # And migrate existing loadouts to one or the other
+    # If the tertiary weapon slot (used for perks in GOTY) is > 100000 then it is goty
+    if data['loadouts']['1683']['0']['1765'] > 100000:
+        new_loadouts['goty'] = data['loadouts']
+    else:
+        new_loadouts['ootb'] = data['loadouts']
+
+    data['loadouts'] = new_loadouts
+
+    return data
