@@ -152,6 +152,7 @@ class Firewall:
         for program in tribes_ascend_programs:
             self.utils.disable_rules_for_program_name(program)
 
+        self.utils.add_rule('TAserverfirewall-general', 'any', 9001, 'tcp', 'allow')
         self.whitelist.reset()
         self.blacklist.reset()
 
