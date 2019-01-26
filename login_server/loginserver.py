@@ -27,6 +27,7 @@ import string
 
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.firewall import reset_firewall
+from common.ipaddresspair import IPAddressPair
 from common.messages import *
 from common.statetracer import statetracer, TracingDict
 from common.versions import launcher2loginserver_protocol_version
@@ -37,7 +38,7 @@ from .pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
 from .player.player import Player
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
-from .utils import first_unused_number_above, IPAddressPair
+from .utils import first_unused_number_above
 
 @statetracer('game_servers', 'players')
 class LoginServer:
@@ -66,6 +67,15 @@ class LoginServer:
             Launcher2LoginMatchEndMessage: self.handle_match_end_message,
         }
         self.pending_callbacks = PendingCallbacks(server_queue)
+
+        self.address_pair, errormsg = IPAddressPair.detect()
+        if not self.address_pair.external_ip:
+            self.logger.warning('Unable to detect public IP address: %s\n'
+                                'This will cause problems if the login server '
+                                'and any players are on the same LAN, but the '
+                                'game server is not.' % errormsg)
+        else:
+            self.logger.info('server: detected external IP: %s' % self.address_pair.external_ip)
 
     def run(self):
         gevent.getcurrent().name = 'loginserver'
@@ -144,6 +154,7 @@ class LoginServer:
             player = msg.peer
             player.unique_id = unique_id
             player.login_server = self
+            player.complement_address_pair(self.address_pair)
             player.set_state(UnauthenticatedState)
             self.players[unique_id] = player
         elif isinstance(msg.peer, GameServer):

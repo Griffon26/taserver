@@ -22,8 +22,8 @@ from ipaddress import IPv4Address
 
 from .friends import Friends
 from .loadouts import Loadouts
-from ..utils import IPAddressPair
 from common.connectionhandler import Peer
+from common.ipaddresspair import IPAddressPair
 from common.statetracer import statetracer, RefOnly
 
 
@@ -64,6 +64,13 @@ class Player(Peer):
         else:
             assert self.detected_ip.is_private
             self.address_pair = IPAddressPair(None, self.detected_ip)
+
+    def complement_address_pair(self, login_server_address_pair):
+        # Take over login server external address in case login server and player
+        # are on the same LAN
+        if not self.address_pair.external_ip and login_server_address_pair.external_ip:
+            assert(self.address_pair.internal_ip)
+            self.address_pair.external_ip = login_server_address_pair.external_ip
 
     def set_state(self, state_class, *args, **kwargs):
         assert self.unique_id is not None

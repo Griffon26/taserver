@@ -18,33 +18,6 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from ipaddress import IPv4Address
-from typing import Optional
-
-
-class IPAddressPair:
-    def __init__(self, external_ip: Optional[IPv4Address], internal_ip: Optional[IPv4Address]):
-        assert external_ip is not None or internal_ip is not None
-        assert external_ip is None or external_ip.is_global
-        assert internal_ip is None or internal_ip.is_private
-
-        self._external_ip = external_ip
-        self._internal_ip = internal_ip
-
-    def validate_against_detected_address(self, detected_ip: IPv4Address):
-        assert detected_ip == self._external_ip or detected_ip == self._internal_ip
-
-    def get_preferred_destination(self, source_address_pair):
-        if (self._external_ip is None or
-                source_address_pair._external_ip is None or
-                self._external_ip == source_address_pair._external_ip):
-            return self._internal_ip
-        else:
-            return self._external_ip
-
-    def __str__(self):
-        return '%s/%s' % (self._external_ip, self._internal_ip)
-
 
 def hexdump(data):
     bytelist = ['%02X' % b for b in data]
