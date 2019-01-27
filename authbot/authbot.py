@@ -175,7 +175,6 @@ class AuthBot:
         msg.peer.last_received_seq = msg.clientseq
 
         requests = ' '.join(['%04X' % req.ident for req in msg.requests])
-        self.logger.info('authbot: login server sent: %s' % requests)
 
         for request in msg.requests:
             methods = [
