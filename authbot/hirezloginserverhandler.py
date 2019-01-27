@@ -19,20 +19,10 @@
 #
 
 from common.connectionhandler import *
-from common.messages import parse_message
+from common.loginprotocol import LoginProtocolReader, LoginProtocolWriter
 from ipaddress import IPv4Address
 
 LOGIN_SERVER_PORT = 9000
-
-
-class HirezLoginServerReader(TcpMessageConnectionReader):
-    def decode(self, msg_bytes):
-        return parse_message(msg_bytes)
-
-
-class HirezLoginServerWriter(TcpMessageConnectionWriter):
-    def encode(self, msg):
-        return msg.to_bytes()
 
 
 class HirezLoginServer(Peer):
@@ -40,6 +30,10 @@ class HirezLoginServer(Peer):
         super().__init__()
         self.ip = ip
         self.port = port
+        self.last_received_seq = None
+
+    def send(self, data):
+        super().send((data, self.last_received_seq))
 
 
 class HirezLoginServerHandler(OutgoingConnectionHandler):
@@ -53,8 +47,8 @@ class HirezLoginServerHandler(OutgoingConnectionHandler):
                           config['hirez_login_server'], LOGIN_SERVER_PORT))
 
     def create_connection_instances(self, sock, address):
-        reader = HirezLoginServerReader(sock)
-        writer = HirezLoginServerWriter(sock)
+        reader = LoginProtocolReader(sock, None)
+        writer = LoginProtocolWriter(sock, None)
         peer = HirezLoginServer(IPv4Address(address[0]), int(address[1]))
         return reader, writer, peer
 

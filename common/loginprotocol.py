@@ -22,7 +22,7 @@ import io
 import struct
 
 from common.connectionhandler import *
-from .datatypes import constructenumblockarray
+from .datatypes import construct_top_level_enumfield
 
 
 def peekshort(infile):
@@ -82,15 +82,18 @@ class StreamParser:
         # FIXME: That we have to look at the first short to see how
         # many items are in this packet probably indicates that we
         # interpret the packet structure incorrectly.
-        item_count = 1
+        if next_value == 0x003d:
+            item_count = 12
+        else:
+            item_count = 1
         has_seq_ack = True
 
-        if next_value == 0x01BC:
+        if next_value == 0x01bc:
             has_seq_ack = False
 
         objs = []
         for i in range(item_count):
-            objs.append(constructenumblockarray(self.in_stream))
+            objs.append(construct_top_level_enumfield(self.in_stream))
         if has_seq_ack:
             seq, _ = parseseqack(self.in_stream)
         else:

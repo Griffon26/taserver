@@ -339,6 +339,11 @@ class m0001(onebyte):
         super().__init__(0x0001, 0x00)
 
 
+class m006f(onebyte):
+    def __init__(self):
+        super().__init__(0x006f, 0x00)
+
+
 class m01fa(onebyte):
     def __init__(self):
         super().__init__(0x01fa, 0x00)
@@ -382,6 +387,11 @@ class m05e6(onebyte):
 class m0601(onebyte):
     def __init__(self):
         super().__init__(0x0601, 0x00)
+
+
+class m063c(onebyte):
+    def __init__(self):
+        super().__init__(0x063c, 0x00)
 
 
 class m0673(onebyte):
@@ -442,6 +452,11 @@ class m006d(fourbytes):
         super().__init__(0x006d, 0x00000000)
 
 
+class m008b(fourbytes):
+    def __init__(self):
+        super().__init__(0x008b, 0x00000000)
+
+
 class m008d(fourbytes):
     def __init__(self):
         super().__init__(0x008d, 0x00000001)
@@ -495,6 +510,16 @@ class m0197(fourbytes):
 class m01a3(fourbytes):
     def __init__(self):
         super().__init__(0x01a3, 0x00000000)
+
+
+class m01c0(fourbytes):
+    def __init__(self):
+        super().__init__(0x01c0, 0x00000000)
+
+
+class m01c1(fourbytes):
+    def __init__(self):
+        super().__init__(0x01c1, 0x00000000)
 
 
 class m01c9(fourbytes):
@@ -560,6 +585,11 @@ class m0253(fourbytes):
 class m0259(fourbytes):
     def __init__(self):
         super().__init__(0x0259, 0x00000000)
+
+
+class m025a(fourbytes):
+    def __init__(self):
+        super().__init__(0x025a, 0x00000000)
 
 
 class m025c(fourbytes):
@@ -674,7 +704,12 @@ class m02d7(fourbytes):
 
 class m02d8(fourbytes):
     def __init__(self):
-        super().__init__(0x02d8, 0x00000000)  # unknown
+        super().__init__(0x02d8, 0x00000000)
+
+
+class m02dc(fourbytes):
+    def __init__(self):
+        super().__init__(0x02dc, 0x00000000)
 
 
 class m02ec(fourbytes):
@@ -685,6 +720,11 @@ class m02ec(fourbytes):
 class m02ed(fourbytes):
     def __init__(self):
         super().__init__(0x02ed, 0x00000000)
+
+
+class m02ef(fourbytes):
+    def __init__(self):
+        super().__init__(0x02ef, 0x00000000)
 
 
 class m02f4(fourbytes):
@@ -762,6 +802,16 @@ class m0369(fourbytes):
         super().__init__(0x0369, 0x00000000)
 
 
+class m036b(fourbytes):
+    def __init__(self):
+        super().__init__(0x036b, 0x00000000)
+
+
+class m036c(fourbytes):
+    def __init__(self):
+        super().__init__(0x036c, 0x00000000)
+
+
 class m037f(fourbytes):
     def __init__(self):
         super().__init__(0x037f, 0x00000000)
@@ -785,6 +835,11 @@ class m0398(fourbytes):
 class m03a4(fourbytes):
     def __init__(self):
         super().__init__(0x03a4, 0x00000000)
+
+
+class m03b4(fourbytes):
+    def __init__(self):
+        super().__init__(0x03b4, 0x00000000)
 
 
 class m03ce(fourbytes):
@@ -847,6 +902,21 @@ class m0452(fourbytes):
         super().__init__(0x0452, 0x00000001)
 
 
+class m0457(fourbytes):
+    def __init__(self):
+        super().__init__(0x0457, 0x00000000)
+
+
+class m0458(fourbytes):
+    def __init__(self):
+        super().__init__(0x0458, 0x00000000)
+
+
+class m0472(fourbytes):
+    def __init__(self):
+        super().__init__(0x0472, 0x00000000)
+
+
 class m0489(fourbytes):
     def __init__(self):
         super().__init__(0x0489, 0x00000000)
@@ -857,6 +927,36 @@ class m049e(fourbytes):
         super().__init__(0x049e, 0x01040B61)
 
 
+class m04a5(fourbytes):
+    def __init__(self):
+        super().__init__(0x04a5, 0x00000000)
+
+
+class m04a6(fourbytes):
+    def __init__(self):
+        super().__init__(0x04a6, 0x00000000)
+
+
+class m04a7(fourbytes):
+    def __init__(self):
+        super().__init__(0x04a7, 0x00000000)
+
+
+class m04a8(fourbytes):
+    def __init__(self):
+        super().__init__(0x04a8, 0x00000000)
+
+
+class m04a9(fourbytes):
+    def __init__(self):
+        super().__init__(0x04a9, 0x00000000)
+
+
+class m04aa(fourbytes):
+    def __init__(self):
+        super().__init__(0x04aa, 0x00000000)
+
+
 class m04bb(fourbytes):
     def __init__(self):
         super().__init__(0x04bb, 0x00000000)
@@ -865,6 +965,11 @@ class m04bb(fourbytes):
 class m04cb(fourbytes):
     def __init__(self):
         super().__init__(0x04cb, 0x00100000)  # xp
+
+
+class m04d1(fourbytes):
+    def __init__(self):
+        super().__init__(0x04d1, 0x00000000)
 
 
 class m04d5(fourbytes):
@@ -1022,9 +1127,29 @@ class m062f(fourbytes):
         super().__init__(0x062f, 0x00000000)
 
 
+class m0636(fourbytes):
+    def __init__(self):
+        super().__init__(0x0636, 0x00000000)
+
+
 class m0637(fourbytes):
     def __init__(self):
         super().__init__(0x0637, 0x00000000)
+
+
+class m0638(fourbytes):
+    def __init__(self):
+        super().__init__(0x0638, 0x00000000)
+
+
+class m0639(fourbytes):
+    def __init__(self):
+        super().__init__(0x0639, 0x00000000)
+
+
+class m063a(fourbytes):
+    def __init__(self):
+        super().__init__(0x063a, 0x00000000)
 
 
 class m063d(fourbytes):
@@ -1035,6 +1160,11 @@ class m063d(fourbytes):
 class m065f(fourbytes):
     def __init__(self):
         super().__init__(0x065f, 0x00000000)
+
+
+class m0660(fourbytes):
+    def __init__(self):
+        super().__init__(0x0660, 0x00000000)
 
 
 class m0661(fourbytes):
@@ -1080,6 +1210,16 @@ class m0676(fourbytes):
 class m0677(fourbytes):
     def __init__(self):
         super().__init__(0x0677, 0x00000000)
+
+
+class m067f(fourbytes):
+    def __init__(self):
+        super().__init__(0x067f, 0x00000000)
+
+
+class m0680(fourbytes):
+    def __init__(self):
+        super().__init__(0x0680, 0x00000000)
 
 
 class m0683(fourbytes):
@@ -1145,6 +1285,11 @@ class m06f1(fourbytes):
 class m06f5(fourbytes):
     def __init__(self):
         super().__init__(0x06f5, 0x00000000)
+
+
+class m06fa(fourbytes):
+    def __init__(self):
+        super().__init__(0x06fa, 0x00000000)
 
 
 class m0701(fourbytes):
@@ -1256,6 +1401,11 @@ class m0013(stringenum):
         super().__init__(0x0013, 'y')
 
 
+class m0082(stringenum):
+    def __init__(self):
+        super().__init__(0x0082, '')
+
+
 class m00a2(stringenum):
     def __init__(self):
         super().__init__(0x00a2, '')
@@ -1269,6 +1419,11 @@ class m00a3(stringenum):
 class m00aa(stringenum):
     def __init__(self):
         super().__init__(0x00aa, 'y')
+
+
+class m00ab(stringenum):
+    def __init__(self):
+        super().__init__(0x00ab, '')
 
 
 class m01a4(stringenum):
@@ -1289,6 +1444,16 @@ class m01bc(stringenum):
 class m01c4(stringenum):
     def __init__(self):
         super().__init__(0x01c4, 'n')
+
+
+class m020c(stringenum):
+    def __init__(self):
+        super().__init__(0x020c, '')
+
+
+class m021a(stringenum):
+    def __init__(self):
+        super().__init__(0x021a, '')
 
 
 class m0261(stringenum):
@@ -1351,6 +1516,11 @@ class m0437(stringenum):
         super().__init__(0x0437, '')
 
 
+class m045e(stringenum):
+    def __init__(self):
+        super().__init__(0x045e, '')
+
+
 class m0468(stringenum):
     def __init__(self):
         super().__init__(0x0468, 'f8')
@@ -1359,6 +1529,11 @@ class m0468(stringenum):
 class m0494(stringenum):
     def __init__(self):
         super().__init__(0x0494, '')
+
+
+class m063b(stringenum):
+    def __init__(self):
+        super().__init__(0x063b, '')
 
 
 class m0669(stringenum):
@@ -2896,8 +3071,12 @@ class originalfragment():
         stream.write(_originalbytes(self.fromoffset, self.tooffset))
 
 
-def constructenumblockarray(stream):
+def construct_top_level_enumfield(stream):
     ident = struct.unpack('<H', stream.peek(2))[0]
     classname = ('a%04X' % ident).lower()
+
+    if classname not in globals():
+        classname = ('m%04X' % ident).lower()
+
     obj = globals()[classname]().read(stream)
     return obj

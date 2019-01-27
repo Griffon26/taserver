@@ -18,18 +18,35 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from distutils.version import StrictVersion
+from functools import wraps
 import gevent
+import inspect
 import logging
-from gevent import socket
-import urllib.request as urlreq
 
-from common.errors import FatalError
-from common.messages import *
+from common.datatypes import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
+from common.loginprotocol import LoginProtocolMessage
 from common.statetracer import statetracer, TracingDict
 
 from .hirezloginserverhandler import HirezLoginServer
+
+
+def handles(packet):
+    """
+    A decorator that defines a function as a handler for a certain packet
+    :param packet: the packet being handled by the function
+    """
+
+    def real_decorator(func):
+        func.handles_packet = packet
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return real_decorator
 
 
 @statetracer()
@@ -39,11 +56,12 @@ class AuthBot:
 
         self.logger = logging.getLogger(__name__)
         self.incoming_queue = incoming_queue
+        self.login_server = None
 
         self.message_handlers = {
             PeerConnectedMessage: self.handle_peer_connected,
             PeerDisconnectedMessage: self.handle_peer_disconnected,
-            #ClientMessage: self.handle_client_message
+            LoginProtocolMessage: self.handle_login_protocol_message
         }
 
     def run(self):
@@ -54,16 +72,71 @@ class AuthBot:
 
     def handle_peer_connected(self, msg):
         assert isinstance(msg.peer, HirezLoginServer)
+        assert self.login_server is None
         self.logger.info('authbot: hirez login server connected')
+        self.login_server = msg.peer
+        self.login_server.send(
+            a01bc().set([
+                m049e(),
+                m0489()
+            ])
+        )
 
     def handle_peer_disconnected(self, msg):
         assert isinstance(msg.peer, HirezLoginServer)
+        assert self.login_server is msg.peer
         msg.peer.disconnect()
         self.logger.info('authbot: hirez login server disconnected')
 
-    def handle_client_message(self, msg):
-        self.logger.info('launcher: received client message')
-        #msg.peer.send(msg)
+    def handle_login_protocol_message(self, msg):
+        msg.peer.last_received_seq = msg.clientseq
+
+        requests = ' '.join(['%04X' % req.ident for req in msg.requests])
+        self.logger.info('authbot: login server sent: %s' % requests)
+
+        for request in msg.requests:
+            methods = [
+                func for name, func in inspect.getmembers(self) if
+                getattr(func, 'handles_packet', None) == type(request)
+            ]
+            if not methods:
+                self.logger.warning("No handler found for request %s" % request)
+                return
+
+            if len(methods) > 1:
+                raise ValueError("Duplicate handlers found for request")
+
+            methods[0](request)
+
+    @handles(packet=a01bc)
+    def handle_a01bc(self, request):
+        pass
+
+    @handles(packet=a0197)
+    def handle_a0197(self, request):
+        self.login_server.send(a003a())
+
+    @handles(packet=a003a)
+    def handle_a003a(self, request):
+        salt = request.findbytype(m03e3).value
+        self.login_server.send(
+            a003a().set([
+                m0056(),
+                m0494(), #login name
+                m0671(),
+                m0671(),
+                m0672(),
+                m0673(),
+                m0677(),
+                m0676(),
+                m0674(),
+                m0675(),
+                m0434(),
+                m049e()
+            ])
+        )
+
+
 
 
 def handle_authbot(incoming_queue):
