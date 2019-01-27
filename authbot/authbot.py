@@ -21,9 +21,11 @@
 import base64
 from functools import wraps
 import gevent
+import gevent.subprocess as sp
 import inspect
 import itertools
 import logging
+import time
 
 from common.datatypes import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
@@ -117,6 +119,7 @@ class AuthBot:
         self.login_name = config['login_name']
         self.display_name = None
         self.password_hash = base64.b64decode(config['password_hash'])
+        self.last_requests = {}
 
         self.message_handlers = {
             PeerConnectedMessage: self.handle_peer_connected,
@@ -209,14 +212,43 @@ class AuthBot:
         sender_name = request.findbytype(m02fe).value
 
         if message_type == MESSAGE_PRIVATE and sender_name != self.display_name:
+            reply = self.process_chat_message(sender_name, message_text)
             self.login_server.send(
                 a0070().set([
                     m009e().set(MESSAGE_PRIVATE),
-                    m02e6().set('hey there %s, how are you doing?' % sender_name),
+                    m02e6().set(reply),
                     m034a().set(sender_name),
                     m0574()
                 ])
             )
+
+    def process_chat_message(self, sender_name, message_text):
+
+        self.last_requests = {k: v for k, v in self.last_requests.items() if time.time() - v < 5}
+
+        generic_error_reply = 'Something went wrong. Please contact the administrator of this bot or try again later.'
+
+        if message_text == 'authcode':
+            try:
+                if sender_name in self.last_requests:
+                    return 'Jeez.. I just gave you an authcode five seconds ago! Stop being so pushy!'
+                else:
+                    output = sp.run('getauthcode.py %s' % sender_name,
+                                    shell=True, check=True, capture_output=True, text=True).stdout
+                    if output.startswith('Received authcode'):
+                        authcode = output.split()[2]
+                        self.last_requests[sender_name] = time.time()
+                        return 'Your authcode is %s' % authcode
+                    else:
+                        self.logger.error('authbot: unexpected output from getauthcode.py: %s' % output)
+                        return generic_error_reply
+
+            except sp.CalledProcessError as e:
+                error_message = e.stderr if e.stderr else str(e)
+                self.logger.error('authbot: failed to run getauthcode.py: %s' % error_message)
+                return generic_error_reply
+        else:
+            return 'Hey there %s, how are you? To get an authcode say "authcode" to me.' % sender_name
 
 def handle_authbot(config, incoming_queue):
     authbot = AuthBot(config, incoming_queue)
