@@ -51,6 +51,7 @@ class Player(Peer):
         self.last_received_seq = 0
         self.vote = None
         self.state = None
+        self.is_modded = False
         self.login_server = None
         self.game_server = None
         self.loadouts = Loadouts(use_goty_mode)

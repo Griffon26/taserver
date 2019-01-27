@@ -349,7 +349,11 @@ class AuthenticatedState(PlayerState):
 
     @handles_control_message(messageType=Client2LoginConnect)
     def handle_client2login_connect(self, message: Client2LoginConnect):
-        pass
+        # The player is now known to be modded
+        self.player.is_modded = True
+        # Give the player their current mode
+        resp = Login2ClientModeInfo('ootb')
+        self._send_control_message(self.player, resp)
 
     @handles_control_message(messageType=Client2LoginSwitchMode)
     def handle_client2login_switchmode(self, message: Client2LoginSwitchMode):
