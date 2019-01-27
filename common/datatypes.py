@@ -354,6 +354,11 @@ class m02c9(onebyte):
         super().__init__(0x02c9, 0x00)
 
 
+class m0318(onebyte):
+    def __init__(self):
+        super().__init__(0x0318, 0x00)
+
+
 class m0326(onebyte):
     def __init__(self):
         super().__init__(0x0326, 0x00)
@@ -362,6 +367,11 @@ class m0326(onebyte):
 class m0442(onebyte):
     def __init__(self):
         super().__init__(0x0442, 0x01)
+
+
+class m046b(onebyte):
+    def __init__(self):
+        super().__init__(0x046b, 0x00)
 
 
 class m0574(onebyte):
@@ -450,6 +460,11 @@ class m0035(fourbytes):
 class m006d(fourbytes):
     def __init__(self):
         super().__init__(0x006d, 0x00000000)
+
+
+class m0073(fourbytes):
+    def __init__(self):
+        super().__init__(0x0073, 0x00000000)
 
 
 class m008b(fourbytes):
@@ -677,6 +692,11 @@ class m02b5(fourbytes):
         super().__init__(0x02b5, 0x00866c82)
 
 
+class m02b7(fourbytes):
+    def __init__(self):
+        super().__init__(0x02b7, 0x00000000)
+
+
 class m02be(fourbytes):
     def __init__(self):
         super().__init__(0x02be, 0x00000000)
@@ -712,6 +732,11 @@ class m02dc(fourbytes):
         super().__init__(0x02dc, 0x00000000)
 
 
+class m02ea(fourbytes):
+    def __init__(self):
+        super().__init__(0x02ea, 0x00000000)
+
+
 class m02ec(fourbytes):
     def __init__(self):
         super().__init__(0x02ec, 0x00000004)
@@ -745,6 +770,11 @@ class m02ff(fourbytes):
 class m0319(fourbytes):
     def __init__(self):
         super().__init__(0x0319, 0x00000000)
+
+
+class m0320(fourbytes):
+    def __init__(self):
+        super().__init__(0x0320, 0x00000000)
 
 
 class m0331(fourbytes):
@@ -1247,6 +1277,31 @@ class m068c(fourbytes):
         super().__init__(0x068c, 0x00000000)
 
 
+class m0698(fourbytes):
+    def __init__(self):
+        super().__init__(0x0698, 0x00000000)
+
+
+class m0699(fourbytes):
+    def __init__(self):
+        super().__init__(0x0699, 0x00000000)
+
+
+class m069d(fourbytes):
+    def __init__(self):
+        super().__init__(0x069d, 0x00000000)
+
+
+class m069e(fourbytes):
+    def __init__(self):
+        super().__init__(0x069e, 0x00000000)
+
+
+class m069f(fourbytes):
+    def __init__(self):
+        super().__init__(0x069f, 0x00000000)
+
+
 class m06b7(fourbytes):
     def __init__(self):
         super().__init__(0x06b7, 0x00000000)
@@ -1275,6 +1330,11 @@ class m06bf(fourbytes):
 class m06c0(fourbytes):
     def __init__(self):
         super().__init__(0x06c0, 0x00000000)
+
+
+class m06c9(fourbytes):
+    def __init__(self):
+        super().__init__(0x06c9, 0x00000000)
 
 
 class m06ea(fourbytes):
@@ -1395,6 +1455,11 @@ class m05e2(nbytes):
 class m057e(nbytes):
     def __init__(self):
         super().__init__(0x057e, hexparse('00 00 00 00 00 00 00 00'))
+
+
+class m05e2(nbytes):
+    def __init__(self):
+        super().__init__(0x05e2, hexparse('00 00 00 00 00 00 00 00'))
 
 
 class m05e4(nbytes):
@@ -1767,6 +1832,11 @@ class m0144(arrayofenumblockarrays):
         super().__init__(0x0144)
 
 
+class m0148(arrayofenumblockarrays):
+    def __init__(self):
+        super().__init__(0x0148)
+
+
 class m05cb(arrayofenumblockarrays):
     def __init__(self):
         super().__init__(0x05cb)
@@ -1797,25 +1867,6 @@ class m05cb(arrayofenumblockarrays):
             m041a().set(amount),
         ])
         return self
-
-
-class m06ef(arrayofenumblockarrays):
-    def __init__(self):
-        super().__init__(0x06ef)
-        self.arrays = [
-            [
-                m06ee(),
-                m042e(),
-                m042f(),
-                m03f5()
-            ],
-            [
-                m06ee(),
-                m042e(),
-                m042f(),
-                m03f5()
-            ]
-        ]
 
 
 class m0632(arrayofenumblockarrays):
@@ -2553,6 +2604,25 @@ class m06bb(arrayofenumblockarrays):
             self.arrays.append(sub_array)
 
 
+class m06ef(arrayofenumblockarrays):
+    def __init__(self):
+        super().__init__(0x06ef)
+        self.arrays = [
+            [
+                m06ee(),
+                m042e(),
+                m042f(),
+                m03f5()
+            ],
+            [
+                m06ee(),
+                m042e(),
+                m042f(),
+                m03f5()
+            ]
+        ]
+
+
 # ------------------------------------------------------------
 # enumblockarrays
 # ------------------------------------------------------------
@@ -3017,6 +3087,21 @@ class a0197(enumblockarray):
 class a019a(enumblockarray):
     def __init__(self):
         super().__init__(0x019a)
+
+
+class a01a2(enumblockarray):
+    def __init__(self):
+        super().__init__(0x01a2)
+
+
+class a01a4(enumblockarray):
+    def __init__(self):
+        super().__init__(0x01a4)
+
+
+class a01a5(enumblockarray):
+    def __init__(self):
+        super().__init__(0x01a5)
 
 
 class a01b5(enumblockarray):

@@ -21,8 +21,8 @@
 0x00EC,EnumBlockArray,/report command
 0x00FB,EnumBlockArray,
 0x010F,EnumBlockArray,something to do with match end
-0x011C,EnumBlockArray,
 0x011B,EnumBlockArray,player online/join notification
+0x011C,EnumBlockArray,
 0x0145,EnumBlockArray,
 0x0175,EnumBlockArray,purchase
 0x0176,EnumBlockArray,
