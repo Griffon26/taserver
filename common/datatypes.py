@@ -3019,6 +3019,11 @@ class a011c(enumblockarray):
         super().__init__(0x011c)
 
 
+class a0145(enumblockarray):
+    def __init__(self):
+        super().__init__(0x0145)
+
+
 class a0175(enumblockarray):
     def __init__(self):
         super().__init__(0x0175)
