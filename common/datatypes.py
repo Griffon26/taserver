@@ -1042,6 +1042,11 @@ class m0597(fourbytes):
         super().__init__(0x0597, 0x00000000)
 
 
+class m05b8(fourbytes):
+    def __init__(self):
+        super().__init__(0x05b8, 0x00000000)
+
+
 class m05cc(fourbytes):
     def __init__(self):
         super().__init__(0x05cc, 0x00000000)
@@ -1180,6 +1185,11 @@ class m0663(fourbytes):
 class m0664(fourbytes):
     def __init__(self):
         super().__init__(0x0664, 0x00044107)
+
+
+class m066a(fourbytes):
+    def __init__(self):
+        super().__init__(0x066a, 0x00000000)
 
 
 class m0671(fourbytes):
@@ -3048,6 +3058,10 @@ class m0056():
     def __init__(self):
         self.ident = 0x0056
         self.content = b'0' * 90
+
+    def set(self, value):
+        self.content = value
+        return self
 
     def write(self, stream):
         stream.write(struct.pack('<HL', self.ident, len(self.content)) + self.content)

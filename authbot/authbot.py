@@ -22,6 +22,7 @@ import base64
 from functools import wraps
 import gevent
 import inspect
+import itertools
 import logging
 
 from common.datatypes import *
@@ -50,6 +51,61 @@ def handles(packet):
     return real_decorator
 
 
+def xor_password_hash(password_hash, salt):
+    salt_nibbles = []
+    for value in salt:
+        salt_nibbles.append(value >> 4)
+        salt_nibbles.append(value & 0x0F)
+
+    xor_values = [(value if value <= 9 else 0x47 + value) for value in salt_nibbles]
+
+    xor_pattern = [
+        xor_values[6], 0,
+        xor_values[7], 0,
+        xor_values[4], 0,
+        xor_values[5], 0,
+        xor_values[2], 0,
+        xor_values[3], 0,
+        xor_values[0], 0,
+        xor_values[1], 0,
+        0, 0,
+        xor_values[10], 0,
+        xor_values[11], 0,
+        xor_values[8], 0,
+        xor_values[9], 0,
+        0, 0,
+        xor_values[14], 0,
+        xor_values[15], 0,
+        xor_values[12], 0,
+        xor_values[13], 0,
+        0, 0,
+        xor_values[16], 0,
+        xor_values[17], 0,
+        xor_values[18], 0,
+        xor_values[19], 0,
+        0, 0,
+        xor_values[20], 0,
+        xor_values[21], 0,
+        xor_values[22], 0,
+        xor_values[23], 0,
+        xor_values[24], 0,
+        xor_values[25], 0,
+        xor_values[26], 0,
+        xor_values[27], 0,
+        xor_values[28], 0,
+        xor_values[29], 0,
+        xor_values[30], 0,
+        xor_values[31], 0,
+    ]
+
+
+    xored_password_hash = [
+        p ^ x for p, x in itertools.zip_longest(password_hash, xor_pattern, fillvalue = 0)
+    ]
+
+    return bytes(xored_password_hash)
+
+
 @statetracer()
 class AuthBot:
     def __init__(self, config, incoming_queue):
@@ -60,7 +116,7 @@ class AuthBot:
         self.login_server = None
         self.login_name = config['login_name']
         self.display_name = None
-        password_hash = base64.b64decode(config['password_hash'])
+        self.password_hash = base64.b64decode(config['password_hash'])
 
         self.message_handlers = {
             PeerConnectedMessage: self.handle_peer_connected,
@@ -125,7 +181,7 @@ class AuthBot:
         salt = request.findbytype(m03e3).value
         self.login_server.send(
             a003a().set([
-                m0056(),
+                m0056().set(xor_password_hash(self.password_hash, salt)),
                 m0494().set(self.login_name),
                 m0671(),
                 m0671(),
