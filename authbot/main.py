@@ -47,7 +47,7 @@ def main():
             incoming_queue = gevent.queue.Queue()
 
             tasks = [
-                gevent.spawn(handle_authbot, incoming_queue),
+                gevent.spawn(handle_authbot, config['authbot'], incoming_queue),
                 gevent.spawn(handle_hirez_login_server, config['authbot'], incoming_queue),
             ]
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2018  Maurice van der Pot <griffon26@kfk4ever.com>
+# Copyright (C) 2019  Maurice van der Pot <griffon26@kfk4ever.com>
 #
 # This file is part of taserver
 #
@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import base64
 from functools import wraps
 import gevent
 import inspect
@@ -51,12 +52,15 @@ def handles(packet):
 
 @statetracer()
 class AuthBot:
-    def __init__(self, incoming_queue):
+    def __init__(self, config, incoming_queue):
         gevent.getcurrent().name = 'authbot'
 
         self.logger = logging.getLogger(__name__)
         self.incoming_queue = incoming_queue
         self.login_server = None
+        self.login_name = config['login_name']
+        self.display_name = None
+        password_hash = base64.b64decode(config['password_hash'])
 
         self.message_handlers = {
             PeerConnectedMessage: self.handle_peer_connected,
@@ -122,7 +126,7 @@ class AuthBot:
         self.login_server.send(
             a003a().set([
                 m0056(),
-                m0494(), #login name
+                m0494().set(self.login_name),
                 m0671(),
                 m0671(),
                 m0672(),
@@ -136,10 +140,29 @@ class AuthBot:
             ])
         )
 
+    @handles(packet=a003d)
+    def handle_a003d(self, request):
+        self.display_name = request.findbytype(m034a).value
 
+    @handles(packet=a0070)
+    def handle_chat(self, request):
+        assert self.display_name is not None
 
+        message_type = request.findbytype(m009e).value
+        message_text = request.findbytype(m02e6).value
+        sender_name = request.findbytype(m02fe).value
 
-def handle_authbot(incoming_queue):
-    authbot = AuthBot(incoming_queue)
+        if message_type == MESSAGE_PRIVATE and sender_name != self.display_name:
+            self.login_server.send(
+                a0070().set([
+                    m009e().set(MESSAGE_PRIVATE),
+                    m02e6().set('hey there %s, how are you doing?' % sender_name),
+                    m034a().set(sender_name),
+                    m0574()
+                ])
+            )
+
+def handle_authbot(config, incoming_queue):
+    authbot = AuthBot(config, incoming_queue)
     # launcher.trace_as('authbot')
     authbot.run()
