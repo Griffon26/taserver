@@ -22,7 +22,7 @@ import io
 import struct
 
 from common.connectionhandler import *
-from .datatypes import construct_top_level_enumfield
+from .datatypes import construct_top_level_enumfield, m034a
 
 
 def peekshort(infile):
@@ -77,22 +77,22 @@ class StreamParser:
 
     def parse(self):
         out_file = io.StringIO()
-        next_value = peekshort(self.in_stream)
+        next_object = construct_top_level_enumfield(self.in_stream)
 
-        # FIXME: That we have to look at the first short to see how
+        # FIXME: That we have to look at the first object to see how
         # many items are in this packet probably indicates that we
         # interpret the packet structure incorrectly.
-        if next_value == 0x003d:
-            item_count = 12
+        if next_object.ident == 0x003d and next_object.findbytype(m034a):
+            additional_item_count = 11
         else:
-            item_count = 1
+            additional_item_count = 0
         has_seq_ack = True
 
-        if next_value == 0x01bc:
+        if next_object.ident == 0x01bc:
             has_seq_ack = False
 
-        objs = []
-        for i in range(item_count):
+        objs = [next_object]
+        for i in range(additional_item_count):
             objs.append(construct_top_level_enumfield(self.in_stream))
         if has_seq_ack:
             seq, _ = parseseqack(self.in_stream)

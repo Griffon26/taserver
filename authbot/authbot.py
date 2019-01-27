@@ -28,11 +28,17 @@ import logging
 import time
 
 from common.datatypes import *
+from common.errors import FatalError
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.loginprotocol import LoginProtocolMessage
 from common.statetracer import statetracer, TracingDict
 
 from .hirezloginserverhandler import HirezLoginServer
+
+
+class LoginFailedError(FatalError):
+    def __init__(self):
+        super().__init__('Failed to login with the specified credentials. Check your authbot.ini')
 
 
 def handles(packet):
@@ -128,10 +134,23 @@ class AuthBot:
         }
 
     def run(self):
+        self.send_and_schedule_keepalive_message()
         while True:
             for message in self.incoming_queue:
                 handler = self.message_handlers[type(message)]
                 handler(message)
+
+    def send_and_schedule_keepalive_message(self):
+        if self.login_server and self.display_name:
+            self.login_server.send(
+                a0070().set([
+                    m009e().set(MESSAGE_PRIVATE),
+                    m02e6().set("Ah, ha, ha, ha, stayin' alive, stayin' alive"),
+                    m034a().set(self.display_name),
+                    m0574()
+                ])
+            )
+        gevent.spawn_later(60, self.send_and_schedule_keepalive_message)
 
     def handle_peer_connected(self, msg):
         assert isinstance(msg.peer, HirezLoginServer)
@@ -150,6 +169,7 @@ class AuthBot:
         assert self.login_server is msg.peer
         msg.peer.disconnect()
         self.logger.info('authbot: hirez login server disconnected')
+        self.login_server = None
 
     def handle_login_protocol_message(self, msg):
         msg.peer.last_received_seq = msg.clientseq
@@ -201,7 +221,12 @@ class AuthBot:
 
     @handles(packet=a003d)
     def handle_a003d(self, request):
-        self.display_name = request.findbytype(m034a).value
+        display_name_field = request.findbytype(m034a)
+        if display_name_field:
+            self.display_name = display_name_field.value
+        else:
+            self.logger.info('authbot: login to HiRez server failed.')
+            raise LoginFailedError()
 
     @handles(packet=a0070)
     def handle_chat(self, request):
