@@ -20,25 +20,26 @@
 
 from distutils.version import StrictVersion
 import gevent
-from ipaddress import IPv4Address
 import logging
 import random
 import string
 
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
+from common.datatypes import *
 from common.firewall import reset_firewall
 from common.ipaddresspair import IPAddressPair
+from common.loginprotocol import LoginProtocolMessage
 from common.messages import *
 from common.statetracer import statetracer, TracingDict
 from common.versions import launcher2loginserver_protocol_version
 from .authcodehandler import AuthCodeRequester
-from .datatypes import *
 from .gameserver import GameServer
 from .pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
 from .player.player import Player
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
 from .utils import first_unused_number_above
+
 
 @statetracer('address_pair', 'game_servers', 'players')
 class LoginServer:
@@ -56,7 +57,7 @@ class LoginServer:
             ExecuteCallbackMessage: self.handle_execute_callback_message,
             PeerConnectedMessage: self.handle_client_connected_message,
             PeerDisconnectedMessage: self.handle_client_disconnected_message,
-            ClientMessage: self.handle_client_message,
+            LoginProtocolMessage: self.handle_client_message,
             Launcher2LoginProtocolVersionMessage: self.handle_launcher_protocol_version_message,
             Launcher2LoginServerInfoMessage: self.handle_server_info_message,
             Launcher2LoginMapInfoMessage: self.handle_map_info_message,

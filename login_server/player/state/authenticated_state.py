@@ -19,7 +19,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from ...datatypes import *
+from common.datatypes import *
 from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode, \
     Login2ClientModeInfo, parse_message_string
 from ..friends import FRIEND_STATE_VISIBLE

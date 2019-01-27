@@ -28,6 +28,7 @@ import urllib.request
 
 
 from common.connectionhandler import Peer
+from common.datatypes import *
 from common.firewall import modify_firewall
 from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherSetPlayerLoadoutsMessage, \
@@ -36,7 +37,6 @@ from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherRemovePlayer, \
                             Login2LauncherPings
 from common.statetracer import statetracer, TracingDict
-from .datatypes import *
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .player.state.authenticated_state import AuthenticatedState
 
