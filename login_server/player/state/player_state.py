@@ -23,8 +23,8 @@ import inspect
 import logging
 from functools import wraps
 
+from common.datatypes import *
 from common.game_items import get_class_menu_data
-from ...datatypes import *
 from ..player import Player
 
 

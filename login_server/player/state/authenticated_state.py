@@ -19,7 +19,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from ...datatypes import *
+from common.datatypes import *
 from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles
 

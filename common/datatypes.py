@@ -18,8 +18,8 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from common.game_items import GamePurchase, GameClass, UnlockableGameClass, UnlockableItem, \
-    UnlockableClassSpecificItem, UnlockableWeapon, UnlockablePack, UnlockableSkin, UnlockableVoice
+from common.game_items import GamePurchase, GameClass, UnlockableGameClass, \
+    UnlockableClassSpecificItem, UnlockableWeapon, UnlockableVoice
 from typing import Set, Iterable
 import struct
 from ipaddress import IPv4Address
@@ -113,12 +113,6 @@ MENU_AREA_MEDIUM_LOADOUT_I = 0x02990EFE
 
 class ParseError(Exception):
     pass
-
-
-class ClientMessage():
-    def __init__(self, clientseq, requests):
-        self.clientseq = clientseq
-        self.requests = requests
 
 
 class GameServerConnectedMessage():

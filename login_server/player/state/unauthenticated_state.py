@@ -19,9 +19,9 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from common.datatypes import *
 from .authenticated_state import AuthenticatedState
 from ..state.player_state import PlayerState, handles
-from ...datatypes import *
 
 
 def choose_display_name(login_name, registered, names_in_use, max_name_length):
