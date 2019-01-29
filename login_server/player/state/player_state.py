@@ -24,6 +24,7 @@ import logging
 from functools import wraps
 
 from common.datatypes import *
+from common.messages import Message
 from common.game_items import get_class_menu_data
 from ..player import Player
 
@@ -46,12 +47,29 @@ def handles(packet):
     return real_decorator
 
 
+def handles_control_message(messageType):
+    """
+    A decorator that defines a function as a handler for a certain control message
+    sent by the player to the login server
+    :param messageType: the type of control message this function handles
+    """
+
+    def real_decorator(func):
+        func.handles_message = messageType
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
+
+    return real_decorator
+
+
 class PlayerState:
     def __init__(self, player: Player):
         self.logger = logging.getLogger(__name__)
         self.player = player
         self.class_menu_data = get_class_menu_data(self.player.use_goty_mode)
-
 
     def handle_request(self, request):
         methods = [
@@ -66,6 +84,20 @@ class PlayerState:
             raise ValueError("Duplicate handlers found for request")
 
         methods[0](request)
+
+    def handle_control_message(self, message: Message):
+        methods = [
+            func for name, func in inspect.getmembers(self) if
+            getattr(func, 'handles_message', None) == type(message)
+        ]
+        if not methods:
+            self.logger.warning("No handler found for control message %s" % str(message))
+            return
+
+        if len(methods) > 1:
+            raise ValueError("Duplicate handlers found for control message")
+
+        methods[0](message)
 
     @handles(packet=a01c8)
     def handle_ping(self, request):

@@ -55,10 +55,18 @@ _MSGID_LAUNCHER2GAME_NEXTMAP = 0x4001
 _MSGID_LAUNCHER2GAME_PINGS = 0x4002
 _MSGID_LAUNCHER2GAME_INIT = 0x4003
 
+_MSGID_CLIENT2LOGIN_CONNECT = 0x5000
+_MSGID_CLIENT2LOGIN_SWITCHMODE = 0x5001
+
+_MSGID_LOGIN2CLIENT_MODEINFO = 0x6000
+
 
 class Message:
     def to_bytes(self):
         return struct.pack('<H', self.msg_id) + bytes(json.dumps(self.__dict__), encoding='utf8')
+
+    def to_string(self):
+        return json.dumps({'msg_id': self.msg_id, **self.__dict__})
 
     @classmethod
     def from_bytes(cls, data):
@@ -68,6 +76,14 @@ class Message:
 
         members = json.loads(data[2:])
         return cls(**members)
+
+    @classmethod
+    def from_dict(cls, members):
+        if members['msg_id'] != cls.msg_id:
+            raise ValueError('Cannot parse object of this type from this json')
+        del members['msg_id']
+        return cls(**members)
+
 
 
 class Login2LauncherNextMapMessage(Message):
@@ -313,6 +329,21 @@ class Launcher2GameInit(Message):
         self.controller_context = controller_context
 
 
+class Client2LoginConnect(Message):
+    msg_id = _MSGID_CLIENT2LOGIN_CONNECT
+
+
+class Client2LoginSwitchMode(Message):
+    msg_id = _MSGID_CLIENT2LOGIN_SWITCHMODE
+
+
+class Login2ClientModeInfo(Message):
+    msg_id = _MSGID_LOGIN2CLIENT_MODEINFO
+
+    def __init__(self, game_setting_mode: str):
+        self.game_setting_mode = game_setting_mode
+
+
 _message_classes = [
 
     Login2LauncherProtocolVersionMessage,
@@ -343,15 +374,30 @@ _message_classes = [
     Launcher2GameLoadoutMessage,
     Launcher2GameNextMapMessage,
     Launcher2GamePings,
-    Launcher2GameInit
+    Launcher2GameInit,
+
+    Client2LoginConnect,
+    Client2LoginSwitchMode,
+
+    Login2ClientModeInfo,
 ]
 
 _message_map = { msg_class.msg_id : msg_class for msg_class in _message_classes }
 
 
-def parse_message(message_bytes):
+def parse_message_from_bytes(message_bytes):
     msg_id = struct.unpack('<H', message_bytes[0:2])[0]
     if msg_id not in _message_map:
         raise RuntimeError('Invalid message type received: id 0x%04X was not found in _message_map' % msg_id)
     msg = _message_map[msg_id].from_bytes(message_bytes)
+    return msg
+
+
+def parse_message_from_string(message_str):
+    members = json.loads(message_str)
+    if 'msg_id' not in members:
+        raise ValueError('Failed to parse message due to missing message id')
+    if members['msg_id'] not in _message_map:
+        raise RuntimeError('Invalid message type received: id 0x%04X was not found in _message_map' % members['msg_id'])
+    msg = _message_map[members['msg_id']].from_dict(members)
     return msg
