@@ -58,7 +58,7 @@ _MSGID_LAUNCHER2GAME_INIT = 0x4003
 _MSGID_CLIENT2LOGIN_CONNECT = 0x5000
 _MSGID_CLIENT2LOGIN_SWITCHMODE = 0x5001
 
-_MSGID_LOGIN2CLIENT_MODEINFO = 0x5002
+_MSGID_LOGIN2CLIENT_MODEINFO = 0x6000
 
 
 class Message:
@@ -385,7 +385,7 @@ _message_classes = [
 _message_map = { msg_class.msg_id : msg_class for msg_class in _message_classes }
 
 
-def parse_message(message_bytes):
+def parse_message_from_bytes(message_bytes):
     msg_id = struct.unpack('<H', message_bytes[0:2])[0]
     if msg_id not in _message_map:
         raise RuntimeError('Invalid message type received: id 0x%04X was not found in _message_map' % msg_id)
@@ -393,7 +393,7 @@ def parse_message(message_bytes):
     return msg
 
 
-def parse_message_string(message_str):
+def parse_message_from_string(message_str):
     members = json.loads(message_str)
     if 'msg_id' not in members:
         raise ValueError('Failed to parse message due to missing message id')

@@ -21,7 +21,7 @@
 
 from common.datatypes import *
 from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode, \
-    Login2ClientModeInfo, parse_message_string
+    Login2ClientModeInfo, parse_message_from_string
 from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles, handles_control_message
 
@@ -192,7 +192,7 @@ class AuthenticatedState(PlayerState):
                     addressed_player.send(request)
         elif message_type == MESSAGE_CONTROL:
             try:
-                msg = parse_message_string(request.findbytype(m02e6).value)
+                msg = parse_message_from_string(request.findbytype(m02e6).value)
             except (ValueError, RuntimeError) as e:
                 self.logger.warning('Failed to parse control message: %s' % str(e))
                 return
