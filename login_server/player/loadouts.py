@@ -19,10 +19,9 @@
 #
 
 import json
-import string
 
 from common.game_items import game_classes, get_game_setting_modes
-from ..datatypes import *
+from common.datatypes import *
 
 SLOT_LOADOUT_NAME = 1341
 SLOT_PRIMARY_WEAPON = 1086

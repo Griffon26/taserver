@@ -28,6 +28,7 @@ import urllib.request
 
 
 from common.connectionhandler import Peer
+from common.datatypes import *
 from common.firewall import modify_firewall
 from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherSetPlayerLoadoutsMessage, \
@@ -36,7 +37,6 @@ from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherRemovePlayer, \
                             Login2LauncherPings
 from common.statetracer import statetracer, TracingDict
-from .datatypes import *
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .player.state.authenticated_state import AuthenticatedState
 
@@ -145,7 +145,7 @@ class GameServer(Peer):
         assert player.unique_id not in self.players
         self.players[player.unique_id] = player
         player.vote = None
-        player_ip = player.address_pair.get_preferred_destination(self.address_pair)
+        player_ip = player.address_pair.get_address_seen_from(self.address_pair)
         msg = Login2LauncherAddPlayer(player.unique_id,
                                       str(player_ip) if player_ip is not None else '')
         self.send(msg)
@@ -153,7 +153,7 @@ class GameServer(Peer):
     def remove_player(self, player):
         assert player.unique_id in self.players
         del self.players[player.unique_id]
-        player_ip = player.address_pair.get_preferred_destination(self.address_pair)
+        player_ip = player.address_pair.get_address_seen_from(self.address_pair)
         msg = Login2LauncherRemovePlayer(player.unique_id,
                                          str(player_ip) if player_ip is not None else '')
         self.send(msg)
@@ -186,12 +186,12 @@ class GameServer(Peer):
             reply = a018c()
             reply.content = [
                 m02c4().set(self.match_id),
-                m034a().set(kicker.display_name),
-                m0348().set(kicker.unique_id),
+                m034a().set(kickee.display_name),
+                m0348().set(kickee.unique_id),
                 m02fc().set(STDMSG_VOTE_BY_X_KICK_PLAYER_X_YES_NO),
                 m0442(),
-                m0704().set(kickee.unique_id),
-                m0705().set(kickee.display_name)
+                m0704().set(kicker.unique_id),
+                m0705().set(kicker.display_name)
             ]
             self.send_all_players(reply)
 
@@ -200,17 +200,22 @@ class GameServer(Peer):
 
             self.player_being_kicked = kickee
 
+            self.logger.info('server: votekick started by %d:"%s" against %d:"%s"' %
+                             (kicker.unique_id, kicker.display_name,
+                              kickee.unique_id, kickee.display_name))
+
             self.login_server.pending_callbacks.add(self, 35, self.end_votekick)
 
     def end_votekick(self):
         if self.player_being_kicked:
             eligible_voters, total_votes, yes_votes = self._tally_votes()
             vote_passed = total_votes >= 4 and yes_votes / total_votes >= 0.5
-            self.logger.info('server: votekick %s at timeout with %d/%d/%d (yes/no/abstain) with %d players' %
+            self.logger.info('server: votekick %s at timeout with %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
                   ('passed' if vote_passed else 'failed',
                    yes_votes,
                    total_votes - yes_votes,
                    eligible_voters - total_votes,
+                   eligible_voters,
                    len(self.players)))
             self._do_kick(vote_passed)
 
@@ -219,16 +224,20 @@ class GameServer(Peer):
             eligible_voters, total_votes, yes_votes = self._tally_votes()
 
             # If enough people vote yes, kick immediately. Otherwise wait for a majority at the timeout.
-            if yes_votes >= 8:
-                self.logger.info('server: votekick passed immediately %d/%d/%d (yes/no/abstain) with %d players' %
+            if yes_votes >= 8 or total_votes == eligible_voters:
+                self.logger.info('server: votekick passed immediately %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
                       (yes_votes,
                        total_votes - yes_votes,
                        eligible_voters - total_votes,
+                       eligible_voters,
                        len(self.players)))
                 self._do_kick(True)
 
     def _tally_votes(self):
-        eligible_voters_votes = {p.detected_ip: p.vote for p in self.players.values()}
+        eligible_voters_votes = {
+            p.address_pair.get_address_seen_from(self.login_server.address_pair): p.vote
+            for p in self.players.values()
+        }
         votes = {v for v in eligible_voters_votes.values() if v is not None}
         yes_votes = [v for v in votes if v]
 
@@ -265,12 +274,11 @@ class GameServer(Peer):
                 player_to_kick.send(msg)
             player_to_kick.set_state(UnauthenticatedState)
 
-            # Because this is a firewall rule on the login server, it has to be the source IP of the player's
-            # incoming connection and not always the external or always the internal address in address_pair.
-            modify_firewall('blacklist', 'add', player_to_kick.unique_id, player_to_kick.detected_ip)
+            ip_to_ban_on_login_server = player_to_kick.address_pair.get_address_seen_from(self.login_server.address_pair)
+            modify_firewall('blacklist', 'add', player_to_kick.unique_id, ip_to_ban_on_login_server)
 
             def remove_blacklist_rule():
-                modify_firewall('blacklist', 'remove', player_to_kick.unique_id, player_to_kick.detected_ip)
+                modify_firewall('blacklist', 'remove', player_to_kick.unique_id, ip_to_ban_on_login_server)
 
             self.login_server.pending_callbacks.add(self.login_server, 8 * 3600, remove_blacklist_rule)
 

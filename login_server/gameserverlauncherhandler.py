@@ -21,14 +21,14 @@
 from ipaddress import IPv4Address
 
 from common.connectionhandler import *
-from common.messages import parse_message
+from common.messages import parse_message_from_bytes
 from .gameserver import GameServer
 
 
 class GameServerLauncherReader(TcpMessageConnectionReader):
     def decode(self, msg_bytes):
         # TODO: add validation
-        return parse_message(msg_bytes)
+        return parse_message_from_bytes(msg_bytes)
 
 
 class GameServerLauncherWriter(TcpMessageConnectionWriter):

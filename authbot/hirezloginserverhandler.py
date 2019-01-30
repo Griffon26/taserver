@@ -19,43 +19,40 @@
 #
 
 from common.connectionhandler import *
-from common.messages import parse_message_from_bytes
+from common.loginprotocol import LoginProtocolReader, LoginProtocolWriter
 from ipaddress import IPv4Address
 
-
-class LoginServerReader(TcpMessageConnectionReader):
-    def decode(self, msg_bytes):
-        return parse_message_from_bytes(msg_bytes)
+LOGIN_SERVER_PORT = 9000
 
 
-class LoginServerWriter(TcpMessageConnectionWriter):
-    def encode(self, msg):
-        return msg.to_bytes()
-
-
-class LoginServer(Peer):
+class HirezLoginServer(Peer):
     def __init__(self, ip, port):
         super().__init__()
         self.ip = ip
         self.port = port
+        self.last_received_seq = None
+
+    def send(self, data):
+        super().send((data, self.last_received_seq))
 
 
-class LoginServerHandler(OutgoingConnectionHandler):
+class HirezLoginServerHandler(OutgoingConnectionHandler):
     def __init__(self, config, incoming_queue):
-        super().__init__('loginserver',
-                         socket.gethostbyname(config['host']),
-                         int(config['port']),
+        super().__init__('hirezloginserver',
+                         socket.gethostbyname(config['hirez_login_server']),
+                         LOGIN_SERVER_PORT,
                          incoming_queue)
-        self.logger.info('%s(%s): Connecting to login server at %s:%s...' %
-                         (self.task_name, id(gevent.getcurrent()), config['host'], config['port']))
+        self.logger.info('%s(%s): Connecting to HiRez login server at %s:%s...' %
+                         (self.task_name, id(gevent.getcurrent()),
+                          config['hirez_login_server'], LOGIN_SERVER_PORT))
 
     def create_connection_instances(self, sock, address):
-        reader = LoginServerReader(sock)
-        writer = LoginServerWriter(sock)
-        peer = LoginServer(IPv4Address(address[0]), int(address[1]))
+        reader = LoginProtocolReader(sock, None)
+        writer = LoginProtocolWriter(sock, None)
+        peer = HirezLoginServer(IPv4Address(address[0]), int(address[1]))
         return reader, writer, peer
 
 
-def handle_login_server(login_server_config, incoming_queue):
-    login_server_handler = LoginServerHandler(login_server_config, incoming_queue)
-    login_server_handler.run(retry_time=10)
+def handle_hirez_login_server(hirez_login_server_config, incoming_queue):
+    hirez_login_server_handler = HirezLoginServerHandler(hirez_login_server_config, incoming_queue)
+    hirez_login_server_handler.run(retry_time=10)

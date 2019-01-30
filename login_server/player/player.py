@@ -23,12 +23,12 @@ from ipaddress import IPv4Address
 from .friends import Friends
 from .loadouts import Loadouts
 from .settings import PlayerSettings
-from ..utils import IPAddressPair
 from common.connectionhandler import Peer
+from common.ipaddresspair import IPAddressPair
 from common.statetracer import statetracer, RefOnly
 
 
-@statetracer('unique_id', 'login_name', 'display_name', 'tag', 'detected_ip', 'port', 'registered',
+@statetracer('unique_id', 'login_name', 'display_name', 'tag', 'address_pair', 'port', 'registered',
              RefOnly('game_server'), 'vote', 'team')
 class Player(Peer):
 
@@ -46,12 +46,12 @@ class Player(Peer):
         self.display_name = None
         self.password_hash = None
         self.tag = ''
-        self.detected_ip = IPv4Address(address[0])
         self.port = address[1]
         self.registered = False
         self.last_received_seq = 0
         self.vote = None
         self.state = None
+        self.is_modded = False
         self.login_server = None
         self.game_server = None
         self.loadouts = Loadouts()
@@ -60,11 +60,19 @@ class Player(Peer):
         self.team = None
         self.pings = {}
 
-        if self.detected_ip.is_global:
-            self.address_pair = IPAddressPair(self.detected_ip, None)
+        detected_ip = IPv4Address(address[0])
+        if detected_ip.is_global:
+            self.address_pair = IPAddressPair(detected_ip, None)
         else:
-            assert self.detected_ip.is_private
-            self.address_pair = IPAddressPair(None, self.detected_ip)
+            assert detected_ip.is_private
+            self.address_pair = IPAddressPair(None, detected_ip)
+
+    def complement_address_pair(self, login_server_address_pair):
+        # Take over login server external address in case login server and player
+        # are on the same LAN
+        if not self.address_pair.external_ip and login_server_address_pair.external_ip:
+            assert(self.address_pair.internal_ip)
+            self.address_pair.external_ip = login_server_address_pair.external_ip
 
     def set_state(self, state_class, *args, **kwargs):
         assert self.unique_id is not None

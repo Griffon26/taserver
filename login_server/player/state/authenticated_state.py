@@ -19,9 +19,11 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from ...datatypes import *
+from common.datatypes import *
+from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode, \
+    Login2ClientModeInfo, parse_message_from_string
 from ..friends import FRIEND_STATE_VISIBLE
-from .player_state import PlayerState, handles
+from .player_state import PlayerState, handles, handles_control_message
 from common.game_items import get_game_setting_modes
 
 
@@ -47,7 +49,6 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a0014)
     def handle_a0014(self, request):
-        # self.player.send(originalfragment(0x20A18, 0x20B3F))  # 0014 (class list)
         self.player.send(a0014().setclasses(self.class_menu_data().classes.values()))
 
     @handles(packet=a018b)
@@ -56,7 +57,7 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a01b5)
     def handle_a01b5(self, request):
-        self.player.send(originalfragment(0x20B53, 0x218F7))  # 01b5 (watch now)
+        self.player.send(a01b5().add_watch_now_menu())
 
     @handles(packet=a0176)
     def handle_a0176(self, request):
@@ -199,7 +200,14 @@ class AuthenticatedState(PlayerState):
 
                 if self.player.unique_id != addressed_player.unique_id:
                     addressed_player.send(request)
-
+        elif message_type == MESSAGE_CONTROL:
+            try:
+                msg = parse_message_from_string(request.findbytype(m02e6).value)
+            except (ValueError, RuntimeError) as e:
+                self.logger.warning('Failed to parse control message: %s' % str(e))
+                return
+            # Handle the control message
+            self.handle_control_message(msg)
         else:  # MESSAGE_PUBLIC
             request.content.append(m02fe().set(self.player.display_name))
             request.content.append(m06de().set(self.player.tag))
@@ -233,6 +241,17 @@ class AuthenticatedState(PlayerState):
         msg = a0070().set([
             m009e().set(MESSAGE_PRIVATE),
             m02e6().set(text),
+            m034a().set(player.display_name),
+            m0574(),
+            m02fe().set('taserver'),
+            m06de().set('bot')
+        ])
+        player.send(msg)
+
+    def _send_control_message(self, player, message: Message):
+        msg = a0070().set([
+            m009e().set(MESSAGE_CONTROL),
+            m02e6().set(message.to_string()),
             m034a().set(player.display_name),
             m0574(),
             m02fe().set('taserver'),
@@ -357,3 +376,16 @@ class AuthenticatedState(PlayerState):
             ])
 
             self.player.send(reply)
+
+    @handles_control_message(messageType=Client2LoginConnect)
+    def handle_client2login_connect(self, message: Client2LoginConnect):
+        # The player is now known to be modded
+        self.player.is_modded = True
+        # Give the player their current mode
+        resp = Login2ClientModeInfo('ootb')
+        self._send_control_message(self.player, resp)
+
+    @handles_control_message(messageType=Client2LoginSwitchMode)
+    def handle_client2login_switchmode(self, message: Client2LoginSwitchMode):
+        resp = Login2ClientModeInfo('ootb')
+        self._send_control_message(self.player, resp)

@@ -19,7 +19,7 @@
 #
 
 from common.connectionhandler import *
-from .datatypes import AuthCodeRequestMessage
+from common.datatypes import AuthCodeRequestMessage
 
 
 class AuthCodeReader(TcpMessageConnectionReader):

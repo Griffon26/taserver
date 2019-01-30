@@ -20,13 +20,13 @@
 
 from distutils.version import StrictVersion
 import gevent
-from ipaddress import IPv4Address
 import logging
 from gevent import socket
 import urllib.request as urlreq
 
 from common.errors import FatalError
 from common.firewall import reset_firewall, modify_firewall
+from common.ipaddresspair import IPAddressPair
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.statetracer import statetracer, TracingDict
@@ -45,25 +45,12 @@ def get_other_port(port):
     assert(False)
 
 
-def _get_local_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
-        ip = s.getsockname()[0]
-    except:
-        ip = '127.0.0.1'
-    finally:
-        s.close()
-    return IPv4Address(ip)
-
-
 class IncompatibleVersionError(FatalError):
     def __init__(self, message):
         super().__init__('A version incompatibility was found: %s' % message)
 
 
-@statetracer('players')
+@statetracer('address_pair', 'players')
 class Launcher:
     def __init__(self, game_server_config, incoming_queue, server_handler_queue):
         gevent.getcurrent().name = 'launcher'
@@ -88,27 +75,22 @@ class Launcher:
         self.last_server_ready_message = None
         self.last_match_end_message = None
 
-        try:
-            self.external_ip = IPv4Address(urlreq.urlopen('http://ipv4.icanhazip.com/').read().decode('utf8').strip())
-            self.logger.info('launcher: detected external IP: %s' % self.external_ip)
-        except Exception as e:
-            self.external_ip = None
+        self.address_pair, errormsg = IPAddressPair.detect()
+
+        if not self.address_pair.external_ip:
             self.logger.warning('Unable to detect public IP address: %s\n'
                                 'This will cause problems if the login server '
-                                'or any of your players are not on your LAN.' % e)
-        if self.external_ip:
-            assert self.external_ip.is_global
+                                'or any of your players are not on your LAN.' % errormsg)
+        else:
+            self.logger.info('launcher: detected external IP: %s' % self.address_pair.external_ip)
 
-        self.internal_ip = _get_local_ip()
-        if self.internal_ip == self.external_ip:
-            self.internal_ip = None
+        if not self.address_pair.internal_ip:
             self.logger.warning('You appear to be running the game server on a machine '
                                 'directly connected to the internet. This is will cause '
                                 'problems if the login server or any of your players '
                                 'are on your LAN.')
         else:
-            assert self.internal_ip.is_private
-            self.logger.info('launcher: detected internal IP: %s' % self.internal_ip)
+            self.logger.info('launcher: detected internal IP: %s' % self.address_pair.internal_ip)
 
         self.message_handlers = {
             PeerConnectedMessage: self.handle_peer_connected,
@@ -151,10 +133,9 @@ class Launcher:
             msg = Launcher2LoginProtocolVersionMessage(str(versions.launcher2loginserver_protocol_version))
             self.login_server.send(msg)
 
-            msg = Launcher2LoginServerInfoMessage(str(self.external_ip) if self.external_ip else '',
-                                                  str(self.internal_ip) if self.internal_ip else '',
+            msg = Launcher2LoginServerInfoMessage(str(self.address_pair.external_ip) if self.address_pair.external_ip else '',
+                                                  str(self.address_pair.internal_ip) if self.address_pair.internal_ip else '',
                                                   self.game_server_config['game_setting_mode'],
-                                                  self.game_server_config['description'],
                                                   self.game_server_config['motd'])
             self.login_server.send(msg)
 
@@ -357,5 +338,5 @@ class Launcher:
 
 def handle_launcher(game_server_config, incoming_queue, server_handler_queue):
     launcher = Launcher(game_server_config, incoming_queue, server_handler_queue)
-    #launcher.trace_as('launcher')
+    # launcher.trace_as('launcher')
     launcher.run()

@@ -76,7 +76,7 @@ def modify_firewall(list_type, action, player_id, ip):
         'list' : list_type,
         'action' : action,
         'player_id' : player_id,
-        'ip' : ip
+        'ip' : str(ip)
     }
     _send_command(command)
 
