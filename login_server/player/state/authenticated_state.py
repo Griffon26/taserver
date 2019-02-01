@@ -415,6 +415,3 @@ class AuthenticatedState(PlayerState):
         self.player.loadouts.modify_by_class_details(self.player.player_settings.game_setting_mode,
                                                      message.game_class, message.loadout_num,
                                                      message.loadout_slot, message.equipment_item)
-        print('Received loadout change message (%d, %d, %d, %d) for player %d'
-              % (message.game_class, message.loadout_num,
-                 message.loadout_slot, message.equipment_item, self.player.login_name))

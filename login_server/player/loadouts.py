@@ -116,10 +116,8 @@ class Loadouts:
     def fill_in_defaults(self, existing_loadouts):
         result = dict()
         for game_setting_mode in get_game_setting_modes():
-            print('Setting up loadouts for... %s' % game_setting_mode)
             if len(existing_loadouts.get(game_setting_mode, dict())) == 0:
                 # No existing loadouts for this game setting mode, set defaults
-                print('No loadouts found for %s' % game_setting_mode)
                 default_loadouts_file = 'data/defaults/default_loadouts_%s.json' % game_setting_mode
                 result[game_setting_mode] = self._load_loadout_data(default_loadouts_file)
             else:
