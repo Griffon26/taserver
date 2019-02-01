@@ -21,10 +21,10 @@
 
 from common.datatypes import *
 from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode, \
-    Login2ClientModeInfo, parse_message_from_string
+    Login2ClientModeInfo, Login2ClientMenuData, Client2LoginLoadoutChange, parse_message_from_string
 from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles, handles_control_message
-from common.game_items import get_game_setting_modes
+from common.game_items import get_game_setting_modes, get_stripped_class_menu_data
 
 
 class AuthenticatedState(PlayerState):
@@ -263,24 +263,7 @@ class AuthenticatedState(PlayerState):
     def handle_promotion_code_redemption(self, request):
         promotion_code = request.findbytype(m0669)
         if promotion_code:
-            if promotion_code.value.startswith('!'):
-                self._handle_promotion_code_message(promotion_code.value)
-            else:
-                self._handle_verification_code(promotion_code.value)
-
-    def _handle_promotion_code_message(self, msg):
-        if msg == '!game_mode_switch':
-            modes = list(get_game_setting_modes())
-            next_mode = modes[(modes.index(self.player.player_settings.game_setting_mode) + 1) % len(modes)]
-            self.logger.info('Switching player %s to game setting mode %s' % (self.player.login_name, next_mode))
-            self.player.player_settings.game_setting_mode = next_mode
-            self._send_private_msg_from_server(self.player, 'You are now in %s mode'
-                                               % self.player.player_settings.game_setting_mode)
-        else:
-            invalid_code_msg = a0175()
-            invalid_code_msg.findbytype(m02fc).set(STDMSG_NOT_A_VALID_PROMOTION_CODE)  # message type
-            invalid_code_msg.findbytype(m0669).set(msg)
-            self.player.send(invalid_code_msg)
+            self._handle_verification_code(promotion_code.value)
 
     def _handle_verification_code(self, authcode):
         if (self.player.login_name in self.player.login_server.accounts and
@@ -382,10 +365,39 @@ class AuthenticatedState(PlayerState):
         # The player is now known to be modded
         self.player.is_modded = True
         # Give the player their current mode
-        resp = Login2ClientModeInfo('ootb')
-        self._send_control_message(self.player, resp)
+        mode_info = Login2ClientModeInfo(self.player.player_settings.game_setting_mode)
+        self._send_control_message(self.player, mode_info)
+        # Give the player the appropriate class menu data
+        for data_point in get_stripped_class_menu_data(self.player.player_settings.game_setting_mode):
+            menu_data = Login2ClientMenuData(data_point)
+            self._send_control_message(self.player, menu_data)
+
+        # TODO: Send loadout data
 
     @handles_control_message(messageType=Client2LoginSwitchMode)
     def handle_client2login_switchmode(self, message: Client2LoginSwitchMode):
-        resp = Login2ClientModeInfo('ootb')
-        self._send_control_message(self.player, resp)
+        modes = list(get_game_setting_modes())
+        next_mode = modes[(modes.index(self.player.player_settings.game_setting_mode) + 1) % len(modes)]
+        self.logger.info('Switching player %s to game setting mode %s' % (self.player.login_name, next_mode))
+        self.player.player_settings.game_setting_mode = next_mode
+
+        # Send the player a message confirming their mode
+        self._send_private_msg_from_server(self.player, 'You are now in %s mode'
+                                           % self.player.player_settings.game_setting_mode)
+
+        # Send the control message indicating the switch
+        mode_info = Login2ClientModeInfo(self.player.player_settings.game_setting_mode)
+        self._send_control_message(self.player, mode_info)
+
+        # Give the player the appropriate class menu data
+        for data_point in get_stripped_class_menu_data(self.player.player_settings.game_setting_mode):
+            menu_data = Login2ClientMenuData(data_point)
+            self._send_control_message(self.player, menu_data)
+
+        # TODO: Send loadout data
+
+    @handles_control_message(messageType=Client2LoginLoadoutChange)
+    def handle_client2login_loadoutchange(self, message: Client2LoginLoadoutChange):
+        print('Received loadout change message (%d, %d, %d, %d) for player %d'
+              % (message.game_class, message.loadout_num,
+                 message.loadout_slot, message.equipment_item, self.player.login_name))
