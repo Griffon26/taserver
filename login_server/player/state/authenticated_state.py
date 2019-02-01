@@ -21,7 +21,8 @@
 
 from common.datatypes import *
 from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode, \
-    Login2ClientModeInfo, Login2ClientMenuData, Client2LoginLoadoutChange, parse_message_from_string
+    Login2ClientModeInfo, Login2ClientMenuData, Login2ClientLoadouts, Client2LoginLoadoutChange, \
+    parse_message_from_string
 from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles, handles_control_message
 from common.game_items import get_game_setting_modes, get_stripped_class_menu_data
@@ -43,8 +44,8 @@ class AuthenticatedState(PlayerState):
             self.player.send(originalfragment(0x1EEB3, 0x20A10))  # 00d5 (map list)
         else:
             self.player.send(a00d5().setservers(self.player.login_server
-                                                    .all_game_servers()
-                                                    .values(),
+                                                .all_game_servers()
+                                                .values(),
                                                 self.player.address_pair))  # 00d5 (server list)
 
     @handles(packet=a0014)
@@ -108,7 +109,8 @@ class AuthenticatedState(PlayerState):
             0x0200: originalfragment(0x239e5, 0x23acf),  # Name change
             0x0206: originalfragment(0x2620e, 0x28ac1),
             0x0214: originalfragment(0x23ad7, 0x26206),  # Purchaseable loadouts
-            0x0218: originalfragment(0x28ac9, 0x2f4d7),  # Weapon name <-> ID mapping - Probably only need to construct this at some point if we wanted to add entirely new weapons
+            0x0218: originalfragment(0x28ac9, 0x2f4d7),
+        # Weapon name <-> ID mapping - Probably only need to construct this at some point if we wanted to add entirely new weapons
             0x021b: originalfragment(0x3d106, 0x47586),
             0x021c: originalfragment(0x6fdeb, 0x6fecf),
             0x0220: a0177().setdata(0x0220, {item
@@ -143,11 +145,11 @@ class AuthenticatedState(PlayerState):
                 self.player.send(b0msg)
 
                 self.player.send(a0070().set([
-                     m0348().set(self.player.unique_id),
-                     m0095(),
-                     m009e().set(MESSAGE_UNKNOWNTYPE),
-                     m009d().set(self.player.unique_id),
-                     m02fc().set(STDMSG_JOINED_A_MATCH_QUEUE)
+                    m0348().set(self.player.unique_id),
+                    m0095(),
+                    m009e().set(MESSAGE_UNKNOWNTYPE),
+                    m009d().set(self.player.unique_id),
+                    m02fc().set(STDMSG_JOINED_A_MATCH_QUEUE)
                 ]))
 
                 b0msg = a00b0().setlength(10).set_server(game_server).set_player(self.player.unique_id)
@@ -303,7 +305,8 @@ class AuthenticatedState(PlayerState):
                         pass
                     else:
                         value = int_field.value if int_field else string_field.value
-                        self.logger.debug('******* Setting %08X of menu area %s to value %s' % (setting, menu_area_field.value, value))
+                        self.logger.debug('******* Setting %08X of menu area %s to value %s' % (
+                        setting, menu_area_field.value, value))
                 else:
                     value = int_field.value if int_field else string_field.value
                     self.logger.debug('******* Setting %08X to value %s' % (setting, value))
@@ -316,7 +319,7 @@ class AuthenticatedState(PlayerState):
         server_id = request.findbytype(m02c7).value
         game_server = self.player.login_server.find_server_by_id(server_id)
         if game_server.joinable:
-            players = self.player.login_server.find_players_by(game_server = game_server)
+            players = self.player.login_server.find_players_by(game_server=game_server)
             reply = a01c6()
             reply.content = [
                 m02c7().set(server_id),
@@ -337,7 +340,7 @@ class AuthenticatedState(PlayerState):
                 if other_player and other_player.registered:
                     self.player.friends.add(other_player.unique_id, name)
 
-            else: # remove
+            else:  # remove
                 unique_id = request.findbytype(m020d).value
                 self.player.friends.remove(unique_id)
 
@@ -346,7 +349,6 @@ class AuthenticatedState(PlayerState):
         assert request.content == []
 
         if self.player.registered:
-
             reply = a011c().set([
                 m0348().set(self.player.unique_id),
                 m0116().set([[
@@ -372,13 +374,15 @@ class AuthenticatedState(PlayerState):
             menu_data = Login2ClientMenuData(data_point)
             self._send_control_message(self.player, menu_data)
 
-        # TODO: Send loadout data
+        for loadout_point in self.player.loadouts.strip_loadouts_for_modded_menus(self.player.player_settings
+                                                                                          .game_setting_mode):
+            loadout_data = Login2ClientLoadouts(loadout_point)
+            self._send_control_message(self.player, loadout_data)
 
     @handles_control_message(messageType=Client2LoginSwitchMode)
     def handle_client2login_switchmode(self, message: Client2LoginSwitchMode):
         modes = list(get_game_setting_modes())
         next_mode = modes[(modes.index(self.player.player_settings.game_setting_mode) + 1) % len(modes)]
-        self.logger.info('Switching player %s to game setting mode %s' % (self.player.login_name, next_mode))
         self.player.player_settings.game_setting_mode = next_mode
 
         # Send the player a message confirming their mode
@@ -394,10 +398,17 @@ class AuthenticatedState(PlayerState):
             menu_data = Login2ClientMenuData(data_point)
             self._send_control_message(self.player, menu_data)
 
-        # TODO: Send loadout data
+        for loadout_point in self.player.loadouts.strip_loadouts_for_modded_menus(self.player.player_settings
+                                                                                      .game_setting_mode):
+            loadout_data = Login2ClientLoadouts(loadout_point)
+            self._send_control_message(self.player, loadout_data)
 
     @handles_control_message(messageType=Client2LoginLoadoutChange)
     def handle_client2login_loadoutchange(self, message: Client2LoginLoadoutChange):
+        # Modify the player's loadout
+        self.player.loadouts.modify_by_class_details(self.player.player_settings.game_setting_mode,
+                                                     message.game_class, message.loadout_num,
+                                                     message.loadout_slot, message.equipment_item)
         print('Received loadout change message (%d, %d, %d, %d) for player %d'
               % (message.game_class, message.loadout_num,
                  message.loadout_slot, message.equipment_item, self.player.login_name))

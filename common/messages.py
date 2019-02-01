@@ -368,8 +368,8 @@ class Login2ClientMenuData(Message):
 class Login2ClientLoadouts(Message):
     msg_id = _MSGID_LOGIN2CLIENT_LOADOUTS
 
-    def __init__(self, loadout_data):
-        self.loadout_data = loadout_data
+    def __init__(self, loadout_item):
+        self.loadout_item = loadout_item
 
 
 _message_classes = [

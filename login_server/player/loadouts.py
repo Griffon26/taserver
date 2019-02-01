@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from typing import List, Dict
 import json
 
 from common.game_items import game_classes, get_game_setting_modes
@@ -132,6 +133,22 @@ class Loadouts:
         class_id, loadout_index = self.loadout_id2key[loadout_id]
         d = self.loadout_dict[game_setting_mode]
         d[class_id][loadout_index][slot] = equipment
+
+    def modify_by_class_details(self, game_setting_mode: str, class_id: int,
+                                loadout_num: int, slot: int, equipment: int):
+        loadout_id = self.loadout_key2id[(class_id, loadout_num)]
+        self.modify(game_setting_mode, loadout_id, slot, equipment)
+
+    def strip_loadouts_for_modded_menus(self, game_setting_mode: str) -> List[Dict]:
+        result = list()
+
+        for class_id, class_defs in self.loadout_dict[game_setting_mode].items():
+            for loadout_index, loadout_def in class_defs.items():
+                result.extend({'class': class_id, 'num': loadout_index, 'eqp': slot, 'item': item}
+                              for slot, item
+                              in loadout_def.items())
+
+        return result
 
     def _load_loadout_data(self, filename):
         def json_keys_to_int(x):
