@@ -31,8 +31,7 @@ Getting registered for the login server run by Griffon26 is an automated process
 
 2. Send a private chat message to `taserverbot` with only the word authcode in it:
 
-
-    Say> @taserverbot authcode
+    `Say> @taserverbot authcode`
 
 3. Now log in to Griffon26's login server with the same name you have on the Hirez
    server and a password of your choosing.
