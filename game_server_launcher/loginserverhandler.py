@@ -19,13 +19,13 @@
 #
 
 from common.connectionhandler import *
-from common.messages import parse_message
+from common.messages import parse_message_from_bytes
 from ipaddress import IPv4Address
 
 
 class LoginServerReader(TcpMessageConnectionReader):
     def decode(self, msg_bytes):
-        return parse_message(msg_bytes)
+        return parse_message_from_bytes(msg_bytes)
 
 
 class LoginServerWriter(TcpMessageConnectionWriter):

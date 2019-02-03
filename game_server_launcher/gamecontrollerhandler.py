@@ -18,13 +18,13 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from common.messages import parse_message
+from common.messages import parse_message_from_bytes
 from common.connectionhandler import *
 
 
 class GameControllerReader(TcpMessageConnectionReader):
     def decode(self, msg_bytes):
-        return parse_message(msg_bytes)
+        return parse_message_from_bytes(msg_bytes)
 
 
 class GameControllerWriter(TcpMessageConnectionWriter):
