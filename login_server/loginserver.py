@@ -170,7 +170,7 @@ class LoginServer:
             game_server = msg.peer
             game_server.server_id = server_id
             game_server.match_id = server_id + 10000000
-            game_server.game_setting_mode = 'ootb'
+            game_server.game_setting_mode = None
             game_server.login_server = self
 
             self.game_servers[server_id] = game_server
