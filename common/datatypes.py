@@ -2794,16 +2794,16 @@ class a003d(enumblockarray):
 
         return self
 
-    def set_player(self, unique_id, name, tag, loadouts, game_setting_mode: str):
-        self.findbytype(m0348).set(unique_id)
-        self.findbytype(m034a).set(name)
-        self.findbytype(m06de).set(tag)
+    def set_player(self, player):
+        self.findbytype(m0348).set(player.unique_id)
+        self.findbytype(m034a).set(player.display_name)
+        self.findbytype(m06de).set(player.tag)
 
         loadout_arrays = []
         loadout_overall_idx = 0
-        for class_id, class_loadout in loadouts.get_loadouts(game_setting_mode).items():
+        for class_id, class_loadout in player.get_loadouts().items():
             for loadout_index, loadout in class_loadout.items():
-                loadout_id = loadouts.loadout_key2id[(class_id, loadout_index)]
+                loadout_id = player.loadouts.loadout_key2id[(class_id, loadout_index)]
 
                 entry_array = []
                 for slot, equipment in loadout.items():

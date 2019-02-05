@@ -85,6 +85,12 @@ class Player(Peer):
             self.state = state_class(self, *args, **kwargs)
             self.state.on_enter()
 
+    def get_loadouts(self):
+        return self.loadouts.get_loadouts(self.player_settings.game_setting_mode)
+
+    def get_loadout_modded_defs(self):
+        return self.loadouts.get_loadout_modded_defs(self.player_settings.game_setting_mode)
+
     def load(self):
         if self.registered:
             self.loadouts.load(self.loadout_file_path % self.login_name)

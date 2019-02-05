@@ -19,13 +19,15 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import datetime
+
 from common.datatypes import *
 from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode, \
     Login2ClientModeInfo, Login2ClientMenuData, Login2ClientLoadouts, Client2LoginLoadoutChange, \
     parse_message_from_string
 from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles, handles_control_message
-from common.game_items import get_game_setting_modes, get_stripped_class_menu_data
+from common.game_items import get_game_setting_modes, get_class_menu_data_modded_defs
 
 
 class AuthenticatedState(PlayerState):
@@ -110,7 +112,7 @@ class AuthenticatedState(PlayerState):
             0x0206: originalfragment(0x2620e, 0x28ac1),
             0x0214: originalfragment(0x23ad7, 0x26206),  # Purchaseable loadouts
             0x0218: originalfragment(0x28ac9, 0x2f4d7),
-        # Weapon name <-> ID mapping - Probably only need to construct this at some point if we wanted to add entirely new weapons
+            # Weapon name <-> ID mapping - Probably only need to construct this at some point if we wanted to add entirely new weapons
             0x021b: originalfragment(0x3d106, 0x47586),
             0x021c: originalfragment(0x6fdeb, 0x6fecf),
             0x0220: a0177().setdata(0x0220, {item
@@ -132,17 +134,17 @@ class AuthenticatedState(PlayerState):
         else:
             game_server = self.player.login_server.find_server_by_id(server_field.value)
 
+            # Disallow joining a non-ootb server if the player is not known to be modded
+            if game_server.game_setting_mode != 'ootb' and not self.player.is_modded:
+                self._send_private_msg_from_server(self.player, 'You cannot join a %s server without TAMods' %
+                                                   self.player.player_settings.game_setting_mode)
+                return
+
             if game_server.game_setting_mode != self.player.player_settings.game_setting_mode:
                 # Cannot join a goty server in ootb mode or vice versa
                 self._send_private_msg_from_server(self.player, 'You are in %s mode; you cannot join a %s mode server' %
                                                    (self.player.player_settings.game_setting_mode,
                                                     game_server.game_setting_mode))
-                return
-
-            # Also disallow joining a non-ootb server if the player is not known to be modded
-            if game_server.game_setting_mode != 'ootb' and not self.player.is_modded:
-                self._send_private_msg_from_server(self.player, 'You cannot join a %s server without TAMods' %
-                                                   self.player.player_settings.game_setting_mode)
                 return
 
             if game_server.joinable:
@@ -311,8 +313,8 @@ class AuthenticatedState(PlayerState):
                         pass
                     else:
                         value = int_field.value if int_field else string_field.value
-                        self.logger.debug('******* Setting %08X of menu area %s to value %s' % (
-                        setting, menu_area_field.value, value))
+                        self.logger.debug('******* Setting %08X of menu area %s to value %s'
+                                          % (setting, menu_area_field.value, value))
                 else:
                     value = int_field.value if int_field else string_field.value
                     self.logger.debug('******* Setting %08X to value %s' % (setting, value))
@@ -368,22 +370,26 @@ class AuthenticatedState(PlayerState):
 
             self.player.send(reply)
 
+    def _send_game_mode_data(self):
+        # Send the control message indicating the switch
+        mode_info = Login2ClientModeInfo(self.player.player_settings.game_setting_mode)
+        self._send_control_message(self.player, mode_info)
+
+        # Give the player the appropriate class menu data1
+        menu_data_datetime = datetime.datetime.utcnow()
+        for data_point in get_class_menu_data_modded_defs(self.player.player_settings.game_setting_mode):
+            menu_data = Login2ClientMenuData(data_point, menu_data_datetime)
+            self._send_control_message(self.player, menu_data)
+
+        for loadout_point in self.player.get_loadout_modded_defs():
+            loadout_data = Login2ClientLoadouts(loadout_point)
+            self._send_control_message(self.player, loadout_data)
+
     @handles_control_message(messageType=Client2LoginConnect)
     def handle_client2login_connect(self, message: Client2LoginConnect):
         # The player is now known to be modded
         self.player.is_modded = True
-        # Give the player their current mode
-        mode_info = Login2ClientModeInfo(self.player.player_settings.game_setting_mode)
-        self._send_control_message(self.player, mode_info)
-        # Give the player the appropriate class menu data
-        for data_point in get_stripped_class_menu_data(self.player.player_settings.game_setting_mode):
-            menu_data = Login2ClientMenuData(data_point)
-            self._send_control_message(self.player, menu_data)
-
-        for loadout_point in self.player.loadouts.strip_loadouts_for_modded_menus(self.player.player_settings
-                                                                                          .game_setting_mode):
-            loadout_data = Login2ClientLoadouts(loadout_point)
-            self._send_control_message(self.player, loadout_data)
+        self._send_game_mode_data()
 
     @handles_control_message(messageType=Client2LoginSwitchMode)
     def handle_client2login_switchmode(self, message: Client2LoginSwitchMode):
@@ -394,20 +400,7 @@ class AuthenticatedState(PlayerState):
         # Send the player a message confirming their mode
         self._send_private_msg_from_server(self.player, 'You are now in %s mode'
                                            % self.player.player_settings.game_setting_mode)
-
-        # Send the control message indicating the switch
-        mode_info = Login2ClientModeInfo(self.player.player_settings.game_setting_mode)
-        self._send_control_message(self.player, mode_info)
-
-        # Give the player the appropriate class menu data
-        for data_point in get_stripped_class_menu_data(self.player.player_settings.game_setting_mode):
-            menu_data = Login2ClientMenuData(data_point)
-            self._send_control_message(self.player, menu_data)
-
-        for loadout_point in self.player.loadouts.strip_loadouts_for_modded_menus(self.player.player_settings
-                                                                                      .game_setting_mode):
-            loadout_data = Login2ClientLoadouts(loadout_point)
-            self._send_control_message(self.player, loadout_data)
+        self._send_game_mode_data()
 
     @handles_control_message(messageType=Client2LoginLoadoutChange)
     def handle_client2login_loadoutchange(self, message: Client2LoginLoadoutChange):

@@ -20,6 +20,7 @@
 
 import json
 import struct
+import datetime
 from typing import Optional
 
 # These IDs should only be extended, not changed, to allow for some
@@ -361,8 +362,9 @@ class Login2ClientModeInfo(Message):
 class Login2ClientMenuData(Message):
     msg_id = _MSGID_LOGIN2CLIENT_MENUDATA
 
-    def __init__(self, menu_item):
+    def __init__(self, menu_item, timestamp_value: datetime.datetime):
         self.menu_item = menu_item
+        self.timestamp = timestamp_value.isoformat()
 
 
 class Login2ClientLoadouts(Message):

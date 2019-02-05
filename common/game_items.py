@@ -953,7 +953,7 @@ def merge_goty_classes_for_non_modded_menus(goty_defs: Dict) -> Dict:
     return result
 
 
-def strip_classes_for_modded_menus(class_defs: Dict) -> List[Dict]:
+def generate_class_menu_data_modded_defs(class_defs: Dict) -> List[Dict]:
     result = list()
     for kind in ['perkA', 'perkB', 'voices']:
         result.extend(({'id': item, 'kind': kind} for item in class_defs[kind].values()))
@@ -994,9 +994,9 @@ _built_class_menu_data = OrderedDict({
                                   _items_to_remove, _items_to_lock)
 })
 
-_stripped_class_menu_data = OrderedDict({
-    'ootb': strip_classes_for_modded_menus(_hierarchical_definitions_ootb),
-    'goty': strip_classes_for_modded_menus(_hierarchical_definitions_goty)
+_class_menu_data_modded_defs = OrderedDict({
+    'ootb': generate_class_menu_data_modded_defs(_hierarchical_definitions_ootb),
+    'goty': generate_class_menu_data_modded_defs(_hierarchical_definitions_goty)
 })
 
 
@@ -1009,5 +1009,5 @@ def get_class_menu_data(game_setting_mode: str) -> Unlockables:
     return _built_class_menu_data[game_setting_mode]
 
 
-def get_stripped_class_menu_data(game_setting_mode: str) -> List[Dict]:
-    return _stripped_class_menu_data[game_setting_mode]
+def get_class_menu_data_modded_defs(game_setting_mode: str) -> List[Dict]:
+    return _class_menu_data_modded_defs[game_setting_mode]

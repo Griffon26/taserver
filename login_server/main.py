@@ -77,8 +77,6 @@ def main():
     accounts = Accounts('data/accountdatabase.json')
     configuration = Configuration()
 
-    # use_goty_mode: bool = configuration.config['loginserver'].getboolean('useGOTYMode')
-
     tasks = [
         gevent.spawn(handle_server, server_queue, client_queues, accounts, configuration),
         gevent.spawn(handle_authcodes, server_queue),

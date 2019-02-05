@@ -137,7 +137,7 @@ class Loadouts:
         loadout_id = self.loadout_key2id[(class_id, loadout_num)]
         self.modify(game_setting_mode, loadout_id, slot, equipment)
 
-    def strip_loadouts_for_modded_menus(self, game_setting_mode: str) -> List[Dict]:
+    def get_loadout_modded_defs(self, game_setting_mode: str) -> List[Dict]:
         result = list()
 
         for class_id, class_defs in self.loadout_dict[game_setting_mode].items():
