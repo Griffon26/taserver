@@ -345,11 +345,11 @@ class Client2LoginSwitchMode(Message):
 class Client2LoginLoadoutChange(Message):
     msg_id = _MSGID_CLIENT2LOGIN_LOADOUTCHANGE
 
-    def __init__(self, game_class, loadout_num, loadout_slot, equipment_item):
+    def __init__(self, game_class, loadout_index, loadout_slot, value):
         self.game_class = game_class
-        self.loadout_num = loadout_num
+        self.loadout_index = loadout_index
         self.loadout_slot = loadout_slot
-        self.equipment_item = equipment_item
+        self.value = value
 
 
 class Login2ClientModeInfo(Message):

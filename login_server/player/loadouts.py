@@ -133,9 +133,9 @@ class Loadouts:
         d[class_id][loadout_index][slot] = equipment
 
     def modify_by_class_details(self, game_setting_mode: str, class_id: int,
-                                loadout_num: int, slot: int, equipment: int):
-        loadout_id = self.loadout_key2id[(class_id, loadout_num)]
-        self.modify(game_setting_mode, loadout_id, slot, equipment)
+                                loadout_index: int, slot: int, equipment: int):
+        d = self.loadout_dict[game_setting_mode]
+        d[class_id][loadout_index][slot] = equipment
 
     def get_loadout_modded_defs(self, game_setting_mode: str) -> List[Dict]:
         result = list()
