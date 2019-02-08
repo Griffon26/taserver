@@ -386,8 +386,8 @@ _hierarchical_definitions_ootb = {
                 'Skin SEN': 8327,
                 'Skin PTH Mercenary': 8326,
                 'Skin INF Mercenary': 8336,
-                'Skin SEN Mercenary': 8337,
-                'Skin INF Assassin': 8665,
+                'Skin INF Assassin': 8337,
+                'Skin SEN Mercenary': 8665,
             }
         },
         'medium': {
@@ -963,7 +963,7 @@ def generate_class_menu_data_modded_defs(class_defs: Dict) -> List[Dict]:
             result.extend(({
                 'id': item,
                 'kind': 'weapon',
-                'cat':  weapon_category_name,
+                'cat': weapon_category_name,
                 'class': game_class_name
             } for item in weapon_category_defs.values()))
         for kind in ['belt', 'packs', 'skins']:
@@ -986,16 +986,19 @@ _items_to_remove: Set[str] = set()
 # Definition of items that should appear in the menu, but should be by default locked
 _items_to_lock: Set[str] = set()
 
+# The game setting mode that should be used for all non-modded clients
+UNMODDED_GAME_SETTING_MODE = 'ootb'
+
 _built_class_menu_data = OrderedDict({
-    'ootb': build_class_menu_data(game_classes, _weapon_categories_ootb,
-                                  _hierarchical_definitions_ootb, _items_to_remove, _items_to_lock),
+    UNMODDED_GAME_SETTING_MODE: build_class_menu_data(game_classes, _weapon_categories_ootb,
+                                                      _hierarchical_definitions_ootb, _items_to_remove, _items_to_lock),
     'goty': build_class_menu_data(game_classes, _weapon_categories_goty,
                                   merge_goty_classes_for_non_modded_menus(_hierarchical_definitions_goty),
                                   _items_to_remove, _items_to_lock)
 })
 
 _class_menu_data_modded_defs = OrderedDict({
-    'ootb': generate_class_menu_data_modded_defs(_hierarchical_definitions_ootb),
+    UNMODDED_GAME_SETTING_MODE: generate_class_menu_data_modded_defs(_hierarchical_definitions_ootb),
     'goty': generate_class_menu_data_modded_defs(_hierarchical_definitions_goty)
 })
 

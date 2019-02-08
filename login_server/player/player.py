@@ -18,6 +18,8 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from typing import Dict
+
 from ipaddress import IPv4Address
 
 from .friends import Friends
@@ -26,6 +28,7 @@ from .settings import PlayerSettings
 from common.connectionhandler import Peer
 from common.ipaddresspair import IPAddressPair
 from common.statetracer import statetracer, RefOnly
+from common.game_items import get_game_setting_modes, UNMODDED_GAME_SETTING_MODE
 
 
 @statetracer('unique_id', 'login_name', 'display_name', 'tag', 'address_pair', 'port', 'registered',
@@ -34,27 +37,27 @@ class Player(Peer):
 
     max_name_length = 15
 
-    loadout_file_path = 'data/players/%s_loadouts.json'
+    loadout_file_path = 'data/players/%s_%s_loadouts.json'
     friends_file_path = 'data/players/%s_friends.json'
     settings_file_path = 'data/players/%s_settings.json'
 
     def __init__(self, address):
         super().__init__()
 
-        self.unique_id = None
-        self.login_name = None
-        self.display_name = None
-        self.password_hash = None
-        self.tag = ''
+        self.unique_id: int = None
+        self.login_name: str = None
+        self.display_name: str = None
+        self.password_hash: str = None
+        self.tag: str = ''
         self.port = address[1]
         self.registered = False
         self.last_received_seq = 0
         self.vote = None
         self.state = None
-        self.is_modded = False
+        self.is_modded: bool = False
         self.login_server = None
         self.game_server = None
-        self.loadouts = Loadouts()
+        self.loadouts: Dict[Loadouts] = {mode: Loadouts(mode) for mode in get_game_setting_modes()}
         self.friends = Friends()
         self.player_settings = PlayerSettings()
         self.team = None
@@ -85,21 +88,26 @@ class Player(Peer):
             self.state = state_class(self, *args, **kwargs)
             self.state.on_enter()
 
-    def get_loadouts(self):
-        return self.loadouts.get_loadouts(self.player_settings.game_setting_mode)
+    def get_unmodded_loadouts(self) -> Loadouts:
+        return self.loadouts[UNMODDED_GAME_SETTING_MODE]
+
+    def get_current_loadouts(self) -> Loadouts:
+        return self.loadouts[self.player_settings.game_setting_mode]
 
     def get_loadout_modded_defs(self):
-        return self.loadouts.get_loadout_modded_defs(self.player_settings.game_setting_mode)
+        return self.loadouts[self.player_settings.game_setting_mode].get_loadout_modded_defs()
 
     def load(self):
         if self.registered:
-            self.loadouts.load(self.loadout_file_path % self.login_name)
+            for mode in get_game_setting_modes():
+                self.loadouts[mode].load(self.loadout_file_path % (self.login_name, mode))
             self.friends.load(self.friends_file_path % self.login_name)
             self.player_settings.load(self.settings_file_path % self.login_name)
 
     def save(self):
         if self.registered:
-            self.loadouts.save(self.loadout_file_path % self.login_name)
+            for mode in get_game_setting_modes():
+                self.loadouts[mode].save(self.loadout_file_path % (self.login_name, mode))
             self.friends.save(self.friends_file_path % self.login_name)
             self.player_settings.save(self.settings_file_path % self.login_name)
 

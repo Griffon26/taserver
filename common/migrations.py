@@ -62,15 +62,12 @@ def _migration_ootb_and_goty_loadouts(data, player: str):
         # Uninitialised loadouts, don't migrate
         return data
 
-    new_loadouts = dict()
     # Test to determine whether existing loadouts are 'ootb' or 'goty'
-    # And migrate existing loadouts to one or the other
-    # If the tertiary weapon slot (used for perks in GOTY) is > 100000 then it is goty
-    if data['loadouts']['1683']['0']['1765'] > 100000:
-        new_loadouts['goty'] = data['loadouts']
-    else:
-        new_loadouts['ootb'] = data['loadouts']
+    # We can only migrate OOTB loadouts since there are now 9 loadouts per goty class
+    # If the tertiary weapon slot (used for perks in GOTY) is >= 100000 then it is goty
+    if data['loadouts']['1683']['0']['1765'] < 100000:
+        data['ootb_loadouts'] = data['loadouts']
 
-    data['loadouts'] = new_loadouts
+    del data['loadouts']
 
     return data

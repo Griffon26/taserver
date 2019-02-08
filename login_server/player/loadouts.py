@@ -107,62 +107,49 @@ class Loadouts:
 
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
-    def __init__(self):
-        self.loadout_dict = self.fill_in_defaults(dict())
+    def __init__(self, game_setting_mode: str):
+        self.game_setting_mode = game_setting_mode
+        self.loadout_dict = self.defaults()
 
-    def get_loadouts(self, game_setting_mode: str):
-        return self.loadout_dict[game_setting_mode]
-
-    def fill_in_defaults(self, existing_loadouts):
-        result = dict()
-        for game_setting_mode in get_game_setting_modes():
-            if len(existing_loadouts.get(game_setting_mode, dict())) == 0:
-                # No existing loadouts for this game setting mode, set defaults
-                default_loadouts_file = 'data/defaults/default_loadouts_%s.json' % game_setting_mode
-                result[game_setting_mode] = self._load_loadout_data(default_loadouts_file)
-            else:
-                result[game_setting_mode] = existing_loadouts[game_setting_mode]
-        return result
+    def defaults(self):
+        default_loadouts_file = 'data/defaults/default_loadouts_%s.json' % self.game_setting_mode
+        return self._load_loadout_data(default_loadouts_file)
 
     def is_loadout_menu_item(self, value):
         return value in self.loadout_id2key
 
-    def modify(self, game_setting_mode: str, loadout_id, slot, equipment):
+    def get_data(self):
+        return self.loadout_dict
+
+    def modify(self, loadout_id, slot, equipment):
         class_id, loadout_index = self.loadout_id2key[loadout_id]
-        d = self.loadout_dict[game_setting_mode]
-        d[class_id][loadout_index][slot] = equipment
+        self.loadout_dict[class_id][loadout_index][slot] = equipment
 
-    def modify_by_class_details(self, game_setting_mode: str, class_id: int,
-                                loadout_index: int, slot: int, equipment: int):
-        d = self.loadout_dict[game_setting_mode]
-        d[class_id][loadout_index][slot] = equipment
+    def modify_by_class_details(self, class_id: int, loadout_index: int, slot: int, equipment: int):
+        self.loadout_dict[class_id][loadout_index][slot] = equipment
 
-    def get_loadout_modded_defs(self, game_setting_mode: str) -> List[Dict]:
+    def get_loadout_modded_defs(self) -> List[Dict]:
         result = list()
-
-        for class_id, class_defs in self.loadout_dict[game_setting_mode].items():
+        for class_id, class_defs in self.loadout_dict.items():
             for loadout_index, loadout_def in class_defs.items():
                 result.extend({'class': class_id, 'num': loadout_index, 'eqp': slot, 'item': item}
                               for slot, item
                               in loadout_def.items())
-
         return result
 
     def _load_loadout_data(self, filename):
         def json_keys_to_int(x):
             if isinstance(x, dict):
-                return {(int(k) if k not in get_game_setting_modes() else k): v
-                        for k, v
-                        in x.items()}
+                return {int(k): v for k, v in x.items()}
 
         with open(filename, 'rt') as infile:
             return json.load(infile, object_hook=json_keys_to_int)
 
     def load(self, filename):
         try:
-            self.loadout_dict = self.fill_in_defaults(self._load_loadout_data(filename))
+            self.loadout_dict = self._load_loadout_data(filename)
         except OSError:
-            self.loadout_dict = self.fill_in_defaults(dict())
+            self.loadout_dict = self.defaults()
 
     def save(self, filename):
         with open(filename, 'wt') as outfile:

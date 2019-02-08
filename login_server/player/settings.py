@@ -19,12 +19,12 @@
 #
 
 import json
+from common.game_items import UNMODDED_GAME_SETTING_MODE
 
 
 class PlayerSettings:
-
     def __init__(self):
-        self.game_setting_mode = 'ootb'
+        self.game_setting_mode = UNMODDED_GAME_SETTING_MODE
 
     def load(self, filename):
         try:

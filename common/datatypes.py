@@ -2801,9 +2801,9 @@ class a003d(enumblockarray):
 
         loadout_arrays = []
         loadout_overall_idx = 0
-        for class_id, class_loadout in player.get_loadouts().items():
+        for class_id, class_loadout in player.get_unmodded_loadouts().get_data().items():
             for loadout_index, loadout in class_loadout.items():
-                loadout_id = player.loadouts.loadout_key2id[(class_id, loadout_index)]
+                loadout_id = player.get_unmodded_loadouts().loadout_key2id[(class_id, loadout_index)]
 
                 entry_array = []
                 for slot, equipment in loadout.items():

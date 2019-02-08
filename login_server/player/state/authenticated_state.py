@@ -303,10 +303,9 @@ class AuthenticatedState(PlayerState):
                 menu_area_field = findbytype(arr, m0661)
 
                 if menu_area_field:
-                    if self.player.loadouts.is_loadout_menu_item(menu_area_field.value):
+                    if self.player.get_unmodded_loadouts().is_loadout_menu_item(menu_area_field.value):
                         equip_value = int(int_field.value) if int_field else string_field.value
-                        self.player.loadouts.modify(self.player.player_settings.game_setting_mode,
-                                                    menu_area_field.value, setting, equip_value)
+                        self.player.get_unmodded_loadouts().modify(menu_area_field.value, setting, equip_value)
                         loadout_changed = True
                     elif menu_area_field.value == MENU_AREA_SETTINGS:
                         # Ignore user settings. They'll have to store them themselves
@@ -405,6 +404,5 @@ class AuthenticatedState(PlayerState):
     @handles_control_message(messageType=Client2LoginLoadoutChange)
     def handle_client2login_loadoutchange(self, message: Client2LoginLoadoutChange):
         # Modify the player's loadout
-        self.player.loadouts.modify_by_class_details(self.player.player_settings.game_setting_mode,
-                                                     message.game_class, message.loadout_index,
+        self.player.get_current_loadouts().modify_by_class_details(message.game_class, message.loadout_index,
                                                      message.loadout_slot, message.value)
