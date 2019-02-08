@@ -406,5 +406,5 @@ class AuthenticatedState(PlayerState):
     def handle_client2login_loadoutchange(self, message: Client2LoginLoadoutChange):
         # Modify the player's loadout
         self.player.loadouts.modify_by_class_details(self.player.player_settings.game_setting_mode,
-                                                     message.game_class, message.loadout_num,
-                                                     message.loadout_slot, message.equipment_item)
+                                                     message.game_class, message.loadout_index,
+                                                     message.loadout_slot, message.value)

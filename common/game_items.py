@@ -613,7 +613,7 @@ _hierarchical_definitions_goty = {
             },
             'skins': {
                 'Skin SEN': 8327,
-                'Skin SEN Mercenary': 8337,
+                'Skin SEN Mercenary': 8665,
             },
         },
         'inf': {
@@ -649,7 +649,7 @@ _hierarchical_definitions_goty = {
             'skins': {
                 'Skin INF': 7835,
                 'Skin INF Mercenary': 8336,
-                'Skin INF Assassin': 8665,
+                'Skin INF Assassin': 8337,
             },
         },
         'sld': {
