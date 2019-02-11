@@ -406,3 +406,6 @@ class AuthenticatedState(PlayerState):
         # Modify the player's loadout
         self.player.get_current_loadouts().modify_by_class_details(message.game_class, message.loadout_index,
                                                      message.loadout_slot, message.value)
+        # Send the change to the game server the player is in
+        if self.player.game_server:
+            self.player.game_server.set_player_loadouts(self.player)
