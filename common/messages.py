@@ -21,7 +21,7 @@
 import json
 import struct
 import datetime
-from typing import Optional
+from typing import Optional, List
 
 # These IDs should only be extended, not changed, to allow for some
 # backward compatibility
@@ -146,12 +146,13 @@ class Launcher2LoginServerInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SERVERINFO
 
     def __init__(self, external_ip: str, internal_ip: str, game_setting_mode: str,
-                 description: str, motd: str):
+                 description: str, motd: str, password_hash: List[int]):
         self.external_ip = external_ip
         self.internal_ip = internal_ip
         self.game_setting_mode = game_setting_mode
         self.description = description
         self.motd = motd
+        self.password_hash = password_hash
 
 
 class Launcher2LoginMapInfoMessage(Message):

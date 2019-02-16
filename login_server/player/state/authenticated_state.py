@@ -148,6 +148,25 @@ class AuthenticatedState(PlayerState):
                 return
 
             if game_server.joinable:
+
+                # Check password, if one is necessary
+                if game_server.password_hash is not None:
+                    password_hash_attempt = request.findbytype(m032e)
+                    if password_hash_attempt is None \
+                            or bytes(password_hash_attempt.content) != game_server.password_hash:
+                        # Wrong password / no password
+                        b0msg = a00b0().set_server(game_server).set_player(self.player.unique_id)
+                        b0msg.content.append(m042b().set(STDMSG_INCORRECT_PASSWORD))
+                        self.player.send(b0msg)
+                        self.player.send(a0070().set([
+                            m0348().set(self.player.unique_id),
+                            m0095(),
+                            m009e().set(MESSAGE_UNKNOWNTYPE),
+                            m009d().set(self.player.unique_id),
+                            m02fc().set(STDMSG_INCORRECT_PASSWORD)
+                        ]))
+                        return
+
                 b0msg = a00b0().setlength(9).set_server(game_server).set_player(self.player.unique_id)
                 b0msg.findbytype(m042a).set(2)
                 self.player.send(b0msg)

@@ -133,11 +133,17 @@ class Launcher:
             msg = Launcher2LoginProtocolVersionMessage(str(versions.launcher2loginserver_protocol_version))
             self.login_server.send(msg)
 
+            # password hash is sent as an array of ints, as the json library can't serialise the bytes type
+            password_hash = self.hash_server_password(self.game_server_config['password']) \
+                if 'password' in self.game_server_config \
+                else None
+
             msg = Launcher2LoginServerInfoMessage(str(self.address_pair.external_ip) if self.address_pair.external_ip else '',
                                                   str(self.address_pair.internal_ip) if self.address_pair.internal_ip else '',
                                                   self.game_server_config['game_setting_mode'],
                                                   self.game_server_config['description'],
-                                                  self.game_server_config['motd'])
+                                                  self.game_server_config['motd'],
+                                                  password_hash)
             self.login_server.send(msg)
 
             # Send the latest relevant information that was received while the login server was not connected
@@ -162,6 +168,16 @@ class Launcher:
 
         else:
             assert False, "Invalid connection message received"
+
+    def hash_server_password(self, password: str) -> List[int]:
+        hash_constants = [0x55, 0x93, 0x55, 0x58, 0xBA, 0x6f, 0xe9, 0xf9]
+        interspersed_constants = [0x7a, 0x1e, 0x9f, 0x47, 0xf9, 0x17, 0xb0, 0x03]
+        result = []
+        for idx, c in enumerate(password.encode('latin1')):
+            pattern_idx = idx % 8
+            result.extend([(c ^ hash_constants[pattern_idx]), interspersed_constants[pattern_idx]])
+
+        return result
 
     def handle_peer_disconnected(self, msg):
         if isinstance(msg.peer, GameController):

@@ -58,6 +58,7 @@ class GameServer(Peer):
         self.port = None
         self.description = None
         self.motd = None
+        self.password_hash = None
         self.region = None
 
         self.game_setting_mode = 'ootb'
@@ -96,11 +97,12 @@ class GameServer(Peer):
             player.set_state(AuthenticatedState)
         super().disconnect(exception)
 
-    def set_info(self, address_pair, game_setting_mode: str, description: str, motd: str):
+    def set_info(self, address_pair, game_setting_mode: str, description: str, motd: str, password_hash: bytes):
         self.address_pair = address_pair
         self.game_setting_mode = game_setting_mode
         self.description = description
         self.motd = motd
+        self.password_hash = password_hash
         self.send_pings()
 
     def set_match_time(self, seconds_remaining, counting):

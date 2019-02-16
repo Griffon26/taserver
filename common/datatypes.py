@@ -70,6 +70,7 @@ STDMSG_PROMOTION_NOT_AVAILABLE              = 0x00019645 # 'This promotion is no
 STDMSG_NOT_A_VALID_PROMOTION_CODE           = 0x00019646 # 'The code entered is not a valid promotion code'
 STDMSG_ITEM_PRICE_HAS_CHANGED               = 0x0001966e # 'Item price has changed'
 STDMSG_CANNOT_CONNECT_TO_SERVER             = 0x000197c7 # 'Cannot connect to server. Please wait and try again shortly.'
+STDMSG_INCORRECT_PASSWORD                   = 0x00019fdf # 'Incorrect password'
 
 MENU_AREA_SETTINGS = 0x0192C9D3
 
@@ -1678,8 +1679,8 @@ class m00e9(arrayofenumblockarrays):
                 m0299(),
                 m0298(),
                 m06bf(),
-                m069c(),
-                m069b(),
+                m069c().set(0x01 if server.password_hash is not None else 0x00),
+                m069b().set(0x01 if server.password_hash is not None else 0x00),
                 m0300().set(server.description),
                 m01a4().set(server.motd),
                 m02b2().set(server.map_id),
@@ -3145,10 +3146,10 @@ class a01c8(enumblockarray):
 # special fields
 # ------------------------------------------------------------
 
-class m0056():
-    def __init__(self):
-        self.ident = 0x0056
-        self.content = b'0' * 90
+class variablelengthbytes():
+    def __init__(self, ident, content):
+        self.ident = ident
+        self.content = content
 
     def set(self, value):
         self.content = value
@@ -3160,10 +3161,38 @@ class m0056():
     def read(self, stream):
         ident, length = struct.unpack('<HL', stream.read(6))
         if ident != self.ident:
-            raise ParseError('self.ident(%02X) did not match parsed ident value (%02X)' % (self.ident, ident))
+            raise ParseError('self.ident(%04X) did not match parsed ident value (%04X)' % (self.ident, ident))
         self.content = stream.read(length)
+        return self
+
+
+# Player password
+class m0056(variablelengthbytes):
+    def __init__(self):
+        super().__init__(0x0056, b'0' * 90)
+
+    def read(self, stream):
+        super().read(stream)
         if len(self.content) < 72:
             raise ParseError('self.content is not allowed to be shorter than 72 bytes')
+        return self
+
+
+# Server password
+class m032e(variablelengthbytes):
+    def __init__(self):
+        super().__init__(0x032e, b'0')
+
+    def write(self, stream):
+        stream.write(struct.pack('<HH', self.ident, len(self.content)) + self.content)
+
+    def read(self, stream):
+        ident, length = struct.unpack('<HH', stream.read(4))
+        # Length is actually doubled due to server pass's interspersed bytes
+        length = (length & 0x7FFF) * 2
+        if ident != self.ident:
+            raise ParseError('self.ident(%04X) did not match parsed ident value (%04X)' % (self.ident, ident))
+        self.content = stream.read(length)
         return self
 
 
