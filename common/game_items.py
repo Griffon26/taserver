@@ -1007,9 +1007,8 @@ def get_game_setting_modes():
     return _built_class_menu_data.keys()
 
 
-# Processed form containing the information needed to build the menu content
-def get_class_menu_data(game_setting_mode: str) -> Unlockables:
-    return _built_class_menu_data[game_setting_mode]
+def get_unmodded_class_menu_data() -> Unlockables:
+    return _built_class_menu_data[UNMODDED_GAME_SETTING_MODE]
 
 
 def get_class_menu_data_modded_defs(game_setting_mode: str) -> List[Dict]:
