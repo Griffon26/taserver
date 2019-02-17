@@ -25,7 +25,6 @@ from functools import wraps
 
 from common.datatypes import *
 from common.messages import Message
-from common.game_items import get_unmodded_class_menu_data
 from ..player import Player
 
 
