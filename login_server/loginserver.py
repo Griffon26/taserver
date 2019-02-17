@@ -93,9 +93,6 @@ class LoginServer:
                     else:
                         raise
 
-    def game_servers_for_current_mode(self, game_setting_mode: str):
-        return {k: v for k, v in self.game_servers.items() if v.game_setting_mode == game_setting_mode}
-
     def all_game_servers(self):
         return self.game_servers
 

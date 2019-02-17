@@ -25,7 +25,7 @@ from functools import wraps
 
 from common.datatypes import *
 from common.messages import Message
-from common.game_items import get_class_menu_data
+from common.game_items import get_unmodded_class_menu_data
 from ..player import Player
 
 
@@ -71,7 +71,7 @@ class PlayerState:
         self.player = player
 
     def class_menu_data(self):
-        return get_class_menu_data(self.player.player_settings.game_setting_mode)
+        return get_unmodded_class_menu_data()
 
     def handle_request(self, request):
         methods = [
