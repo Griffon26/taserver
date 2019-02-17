@@ -1,10 +1,10 @@
-## Getting verified
+# Getting verified
 
 To get rid of the "unvrf-" prefix to your name you need to get registered.
 This document explains why this mechanism exists, how you register and how
 a login server administrator generates authentication codes.
 
-### Why this mechanism
+## Why this mechanism
 
 Because the Hirez account database cannot be accessed from the custom login
 server, the login server will have to maintain its own account database.
@@ -21,7 +21,30 @@ that they can then use on the custom login server to claim their account name.
 Of course anyone running their own login server is free to use a different
 approach to generating and distributing authentication codes.
 
-### How to register
+## How to register
+
+### For Griffon26's login server
+
+Getting registered for the login server run by Griffon26 is an automated process:
+
+1. First log in to the Hirez servers
+
+2. Send a private chat message to `taserverbot` with only the word authcode in it:
+
+    `Say> @taserverbot authcode`
+
+3. Now log in to Griffon26's login server with the same name you have on the Hirez
+   server and a password of your choosing.
+ 
+4. After logging in go to the "Store" menu and select "Redeem promotion"
+
+5. Fill in the authentication code and press OK
+
+6. If you don't get an error message, registration was successful.
+   The next time you log on to that login server with the same name
+   and password you will no longer have the "unvrf-" prefix.
+
+### For any other login server
 
 1. Ask the owner of the login server how to get an authentication code
 
@@ -39,7 +62,7 @@ approach to generating and distributing authentication codes.
    The next time you log on to that login server with the same name
    and password you will no longer have the "unvrf-" prefix.
    
-### How to generate authentication codes
+## How to generate authentication codes
 
 Generating an authentication code is simple. Execute the following on the
 machine that is running the login server:
