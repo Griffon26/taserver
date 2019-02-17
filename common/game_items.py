@@ -19,6 +19,8 @@
 #
 
 from typing import NamedTuple, Dict, Set, List, Tuple, Generator
+from collections import OrderedDict
+import copy
 import itertools
 
 
@@ -56,7 +58,7 @@ class GameClass:
 
     def __repr__(self):
         return f'GameClass({self.class_id}, {self.secondary_id}, "{self.family_info_name}", ' \
-               f'"{self.short_name}", "{self.purchase_name}")'
+            f'"{self.short_name}", "{self.purchase_name}")'
 
 
 class UnlockableGameClass(GamePurchase):
@@ -101,7 +103,7 @@ class UnlockableClassSpecificItem(UnlockableItem):
 
     def __repr__(self):
         return f'UnlockableClassSpecificItem("{self.name}", {self.item_id}, ' \
-               f'{self.game_class.class_id}, {self.shown}, {self.unlocked})'
+            f'{self.game_class.class_id}, {self.shown}, {self.unlocked})'
 
 
 class UnlockableWeapon(UnlockableClassSpecificItem):
@@ -116,7 +118,7 @@ class UnlockableWeapon(UnlockableClassSpecificItem):
 
     def __repr__(self):
         return f'UnlockableWeapon("{self.name}", {self.item_id}, ' \
-               f'{self.game_class.class_id}, {self.category}, {self.shown}, {self.unlocked})'
+            f'{self.game_class.class_id}, {self.category}, {self.shown}, {self.unlocked})'
 
 
 class UnlockablePack(UnlockableClassSpecificItem):
@@ -384,8 +386,8 @@ _hierarchical_definitions_ootb = {
                 'Skin SEN': 8327,
                 'Skin PTH Mercenary': 8326,
                 'Skin INF Mercenary': 8336,
-                'Skin SEN Mercenary': 8337,
-                'Skin INF Assassin': 8665,
+                'Skin INF Assassin': 8337,
+                'Skin SEN Mercenary': 8665,
             }
         },
         'medium': {
@@ -546,104 +548,127 @@ _hierarchical_definitions_ootb = {
 
 _hierarchical_definitions_goty = {
     'classes': {
-        'light': {
+        'pth': {
             'weapons': {
-                'impact': {
+                'primary': {
                     'Pathfinder_Primary_LightSpinfusor': 7422,
                     'Pathfinder_Primary_BoltLauncher': 7425,
                     'Pathfinder_Primary_LightSpinfusor_100X': 8696,
                     'Pathfinder_Primary_LightTwinfusor': 8245,
                     'Pathfinder_Primary_LightSpinfusor_MKD': 8415,
-                    'Infiltrator_Primary_StealthLightSpinfusor': 7902,
-                    'Infiltrator_Primary_RemoteArxBuster': 8252,
-                    'Infiltrator_Primary_RhinoSMG': 7397,
-                    'Infiltrator_Primary_RhinoSMG_MKD': 8409,
+                },
+                'secondary': {
+                    'Pathfinder_Secondary_LightAssaultRifle': 7438,
+                    'Pathfinder_Secondary_Shotgun': 7399,
+                    'Pathfinder_Secondary_Shotgun_MKD': 8411,
+                    'All_H1_Shocklance': 7435,
+                    # 'Light_Primary_LightGrenadeLauncher': 8761,  # OOTB only
+                },
+                'dummy': {
+                    'Technician_Secondary_RepairToolSD_MKD': 8405,
+                }
+            },
+            'belt': {
+                'Pathfinder_Belt_ImpactNitron': 7387,
+                'Pathfinder_Belt_STGrenade': 7437,
+                'Pathfinder_Belt_ImpactNitron_MKD': 8396,
+            },
+            'packs': {
+                'Pathfinder_Pack_JumpPack': 7822,
+                'Pathfinder_Pack_EnergyRecharge': 7825,
+            },
+            'skins': {
+                'Skin PTH': 7834,
+                'Skin PTH Mercenary': 8326,
+            },
+        },
+        'sen': {
+            'weapons': {
+                'primary': {
                     'Sentinel_Primary_SniperRifle': 7400,
                     'Sentinel_Primary_PhaseRifle': 7395,
                     'Sentinel_Primary_SniperRifle_MKD': 8407,
                     'Sentinel_Primary_SAP20': 8254,
-
                 },
-                'timed': {
-                    'Pathfinder_Secondary_LightAssaultRifle': 7438,
-                    'Pathfinder_Secondary_Shotgun': 7399,
-                    'Pathfinder_Secondary_Shotgun_MKD': 8411,
-                    # 'Light_Primary_LightGrenadeLauncher': 8761,  # OOTB only
-                    'Infiltrator_Secondary_ThrowingKnives': 8256,
-                    'Infiltrator_Secondary_SN7': 7418,
-                    'Infiltrator_Secondary_SN7_MKD': 8404,
+                'secondary': {
                     'Sentinel_Secondary_Falcon': 7419,
                     'Medium_Sidearm_NovaBlaster': 7394,
                     'Heavy_Sidearm_NovaBlaster_MKD': 8403,
                     'Sentinel_Secondary_AccurizedShotgun': 8239,
                     'All_H1_Shocklance': 7435,
                 },
-                'speciality': {
+                'dummy': {
                     'Technician_Secondary_RepairToolSD_MKD': 8405,
-                },
+                }
             },
             'belt': {
-                'Pathfinder_Belt_ImpactNitron': 7387,
-                'Pathfinder_Belt_STGrenade': 7437,
-                'Pathfinder_Belt_ImpactNitron_MKD': 8396,
-                'Infiltrator_Belt_StickyGrenade': 7402,
-                'Infiltrator_Belt_StickyGrenade_MKD': 8398,
-                'Infiltrator_Belt_PrismMines': 7440,
-                # 'Infiltrator_Belt_NinjaSmoke': 8248, # Repurposed as chaff grenades
                 'Sentinel_Belt_GrenadeT5': 7914,
                 'Sentinel_Belt_Claymore': 7421,
                 'Sentinel_Belt_ArmoredClaymore': 8240,
             },
             'packs': {
-                'Pathfinder_Pack_JumpPack': 7822,
+                'Pathfinder_Pack_EnergyRecharge': 7825,
+                # 'Sentinel_Pack_EnergyRecharge': 7900, # Repurposed as light utility pack
+                # 'Sentinel_Pack_DropJammer': 7456, # Repurposed as Drop Station
+            },
+            'skins': {
+                'Skin SEN': 8327,
+                'Skin SEN Mercenary': 8665,
+            },
+        },
+        'inf': {
+            'weapons': {
+                'primary': {
+                    'Infiltrator_Primary_StealthLightSpinfusor': 7902,
+                    'Infiltrator_Primary_RemoteArxBuster': 8252,
+                    'Infiltrator_Primary_RhinoSMG': 7397,
+                    'Infiltrator_Primary_RhinoSMG_MKD': 8409,
+                },
+                'secondary': {
+                    'Infiltrator_Secondary_SN7': 7418,
+                    'Infiltrator_Secondary_SN7_MKD': 8404,
+                    'Infiltrator_Secondary_ThrowingKnives': 8256,
+                    'All_H1_Shocklance': 7435,
+                },
+                'dummy': {
+                    'Technician_Secondary_RepairToolSD_MKD': 8405,
+                }
+            },
+            'belt': {
+                'Infiltrator_Belt_StickyGrenade': 7402,
+                'Infiltrator_Belt_StickyGrenade_MKD': 8398,
+                'Infiltrator_Belt_PrismMines': 7440,
+                # 'Infiltrator_Belt_NinjaSmoke': 8248, # Repurposed as chaff grenades
+            },
+            'packs': {
                 'Pathfinder_Pack_EnergyRecharge': 7825,
                 'Infiltrator_Pack_Stealth': 7833,
                 # 'Sentinel_Pack_EnergyRecharge': 7900, # Repurposed as light utility pack
                 # 'Sentinel_Pack_DropJammer': 7456, # Repurposed as Drop Station
             },
             'skins': {
-                'Skin PTH': 7834,
-                'Skin PTH Mercenary': 8326,
                 'Skin INF': 7835,
                 'Skin INF Mercenary': 8336,
-                'Skin INF Assassin': 8665,
-                'Skin SEN': 8327,
-                'Skin SEN Mercenary': 8337,
-            }
+                'Skin INF Assassin': 8337,
+            },
         },
-        'medium': {
+        'sld': {
             'weapons': {
-                'impact': {
+                'primary': {
                     'Soldier_Primary_Spinfusor': 7401,
                     'Soldier_Primary_Twinfusor': 8257,
                     'Soldier_Primary_Honorfusor': 8768,
                     'Soldier_Primary_AssaultRifle': 7385,
                     'Soldier_Primary_AssaultRifle_MKD': 8406,
-                    'Raider_Primary_ArxBuster': 7384,
-                    'Raider_Primary_ArxBuster_MKD': 8391,
-                    'Raider_Primary_GrenadeLauncher': 7416,
-                    'Raider_Primary_PlasmaGun': 8251,
-                    'Technician_Primary_Thumper': 7461,
-                    'Technician_Primary_TCN4': 7443,
-                    'Technician_Primary_TCN4_MKD': 8410,
-                    # 'Technician_Primary_TC24': 8699,  # Repurposed as Flak Cannon
                 },
-                'timed': {
+                'secondary': {
                     'Soldier_Secondary_SpareSpinfusor': 8697,
                     'Soldier_Secondary_ThumperD': 7462,
                     'Soldier_Secondary_ThumperD_MKD': 8417,
                     'Soldier_Secondary_Eagle': 7388,
-                    'Raider_Secondary_NJ4SMG': 7441,
-                    'Raider_Secondary_NJ4SMG_MKD': 8408,
-                    'Raider_Secondary_NJ5SMG': 8249,
-                    'Technician_Secondary_RepairToolSD': 7436,
-                    # 'Technician_Secondary_RepairToolSD_MKD': 8405,  # Disabled, used as a placeholder tertiary
-                    'Technician_Secondary_SawedOff': 7427,
-                    'Light_Sidearm_Sparrow': 7433,
-                    # 'Medium_ElfProjector': 8765,
                     'All_H1_Shocklance': 7435,
                 },
-                'speciality': {
+                'dummy': {
                     'Technician_Secondary_RepairToolSD_MKD': 8405,
                 }
             },
@@ -652,61 +677,101 @@ _hierarchical_definitions_goty = {
                 'Soldier_Belt_FragGrenadeXL_MKD': 8399,
                 'Soldier_Belt_APGrenade': 7434,
                 'Soldier_Belt_ProximityGrenade': 8222,
-                'Raider_Belt_EMPGrenade': 7444,
-                'Raider_Belt_WhiteOut': 7432,
-                'Raider_Belt_MIRVGrenade': 8247,
-                'Raider_Belt_EMPGrenade_MKD': 8395,
-                'Technician_Belt_TCNG': 7736,
-                'Technician_Belt_TCNG_MKD': 8416,
-                'Technician_Belt_MotionAlarm': 7426,
             },
             'packs': {
                 'Soldier_Pack_EnergyPool': 7824,
                 'Soldier_Pack_Utility': 8223,
-                'Raider_Pack_Shield': 7832,
-                'Raider_Pack_Jammer': 7827,
-                'Sentinel_Pack_DropJammer': 7456,  # Repurposed
-                'Technician_Pack_LightTurret': 7413,
-                'Technician_Pack_EXRTurret': 7417,
             },
             'skins': {
                 'Skin SLD': 8328,
                 'Skin SLD Mercenary': 8748,
+            },
+        },
+        'rdr': {
+            'weapons': {
+                'primary': {
+                    'Raider_Primary_ArxBuster': 7384,
+                    'Raider_Primary_ArxBuster_MKD': 8391,
+                    'Raider_Primary_GrenadeLauncher': 7416,
+                    'Raider_Primary_PlasmaGun': 8251,
+                },
+                'secondary': {
+                    'Raider_Secondary_NJ4SMG': 7441,
+                    'Raider_Secondary_NJ4SMG_MKD': 8408,
+                    'Raider_Secondary_NJ5SMG': 8249,
+                    'All_H1_Shocklance': 7435,
+                },
+                'dummy': {
+                    'Technician_Secondary_RepairToolSD_MKD': 8405,
+                }
+            },
+            'belt': {
+                'Raider_Belt_EMPGrenade': 7444,
+                'Raider_Belt_WhiteOut': 7432,
+                'Raider_Belt_MIRVGrenade': 8247,
+                'Raider_Belt_EMPGrenade_MKD': 8395,
+            },
+            'packs': {
+                'Raider_Pack_Shield': 7832,
+                'Raider_Pack_Jammer': 7827,
+            },
+            'skins': {
                 'Skin RDR': 8330,
                 'Skin RDR Mercenary': 8352,
                 'Skin RDR Griever': 8351,
+            },
+        },
+        'tcn': {
+            'weapons': {
+                'primary': {
+                    'Technician_Primary_Thumper': 7461,
+                    'Technician_Primary_TCN4': 7443,
+                    'Technician_Primary_TCN4_MKD': 8410,
+                    # 'Technician_Primary_TC24': 8699,  # Repurposed as Flak Cannon
+                },
+                'secondary': {
+                    'Technician_Secondary_RepairToolSD': 7436,
+                    # 'Technician_Secondary_RepairToolSD_MKD': 8405,  # Disabled, used as a placeholder tertiary
+                    'Technician_Secondary_SawedOff': 7427,
+                    'Light_Sidearm_Sparrow': 7433,
+                    # 'Medium_ElfProjector': 8765, # OOTB only
+                    'All_H1_Shocklance': 7435,
+                },
+                'dummy': {
+                    'Technician_Secondary_RepairToolSD_MKD': 8405,
+                }
+            },
+            'belt': {
+                'Technician_Belt_TCNG': 7736,
+                'Technician_Belt_TCNG_MKD': 8416,
+                'Technician_Belt_MotionAlarm': 7426,
+                'Technician_Belt_RepairKit': 8698,
+            },
+            'packs': {
+                # 'Sentinel_Pack_DropJammer': 7456,  # Repurposed as lunchbox
+                'Technician_Pack_LightTurret': 7413,
+                'Technician_Pack_EXRTurret': 7417,
+            },
+            'skins': {
                 'Skin TCN': 8329,
                 'Skin TCN Mercenary': 8731,
-            }
+            },
         },
-        'heavy': {
+        'jug': {
             'weapons': {
-                'impact': {
+                'primary': {
                     'Juggernaut_Primary_FusionMortar': 7393,
                     'Juggernaut_Primary_FusionMortar_MKD': 8400,
                     'Juggernaut_Primary_MIRVLauncher': 7457,
-                    'Doombringer_Primary_ChainGun': 7386,
-                    'Doombringer_Primary_ChainGun_MKD': 8392,
-                    'Doombringer_Primary_HeavyBoltLauncher': 7452,
-                    'Brute_Primary_HeavySpinfusor': 7448,
-                    'Brute_Primary_HeavySpinfusor_MKD': 8414,
-                    'Brute_Primary_SpikeLauncher': 8357,
                 },
-                'timed': {
+                'secondary': {
                     'Juggernaut_Secondary_SpinfusorD': 7446,
                     'Juggernaut_Secondary_SpinfusorD_MKD': 8413,
                     'Juggernaut_Secondary_HeavyTwinfusor': 8656,
                     'Juggernaut_Secondary_X1LMG': 7458,
-                    'Doombringer_Secondary_SaberLauncher': 7398,
-                    'Doombringer_Secondary_SaberLauncher_MKD': 8401,
-                    'Brute_Secondary_AutoShotgun': 7449,
-                    'Brute_Secondary_AutoShotgun_MKD': 8412,
-                    'Brute_Secondary_NovaColt': 7431,
-                    'Brute_Secondary_PlasmaCannon': 8250,
-                    # 'Elf_FlakCannon': 8766,
                     'All_H1_Shocklance': 7435,
                 },
-                'speciality': {
+                'dummy': {
                     'Technician_Secondary_RepairToolSD_MKD': 8405,
                 }
             },
@@ -714,28 +779,77 @@ _hierarchical_definitions_goty = {
                 'Juggernaut_Belt_HeavyAPGrenade': 7447,
                 'Juggernaut_Belt_HeavyAPGrenade_MKD': 8394,
                 'Juggernaut_Belt_DiskToss': 7459,
+            },
+            'packs': {
+                'Juggernaut_Pack_HealthRegen': 7831,
+                # 'Juggernaut_Pack_Energy': 7901,
+            },
+            'skins': {
+                'Skin JUG': 8331,
+                'Skin JUG Mercenary': 8745,
+            },
+        },
+        'dmb': {
+            'weapons': {
+                'primary': {
+                    'Doombringer_Primary_ChainGun': 7386,
+                    'Doombringer_Primary_ChainGun_MKD': 8392,
+                    'Doombringer_Primary_HeavyBoltLauncher': 7452,
+                },
+                'secondary': {
+                    'Doombringer_Secondary_SaberLauncher': 7398,
+                    'Doombringer_Secondary_SaberLauncher_MKD': 8401,
+                    'All_H1_Shocklance': 7435,
+                },
+                'dummy': {
+                    'Technician_Secondary_RepairToolSD_MKD': 8405,
+                }
+            },
+            'belt': {
                 'Doombringer_Belt_Mine': 7392,
                 'Doombringer_Belt_FragGrenade': 7390,
+            },
+            'packs': {
+                'Doombringer_Pack_ForceField': 7411,
+            },
+            'skins': {
+                'Skin DMB': 8332,
+                'Skin DMB Mercenary': 8744,
+            },
+        },
+        'brt': {
+            'weapons': {
+                'primary': {
+                    'Brute_Primary_HeavySpinfusor': 7448,
+                    'Brute_Primary_HeavySpinfusor_MKD': 8414,
+                    'Brute_Primary_SpikeLauncher': 8357,
+                },
+                'secondary': {
+                    'Brute_Secondary_AutoShotgun': 7449,
+                    'Brute_Secondary_AutoShotgun_MKD': 8412,
+                    'Brute_Secondary_NovaColt': 7431,
+                    'Brute_Secondary_PlasmaCannon': 8250,
+                    # 'Elf_FlakCannon': 8766,
+                    'All_H1_Shocklance': 7435,
+                },
+                'dummy': {
+                    'Technician_Secondary_RepairToolSD_MKD': 8405,
+                }
+            },
+            'belt': {
                 'Brute_Belt_FractalGrenade': 7428,
                 'Brute_Belt_FractalGrenade_MKD': 8397,
                 'Brute_Belt_LightStickyGrenade': 7455,
             },
             'packs': {
-                'Juggernaut_Pack_HealthRegen': 7831,
-                # 'Juggernaut_Pack_Energy': 7901,
-                'Doombringer_Pack_ForceField': 7411,
                 'Brute_Pack_HeavyShield': 7826,
                 'Brute_Pack_MinorEnergy': 7830,
                 'Brute_Pack_SurvivalPack': 8255,
             },
             'skins': {
-                'Skin JUG': 8331,
-                'Skin JUG Mercenary': 8745,
-                'Skin DMB': 8332,
-                'Skin DMB Mercenary': 8744,
                 'Skin BRT': 8333,
                 'Skin BRT Mercenary': 8663,
-            }
+            },
         },
     },
     'perkA': {
@@ -792,18 +906,79 @@ _hierarchical_definitions_goty = {
 }
 
 
+def merge_goty_classes_for_non_modded_menus(goty_defs: Dict) -> Dict:
+    result = dict()
+
+    result['perkA'] = goty_defs['perkA'].copy()
+    result['perkB'] = goty_defs['perkB'].copy()
+    result['voices'] = goty_defs['voices'].copy()
+
+    mappings = {
+        'light': ['pth', 'sen', 'inf'],
+        'medium': ['sld', 'rdr', 'tcn'],
+        'heavy': ['jug', 'dmb', 'brt'],
+    }
+
+    category_mappings = {
+        'primary': 'impact',
+        'secondary': 'timed',
+        'dummy': 'speciality',
+    }
+
+    result['classes'] = dict()
+
+    for ootb_class, goty_classes in mappings.items():
+        result['classes'][ootb_class] = dict()
+        result['classes'][ootb_class]['weapons'] = dict()
+        for goty_category, ootb_category in category_mappings.items():
+            result['classes'][ootb_class]['weapons'][ootb_category] = dict()
+            for goty_class in goty_classes:
+                result['classes'][ootb_class]['weapons'][ootb_category] \
+                    .update(goty_defs['classes'][goty_class]['weapons'].get(goty_category, dict()))
+        for non_weapon_item_kind in ['belt', 'packs', 'skins']:
+            result['classes'][ootb_class][non_weapon_item_kind] = dict()
+            for goty_class in goty_classes:
+                result['classes'][ootb_class][non_weapon_item_kind] \
+                    .update(goty_defs['classes'][goty_class].get(non_weapon_item_kind, dict()))
+
+    # In GOTY mode, add all encoded perk combinations as "bullet" weapons
+    for c in game_classes.keys():
+        result['classes'][c]['weapons']['bullet'] = {
+            str(_encode_perks(perk_a, perk_b)): _encode_perks(perk_a, perk_b)
+            for (perk_a, perk_b)
+            in list(itertools.product(*[result['perkA'].values(),
+                                        result['perkB'].values()]))
+        }
+
+    return result
+
+
+def generate_class_menu_data_modded_defs(class_defs: Dict) -> List[Dict]:
+    result = list()
+    for kind in ['perkA', 'perkB', 'voices']:
+        result.extend(({'id': item, 'kind': kind} for item in class_defs[kind].values()))
+
+    for game_class_name, game_class_defs in class_defs['classes'].items():
+        for weapon_category_name, weapon_category_defs in class_defs['classes'][game_class_name]['weapons'].items():
+            result.extend(({
+                'id': item,
+                'kind': 'weapon',
+                'cat': weapon_category_name,
+                'class': game_class_name
+            } for item in weapon_category_defs.values()))
+        for kind in ['belt', 'packs', 'skins']:
+            result.extend(({
+                'id': item,
+                'kind': kind,
+                'class': game_class_name
+            } for item in class_defs['classes'][game_class_name][kind].values()))
+
+    return result
+
+
 def _encode_perks(perk_a: int, perk_b: int):
     return (perk_a << 16) | perk_b
 
-
-# In GOTY mode, add all encoded perk combinations as "bullet" weapons
-for c in game_classes.keys():
-    _hierarchical_definitions_goty['classes'][c]['weapons']['bullet'] = {
-        str(_encode_perks(perk_a, perk_b)): _encode_perks(perk_a, perk_b)
-        for (perk_a, perk_b)
-        in list(itertools.product(*[_hierarchical_definitions_goty['perkA'].values(),
-                                    _hierarchical_definitions_goty['perkB'].values()]))
-    }
 
 # Definition of items that should not appear in the menu at all
 _items_to_remove: Set[str] = set()
@@ -811,10 +986,30 @@ _items_to_remove: Set[str] = set()
 # Definition of items that should appear in the menu, but should be by default locked
 _items_to_lock: Set[str] = set()
 
+# The game setting mode that should be used for all non-modded clients
+UNMODDED_GAME_SETTING_MODE = 'ootb'
 
-# Processed form containing the information needed to build the menu content
-def get_class_menu_data(do_use_goty_defs: bool) -> Unlockables:
-    _weapon_categories = _weapon_categories_goty if do_use_goty_defs else _weapon_categories_ootb
-    _hierarchical_definitions = _hierarchical_definitions_goty if do_use_goty_defs else _hierarchical_definitions_ootb
-    return build_class_menu_data(game_classes, _weapon_categories,
-                                 _hierarchical_definitions, _items_to_remove, _items_to_lock)
+_built_class_menu_data = OrderedDict({
+    UNMODDED_GAME_SETTING_MODE: build_class_menu_data(game_classes, _weapon_categories_ootb,
+                                                      _hierarchical_definitions_ootb, _items_to_remove, _items_to_lock),
+    'goty': build_class_menu_data(game_classes, _weapon_categories_goty,
+                                  merge_goty_classes_for_non_modded_menus(_hierarchical_definitions_goty),
+                                  _items_to_remove, _items_to_lock)
+})
+
+_class_menu_data_modded_defs = OrderedDict({
+    UNMODDED_GAME_SETTING_MODE: generate_class_menu_data_modded_defs(_hierarchical_definitions_ootb),
+    'goty': generate_class_menu_data_modded_defs(_hierarchical_definitions_goty)
+})
+
+
+def get_game_setting_modes():
+    return _built_class_menu_data.keys()
+
+
+def get_unmodded_class_menu_data() -> Unlockables:
+    return _built_class_menu_data[UNMODDED_GAME_SETTING_MODE]
+
+
+def get_class_menu_data_modded_defs(game_setting_mode: str) -> List[Dict]:
+    return _class_menu_data_modded_defs[game_setting_mode]

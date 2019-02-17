@@ -18,10 +18,11 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from typing import List, Dict
 import json
 
+from common.game_items import game_classes, get_game_setting_modes
 from common.datatypes import *
-from common.game_items import game_classes
 
 SLOT_LOADOUT_NAME = 1341
 SLOT_PRIMARY_WEAPON = 1086
@@ -106,21 +107,35 @@ class Loadouts:
 
     loadout_key2id = {v: k for k, v in loadout_id2key.items()}
 
-    def __init__(self, use_goty_default_loadouts: bool):
-        self.use_goty_default_loadouts = use_goty_default_loadouts
+    def __init__(self, game_setting_mode: str):
+        self.game_setting_mode = game_setting_mode
         self.loadout_dict = self.defaults()
 
     def defaults(self):
-        default_loadouts_file = 'data/defaults/default_loadouts_%s.json' \
-                                % ('goty' if self.use_goty_default_loadouts else 'ootb')
+        default_loadouts_file = 'data/defaults/default_loadouts_%s.json' % self.game_setting_mode
         return self._load_loadout_data(default_loadouts_file)
 
     def is_loadout_menu_item(self, value):
         return value in self.loadout_id2key
 
+    def get_data(self):
+        return self.loadout_dict
+
     def modify(self, loadout_id, slot, equipment):
         class_id, loadout_index = self.loadout_id2key[loadout_id]
         self.loadout_dict[class_id][loadout_index][slot] = equipment
+
+    def modify_by_class_details(self, class_id: int, loadout_index: int, slot: int, equipment: int):
+        self.loadout_dict[class_id][loadout_index][slot] = equipment
+
+    def get_loadout_modded_defs(self) -> List[Dict]:
+        result = list()
+        for class_id, class_defs in self.loadout_dict.items():
+            for loadout_index, loadout_def in class_defs.items():
+                result.extend({'class': class_id, 'num': loadout_index, 'eqp': slot, 'item': item}
+                              for slot, item
+                              in loadout_def.items())
+        return result
 
     def _load_loadout_data(self, filename):
         def json_keys_to_int(x):

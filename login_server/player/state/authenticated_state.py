@@ -19,11 +19,15 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import datetime
+
 from common.datatypes import *
 from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode, \
-    Login2ClientModeInfo, parse_message_from_string
+    Login2ClientModeInfo, Login2ClientMenuData, Login2ClientLoadouts, Client2LoginLoadoutChange, \
+    parse_message_from_string
 from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles, handles_control_message
+from common.game_items import get_game_setting_modes, get_class_menu_data_modded_defs, get_unmodded_class_menu_data
 
 
 class AuthenticatedState(PlayerState):
@@ -41,12 +45,14 @@ class AuthenticatedState(PlayerState):
         if request.findbytype(m0228).value == 1:
             self.player.send(originalfragment(0x1EEB3, 0x20A10))  # 00d5 (map list)
         else:
-            self.player.send(a00d5().setservers(self.player.login_server.game_servers.values(),
+            self.player.send(a00d5().setservers(self.player.login_server
+                                                .all_game_servers()
+                                                .values(),
                                                 self.player.address_pair))  # 00d5 (server list)
 
     @handles(packet=a0014)
     def handle_a0014(self, request):
-        self.player.send(a0014().setclasses(self.class_menu_data.classes.values()))
+        self.player.send(a0014().setclasses(get_unmodded_class_menu_data().classes.values()))
 
     @handles(packet=a018b)
     def handle_a018b(self, request):
@@ -65,23 +71,23 @@ class AuthenticatedState(PlayerState):
         menu_part = request.findbytype(m02ab).value
         menu_fragments = {
             0x01de: originalfragment(0x38d17, 0x3d0fe),
-            0x01ed: a0177().setdata(0x01ed, self.class_menu_data.class_purchases, False),  # Classes
+            0x01ed: a0177().setdata(0x01ed, get_unmodded_class_menu_data().class_purchases, False),  # Classes
             0x01f0: a0177().setdata(0x01f0, {item
                                              for _, class_items
-                                             in self.class_menu_data.class_items.items()
+                                             in get_unmodded_class_menu_data().class_items.items()
                                              for item
                                              in class_items.weapons},
                                     False),  # Weapons with categories
             0x01f1: originalfragment(0x54bc6, 0x54db0),  # Purpose not fully known, needed or weapons are locked
             0x01f2: a0177().setdata(0x01f2, {item
                                              for _, class_items
-                                             in self.class_menu_data.class_items.items()
+                                             in get_unmodded_class_menu_data().class_items.items()
                                              for item
                                              in class_items.belt_items},
                                     False),  # Belt items
             0x01f3: a0177().setdata(0x01f3, {item
                                              for _, class_items
-                                             in self.class_menu_data.class_items.items()
+                                             in get_unmodded_class_menu_data().class_items.items()
                                              for item
                                              in class_items.packs},
                                     False),  # Packs
@@ -89,13 +95,13 @@ class AuthenticatedState(PlayerState):
             # 0x01f6: originalfragment(0x5965a, 0x5a72b),  # Perks
             0x01f6: a0177().setdata(0x01f6, {item
                                              for item
-                                             in self.class_menu_data.perks},
+                                             in get_unmodded_class_menu_data().perks},
                                     False),  # Perks
             0x01f7: originalfragment(0x5a733, 0x5a76e),
             0x01f8: originalfragment(0x5737d, 0x579af),  # Armor Upgrades
             0x01f9: a0177().setdata(0x01f9, {item
                                              for _, class_items
-                                             in self.class_menu_data.class_items.items()
+                                             in get_unmodded_class_menu_data().class_items.items()
                                              for item
                                              in class_items.skins},
                                     False),  # Skins
@@ -105,12 +111,13 @@ class AuthenticatedState(PlayerState):
             0x0200: originalfragment(0x239e5, 0x23acf),  # Name change
             0x0206: originalfragment(0x2620e, 0x28ac1),
             0x0214: originalfragment(0x23ad7, 0x26206),  # Purchaseable loadouts
-            0x0218: originalfragment(0x28ac9, 0x2f4d7),  # Weapon name <-> ID mapping - Probably only need to construct this at some point if we wanted to add entirely new weapons
+            0x0218: originalfragment(0x28ac9, 0x2f4d7),
+            # Weapon name <-> ID mapping - Probably only need to construct this at some point if we wanted to add entirely new weapons
             0x021b: originalfragment(0x3d106, 0x47586),
             0x021c: originalfragment(0x6fdeb, 0x6fecf),
             0x0220: a0177().setdata(0x0220, {item
                                              for item
-                                             in self.class_menu_data.voices},
+                                             in get_unmodded_class_menu_data().voices},
                                     False),  # Voices
             0x0221: originalfragment(0x2f4df, 0x2f69f),  # Modify Clantag
             0x0227: originalfragment(0x2f6a7, 0x38d0f),  # GOTY
@@ -127,17 +134,30 @@ class AuthenticatedState(PlayerState):
         else:
             game_server = self.player.login_server.find_server_by_id(server_field.value)
 
+            # Disallow joining a non-ootb server if the player is not known to be modded
+            if game_server.game_setting_mode != 'ootb' and not self.player.is_modded:
+                self._send_private_msg_from_server(self.player, 'You cannot join a %s server without TAMods' %
+                                                   self.player.player_settings.game_setting_mode)
+                return
+
+            if game_server.game_setting_mode != self.player.player_settings.game_setting_mode:
+                # Cannot join a goty server in ootb mode or vice versa
+                self._send_private_msg_from_server(self.player, 'You are in %s mode; you cannot join a %s mode server' %
+                                                   (self.player.player_settings.game_setting_mode,
+                                                    game_server.game_setting_mode))
+                return
+
             if game_server.joinable:
                 b0msg = a00b0().setlength(9).set_server(game_server).set_player(self.player.unique_id)
                 b0msg.findbytype(m042a).set(2)
                 self.player.send(b0msg)
 
                 self.player.send(a0070().set([
-                     m0348().set(self.player.unique_id),
-                     m0095(),
-                     m009e().set(MESSAGE_UNKNOWNTYPE),
-                     m009d().set(self.player.unique_id),
-                     m02fc().set(STDMSG_JOINED_A_MATCH_QUEUE)
+                    m0348().set(self.player.unique_id),
+                    m0095(),
+                    m009e().set(MESSAGE_UNKNOWNTYPE),
+                    m009d().set(self.player.unique_id),
+                    m02fc().set(STDMSG_JOINED_A_MATCH_QUEUE)
                 ]))
 
                 b0msg = a00b0().setlength(10).set_server(game_server).set_player(self.player.unique_id)
@@ -253,18 +273,20 @@ class AuthenticatedState(PlayerState):
     def handle_promotion_code_redemption(self, request):
         promotion_code = request.findbytype(m0669)
         if promotion_code:
-            authcode = promotion_code.value
-            if (self.player.login_name in self.player.login_server.accounts and
-                    self.player.login_server.accounts[self.player.login_name].authcode == authcode):
+            self._handle_verification_code(promotion_code.value)
 
-                self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
-                self.player.login_server.accounts[self.player.login_name].authcode = None
-                self.player.login_server.accounts.save()
-            else:
-                invalid_code_msg = a0175()
-                invalid_code_msg.findbytype(m02fc).set(STDMSG_NOT_A_VALID_PROMOTION_CODE)  # message type
-                invalid_code_msg.findbytype(m0669).set(authcode)
-                self.player.send(invalid_code_msg)
+    def _handle_verification_code(self, authcode):
+        if (self.player.login_name in self.player.login_server.accounts and
+                self.player.login_server.accounts[self.player.login_name].authcode == authcode):
+
+            self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
+            self.player.login_server.accounts[self.player.login_name].authcode = None
+            self.player.login_server.accounts.save()
+        else:
+            invalid_code_msg = a0175()
+            invalid_code_msg.findbytype(m02fc).set(STDMSG_NOT_A_VALID_PROMOTION_CODE)  # message type
+            invalid_code_msg.findbytype(m0669).set(authcode)
+            self.player.send(invalid_code_msg)
 
     @handles(packet=a006d)
     def handle_menuchange(self, request):
@@ -281,16 +303,17 @@ class AuthenticatedState(PlayerState):
                 menu_area_field = findbytype(arr, m0661)
 
                 if menu_area_field:
-                    if self.player.loadouts.is_loadout_menu_item(menu_area_field.value):
+                    if self.player.get_unmodded_loadouts().is_loadout_menu_item(menu_area_field.value):
                         equip_value = int(int_field.value) if int_field else string_field.value
-                        self.player.loadouts.modify(menu_area_field.value, setting, equip_value)
+                        self.player.get_unmodded_loadouts().modify(menu_area_field.value, setting, equip_value)
                         loadout_changed = True
                     elif menu_area_field.value == MENU_AREA_SETTINGS:
                         # Ignore user settings. They'll have to store them themselves
                         pass
                     else:
                         value = int_field.value if int_field else string_field.value
-                        self.logger.debug('******* Setting %08X of menu area %s to value %s' % (setting, menu_area_field.value, value))
+                        self.logger.debug('******* Setting %08X of menu area %s to value %s'
+                                          % (setting, menu_area_field.value, value))
                 else:
                     value = int_field.value if int_field else string_field.value
                     self.logger.debug('******* Setting %08X to value %s' % (setting, value))
@@ -303,7 +326,7 @@ class AuthenticatedState(PlayerState):
         server_id = request.findbytype(m02c7).value
         game_server = self.player.login_server.find_server_by_id(server_id)
         if game_server.joinable:
-            players = self.player.login_server.find_players_by(game_server = game_server)
+            players = self.player.login_server.find_players_by(game_server=game_server)
             reply = a01c6()
             reply.content = [
                 m02c7().set(server_id),
@@ -324,7 +347,7 @@ class AuthenticatedState(PlayerState):
                 if other_player and other_player.registered:
                     self.player.friends.add(other_player.unique_id, name)
 
-            else: # remove
+            else:  # remove
                 unique_id = request.findbytype(m020d).value
                 self.player.friends.remove(unique_id)
 
@@ -333,7 +356,6 @@ class AuthenticatedState(PlayerState):
         assert request.content == []
 
         if self.player.registered:
-
             reply = a011c().set([
                 m0348().set(self.player.unique_id),
                 m0116().set([[
@@ -347,15 +369,43 @@ class AuthenticatedState(PlayerState):
 
             self.player.send(reply)
 
+    def _send_game_mode_data(self):
+        # Send the control message indicating the switch
+        mode_info = Login2ClientModeInfo(self.player.player_settings.game_setting_mode)
+        self._send_control_message(self.player, mode_info)
+
+        # Give the player the appropriate class menu data1
+        menu_data_datetime = datetime.datetime.utcnow()
+        for data_point in get_class_menu_data_modded_defs(self.player.player_settings.game_setting_mode):
+            menu_data = Login2ClientMenuData(data_point, menu_data_datetime)
+            self._send_control_message(self.player, menu_data)
+
+        for loadout_point in self.player.get_loadout_modded_defs():
+            loadout_data = Login2ClientLoadouts(loadout_point)
+            self._send_control_message(self.player, loadout_data)
+
     @handles_control_message(messageType=Client2LoginConnect)
     def handle_client2login_connect(self, message: Client2LoginConnect):
         # The player is now known to be modded
         self.player.is_modded = True
-        # Give the player their current mode
-        resp = Login2ClientModeInfo('ootb')
-        self._send_control_message(self.player, resp)
+        self._send_game_mode_data()
 
     @handles_control_message(messageType=Client2LoginSwitchMode)
     def handle_client2login_switchmode(self, message: Client2LoginSwitchMode):
-        resp = Login2ClientModeInfo('ootb')
-        self._send_control_message(self.player, resp)
+        modes = list(get_game_setting_modes())
+        next_mode = modes[(modes.index(self.player.player_settings.game_setting_mode) + 1) % len(modes)]
+        self.player.player_settings.game_setting_mode = next_mode
+
+        # Send the player a message confirming their mode
+        self._send_private_msg_from_server(self.player, 'You are now in %s mode'
+                                           % self.player.player_settings.game_setting_mode)
+        self._send_game_mode_data()
+
+    @handles_control_message(messageType=Client2LoginLoadoutChange)
+    def handle_client2login_loadoutchange(self, message: Client2LoginLoadoutChange):
+        # Modify the player's loadout
+        self.player.get_current_loadouts().modify_by_class_details(message.game_class, message.loadout_index,
+                                                     message.loadout_slot, message.value)
+        # Send the change to the game server the player is in
+        if self.player.game_server:
+            self.player.game_server.set_player_loadouts(self.player)

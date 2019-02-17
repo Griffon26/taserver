@@ -135,6 +135,7 @@ class Launcher:
 
             msg = Launcher2LoginServerInfoMessage(str(self.address_pair.external_ip) if self.address_pair.external_ip else '',
                                                   str(self.address_pair.internal_ip) if self.address_pair.internal_ip else '',
+                                                  self.game_server_config['game_setting_mode'],
                                                   self.game_server_config['description'],
                                                   self.game_server_config['motd'])
             self.login_server.send(msg)

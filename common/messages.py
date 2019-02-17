@@ -20,6 +20,7 @@
 
 import json
 import struct
+import datetime
 from typing import Optional
 
 # These IDs should only be extended, not changed, to allow for some
@@ -57,9 +58,11 @@ _MSGID_LAUNCHER2GAME_INIT = 0x4003
 
 _MSGID_CLIENT2LOGIN_CONNECT = 0x5000
 _MSGID_CLIENT2LOGIN_SWITCHMODE = 0x5001
+_MSGID_CLIENT2LOGIN_LOADOUTCHANGE = 0x5002
 
 _MSGID_LOGIN2CLIENT_MODEINFO = 0x6000
-
+_MSGID_LOGIN2CLIENT_MENUDATA = 0x6001
+_MSGID_LOGIN2CLIENT_LOADOUTS = 0x6002
 
 class Message:
     def to_bytes(self):
@@ -142,9 +145,11 @@ class Login2LauncherPings(Message):
 class Launcher2LoginServerInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SERVERINFO
 
-    def __init__(self, external_ip: str, internal_ip: str, description: str, motd: str):
+    def __init__(self, external_ip: str, internal_ip: str, game_setting_mode: str,
+                 description: str, motd: str):
         self.external_ip = external_ip
         self.internal_ip = internal_ip
+        self.game_setting_mode = game_setting_mode
         self.description = description
         self.motd = motd
 
@@ -337,11 +342,36 @@ class Client2LoginSwitchMode(Message):
     msg_id = _MSGID_CLIENT2LOGIN_SWITCHMODE
 
 
+class Client2LoginLoadoutChange(Message):
+    msg_id = _MSGID_CLIENT2LOGIN_LOADOUTCHANGE
+
+    def __init__(self, game_class, loadout_index, loadout_slot, value):
+        self.game_class = game_class
+        self.loadout_index = loadout_index
+        self.loadout_slot = loadout_slot
+        self.value = value
+
+
 class Login2ClientModeInfo(Message):
     msg_id = _MSGID_LOGIN2CLIENT_MODEINFO
 
     def __init__(self, game_setting_mode: str):
         self.game_setting_mode = game_setting_mode
+
+
+class Login2ClientMenuData(Message):
+    msg_id = _MSGID_LOGIN2CLIENT_MENUDATA
+
+    def __init__(self, menu_item, timestamp_value: datetime.datetime):
+        self.menu_item = menu_item
+        self.timestamp = timestamp_value.isoformat()
+
+
+class Login2ClientLoadouts(Message):
+    msg_id = _MSGID_LOGIN2CLIENT_LOADOUTS
+
+    def __init__(self, loadout_item):
+        self.loadout_item = loadout_item
 
 
 _message_classes = [
@@ -378,8 +408,11 @@ _message_classes = [
 
     Client2LoginConnect,
     Client2LoginSwitchMode,
+    Client2LoginLoadoutChange,
 
     Login2ClientModeInfo,
+    Login2ClientMenuData,
+    Login2ClientLoadouts,
 ]
 
 _message_map = { msg_class.msg_id : msg_class for msg_class in _message_classes }

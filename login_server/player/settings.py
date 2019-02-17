@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2018  Maurice van der Pot <griffon26@kfk4ever.com>
+# Copyright (C) 2018  Joseph Spearritt <mcoot@tamods.org>
 #
 # This file is part of taserver
 #
@@ -18,8 +18,22 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from distutils.version import StrictVersion
+import json
+from common.game_items import UNMODDED_GAME_SETTING_MODE
 
-# These versions must follow the MAJOR.MINOR.PATCH format of SemVer (https://semver.org/)
-launcher2controller_protocol_version = StrictVersion('1.0.0')
-launcher2loginserver_protocol_version = StrictVersion('4.0.0')
+
+class PlayerSettings:
+    def __init__(self):
+        self.game_setting_mode = UNMODDED_GAME_SETTING_MODE
+
+    def load(self, filename):
+        try:
+            with open(filename, 'rt') as infile:
+                d = json.load(infile)
+                self.game_setting_mode = d.get('game_setting_mode', 'ootb')
+        except OSError:
+            self.game_setting_mode = 'ootb'
+
+    def save(self, filename):
+        with open(filename, 'wt') as outfile:
+            json.dump(vars(self), outfile, indent=4, sort_keys=True)

@@ -27,21 +27,20 @@ from .player.player import Player
 
 
 class GameClientHandler(IncomingConnectionHandler):
-    def __init__(self, use_goty_mode: bool, incoming_queue, dump_queue):
+    def __init__(self, incoming_queue, dump_queue):
         super().__init__('gameclient',
                          '0.0.0.0',
                          9000,
                          incoming_queue)
         self.dump_queue = dump_queue
-        self.use_goty_mode = use_goty_mode
 
     def create_connection_instances(self, sock, address):
         reader = LoginProtocolReader(sock, self.dump_queue)
         writer = LoginProtocolWriter(sock, self.dump_queue)
-        peer = Player(address, self.use_goty_mode)
+        peer = Player(address)
         return reader, writer, peer
 
 
-def handle_game_client(incoming_queue, dump_queue, use_goty_mode: bool):
-    game_client_handler = GameClientHandler(use_goty_mode, incoming_queue, dump_queue)
+def handle_game_client(incoming_queue, dump_queue):
+    game_client_handler = GameClientHandler(incoming_queue, dump_queue)
     game_client_handler.run()

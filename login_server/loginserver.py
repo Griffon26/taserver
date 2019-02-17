@@ -93,14 +93,17 @@ class LoginServer:
                     else:
                         raise
 
+    def all_game_servers(self):
+        return self.game_servers
+
     def find_server_by_id(self, server_id):
-        for game_server in self.game_servers.values():
+        for game_server in self.all_game_servers().values():
             if game_server.server_id == server_id:
                 return game_server
         raise ProtocolViolationError('No server found with specified server ID')
 
     def find_server_by_match_id(self, match_id):
-        for game_server in self.game_servers.values():
+        for game_server in self.all_game_servers().values():
             if game_server.match_id == match_id:
                 return game_server
         raise ProtocolViolationError('No server found with specified match ID')
@@ -159,12 +162,14 @@ class LoginServer:
             player.set_state(UnauthenticatedState)
             self.players[unique_id] = player
         elif isinstance(msg.peer, GameServer):
-            server_id = first_unused_number_above(self.game_servers.keys(), 1)
+            server_id = first_unused_number_above(self.all_game_servers().keys(), 1)
 
             game_server = msg.peer
             game_server.server_id = server_id
             game_server.match_id = server_id + 10000000
+            game_server.game_setting_mode = None
             game_server.login_server = self
+
             self.game_servers[server_id] = game_server
 
             self.logger.info('server: added game server %s (%s)' % (server_id, game_server.detected_ip))
@@ -228,9 +233,10 @@ class LoginServer:
         internal_ip = IPv4Address(msg.internal_ip) if msg.internal_ip else None
         address_pair = IPAddressPair(external_ip, internal_ip)
 
-        game_server.set_info(address_pair, msg.description, msg.motd)
-        self.logger.info('server: server info received for server %s (%s)' % (game_server.server_id,
-                                                                              game_server.detected_ip))
+        game_server.set_info(address_pair, msg.game_setting_mode, msg.description, msg.motd)
+        self.logger.info('server: server info received for %s server %s (%s)' % (game_server.game_setting_mode,
+                                                                                    game_server.server_id,
+                                                                                    game_server.detected_ip))
 
     def handle_map_info_message(self, msg):
         game_server = msg.peer
