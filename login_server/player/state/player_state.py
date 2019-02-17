@@ -70,9 +70,6 @@ class PlayerState:
         self.logger = logging.getLogger(__name__)
         self.player = player
 
-    def class_menu_data(self):
-        return get_unmodded_class_menu_data()
-
     def handle_request(self, request):
         methods = [
             func for name, func in inspect.getmembers(self) if

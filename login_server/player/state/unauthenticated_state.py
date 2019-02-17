@@ -20,6 +20,7 @@
 #
 
 from common.datatypes import *
+from common.game_items import get_unmodded_class_menu_data
 from .authenticated_state import AuthenticatedState
 from ..state.player_state import PlayerState, handles
 
@@ -74,7 +75,7 @@ class UnauthenticatedState(PlayerState):
             self.player.load()
             self.player.send([
                 a003d()
-                    .set_menu_data(self.class_menu_data())
+                    .set_menu_data(get_unmodded_class_menu_data())
                     .set_player(self.player),
                 m0662().set_original_bytes(0x8898, 0xdaff),
                 m0633().set_original_bytes(0xdaff, 0x19116),
