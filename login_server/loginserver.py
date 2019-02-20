@@ -233,7 +233,9 @@ class LoginServer:
         internal_ip = IPv4Address(msg.internal_ip) if msg.internal_ip else None
         address_pair = IPAddressPair(external_ip, internal_ip)
 
-        game_server.set_info(address_pair, msg.game_setting_mode, msg.description, msg.motd)
+        password_hash = bytes(msg.password_hash) if msg.password_hash is not None else None
+
+        game_server.set_info(address_pair, msg.game_setting_mode, msg.description, msg.motd, password_hash)
         self.logger.info('server: server info received for %s server %s (%s)' % (game_server.game_setting_mode,
                                                                                     game_server.server_id,
                                                                                     game_server.detected_ip))

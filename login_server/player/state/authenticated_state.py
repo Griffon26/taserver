@@ -134,30 +134,45 @@ class AuthenticatedState(PlayerState):
         else:
             game_server = self.player.login_server.find_server_by_id(server_field.value)
 
+            allowed_to_join = True
+            join_message = STDMSG_JOINED_A_MATCH_QUEUE
+
             # Disallow joining a non-ootb server if the player is not known to be modded
             if game_server.game_setting_mode != 'ootb' and not self.player.is_modded:
                 self._send_private_msg_from_server(self.player, 'You cannot join a %s server without TAMods' %
                                                    self.player.player_settings.game_setting_mode)
-                return
+                allowed_to_join = False
+                join_message = STDMSG_CANNOT_CONNECT_TO_SERVER
 
             if game_server.game_setting_mode != self.player.player_settings.game_setting_mode:
                 # Cannot join a goty server in ootb mode or vice versa
                 self._send_private_msg_from_server(self.player, 'You are in %s mode; you cannot join a %s mode server' %
                                                    (self.player.player_settings.game_setting_mode,
                                                     game_server.game_setting_mode))
-                return
+                allowed_to_join = False
+                join_message = STDMSG_CANNOT_CONNECT_TO_SERVER
 
-            if game_server.joinable:
-                b0msg = a00b0().setlength(9).set_server(game_server).set_player(self.player.unique_id)
+            if not game_server.joinable:
+                allowed_to_join = False
+                join_message = STDMSG_CANNOT_CONNECT_TO_SERVER
+
+            if allowed_to_join and game_server.password_hash is not None:
+                password_attempt = request.findbytype(m032e)
+                if password_attempt is None or bytes(password_attempt.content) != game_server.password_hash:
+                    allowed_to_join = False
+                    join_message = STDMSG_INCORRECT_PASSWORD
+
+            b0msg = a00b0().set_server(game_server).set_player(self.player.unique_id)
+            if allowed_to_join:
+                b0msg.setlength(9)
                 b0msg.findbytype(m042a).set(2)
                 self.player.send(b0msg)
-
                 self.player.send(a0070().set([
                     m0348().set(self.player.unique_id),
                     m0095(),
                     m009e().set(MESSAGE_UNKNOWNTYPE),
                     m009d().set(self.player.unique_id),
-                    m02fc().set(STDMSG_JOINED_A_MATCH_QUEUE)
+                    m02fc().set(join_message)
                 ]))
 
                 b0msg = a00b0().setlength(10).set_server(game_server).set_player(self.player.unique_id)
@@ -168,8 +183,15 @@ class AuthenticatedState(PlayerState):
                 b4msg.findbytype(m042a).set(3)
                 self.player.send(b4msg)
             else:
-                # TODO: figure out how to display a "failed to join" dialog
-                pass
+                b0msg.content.append(m042b().set(join_message))
+                self.player.send(b0msg)
+                self.player.send(a0070().set([
+                    m0348().set(self.player.unique_id),
+                    m0095(),
+                    m009e().set(MESSAGE_UNKNOWNTYPE),
+                    m009d().set(self.player.unique_id),
+                    m02fc().set(join_message)
+                ]))
 
     @handles(packet=a00b2)
     def handle_server_join_second_step(self, request):
