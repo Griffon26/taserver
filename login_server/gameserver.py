@@ -190,7 +190,7 @@ class GameServer(Peer):
                 m034a().set(kickee.display_name),
                 m0348().set(kickee.unique_id),
                 m02fc().set(STDMSG_VOTE_BY_X_KICK_PLAYER_X_YES_NO),
-                m0442(),
+                m0442().set_success(True),
                 m0704().set(kicker.unique_id),
                 m0705().set(kicker.display_name)
             ]
@@ -256,13 +256,13 @@ class GameServer(Peer):
         if votekick_passed:
             reply.content.extend([
                 m02fc().set(STDMSG_PLAYER_X_HAS_BEEN_KICKED),
-                m0442().set(1)
+                m0442().set_success(True)
             ])
 
         else:
             reply.content.extend([
                 m02fc().set(STDMSG_PLAYER_X_WAS_NOT_VOTED_OUT),
-                m0442().set(0)
+                m0442().set_success(False)
             ])
 
             self.send_all_players(reply)

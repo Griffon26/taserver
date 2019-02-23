@@ -306,6 +306,7 @@ class AuthenticatedState(PlayerState):
             self.player.login_server.accounts.save()
         else:
             invalid_code_msg = a0175()
+            invalid_code_msg.findbytype(m0442).set_success(False)
             invalid_code_msg.findbytype(m02fc).set(STDMSG_NOT_A_VALID_PROMOTION_CODE)  # message type
             invalid_code_msg.findbytype(m0669).set(authcode)
             self.player.send(invalid_code_msg)

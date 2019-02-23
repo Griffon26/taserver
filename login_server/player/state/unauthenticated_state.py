@@ -59,34 +59,52 @@ class UnauthenticatedState(PlayerState):
             self.player.login_name = request.findbytype(m0494).value
             self.player.password_hash = request.findbytype(m0056).content
             accounts = self.player.login_server.accounts
-            if (len(self.player.login_name) <= self.player.max_name_length and
-                    self.player.login_name in accounts and
-                    self.player.password_hash == accounts[self.player.login_name].password_hash):
-                self.player.login_server.change_player_unique_id(self.player.unique_id,
-                                                                 accounts[self.player.login_name].unique_id)
-                self.player.registered = True
 
-            names_in_use = [p.display_name for p in self.player.login_server.players.values()
-                            if p.display_name is not None]
-            self.player.display_name = choose_display_name(self.player.login_name,
-                                                           self.player.registered,
-                                                           names_in_use,
-                                                           self.player.max_name_length)
-            self.player.load()
-            self.player.send([
-                a003d()
-                    .set_menu_data(get_unmodded_class_menu_data())
-                    .set_player(self.player),
-                m0662().set_original_bytes(0x8898, 0xdaff),
-                m0633().set_original_bytes(0xdaff, 0x19116),
-                m063e().set_original_bytes(0x19116, 0x1c6ee),
-                m067e().set_original_bytes(0x1c6ee, 0x1ec45),
-                m0442(),
-                m02fc(),
-                m0219(),
-                m0019(),
-                m0623(),
-                m05d6(),
-                m00ba()
-            ])
-            self.player.set_state(AuthenticatedState)
+            validation_failure = self.player.login_server.validate_username(self.player.login_name)
+            if validation_failure:
+                self.player.send([
+                    a003d().set([
+                        m0442().set_success(False),
+                        m02fc().set(STDMSG_LOGIN_INFO_INVALID),
+                        m0219(),
+                        m0019(),
+                        m0623(),
+                        m05d6(),
+                        m03e3(),
+                        m00ba()
+                    ])
+                ])
+                self.logger.info("Rejected login attempt with user name %s: %s" %
+                                 (self.player.login_name.encode('latin1'), validation_failure))
+
+            else:
+                if (self.player.login_name in accounts and
+                        self.player.password_hash == accounts[self.player.login_name].password_hash):
+                    self.player.login_server.change_player_unique_id(self.player.unique_id,
+                                                                     accounts[self.player.login_name].unique_id)
+                    self.player.registered = True
+
+                names_in_use = [p.display_name for p in self.player.login_server.players.values()
+                                if p.display_name is not None]
+                self.player.display_name = choose_display_name(self.player.login_name,
+                                                               self.player.registered,
+                                                               names_in_use,
+                                                               self.player.max_name_length)
+                self.player.load()
+                self.player.send([
+                    a003d()
+                        .set_menu_data(get_unmodded_class_menu_data())
+                        .set_player(self.player),
+                    m0662().set_original_bytes(0x8898, 0xdaff),
+                    m0633().set_original_bytes(0xdaff, 0x19116),
+                    m063e().set_original_bytes(0x19116, 0x1c6ee),
+                    m067e().set_original_bytes(0x1c6ee, 0x1ec45),
+                    m0442().set_success(True),
+                    m02fc().set(STDMSG_LOGIN_IS_VALID),
+                    m0219(),
+                    m0019(),
+                    m0623(),
+                    m05d6(),
+                    m00ba()
+                ])
+                self.player.set_state(AuthenticatedState)

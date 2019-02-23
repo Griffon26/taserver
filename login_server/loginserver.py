@@ -131,14 +131,31 @@ class LoginServer:
         player.unique_id = new_id
         self.players[new_id] = player
 
+    def validate_username(self, username):
+        if len(username) < 4:
+            return 'User name is too short, min length is 4 characters.'
+
+        if len(username) > Player.max_name_length:
+            return 'User name is too long, max length is %d characters.' % Player.max_name_length
+
+        try:
+            ascii_bytes = username.encode('ascii')
+        except UnicodeError:
+            return 'User name contains invalid (i.e. non-ascii) characters'
+
+        if not all((c >= 33 and c <= 126) for c in ascii_bytes):
+            return 'User name contains invalid characters'
+
+        return None
+
     def handle_authcode_request_message(self, msg):
         authcode_requester = msg.peer
 
-        if len(msg.login_name) > Player.max_name_length:
-            self.logger.warning('server: authcode requested for a user name (%s) that is longer than '
-                                '%d characters. Refused.' % (msg.login_name, Player.max_name_length))
-            authcode_requester.send('Error: account names are not allowed to be longer than %d characters.' %
-                                    Player.max_name_length)
+        validation_failure = self.validate_username(msg.login_name)
+        if validation_failure:
+            self.logger.warning("server: authcode requested for invalid user name '%s': %s. Refused."
+                                % (msg.login_name, validation_failure))
+            authcode_requester.send('Error: %s' % validation_failure)
         else:
             availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
             authcode = ''.join([random.choice(availablechars) for i in range(8)])

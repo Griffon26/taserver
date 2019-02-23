@@ -52,6 +52,9 @@ STDMSG_JOINED_A_MATCH_QUEUE                 = 0x00004782 # 'You have joined a ma
 STDMSG_NOT_IN_THE_MATCH_QUEUE               = 0x00004783 # 'You are not in the match queue'
 STDMSG_LEFT_MATCH_QUEUE                     = 0x00004783 # 'You have left the match queue'
 STDMSG_MISSION_READY_DO_YOU_WANT_TO_JOIN    = 0x00004B72 # 'A mission is ready for you to join, do you want to accept?'
+STDMSG_LOGIN_INFO_INVALID                   = 0x00004948 # 'The login information submitted is invalid. Please verify the user name and password.'
+STDMSG_LOGIN_IS_VALID                       = 0x00004949 # 'Login is valid'
+STDMSG_UNABLE_TO_CONNECT_TO_SERVER          = 0x00004978 # 'Unable to connect to server'
 STDMSG_TEST_CONFIRM_POPUP                   = 0x00004b95 # 'Are you sure you would like to test the functionality of the confirm popup?'
 # Lots of other strings in the range that follows
 STDMSG_MUST_UPGRADE_TO_VIP                  = 0x00019338 # 'You must upgrade your account to VIP Status'
@@ -370,6 +373,9 @@ class m0442(onebyte):
     def __init__(self):
         super().__init__(0x0442, 0x01)
 
+    def set_success(self, success):
+        self.value = 1 if success else 0
+        return self
 
 class m046b(onebyte):
     def __init__(self):
@@ -761,7 +767,7 @@ class m02f4(fourbytes):
 
 class m02fc(fourbytes):
     def __init__(self):
-        super().__init__(0x02fc, 0x00004949)
+        super().__init__(0x02fc, 0x00000000)
 
 
 class m02ff(fourbytes):
@@ -3057,7 +3063,7 @@ class a0177(enumblockarray):
             m02ab().set(menu_part),
             m0127().setpurchasedata(menu_part, purchase_data, include_id_mapping),
             m049e().set(0x0001),
-            m0442().set(0x01),
+            m0442().set_success(True),
         ])
 
 
