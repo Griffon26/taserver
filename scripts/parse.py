@@ -255,20 +255,22 @@ class Parser:
                 self.outfile = io.StringIO()
                 next_value = peek_short(self.infile)
 
-                # FIXME: That we have to look at the first short to see how 
-                # many items are in this packet probably indicates that we 
-                # interpret the packet structure incorrectly.
-                if next_value == 0x01BC:
-                    item_count = 2
-                elif next_value == 0x003D:
-                    item_count = 12
-                else:
-                    item_count = 1
-
                 self.outfile.write('--------------------------------------------------------------------------\n')
                 try:
-                    for i in range(item_count):
-                        self.parse_enumfield(0, index2prefix(i))
+                    enumfield = self.parse_enumfield(0, index2prefix(0))
+
+                    # FIXME: That we have to look at the first short to see how
+                    # many items are in this packet probably indicates that we
+                    # interpret the packet structure incorrectly.
+                    if enumfield['id'] == 0x01BC:
+                        additional_items = 1
+                    elif enumfield['id'] == 0x003D and any(subfield['id'] == 0x034a for subfield in enumfield['content']):
+                        additional_items = 11
+                    else:
+                        additional_items = 0
+
+                    for i in range(additional_items):
+                        self.parse_enumfield(0, index2prefix(i + 1))
                     self.parse_seq_ack()
 
                 except ParseError as e:
@@ -361,7 +363,7 @@ class Parser:
         ack = read_long(self.infile)
         self.outfile.write(offset2string(offset) + 'seq %08X ack %08X\n' % (seq, ack))
 
-    def parse_enumblockarray(self, enumid: int, nesting_level: int, newline: bool, prefix='') -> None:
+    def parse_enumblockarray(self, enumid: int, nesting_level: int, newline: bool, prefix='') -> List:
         """
         Parses an enumfield containing an array of enumfields from the stream
         """
@@ -370,19 +372,26 @@ class Parser:
         if newline:
             self.outfile.write(offset2string(offset) + indentlevel2string(nesting_level))
         self.outfile.write(f'{prefix}enumblockarray length {length}{self.get_description(enumid, None)}\n')
-        for i in range(length):
-            self.parse_enumfield(nesting_level + 1, index2prefix(i))
 
-    def parse_arrayofenumblockarrays(self, enumid: int, nesting_level: int) -> None:
+        content = []
+        for i in range(length):
+            content.append(self.parse_enumfield(nesting_level + 1, index2prefix(i)))
+
+        return content
+
+    def parse_arrayofenumblockarrays(self, enumid: int, nesting_level: int) -> List:
         """
         Parses an array of enumfield arrays from the stream
         """
         size = read_short(self.infile)
         self.outfile.write(f'arrayofenumblockarrays size {size}\n')
-        for i in range(size):
-            self.parse_enumblockarray(-1, nesting_level + 1, True, prefix=index2prefix(i))
 
-    def parse_enumfield(self, nesting_level: int, prefix='') -> None:
+        content = []
+        for i in range(size):
+            content.append(self.parse_enumblockarray(-1, nesting_level + 1, True, prefix=index2prefix(i)))
+        return content
+
+    def parse_enumfield(self, nesting_level: int, prefix='') -> Dict:
         """
         Parses any enumfield from the stream
         """
@@ -390,8 +399,10 @@ class Parser:
         enumid = read_short(self.infile)
         self.outfile.write(offset2string(offset) + indentlevel2string(nesting_level) + prefix + 'enumfield %04X ' % enumid)
 
+        enumfield = {'id': enumid, 'content': None}
+
         if enumid in self.enum_ids['enumblockarray'] and nesting_level == 0:
-            self.parse_enumblockarray(enumid, nesting_level + 1, False)
+            enumfield['content'] = self.parse_enumblockarray(enumid, nesting_level + 1, False)
         elif enumid in self.enum_ids['salt']:
             self.parse_salt(enumid, nesting_level + 1)
         elif enumid in self.enum_ids['password']:
@@ -404,7 +415,7 @@ class Parser:
                 self.dump_error(offset)
                 raise ParseError('Unable to decode some bytes as unicode')
         elif enumid in self.enum_ids['arrayofenumblockarrays']:
-            self.parse_arrayofenumblockarrays(enumid, nesting_level + 1)
+            enumfield['content'] = self.parse_arrayofenumblockarrays(enumid, nesting_level + 1)
         elif enumid in self.enum_ids['onebyte']:
             self.parse_onebyte(enumid, nesting_level + 1)
         elif enumid in self.enum_ids['twobytes']:
@@ -421,6 +432,8 @@ class Parser:
             offset = self.infile.tell()
             self.dump_error(offset)
             raise ParseError('Unknown enumtype %d (0x%04X) at offset 0x%08X' % (enumid, enumid, offset))
+
+        return enumfield
 
     def dump_error(self, offset: int) -> None:
         """
