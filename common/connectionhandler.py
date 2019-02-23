@@ -58,7 +58,7 @@ class ConnectionReader:
                 msg.peer = self.peer
                 self.incoming_queue.put(msg)
 
-        except (ConnectionResetError, gevent._socketcommon.cancel_wait_ex):
+        except (ConnectionResetError, ConnectionAbortedError, gevent._socketcommon.cancel_wait_ex):
             self.logger.info('%s(%s): disconnected' % (self.task_name, self.task_id))
 
         self.incoming_queue.put(PeerDisconnectedMessage(self.peer))
