@@ -142,7 +142,7 @@ class AuthenticatedState(PlayerState):
                 self._send_private_msg_from_server(self.player, 'You cannot join a %s server without TAMods' %
                                                    self.player.player_settings.game_setting_mode)
                 allowed_to_join = False
-                join_message = STDMSG_CANNOT_CONNECT_TO_SERVER
+                join_message = STDMSG_UNABLE_TO_CONNECT_TO_SERVER
 
             if game_server.game_setting_mode != self.player.player_settings.game_setting_mode:
                 # Cannot join a goty server in ootb mode or vice versa
@@ -150,7 +150,7 @@ class AuthenticatedState(PlayerState):
                                                    (self.player.player_settings.game_setting_mode,
                                                     game_server.game_setting_mode))
                 allowed_to_join = False
-                join_message = STDMSG_CANNOT_CONNECT_TO_SERVER
+                join_message = STDMSG_UNABLE_TO_CONNECT_TO_SERVER
 
             if not game_server.joinable:
                 allowed_to_join = False
