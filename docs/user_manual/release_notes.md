@@ -1,3 +1,27 @@
+### taserver v2.0.0
+
+This version is the first one to support running both GOTY and OOTB games on the same login server.
+
+Here is the complete list of changes in this release:
+* one login server now supports both OOTB and GOTY game servers.
+  The mode of a game server is set through the game_setting_mode setting in gameserverlauncher.ini.
+* passworded servers are now supported through a setting in gameserverlauncher.ini
+* user names are now guaranteed to only contain printable ASCII (excluding space and DEL)
+* a new "authbot" script is provided for automating the user registration procedure.
+  It logs on to the HiRez server and provides authcodes to people through private chat
+
+Bug fixes:
+* player IDs in the account database no longer change when they use an authcode
+* parse.py can now parse failed authentications as well
+* improved error logging for configuration errors in the game server launcher
+
+Compatibility notes:
+* Game servers have to be updated to this release in order to work with this login server version
+* Game servers must have a TAMods-Server version of at least 0.4.0.
+  Simply run `download_compatible_controller.py` after updating to this release to get it.
+* For playing in GOTY mode, clients will need an up-to-date TAMods version.
+  OOTB does not require TAMods on the client side.
+
 ### taserver v1.0.1
 
 Bugs fixed:
