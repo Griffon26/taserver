@@ -37,7 +37,8 @@ mode. The instructions below explain where to get it and how to use it.
    Settings such as loadouts will not be remembered across sessions unless you get verified.
    You can [read more about getting verified on this page](/docs/user_manual/getting_verified.md).
 
-7) Press the "Switch Game Mode" menu option and you should see a message indicating you are 
-   now in GOTY mode. If it says OOTB mode, press it again.
+7) Press the "Switch to GOTY" menu option and you should see a message indicating you are 
+   now in GOTY mode. The current mode is shown under "Play Now". If it still says OOTB mode,
+   press "Switch to GOTY" again.
    
 You should now be able to join GOTY game servers.
