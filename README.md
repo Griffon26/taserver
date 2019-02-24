@@ -8,7 +8,7 @@ To talk about this project join the [discord server](https://discordapp.com/invi
 
 ### Joining games
 
-If you just want to join games on the login server hosted by me (Griffon26), then
+If you just want to join OOTB games on the login server hosted by me (Griffon26), then
 you don't need to download anything. All you need to do is create a Windows shortcut to
 `TribesAscend.exe` and add `-hostx=18.197.240.229` to the end of the target field.
 If there are quotes around the executable then add the `-hostx` part after the closing quotes.
@@ -17,6 +17,9 @@ If there are quotes around the executable then add the `-hostx` part after the c
 
 Start the game through the shortcut and log in with any name and password. The servers
 listed in the server browser will be servers hosted by fellow players.
+
+If you want to join any of the GOTY servers in the list then you must be using TAMods.
+[Read more about joining a GOTY servers here](/docs/user_manual/joining_goty_servers.md)
 
 See also: [Getting verified](/docs/user_manual/getting_verified.md)
 

@@ -7,7 +7,7 @@ Here is the complete list of changes in this release:
   The mode of a game server is set through the game_setting_mode setting in gameserverlauncher.ini.
 * passworded servers are now supported through a setting in gameserverlauncher.ini
 * user names are now guaranteed to only contain printable ASCII (excluding space and DEL)
-* a new "authbot" script is provided for automating the user registration procedure.
+* a new "authbot" is provided for automating the user registration procedure.
   It logs on to the HiRez server and provides authcodes to people through private chat
 
 Bug fixes:
