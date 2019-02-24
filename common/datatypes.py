@@ -1503,6 +1503,9 @@ class m00aa(stringenum):
     def __init__(self):
         super().__init__(0x00aa, 'y')
 
+    def set_custom(self, custom):
+        self.set('y' if custom else 'n')
+        return self
 
 class m00ab(stringenum):
     def __init__(self):
@@ -1687,7 +1690,7 @@ class m00e9(arrayofenumblockarrays):
                 m06bf(),
                 m069c().set(0x01 if server.password_hash is not None else 0x00),
                 m069b().set(0x01 if server.password_hash is not None else 0x00),
-                m0300().set(server.description),
+                m0300().set(server.game_setting_mode.upper() + ' | ' + server.description),
                 m01a4().set(server.motd),
                 m02b2().set(server.map_id),
                 m02b5(),
