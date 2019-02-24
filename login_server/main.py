@@ -83,6 +83,8 @@ def main():
         gevent.spawn(handle_game_client, server_queue, dump_queue),
         gevent.spawn(handle_game_server_launcher, server_queue)
     ]
+    # Give the greenlets enough time to start up, otherwise killall can block
+    gevent.sleep(1)
 
     if dump_queue:
         tasks.append(gevent.spawn(handle_dump, dump_queue))

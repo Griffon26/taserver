@@ -30,7 +30,7 @@ from .inject import inject
 from common.errors import FatalError
 
 
-class ConfigurationError(Exception):
+class ConfigurationError(FatalError):
     def __init__(self, message):
         super().__init__('Configuration error: %s' % message)
 

@@ -57,6 +57,8 @@ def main():
                 gevent.spawn(handle_game_controller, config['gamecontroller'], incoming_queue),
                 gevent.spawn(handle_launcher, config['gameserver'], incoming_queue, server_handler_queue)
             ]
+            # Give the greenlets enough time to start up, otherwise killall can block
+            gevent.sleep(1)
 
             # Wait for any of the tasks to terminate
             finished_greenlets = gevent.joinall(tasks, count=1)
