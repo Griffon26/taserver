@@ -32,7 +32,8 @@ def choose_display_name(login_name, registered, names_in_use, max_name_length):
         prefix = 'unvrf-'
         display_name = prefix + login_name[:max_name_length - len(prefix)]
         index = 2
-        while display_name in names_in_use:
+        lowercase_names_in_use = [name.lower() for name in names_in_use]
+        while display_name.lower() in lowercase_names_in_use:
             display_name = 'unv%02d-%s' % (index, login_name[:max_name_length - len(prefix)])
             index += 1
             assert index < 100

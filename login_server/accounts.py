@@ -45,7 +45,7 @@ class Accounts():
                 accountlist = json.loads(data)
                 for accountentry in accountlist:
                     unique_id = accountentry['unique_id']
-                    login_name = accountentry['login_name']
+                    login_name = accountentry['login_name'].lower()
                     authcode = accountentry['authcode']
                     password_hash = accountentry['password_hash']
                     if password_hash is not None:
@@ -66,19 +66,20 @@ class Accounts():
                     password_hash = base64.b64encode(password_hash).decode('utf-8')
                 accountlist.append({
                     'unique_id' : accountinfo.unique_id,
-                    'login_name' : accountinfo.login_name,
+                    'login_name' : accountinfo.login_name.lower(),
                     'authcode' : accountinfo.authcode,
                     'password_hash' : password_hash
                 })
             json.dump(accountlist, f, indent = 4)
 
     def __getitem__(self, key):
-        return self.accounts[key]
+        return self.accounts[key.lower()]
 
     def __contains__(self, key):
-        return key in self.accounts
+        return key.lower() in self.accounts
     
     def add_account(self, login_name, authcode):
+        login_name = login_name.lower()
         if login_name in self.accounts:
             unique_id = self.accounts[login_name].unique_id
         else:
