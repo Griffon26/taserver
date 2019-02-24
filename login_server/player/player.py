@@ -35,6 +35,7 @@ from common.game_items import get_game_setting_modes, UNMODDED_GAME_SETTING_MODE
              RefOnly('game_server'), 'vote', 'team')
 class Player(Peer):
 
+    min_name_length = 2
     max_name_length = 15
 
     loadout_file_path = 'data/players/%s_%s_loadouts.json'

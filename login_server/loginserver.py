@@ -132,8 +132,8 @@ class LoginServer:
         self.players[new_id] = player
 
     def validate_username(self, username):
-        if len(username) < 4:
-            return 'User name is too short, min length is 4 characters.'
+        if len(username) < Player.min_name_length:
+            return 'User name is too short, min length is %d characters.' % Player.min_name_length
 
         if len(username) > Player.max_name_length:
             return 'User name is too long, max length is %d characters.' % Player.max_name_length
