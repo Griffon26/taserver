@@ -137,20 +137,21 @@ class AuthenticatedState(PlayerState):
             allowed_to_join = True
             join_message = STDMSG_JOINED_A_MATCH_QUEUE
 
-            # Disallow joining a non-ootb server if the player is not known to be modded
-            if game_server.game_setting_mode != 'ootb' and not self.player.is_modded:
-                self._send_private_msg_from_server(self.player, 'You cannot join a %s server without TAMods' %
-                                                   self.player.player_settings.game_setting_mode)
-                allowed_to_join = False
-                join_message = STDMSG_UNABLE_TO_CONNECT_TO_SERVER
-
-            if game_server.game_setting_mode != self.player.player_settings.game_setting_mode:
-                # Cannot join a goty server in ootb mode or vice versa
-                self._send_private_msg_from_server(self.player, 'You are in %s mode; you cannot join a %s mode server' %
-                                                   (self.player.player_settings.game_setting_mode,
-                                                    game_server.game_setting_mode))
-                allowed_to_join = False
-                join_message = STDMSG_UNABLE_TO_CONNECT_TO_SERVER
+            if self.player.is_modded:
+                if game_server.game_setting_mode != self.player.player_settings.game_setting_mode:
+                    # Cannot join a goty server in ootb mode or vice versa
+                    self._send_private_msg_from_server(self.player, 'You are in %s mode; you cannot join a %s mode server' %
+                                                       (self.player.player_settings.game_setting_mode,
+                                                        game_server.game_setting_mode))
+                    allowed_to_join = False
+                    join_message = STDMSG_UNABLE_TO_CONNECT_TO_SERVER
+            else:
+                # Disallow joining a non-ootb server if the player is not known to be modded
+                if game_server.game_setting_mode != 'ootb':
+                    self._send_private_msg_from_server(self.player, 'You cannot join a %s server without TAMods' %
+                                                       self.player.player_settings.game_setting_mode)
+                    allowed_to_join = False
+                    join_message = STDMSG_UNABLE_TO_CONNECT_TO_SERVER
 
             if not game_server.joinable:
                 allowed_to_join = False
