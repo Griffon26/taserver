@@ -1,3 +1,15 @@
+### taserver v2.0.1
+
+Bugs fixed:
+* starting the game without TAMods after switching to GOTY mode would not allow joining OOTB servers
+* the speed of thrust with rage incorrectly depended on the capper's speed
+  (this fix requires the versions mentioned below)
+
+Compatibility notes:
+* Game servers must have TAMods-Server version 0.4.1 or higher
+* Clients must have a TAMods version 1.001 or higher
+
+
 ### taserver v2.0.0
 
 This version is the first one to support running both GOTY and OOTB games on the same login server.
@@ -23,6 +35,7 @@ Compatibility notes:
 * For playing in GOTY mode, clients will need an up-to-date TAMods version.
   OOTB does not require TAMods on the client side.
 
+
 ### taserver v1.0.1
 
 Bugs fixed:
@@ -34,6 +47,7 @@ Bugs fixed:
 
 Other changes:
 * more detailed votekick logging on the login server
+
 
 ### taserver v1.0.0 released
 
