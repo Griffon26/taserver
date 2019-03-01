@@ -23,6 +23,10 @@ approach to generating and distributing authentication codes.
 
 ## How to register
 
+Below are two sets of instructions. One is for Griffon26's login server, the other
+for any other login server. Most people should follow the first set of instructions,
+because that server is where most game servers are listed. 
+
 ### For Griffon26's login server
 
 Getting registered for the login server run by Griffon26 is an automated process:
@@ -33,16 +37,18 @@ Getting registered for the login server run by Griffon26 is an automated process
 
     `Say> @taserverbot authcode`
 
-3. Now log in to Griffon26's login server with the same name you have on the Hirez
-   server and a password of your choosing.
+3. Now log in to Griffon26's login server with the in-game name you have on the Hirez
+   server and a password of your choosing. Note that your in-game name could differ
+   from your account name on Hirez servers. On Griffon26's login server your in-game
+   name will be your account name.
  
 4. After logging in go to the "Store" menu and select "Redeem promotion"
 
 5. Fill in the authentication code and press OK
 
 6. If you don't get an error message, registration was successful.
-   The next time you log on to that login server with the same name
-   and password you will no longer have the "unvrf-" prefix.
+
+7. Restart Tribes Ascend and log in to Griffon26's server again to remove the "unvrf-" prefix.
 
 ### For any other login server
 
@@ -59,8 +65,8 @@ Getting registered for the login server run by Griffon26 is an automated process
 5. Fill in the authentication code and press OK
 
 6. If you don't get an error message, registration was successful.
-   The next time you log on to that login server with the same name
-   and password you will no longer have the "unvrf-" prefix.
+
+7. Restart Tribes Ascend and log in to that login server again to remove the "unvrf-" prefix.
    
 ## How to generate authentication codes
 
