@@ -32,7 +32,7 @@ class FirewallUtils:
             'firewall',
             'delete',
             'rule',
-            'name="%s"' % name
+            'name=%s' % name
         ]
         # Don't check for failure here, because it is expected to
         # fail if there are no left-over rules from a previous run.
@@ -48,7 +48,7 @@ class FirewallUtils:
             'firewall',
             'delete',
             'rule',
-            'name="%s"' % name,
+            'name=%s' % name,
             'protocol=%s' % protocol,
             'dir=in',
             'profile=any',
@@ -74,7 +74,7 @@ class FirewallUtils:
             'firewall',
             'add',
             'rule',
-            'name="%s"' % name,
+            'name=%s' % name,
             'protocol=%s' % protocol,
             'dir=in',
             'enable=yes',
@@ -131,7 +131,7 @@ class FirewallUtils:
             'rule',
             'name=all',
             'dir=in',
-            'program="%s"' % programname,
+            'program=%s' % programname,
             'new',
             'enable=no'
         ]
