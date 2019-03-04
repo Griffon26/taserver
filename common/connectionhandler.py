@@ -61,8 +61,9 @@ class ConnectionReader:
         except (ConnectionResetError, ConnectionAbortedError, gevent._socketcommon.cancel_wait_ex):
             self.logger.info('%s(%s): disconnected' % (self.task_name, self.task_id))
 
-        self.incoming_queue.put(PeerDisconnectedMessage(self.peer))
-        self.logger.info('%s(%s): signalled launcher; reader exiting' % (self.task_name, self.task_id))
+        finally:
+            self.incoming_queue.put(PeerDisconnectedMessage(self.peer))
+            self.logger.info('%s(%s): signalled launcher; reader exiting' % (self.task_name, self.task_id))
 
     def decode(self, msg_bytes):
         """ Decode a message from a series of bytes """
