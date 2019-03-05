@@ -46,7 +46,11 @@ WATCHNOW_TRAINING = 3
 WATCHNOW_COMMUNITY = 4
 WATCHNOW_TICKER = 5
 
-STDMSG_ALREADY_IN_MATCH_QUEUE               = 0x0000477c  # 'You are already in the match queue'
+
+STDMSG_PLAYER_NOT_FOUND_ONLINE              = 0x0000457b # 'Player @@PLAYER_NAME@@ not found online. Check spelling of player name?'
+STDMSG_NAME_HAS_LEFT_AGENCY                 = 0x00004583 # '@@name@@ has left the agency
+
+STDMSG_ALREADY_IN_MATCH_QUEUE               = 0x0000477c # 'You are already in the match queue'
 STDMSG_NOT_LEADER_CANT_MANAGE_QUEUE         = 0x00004781 # 'You are not the team leader, only leader can manage the match queue'
 STDMSG_JOINED_A_MATCH_QUEUE                 = 0x00004782 # 'You have joined a match queue'
 STDMSG_NOT_IN_THE_MATCH_QUEUE               = 0x00004783 # 'You are not in the match queue'
@@ -56,6 +60,17 @@ STDMSG_LOGIN_INFO_INVALID                   = 0x00004948 # 'The login informatio
 STDMSG_LOGIN_IS_VALID                       = 0x00004949 # 'Login is valid'
 STDMSG_UNABLE_TO_CONNECT_TO_SERVER          = 0x00004978 # 'Unable to connect to server'
 STDMSG_TEST_CONFIRM_POPUP                   = 0x00004b95 # 'Are you sure you would like to test the functionality of the confirm popup?'
+STDMSG_PLAYER_ALREADY_MEMBER_OF_YOUR_TEAM   = 0x00004fbd # '@@player_name@@ is already a member of your team.'
+STDMSG_PLAYER_ALREADY_MEMBER_OF_OTHER_TEAM  = 0x00004fbe # '@@player_name@@ is a member of another team.'
+STDMSG_TEAM_INVITE_SENT_TO_PLAYER           = 0x00004fbf # 'Team invite was sent to @@player_name@@.'
+STDMSG_PLAYER_HAS_PENDING_TEAM_INVITE       = 0x00004fc0 # '@@player_name@@ has a pending team invite.'
+STDMSG_YOU_ARE_NOT_THE_TEAM_LEADER          = 0x00004fc1 # 'You are not the team leader.'
+STDMSG_LEADER_HAS_INVITED_YOU               = 0x00004fc2 # '@@leader_name@@ has invited you to join a team.'
+STDMSG_PLAYER_HAS_DECLINED_TEAM_INVITE      = 0x00004fc3 # '@@player_name@@ has declined your team invite.'
+STDMSG_TEAM_IS_FULL                         = 0x00004fc6 # 'The team is full.'
+STDMSG_PLAYER_IS_NOT_IN_SAME_ALLIANCE       = 0x00004fdd # '@@player_name@@ is not in same alliance.'
+STDMSG_TOO_MANY_PENDING_INVITES             = 0x00004fe8 # 'Too many pending invites to send another.'
+STDMSG_TEAM_INVITE_EXPIRED                  = 0x00004fea # 'The team invite expired.'
 # Lots of other strings in the range that follows
 STDMSG_MUST_UPGRADE_TO_VIP                  = 0x00019338 # 'You must upgrade your account to VIP Status'
 STDMSG_VOTE_BY_X_KICK_PLAYER_X_YES_NO       = 0x0001942F # 'Vote by @@kicker_player_name@@: kick @@player_name@@? (No: F5) (Yes: F6)

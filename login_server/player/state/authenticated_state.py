@@ -224,15 +224,23 @@ class AuthenticatedState(PlayerState):
 
         elif message_type == MESSAGE_PRIVATE:
             addressed_player_name = request.findbytype(m034a).value
-            addressed_player = self.player.login_server.find_player_by(display_name=addressed_player_name)
+            addressed_player = self.player.login_server.find_player_by_display_name(addressed_player_name)
             if addressed_player:
                 request.content.append(m02fe().set(self.player.display_name))
                 request.content.append(m06de().set(self.player.tag))
-
                 self.player.send(request)
 
-                if self.player.unique_id != addressed_player.unique_id:
-                    addressed_player.send(request)
+                request.findbytype(m034a).set(addressed_player.display_name)
+                addressed_player.send(request)
+            else:
+                reply = a0070().set([
+                    m009e().set(MESSAGE_UNKNOWNTYPE),
+                    m02fc().set(STDMSG_PLAYER_NOT_FOUND_ONLINE),
+                    m034a().set(addressed_player_name)
+                ])
+                self.player.send(reply)
+
+
         elif message_type == MESSAGE_CONTROL:
             try:
                 msg = parse_message_from_string(request.findbytype(m02e6).value)

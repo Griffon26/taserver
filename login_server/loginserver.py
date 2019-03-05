@@ -123,6 +123,14 @@ class LoginServer:
 
         return matching_players
 
+    def find_player_by_display_name(self, display_name):
+        matching_players = [p for p in self.players.values()
+                            if p.display_name.lower() == display_name.lower()]
+        if matching_players:
+            return matching_players[0]
+        else:
+            return None
+
     def change_player_unique_id(self, old_id, new_id):
         assert old_id in self.players
         assert new_id not in self.players
