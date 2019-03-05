@@ -335,6 +335,41 @@ class enumblockarray():
         return self
 
 
+class variablelengthbytes():
+    def __init__(self, ident, content):
+        self.ident = ident
+        self.content = content
+
+    def set(self, value):
+        self.content = value
+        return self
+
+    def write(self, stream):
+        stream.write(struct.pack('<HL', self.ident, len(self.content)) + self.content)
+
+    def read(self, stream):
+        ident, length = struct.unpack('<HL', stream.read(6))
+        if ident != self.ident:
+            raise ParseError('self.ident(%04X) did not match parsed ident value (%04X)' % (self.ident, ident))
+        self.content = stream.read(length)
+        return self
+
+
+class passwordlike(variablelengthbytes):
+
+    def write(self, stream):
+        stream.write(struct.pack('<HH', self.ident, len(self.content)) + self.content)
+
+    def read(self, stream):
+        ident, length = struct.unpack('<HH', stream.read(4))
+        # Length is actually doubled due to server pass's interspersed bytes
+        length = (length & 0x7FFF) * 2
+        if ident != self.ident:
+            raise ParseError('self.ident(%04X) did not match parsed ident value (%04X)' % (self.ident, ident))
+        self.content = stream.read(length)
+        return self
+
+
 # ------------------------------------------------------------
 # onebyte
 # ------------------------------------------------------------
@@ -3080,6 +3115,11 @@ class a0183(enumblockarray):
         super().__init__(0x0183)
 
 
+class a018a(enumblockarray):
+    def __init__(self):
+        super().__init__(0x018a)
+
+
 class a018b(enumblockarray):
     def __init__(self):
         super().__init__(0x018b)
@@ -3155,26 +3195,6 @@ class a01c8(enumblockarray):
 # special fields
 # ------------------------------------------------------------
 
-class variablelengthbytes():
-    def __init__(self, ident, content):
-        self.ident = ident
-        self.content = content
-
-    def set(self, value):
-        self.content = value
-        return self
-
-    def write(self, stream):
-        stream.write(struct.pack('<HL', self.ident, len(self.content)) + self.content)
-
-    def read(self, stream):
-        ident, length = struct.unpack('<HL', stream.read(6))
-        if ident != self.ident:
-            raise ParseError('self.ident(%04X) did not match parsed ident value (%04X)' % (self.ident, ident))
-        self.content = stream.read(length)
-        return self
-
-
 # Player password
 class m0056(variablelengthbytes):
     def __init__(self):
@@ -3188,21 +3208,14 @@ class m0056(variablelengthbytes):
 
 
 # Server password
-class m032e(variablelengthbytes):
+class m032e(passwordlike):
     def __init__(self):
         super().__init__(0x032e, b'0')
 
-    def write(self, stream):
-        stream.write(struct.pack('<HH', self.ident, len(self.content)) + self.content)
 
-    def read(self, stream):
-        ident, length = struct.unpack('<HH', stream.read(4))
-        # Length is actually doubled due to server pass's interspersed bytes
-        length = (length & 0x7FFF) * 2
-        if ident != self.ident:
-            raise ParseError('self.ident(%04X) did not match parsed ident value (%04X)' % (self.ident, ident))
-        self.content = stream.read(length)
-        return self
+class m0620(passwordlike):
+    def __init__(self):
+        super().__init__(0x0620, b'0')
 
 
 class originalfragment():

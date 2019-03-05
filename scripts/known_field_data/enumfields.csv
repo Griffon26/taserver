@@ -1,6 +1,7 @@
 0x0056,Authentication,
 0x03E3,Salt,
 0x032E,Password,server password?
+0x0620,Password,
 0x0014,EnumBlockArray,class menu content
 0x0033,EnumBlockArray,
 0x0035,EnumBlockArray,
@@ -29,6 +30,7 @@
 0x0177,EnumBlockArray,
 0x0182,EnumBlockArray,
 0x0183,EnumBlockArray,
+0x018A,EnumBlockArray,
 0x018B,EnumBlockArray,
 0x018C,EnumBlockArray,/votekick command
 0x0197,EnumBlockArray,
