@@ -19,15 +19,6 @@
 #
 
 
-def hexdump(data):
-    bytelist = ['%02X' % b for b in data]
-    offset = 0
-    while len(bytelist) > offset + 16:
-        print('%04X: %s' % (offset, ' '.join(bytelist[offset:offset + 16])))
-        offset += 16
-    print('%04X: %s' % (offset, ' '.join(bytelist[offset:])))
-
-
 def first_unused_number_above(numbers, minimum):
     used_numbers = (n for n in numbers if n >= minimum)
     first_number_above = next(i for i, e in enumerate(sorted(used_numbers) + [None], start=minimum) if i != e)
