@@ -81,6 +81,11 @@ class UnauthenticatedState(PlayerState):
             else:
                 if (self.player.login_name in accounts and
                         self.player.password_hash == accounts[self.player.login_name].password_hash):
+                    self.logger.info('User successfully authenticated with user name %s '
+                                     '(ID %d -> %d)' %
+                                         (self.player.login_name,
+                                         self.player.unique_id,
+                                         accounts[self.player.login_name].unique_id))
                     self.player.login_server.change_player_unique_id(self.player.unique_id,
                                                                      accounts[self.player.login_name].unique_id)
                     self.player.registered = True
