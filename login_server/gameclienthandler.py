@@ -18,9 +18,6 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import io
-import struct
-
 from common.connectionhandler import *
 from common.loginprotocol import LoginProtocolReader, LoginProtocolWriter
 from .player.player import Player
