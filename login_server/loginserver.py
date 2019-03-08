@@ -89,6 +89,7 @@ class LoginServer:
                     handler(message)
                 except Exception as e:
                     if hasattr(message, 'peer'):
+                        self.logger.error('server: an exception occurred while handling a message; passing it on to the peer...')
                         message.peer.disconnect(e)
                     else:
                         raise
