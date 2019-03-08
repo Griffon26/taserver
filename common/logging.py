@@ -18,10 +18,13 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import gevent
+import io
 import logging.config
 
 
 def set_up_logging(filename):
+    gevent.get_hub().exception_stream = io.StringIO()
     logging.config.dictConfig({
         'version': 1,
         'formatters': {

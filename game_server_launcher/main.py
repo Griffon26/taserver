@@ -25,6 +25,7 @@ import logging
 import os
 
 from common.errors import FatalError
+from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from .gamecontrollerhandler import handle_game_controller
 from .gameserverhandler import handle_game_server
@@ -51,11 +52,26 @@ def main():
             server_handler_queue = gevent.queue.Queue()
 
             tasks = [
-                gevent.spawn(handle_ping),
-                gevent.spawn(handle_game_server, config['gameserver'], server_handler_queue, incoming_queue),
-                gevent.spawn(handle_login_server, config['loginserver'], incoming_queue),
-                gevent.spawn(handle_game_controller, config['gamecontroller'], incoming_queue),
-                gevent.spawn(handle_launcher, config['gameserver'], incoming_queue, server_handler_queue)
+                gevent_spawn("game server launcher's handle_ping",
+                             handle_ping),
+                gevent_spawn("game server launcher's handle_game_server",
+                             handle_game_server,
+                             config['gameserver'],
+                             server_handler_queue,
+                             incoming_queue),
+                gevent_spawn("game server launcher's handle_login_server",
+                             handle_login_server,
+                             config['loginserver'],
+                             incoming_queue),
+                gevent_spawn("game server launcher's handle_game_controller",
+                             handle_game_controller,
+                             config['gamecontroller'],
+                             incoming_queue),
+                gevent_spawn("game server launcher's handle_launcher",
+                             handle_launcher,
+                             config['gameserver'],
+                             incoming_queue,
+                             server_handler_queue)
             ]
             # Give the greenlets enough time to start up, otherwise killall can block
             gevent.sleep(1)

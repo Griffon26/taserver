@@ -24,6 +24,7 @@ import gevent
 import gevent.queue
 import logging
 
+from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from common.migration_mechanism import run_migrations
 from .accounts import Accounts
@@ -78,16 +79,27 @@ def main():
     configuration = Configuration()
 
     tasks = [
-        gevent.spawn(handle_server, server_queue, client_queues, accounts, configuration),
-        gevent.spawn(handle_authcodes, server_queue),
-        gevent.spawn(handle_game_client, server_queue, dump_queue),
-        gevent.spawn(handle_game_server_launcher, server_queue)
+        gevent_spawn("login server's handle_server",
+                     handle_server,
+                     server_queue,
+                     client_queues,
+                     accounts,
+                     configuration),
+        gevent_spawn("login server's handle_authcodes",
+                     handle_authcodes,
+                     server_queue),
+        gevent_spawn("login server's handle_game_client",
+                     handle_game_client,
+                     server_queue, dump_queue),
+        gevent_spawn("login server's handle_game_server_launcher",
+                     handle_game_server_launcher,
+                     server_queue)
     ]
     # Give the greenlets enough time to start up, otherwise killall can block
     gevent.sleep(1)
 
     if dump_queue:
-        tasks.append(gevent.spawn(handle_dump, dump_queue))
+        tasks.append(gevent_spawn("login server's handle_dump", handle_dump, dump_queue))
 
     try:
         # Wait for any of the tasks to terminate

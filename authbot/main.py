@@ -25,6 +25,7 @@ import logging
 import os
 
 from common.errors import FatalError
+from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from .authbot import handle_authbot
 from .hirezloginserverhandler import handle_hirez_login_server
@@ -47,8 +48,14 @@ def main():
             incoming_queue = gevent.queue.Queue()
 
             tasks = [
-                gevent.spawn(handle_authbot, config['authbot'], incoming_queue),
-                gevent.spawn(handle_hirez_login_server, config['authbot'], incoming_queue),
+                gevent_spawn("authbot's handle_authbot",
+                             handle_authbot,
+                             config['authbot'],
+                             incoming_queue),
+                gevent_spawn("authbot's handle_hirez_login_server",
+                             handle_hirez_login_server,
+                             config['authbot'],
+                             incoming_queue),
             ]
 
             # Wait for any of the tasks to terminate

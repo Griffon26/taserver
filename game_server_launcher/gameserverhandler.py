@@ -28,6 +28,7 @@ import time
 
 from .inject import inject
 from common.errors import FatalError
+from common.geventwrapper import gevent_spawn
 
 
 class ConfigurationError(FatalError):
@@ -164,7 +165,7 @@ class GameServerHandler:
         inject(process.pid, self.dll_to_inject)
         self.logger.info('gameserver: Injection done.')
 
-        self.watcher_task = gevent.spawn(self.server_process_watcher, process, port)
+        self.watcher_task = gevent_spawn('gameserver process watcher', self.server_process_watcher, process, port)
 
     def stop_server_process(self, port):
         if port in self.servers:

@@ -26,6 +26,7 @@ import json
 import logging
 import sys
 
+from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from common.tcpmessage import TcpMessageReader
 
@@ -186,7 +187,7 @@ def main():
 
     server_queue = gevent.queue.Queue()
     firewall = Firewall()
-    gevent.spawn(firewall.run, server_queue)
+    gevent_spawn('firewall.run', firewall.run, server_queue)
 
     def handle_client(socket, address):
         msg = TcpMessageReader(socket).receive()

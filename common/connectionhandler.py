@@ -24,6 +24,7 @@ from gevent import socket
 import logging
 
 from common.errors import PortInUseError
+from common.geventwrapper import gevent_spawn
 from common.tcpmessage import TcpMessageReader, TcpMessageWriter
 
 
@@ -195,14 +196,20 @@ class ConnectionHandler:
         writer.task_name = self.task_name
         writer.outgoing_queue = outgoing_queue
 
-        gevent.spawn(reader.run)
-        writer.run()
+        tasks = [
+            gevent_spawn("%s(%s)'s reader" % (self.task_name, task_id), reader.run),
+            gevent_spawn("%s(%s)'s writer" % (self.task_name, task_id), writer.run)
+        ]
+
+        gevent.joinall(tasks)
+
 
     def _handle_and_catch(self, sock, address):
         try:
             self._handle(sock, address)
         except Exception:
             self.logger.exception('%s(%s) terminated with an exception' % (self.task_name, id(gevent.getcurrent())))
+
 
 class IncomingConnectionHandler(ConnectionHandler):
     def run(self):
