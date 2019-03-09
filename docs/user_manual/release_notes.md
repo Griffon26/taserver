@@ -1,4 +1,29 @@
+### taserver v2.0.2
+
+This is a bug fix release.
+
+Bugs fixed:
+* In some cases players could no longer log in with their account
+  after an exception occurred
+* /sc commands would cause disconnection of the player, now those
+  commands are silently ignored
+* when sending a private message the player name is now case
+  insensitive
+* you now get an error message when sending a private message to 
+  a player that is not online
+* Preexisting firewall rules for TribesAscend.exe with spaces in the 
+  path would not be disabled and could theoretically break votekick
+  
+Diagnostic improvements
+* exceptions that occur will now also be written to log files and
+  not only to the command window
+* when a user successfully authenticates, his name is logged along
+  with the associated change in player ID
+  
+
 ### taserver v2.0.1
+
+This is a bug fix release.
 
 Bugs fixed:
 * starting the game without TAMods after switching to GOTY mode would not allow joining OOTB servers
@@ -37,6 +62,8 @@ Compatibility notes:
 
 
 ### taserver v1.0.1
+
+This is a bug fix release.
 
 Bugs fixed:
 * a game server could not connect to the login server if it was running on a different 
