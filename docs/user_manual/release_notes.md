@@ -3,7 +3,7 @@
 This is a bug fix release.
 
 Bugs fixed:
-* In some cases players could no longer log in with their account
+* in some cases players could no longer log in with their account
   after an exception occurred
 * /sc commands would cause disconnection of the player, now those
   commands are silently ignored
@@ -11,7 +11,7 @@ Bugs fixed:
   insensitive
 * you now get an error message when sending a private message to 
   a player that is not online
-* Preexisting firewall rules for TribesAscend.exe with spaces in the 
+* preexisting firewall rules for TribesAscend.exe with spaces in the 
   path would not be disabled and could theoretically break votekick
   
 Diagnostic improvements
@@ -31,8 +31,8 @@ Bugs fixed:
   (this fix requires the versions mentioned below)
 
 Compatibility notes:
-* Game servers must have TAMods-Server version 0.4.1 or higher
-* Clients must have a TAMods version 1.001 or higher
+* game servers must have TAMods-Server version 0.4.1 or higher
+* clients must have a TAMods version 1.001 or higher
 
 
 ### taserver v2.0.0
@@ -54,10 +54,10 @@ Bug fixes:
 * improved error logging for configuration errors in the game server launcher
 
 Compatibility notes:
-* Game servers have to be updated to this release in order to work with this login server version
-* Game servers must have a TAMods-Server version of at least 0.4.0.
+* game servers have to be updated to this release in order to work with this login server version
+* game servers must have a TAMods-Server version of at least 0.4.0.
   Simply run `download_compatible_controller.py` after updating to this release to get it.
-* For playing in GOTY mode, clients will need an up-to-date TAMods version.
+* for playing in GOTY mode, clients will need an up-to-date TAMods version.
   OOTB does not require TAMods on the client side.
 
 
