@@ -55,6 +55,5 @@ class PendingCallbacks:
 
         if self.callbacks[callback_id]['callback_func'] is not None:
             self.callbacks[callback_id]['callback_func']()
-        else:
-            del self.callbacks[callback_id]
+        del self.callbacks[callback_id]
 
