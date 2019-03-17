@@ -36,6 +36,7 @@ class OnGameServerState(AuthenticatedState):
         self.player.game_server.add_player(self.player)
         self.player.game_server.set_player_loadouts(self.player)
         self.player.team = None
+        self.player.friends.notify_on_game_server()
 
     def on_exit(self):
         self.logger.info("%s is exiting state %s" % (self.player, type(self).__name__))

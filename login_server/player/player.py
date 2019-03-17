@@ -59,7 +59,7 @@ class Player(Peer):
         self.login_server = None
         self.game_server = None
         self.loadouts: Dict[Loadouts] = {mode: Loadouts(mode) for mode in get_game_setting_modes()}
-        self.friends = Friends()
+        self.friends = Friends(self)
         self.player_settings = PlayerSettings()
         self.team = None
         self.pings = {}
@@ -85,9 +85,8 @@ class Player(Peer):
         if self.state:
             self.state.on_exit()
 
-        if state_class:
-            self.state = state_class(self, *args, **kwargs)
-            self.state.on_enter()
+        self.state = state_class(self, *args, **kwargs)
+        self.state.on_enter()
 
     def get_unmodded_loadouts(self) -> Loadouts:
         return self.loadouts[UNMODDED_GAME_SETTING_MODE]

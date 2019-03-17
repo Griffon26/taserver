@@ -36,8 +36,10 @@ from .authcodehandler import AuthCodeRequester
 from .gameserver import GameServer
 from .pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
 from .player.player import Player
+from .player.state.offline_state import OfflineState
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
+from .social_network import SocialNetwork
 from .utils import first_unused_number_above
 
 
@@ -51,6 +53,7 @@ class LoginServer:
         self.game_servers = TracingDict()
 
         self.players = TracingDict()
+        self.social_network = SocialNetwork()
         self.accounts = accounts
         self.message_handlers = {
             AuthCodeRequestMessage: self.handle_authcode_request_message,
@@ -182,6 +185,7 @@ class LoginServer:
             unique_id = first_unused_number_above(self.players.keys(), 10000000)
 
             player = msg.peer
+            player.friends.connect_to_social_network(self.social_network)
             player.unique_id = unique_id
             player.login_server = self
             player.complement_address_pair(self.address_pair)
@@ -209,7 +213,7 @@ class LoginServer:
             player = msg.peer
             player.disconnect()
             self.pending_callbacks.remove_receiver(player)
-            player.set_state(None)
+            player.set_state(OfflineState)
             del(self.players[player.unique_id])
 
         elif isinstance(msg.peer, GameServer):

@@ -36,6 +36,10 @@ class AuthenticatedState(PlayerState):
     def handle_a0033(self, request):
         self.player.send(a0033())
 
+    def on_enter(self):
+        self.logger.info("%s is entering state %s" % (self.player, type(self).__name__))
+        self.player.friends.notify_online()
+
     def on_exit(self):
         self.logger.info("%s is exiting state %s" % (self.player, type(self).__name__))
         self.player.save()
@@ -388,18 +392,7 @@ class AuthenticatedState(PlayerState):
         assert request.content == []
 
         if self.player.registered:
-            reply = a011c().set([
-                m0348().set(self.player.unique_id),
-                m0116().set([[
-                    m034a().set(friend['login_name']),
-                    m020d().set(friend_id),
-                    m0296(),
-                    m0591().set(FRIEND_STATE_VISIBLE),
-                    m0307()] for friend_id, friend in self.player.friends.friends_dict.items()]
-                )
-            ])
-
-            self.player.send(reply)
+            self.player.login_server.social_network.send_friend_list(self.player.unique_id)
 
     def _send_game_mode_data(self):
         # Send the control message indicating the switch
