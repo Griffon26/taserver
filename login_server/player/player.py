@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import logging
 from typing import Dict
 
 from ipaddress import IPv4Address
@@ -37,6 +38,7 @@ class Player(Peer):
 
     min_name_length = 2
     max_name_length = 15
+    idle_timeout = 60
 
     loadout_file_path = 'data/players/%s_%s_loadouts.json'
     friends_file_path = 'data/players/%s_friends.json'
@@ -45,6 +47,7 @@ class Player(Peer):
     def __init__(self, address):
         super().__init__()
 
+        self.logger = logging.getLogger(__name__)
         self.unique_id: int = None
         self.login_name: str = None
         self.display_name: str = None
@@ -63,6 +66,7 @@ class Player(Peer):
         self.player_settings = PlayerSettings()
         self.team = None
         self.pings = {}
+        self.activity_since_last_check = True
 
         detected_ip = IPv4Address(address[0])
         if detected_ip.is_global:
@@ -70,6 +74,15 @@ class Player(Peer):
         else:
             assert detected_ip.is_private
             self.address_pair = IPAddressPair(None, detected_ip)
+
+    def start_idle_timeout(self):
+        if not self.activity_since_last_check:
+            self.logger.info('Disconnecting %s after a period of %s seconds without network activity' %
+                             (self, self.idle_timeout))
+            self.disconnect()
+        else:
+            self.activity_since_last_check = False
+            self.login_server.pending_callbacks.add(self, self.idle_timeout, self.start_idle_timeout)
 
     def complement_address_pair(self, login_server_address_pair):
         # Take over login server external address in case login server and player

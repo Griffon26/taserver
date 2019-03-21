@@ -1,3 +1,15 @@
+### taserver v2.0.3
+
+This is a bug fix release.
+
+Bugs fixed:
+* Fixed a resource leak that would cause the server to use up
+  more and more of the cpu the longer it was up and running
+* Fixed the problem where players were no longer able to log
+  in after having lost internet connectivity during a previous
+  session
+
+
 ### taserver v2.0.2
 
 This is a bug fix release.
