@@ -42,6 +42,10 @@ def choose_display_name(login_name, registered, names_in_use, max_name_length):
 
 
 class UnauthenticatedState(PlayerState):
+    def on_enter(self):
+        self.logger.info("%s is entering state %s" % (self.player, type(self).__name__))
+        self.player.start_idle_timeout()
+
     @handles(packet=a01bc)
     def handle_a01bc(self, request):
         self.player.send(a01bc())

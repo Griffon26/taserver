@@ -99,6 +99,7 @@ class PlayerState:
 
     @handles(packet=a01c8)
     def handle_ping(self, request):
+        self.player.activity_since_last_check = True
         for arr in request.findbytype(m068b).arrays:
             region = findbytype(arr, m0448).value
             ping = findbytype(arr, m053d).value
