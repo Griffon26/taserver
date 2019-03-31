@@ -1,3 +1,21 @@
+### taserver v2.1.0
+
+This release makes it easier to set up a GOTY game server.
+
+Here is the complete list of changes in this release:
+* moved default serverconfig.lua to data/gamesettings/ootb/
+* added download_gotylike.py for downloading GOTY settings to data/gamesettings/gotylike/
+* moved description, motd, password, game_setting_mode from gameserverlauncher.ini
+  to controller serverconfig.lua
+* added instructions to README.md for setting up a GOTY server
+
+Compatibility notes:
+* this release is not backwards compatible; both login server and 
+  game servers must be upgraded to v2.1.0 simultaneously
+* game servers must have TAMods-Server version 0.5.0 or higher
+  (just run download_compatible_controller.py after upgrading
+   the game server to v2.1.0)
+
 ### taserver v2.0.3
 
 This is a bug fix release.
