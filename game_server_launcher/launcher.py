@@ -21,8 +21,6 @@
 from distutils.version import StrictVersion
 import gevent
 import logging
-from gevent import socket
-import urllib.request as urlreq
 
 from common.errors import FatalError
 from common.firewall import reset_firewall, modify_firewall
@@ -68,6 +66,7 @@ class Launcher:
         self.server_stopping = False
         self.controller_context = {}
 
+        self.last_server_info_message = None
         self.last_map_info_message = None
         self.last_team_info_message = None
         self.last_score_info_message = None
@@ -103,6 +102,7 @@ class Launcher:
             Login2LauncherRemovePlayer: self.handle_remove_player_message,
             Login2LauncherPings: self.handle_pings_message,
             Game2LauncherProtocolVersionMessage: self.handle_game_controller_protocol_version_message,
+            Game2LauncherServerInfoMessage: self.handle_server_info_message,
             Game2LauncherMapInfoMessage: self.handle_map_info_message,
             Game2LauncherTeamInfoMessage: self.handle_team_info_message,
             Game2LauncherScoreInfoMessage: self.handle_score_info_message,
@@ -133,20 +133,16 @@ class Launcher:
             msg = Launcher2LoginProtocolVersionMessage(str(versions.launcher2loginserver_protocol_version))
             self.login_server.send(msg)
 
-            # password hash is sent as an array of ints, as the json library can't serialise the bytes type
-            password_hash = self.hash_server_password(self.game_server_config['password']) \
-                if 'password' in self.game_server_config \
-                else None
-
-            msg = Launcher2LoginServerInfoMessage(str(self.address_pair.external_ip) if self.address_pair.external_ip else '',
-                                                  str(self.address_pair.internal_ip) if self.address_pair.internal_ip else '',
-                                                  self.game_server_config['game_setting_mode'],
-                                                  self.game_server_config['description'],
-                                                  self.game_server_config['motd'],
-                                                  password_hash)
+            msg = Launcher2LoginAddressInfoMessage(
+                str(self.address_pair.external_ip) if self.address_pair.external_ip else '',
+                str(self.address_pair.internal_ip) if self.address_pair.internal_ip else '')
             self.login_server.send(msg)
 
-            # Send the latest relevant information that was received while the login server was not connected
+            # Send the latest relevant information that was received
+            # while the login server was not connected
+            if self.last_server_info_message:
+                self.login_server.send(self.last_server_info_message)
+                self.last_server_info_message = None
             if self.last_map_info_message:
                 self.login_server.send(self.last_map_info_message)
                 self.last_map_info_message = None
@@ -249,6 +245,18 @@ class Launcher:
         self.game_controller = msg.peer
         msg = Launcher2GameInit(self.controller_context)
         self.game_controller.send(msg)
+
+    def handle_server_info_message(self, msg):
+        self.logger.info('launcher: received server info from game controller')
+
+        msg = Launcher2LoginServerInfoMessage(msg.description,
+                                              msg.motd,
+                                              msg.game_setting_mode,
+                                              msg.password_hash)
+        if self.login_server:
+            self.login_server.send(msg)
+        else:
+            self.last_map_info_message = msg
 
     def handle_map_info_message(self, msg):
         self.logger.info('launcher: received map info from game controller')

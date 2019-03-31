@@ -42,6 +42,7 @@ _MSGID_LAUNCHER2LOGIN_MATCHTIME = 0x2004
 _MSGID_LAUNCHER2LOGIN_MATCHEND = 0x2005
 _MSGID_LAUNCHER2LOGIN_PROTOCOL_VERSION = 0x2006
 _MSGID_LAUNCHER2LOGIN_SERVERREADY = 0x2007
+_MSGID_LAUNCHER2LOGIN_ADDRESSINFO = 0x2008
 
 _MSGID_GAME2LAUNCHER_PROTOCOL_VERSION = 0x3000
 _MSGID_GAME2LAUNCHER_TEAMINFO = 0x3001
@@ -50,6 +51,7 @@ _MSGID_GAME2LAUNCHER_MATCHTIME = 0x3003
 _MSGID_GAME2LAUNCHER_MATCHEND = 0x3004
 _MSGID_GAME2LAUNCHER_LOADOUTREQUEST = 0x3005
 _MSGID_GAME2LAUNCHER_MAPINFO = 0x3006
+_MSGID_GAME2LAUNCHER_SERVERINFO = 0x3007
 
 _MSGID_LAUNCHER2GAME_LOADOUT = 0x4000
 _MSGID_LAUNCHER2GAME_NEXTMAP = 0x4001
@@ -142,16 +144,18 @@ class Login2LauncherPings(Message):
         self.player_pings = player_pings
 
 
+# Example json: { 'description' : 'some server',
+#                 'motd' : 'message of the day',
+#                 'game_setting_mode' : 'goty',
+#                 'password_hash' : [ 1, 2, 3, 4 ] or None }
 class Launcher2LoginServerInfoMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SERVERINFO
 
-    def __init__(self, external_ip: str, internal_ip: str, game_setting_mode: str,
-                 description: str, motd: str, password_hash: List[int]):
-        self.external_ip = external_ip
-        self.internal_ip = internal_ip
-        self.game_setting_mode = game_setting_mode
+    def __init__(self, description: str, motd: str,
+                 game_setting_mode: str, password_hash: Optional[List[int]]):
         self.description = description
         self.motd = motd
+        self.game_setting_mode = game_setting_mode
         self.password_hash = password_hash
 
 
@@ -192,6 +196,14 @@ class Launcher2LoginMatchEndMessage(Message):
         pass
 
 
+class Launcher2LoginAddressInfoMessage(Message):
+    msg_id = _MSGID_LAUNCHER2LOGIN_ADDRESSINFO
+
+    def __init__(self, external_ip: str, internal_ip: str):
+        self.external_ip = external_ip
+        self.internal_ip = internal_ip
+
+
 # Example json: { 'version' : '0.1.0' }
 class Launcher2LoginProtocolVersionMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_PROTOCOL_VERSION
@@ -214,6 +226,21 @@ class Game2LauncherProtocolVersionMessage(Message):
 
     def __init__(self, version: str):
         self.version = version
+
+
+# Example json: { 'description' : 'some server',
+#                 'motd' : 'message of the day',
+#                 'game_setting_mode' : 'goty',
+#                 'password_hash' : [ 1, 2, 3, 4 ] or None }
+class Game2LauncherServerInfoMessage(Message):
+    msg_id = _MSGID_GAME2LAUNCHER_SERVERINFO
+
+    def __init__(self, description: str, motd: str,
+                 game_setting_mode: str, password_hash: Optional[List[int]]):
+        self.description = description
+        self.motd = motd
+        self.game_setting_mode = game_setting_mode
+        self.password_hash = password_hash
 
 
 # Example json: { 'map_id' : 1447 }
@@ -393,8 +420,10 @@ _message_classes = [
     Launcher2LoginMatchEndMessage,
     Launcher2LoginProtocolVersionMessage,
     Launcher2LoginServerReadyMessage,
+    Launcher2LoginAddressInfoMessage,
 
     Game2LauncherProtocolVersionMessage,
+    Game2LauncherServerInfoMessage,
     Game2LauncherMapInfoMessage,
     Game2LauncherTeamInfoMessage,
     Game2LauncherScoreInfoMessage,

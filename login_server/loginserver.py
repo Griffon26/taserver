@@ -62,6 +62,7 @@ class LoginServer:
             PeerDisconnectedMessage: self.handle_client_disconnected_message,
             LoginProtocolMessage: self.handle_client_message,
             Launcher2LoginProtocolVersionMessage: self.handle_launcher_protocol_version_message,
+            Launcher2LoginAddressInfoMessage: self.handle_address_info_message,
             Launcher2LoginServerInfoMessage: self.handle_server_info_message,
             Launcher2LoginMapInfoMessage: self.handle_map_info_message,
             Launcher2LoginTeamInfoMessage: self.handle_team_info_message,
@@ -257,18 +258,25 @@ class LoginServer:
             msg.peer.send(Login2LauncherProtocolVersionMessage(str(my_version)))
             msg.peer.disconnect()
 
-    def handle_server_info_message(self, msg):
+    def handle_address_info_message(self, msg):
         game_server = msg.peer
         external_ip = IPv4Address(msg.external_ip) if msg.external_ip else None
         internal_ip = IPv4Address(msg.internal_ip) if msg.internal_ip else None
-        address_pair = IPAddressPair(external_ip, internal_ip)
 
+        game_server.set_address_info(IPAddressPair(external_ip, internal_ip))
+        self.logger.info('server: address info received for server %s (%s)' %
+                         (game_server.server_id,
+                          game_server.detected_ip))
+
+    def handle_server_info_message(self, msg):
+        game_server = msg.peer
         password_hash = bytes(msg.password_hash) if msg.password_hash is not None else None
 
-        game_server.set_info(address_pair, msg.game_setting_mode, msg.description, msg.motd, password_hash)
-        self.logger.info('server: server info received for %s server %s (%s)' % (game_server.game_setting_mode,
-                                                                                    game_server.server_id,
-                                                                                    game_server.detected_ip))
+        game_server.set_info(msg.description, msg.motd, msg.game_setting_mode, password_hash)
+        self.logger.info('server: server info received for %s server %s (%s)' %
+                         (game_server.game_setting_mode,
+                          game_server.server_id,
+                          game_server.detected_ip))
 
     def handle_map_info_message(self, msg):
         game_server = msg.peer
