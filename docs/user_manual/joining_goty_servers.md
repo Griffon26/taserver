@@ -13,19 +13,19 @@ it is possible to have both GOTY and OOTB game servers listed in the same server
 
 # Joining GOTY servers
 
-Because of the drastic differences between GOTY and OOTB, TAMods is required for playing in GOTY
-mode. The instructions below explain where to get it and how to use it.
+Because of the drastic differences between GOTY and OOTB, TAMods is required on the client side
+for playing in GOTY mode. The instructions below explain where to get it and how to use it.
 
 1) Make sure you have a recent version of the Tribes launcher installed (Version 1.0.4 or above).
    The download can be found here. https://github.com/mcoot/TribesLauncher/releases
 
 2) Open your Tribes Launcher and click "Configure Launcher" near the top. 
 
-    a) Under "Log In Server" click "Custom" and enter `18.197.240.229` in the login server host field.
+    a) Under "Log In Server" select "Unofficial"
 
-    b) Uncheck “Launch via Steam”
+    b) Uncheck "Launch via Steam"
     
-    c) Click Save.
+    c) Click Save
     
 3) If the button in the bottom right says "Update TAMods" then click it to update.
 

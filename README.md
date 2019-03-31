@@ -33,7 +33,8 @@ connect to the replacement login server, follow these steps:
 2. Get the code for [this project](https://github.com/Griffon26/taserver) from github
 
 3. Run the `download_compatible_controller.py` script to download the latest compatible
-   version of `TAMods-Server.dll`. TAMods-Server is responsible for all game-related settings. 
+   version of `TAMods-Server.dll`. TAMods-Server is responsible for all game-related settings,
+   including server description, message of the day and password. 
    Consult the [TAMods-Server documentation](https://www.tamods.org/docs/doc_srv_api_overview.html)
    on how to change any of these.
 
@@ -90,6 +91,23 @@ connect to the replacement login server, follow these steps:
 
 Your server should now show up in the list for anyone connecting to the login server.
 Try it out by following the instructions under [Joining games](#joining-games)
+
+The server is in OOTB mode by default. If you want to run it in GOTY mode instead there are two
+more steps below.
+
+1. Run the `download_gotylike.py` script to automatically download 
+   [mcoot's GOTY-like server configuration](https://github.com/mcoot/tamods-server-gotylike)
+   
+2. Edit `data/gameserverlauncher.ini` and replace:
+
+       controller_config = data\gamesettings\ootb\serverconfig.lua
+       
+   with
+   
+       controller_config = data\gamesettings\gotylike\serverconfig.lua
+
+Read more about GOTY and how people can join GOTY servers on 
+[this page](/docs/user_manual/joining_goty_servers.md).
 
 ### Running your own login server
 
