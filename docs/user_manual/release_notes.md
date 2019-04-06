@@ -8,11 +8,21 @@ Here is the complete list of changes in this release:
 * moved description, motd, password, game_setting_mode from gameserverlauncher.ini
   to controller serverconfig.lua
 * added instructions to README.md for setting up a GOTY server
+* GOTY loadout defaults have changed to the EU set provided by Darksteve
+* implemented friend/follower status notifications 
+
+Bugs fixed:
 * corrected message given when joining a GOTY server without TAMods
 
 Compatibility notes:
 * this release is not backwards compatible; both login server and 
   game servers must be upgraded to v2.1.0 simultaneously
+* modifications to game server settings (description, motd, password)
+  have to be manually applied to serverconfig.lua
+* if you are using a previously downloaded gotylike serverconfig.lua,
+  add the appropriate lines for game server settings (description, motd,
+  password). You can look at data/gamesettings/ootb/serverconfig.lua
+  as an example.  
 * game servers must have TAMods-Server version 0.5.0 or higher
   (just run download_compatible_controller.py after upgrading
    the game server to v2.1.0)
