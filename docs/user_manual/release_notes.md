@@ -8,6 +8,7 @@ Here is the complete list of changes in this release:
 * moved description, motd, password, game_setting_mode from gameserverlauncher.ini
   to controller serverconfig.lua
 * added instructions to README.md for setting up a GOTY server
+* corrected message given when joining a GOTY server without TAMods
 
 Compatibility notes:
 * this release is not backwards compatible; both login server and 

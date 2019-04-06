@@ -153,7 +153,7 @@ class AuthenticatedState(PlayerState):
                 # Disallow joining a non-ootb server if the player is not known to be modded
                 if game_server.game_setting_mode != 'ootb':
                     self._send_private_msg_from_server(self.player, 'You cannot join a %s server without TAMods' %
-                                                       self.player.player_settings.game_setting_mode)
+                                                       game_server.game_setting_mode)
                     allowed_to_join = False
                     join_message = STDMSG_UNABLE_TO_CONNECT_TO_SERVER
 
