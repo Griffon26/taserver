@@ -1,3 +1,12 @@
+### taserver v2.1.1
+
+This is a bug fix release.
+
+Bugs fixed:
+* Fixed a problem that continuously disconnected all clients
+  and that occurred whenever a game server started up before
+  being connected to the login server.
+  
 ### taserver v2.1.0
 
 This release makes it easier to set up a GOTY game server.
