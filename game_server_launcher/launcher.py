@@ -256,7 +256,7 @@ class Launcher:
         if self.login_server:
             self.login_server.send(msg)
         else:
-            self.last_map_info_message = msg
+            self.last_server_info_message = msg
 
     def handle_map_info_message(self, msg):
         self.logger.info('launcher: received map info from game controller')
