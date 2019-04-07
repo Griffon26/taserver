@@ -13,7 +13,7 @@ you don't need to download anything. All you need to do is create a Windows shor
 `TribesAscend.exe` and add `-hostx=18.197.240.229` to the end of the target field.
 If there are quotes around the executable then add the `-hostx` part after the closing quotes.
 
-![Shortcut dialog](/docs/images/tashortcut.png?raw=true)
+![Shortcut dialog](/docs/images/tashortcut_nonsteam.png?raw=true)
 
 Start the game through the shortcut and log in with any name and password. The servers
 listed in the server browser will be servers hosted by fellow players.
