@@ -7,7 +7,7 @@ created shortcut.
 
 * Find the shortcut that you use to start Tribes Ascend.
 * Right-click on it and select `Properties`
-* Now check if the dialog that opens look more like the screenshot on the left or the one on the right
+* Now check if the dialog that opens looks more like the screenshot on the left or the one on the right
 
 [![steam shortcut](../images/tashortcut_steam.png?raw=true)](creating_a_shortcut_from_a_steam_install.md)
 [![non-steam shortcut](../images/tashortcut_nonsteam.png?raw=true)](creating_a_shortcut_from_a_non_steam_install.md)
