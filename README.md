@@ -13,22 +13,25 @@ you don't need to download anything. All you need to do is create a Windows shor
 `TribesAscend.exe` and add `-hostx=18.197.240.229` to the end of the target field.
 If there are quotes around the executable then add the `-hostx` part after the closing quotes.
 
-![Shortcut dialog](/docs/images/tashortcut_nonsteam.png?raw=true)
+I also created [a step-by-step explanation with screenshots of how to create such a
+shortcut](docs/user_manual/creating_a_shortcut.md). 
+
+![Shortcut dialog](docs/images/tashortcut_nonsteam.png?raw=true)
 
 Start the game through the shortcut and log in with any name and password. The servers
 listed in the server browser will be servers hosted by fellow players.
 
 If you want to join any of the GOTY servers in the list then you must be using TAMods.
-[Read more about joining a GOTY servers here](/docs/user_manual/joining_goty_servers.md)
+[Read more about joining a GOTY servers here](docs/user_manual/joining_goty_servers.md)
 
-See also: [Getting verified](/docs/user_manual/getting_verified.md)
+See also: [Getting verified](docs/user_manual/getting_verified.md)
 
 ### Hosting a dedicated server
 
 If you want to run a game server and have it show up in the server list for players who
 connect to the replacement login server, follow these steps:
 
-1. Make sure [Tribes Ascend and its prerequisites have been installed](/docs/user_manual/installing_tribes_and_prerequisites.md)
+1. Make sure [Tribes Ascend and its prerequisites have been installed](docs/user_manual/installing_tribes_and_prerequisites.md)
 
 2. Get the code for [this project](https://github.com/Griffon26/taserver) from github
 
@@ -107,7 +110,7 @@ more steps below.
        controller_config = data\gamesettings\gotylike\serverconfig.lua
 
 Read more about GOTY and how people can join GOTY servers on 
-[this page](/docs/user_manual/joining_goty_servers.md).
+[this page](docs/user_manual/joining_goty_servers.md).
 
 ### Running your own login server
 
