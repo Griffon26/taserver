@@ -2,7 +2,7 @@
 
 * If you still have the shortcut properties dialog open, then close it by pressing `Cancel` 
 
-  [![steam shortcut](../images/tashortcut_steam.png?raw=true)](#For-the-steam-version)
+  ![steam shortcut](../images/tashortcut_steam.png?raw=true)
 
 * right-click on the steam icon in the system tray and select `Library`
 

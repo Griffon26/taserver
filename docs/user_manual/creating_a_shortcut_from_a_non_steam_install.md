@@ -2,7 +2,7 @@
 
 * If you still have the shortcut properties dialog open, then close it by pressing `Cancel` 
 
-  [![non-steam shortcut](../images/tashortcut_nonsteam.png?raw=true)](#For_the_non_steam_version)
+  ![non-steam shortcut](../images/tashortcut_nonsteam.png?raw=true)
 
 * right-click on the shortcut and choose `Send to`, followed by `Desktop`
 
