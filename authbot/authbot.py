@@ -24,8 +24,10 @@ import gevent
 import gevent.subprocess as sp
 import inspect
 import itertools
+import json
 import logging
 import time
+import urllib.request as urlreq
 
 from common.datatypes import *
 from common.errors import FatalError
@@ -105,7 +107,6 @@ def xor_password_hash(password_hash, salt):
         xor_values[30], 0,
         xor_values[31], 0,
     ]
-
 
     xored_password_hash = [
         p ^ x for p, x in itertools.zip_longest(password_hash, xor_pattern, fillvalue = 0)
@@ -271,8 +272,20 @@ class AuthBot:
                 error_message = e.stderr if e.stderr else str(e)
                 self.logger.error('authbot: failed to run getauthcode.py: %s' % error_message)
                 return generic_error_reply
+
+        elif message_text == 'status':
+            server_info = json.loads(urlreq.urlopen('http://localhost:9080/status').read())
+
+            try:
+                return 'There are %s players and %s servers online' % (server_info['online_players'],
+                                                                       server_info['online_servers'])
+            except KeyError as e:
+                self.logger.error('authbot: invalid status received from server: %s' % e)
+                return generic_error_reply
+
+
         else:
-            return 'Hey there %s, how are you? To get an authcode say "authcode" to me.' % sender_name
+            return 'Hi %s. Valid commands are "authcode" or "status".' % sender_name
 
 def handle_authbot(config, incoming_queue):
     authbot = AuthBot(config, incoming_queue)

@@ -18,6 +18,9 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import gevent.monkey
+gevent.monkey.patch_all()
+
 import configparser
 import gevent
 import gevent.queue
