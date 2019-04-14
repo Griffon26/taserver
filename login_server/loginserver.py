@@ -156,7 +156,7 @@ class LoginServer:
         except UnicodeError:
             return 'User name contains invalid (i.e. non-ascii) characters'
 
-        if not all((c >= 33 and c <= 126) for c in ascii_bytes):
+        if not all((33 <= c <= 126 and chr(c) not in '~`\\') for c in ascii_bytes):
             return 'User name contains invalid characters'
 
         return None
