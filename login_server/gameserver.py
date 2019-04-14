@@ -43,8 +43,9 @@ from .player.state.authenticated_state import AuthenticatedState
 PING_UPDATE_TIME = 3
 
 
-@statetracer('server_id', 'detected_ip', 'address_pair', 'port', 'joinable', 'players', 'player_being_kicked',
-             'match_end_time_rel_or_abs', 'match_time_counting', 'be_score', 'ds_score', 'map_id')
+@statetracer('server_id', 'detected_ip', 'address_pair', 'port', 'game_setting_mode', 'joinable',
+             'players', 'player_being_kicked', 'match_end_time_rel_or_abs', 'match_time_counting',
+             'be_score', 'ds_score', 'map_id', )
 class GameServer(Peer):
     def __init__(self, detected_ip: IPv4Address):
         super().__init__()
@@ -211,8 +212,7 @@ class GameServer(Peer):
 
     def end_votekick(self):
         if self.player_being_kicked:
-            eligible_voters, total_votes, yes_votes = self._tally_votes()
-            vote_passed = total_votes >= 4 and yes_votes / total_votes >= 0.5
+            eligible_voters, total_votes, yes_votes, vote_passed = self._tally_votes()
             self.logger.info('server: votekick %s at timeout with %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
                   ('passed' if vote_passed else 'failed',
                    yes_votes,
@@ -224,17 +224,19 @@ class GameServer(Peer):
 
     def check_votes(self):
         if self.player_being_kicked:
-            eligible_voters, total_votes, yes_votes = self._tally_votes()
+            eligible_voters, total_votes, yes_votes, vote_passed = self._tally_votes()
 
-            # If enough people vote yes, kick immediately. Otherwise wait for a majority at the timeout.
-            if yes_votes >= 8 or total_votes == eligible_voters:
-                self.logger.info('server: votekick passed immediately %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
-                      (yes_votes,
+            # If enough people vote yes or the vote is unanimous, end the vote immediately.
+            # Otherwise wait for the timeout.
+            if (yes_votes >= 8 and vote_passed) or total_votes == eligible_voters:
+                self.logger.info('server: votekick %s immediately %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
+                      ('passed' if vote_passed else 'failed',
+                       yes_votes,
                        total_votes - yes_votes,
                        eligible_voters - total_votes,
                        eligible_voters,
                        len(self.players)))
-                self._do_kick(True)
+                self._do_kick(vote_passed)
 
     def _tally_votes(self):
         eligible_voters_votes = {
@@ -244,7 +246,9 @@ class GameServer(Peer):
         votes = {v for v in eligible_voters_votes.values() if v is not None}
         yes_votes = [v for v in votes if v]
 
-        return len(eligible_voters_votes), len(votes), len(yes_votes)
+        vote_passed = len(votes) >= 4 and len(yes_votes) / len(votes) >= 0.5
+
+        return len(eligible_voters_votes), len(votes), len(yes_votes), vote_passed
 
     def _do_kick(self, votekick_passed):
         player_to_kick = self.player_being_kicked
