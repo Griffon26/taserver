@@ -32,6 +32,7 @@ from .authcodehandler import handle_authcodes
 from .configuration import Configuration
 from .gameserverlauncherhandler import handle_game_server_launcher
 from .gameclienthandler import handle_game_client
+from .httphandler import handle_http
 from .trafficdumper import TrafficDumper, dumpfilename
 from .loginserver import LoginServer
 
@@ -87,6 +88,9 @@ def main():
                      configuration),
         gevent_spawn("login server's handle_authcodes",
                      handle_authcodes,
+                     server_queue),
+        gevent_spawn("login server's handle_http",
+                     handle_http,
                      server_queue),
         gevent_spawn("login server's handle_game_client",
                      handle_game_client,

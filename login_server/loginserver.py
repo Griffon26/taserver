@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2018  Maurice van der Pot <griffon26@kfk4ever.com>
+# Copyright (C) 2018-2019  Maurice van der Pot <griffon26@kfk4ever.com>
 #
 # This file is part of taserver
 # 
@@ -58,6 +58,7 @@ class LoginServer:
         self.message_handlers = {
             AuthCodeRequestMessage: self.handle_authcode_request_message,
             ExecuteCallbackMessage: self.handle_execute_callback_message,
+            HttpRequestMessage: self.handle_http_request_message,
             PeerConnectedMessage: self.handle_client_connected_message,
             PeerDisconnectedMessage: self.handle_client_disconnected_message,
             LoginProtocolMessage: self.handle_client_message,
@@ -241,6 +242,15 @@ class LoginServer:
 
         for request in msg.requests:
             current_player.handle_request(request)
+
+    def handle_http_request_message(self, msg):
+        if msg.env['PATH_INFO'] == '/status':
+            msg.peer.send_response(json.dumps({
+                'online_players': len(self.players),
+                'online_servers': len(self.game_servers)
+            }, sort_keys = True, indent = 4))
+        else:
+            msg.peer.send_response(None)
 
     def handle_launcher_protocol_version_message(self, msg):
         launcher_version = StrictVersion(msg.version)

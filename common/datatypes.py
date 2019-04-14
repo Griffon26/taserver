@@ -153,6 +153,12 @@ class AuthCodeRequestMessage():
         self.login_name = login_name
 
 
+class HttpRequestMessage():
+    def __init__(self, peer, env):
+        self.peer = peer
+        self.env = env
+
+
 def hexparse(hexstring):
     return bytes([int('0x' + hexbyte, base=16) for hexbyte in hexstring.split()])
 

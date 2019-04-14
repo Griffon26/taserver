@@ -153,7 +153,8 @@ class Firewall:
         for program in tribes_ascend_programs:
             self.utils.disable_rules_for_program_name(program)
 
-        self.utils.add_rule('TAserverfirewall-general', 'any', 9001, 'tcp', 'allow')
+        self.utils.add_rule('TAserverfirewall-general', 'any', 9001, 'tcp', 'allow') # for game servers
+        self.utils.add_rule('TAserverfirewall-general', 'any', 9080, 'tcp', 'allow') # for REST
         self.whitelist.reset()
         self.blacklist.reset()
 

@@ -155,7 +155,8 @@ on a LAN disconnected from the internet. In that case, follow these steps to set
    the login server:
     
    * 9000/TCP
-   * 9001/TCP 
+   * 9001/TCP
+   * 9080/TCP
    
    **Do not manually open these ports in the firewall on the machine where the login server runs,
      otherwise votekick may not work correctly. taserver itself will manage the firewall rules**
