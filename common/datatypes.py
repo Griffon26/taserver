@@ -46,6 +46,10 @@ WATCHNOW_TRAINING = 3
 WATCHNOW_COMMUNITY = 4
 WATCHNOW_TICKER = 5
 
+PURCHASE_TYPE_SERVER = 0x01de
+PURCHASE_TYPE_BOOSTERS = 0x01fc
+PURCHASE_TYPE_NAME = 0x0200
+PURCHASE_TYPE_TAG = 0x0221
 
 STDMSG_PLAYER_NOT_FOUND_ONLINE              = 0x0000457b # 'Player @@PLAYER_NAME@@ not found online. Check spelling of player name?'
 STDMSG_NAME_HAS_LEFT_AGENCY                 = 0x00004583 # '@@name@@ has left the agency
@@ -72,6 +76,10 @@ STDMSG_PLAYER_IS_NOT_IN_SAME_ALLIANCE       = 0x00004fdd # '@@player_name@@ is n
 STDMSG_TOO_MANY_PENDING_INVITES             = 0x00004fe8 # 'Too many pending invites to send another.'
 STDMSG_TEAM_INVITE_EXPIRED                  = 0x00004fea # 'The team invite expired.'
 # Lots of other strings in the range that follows
+STDMSG_SHOPPING_NOT_AVAILABLE               = 0x00019001 # 'Shopping is not available at this time'
+STDMSG_PROBLEM_WITH_YOUR_PURCHASE_REQUEST   = 0x00019002 # 'There was a problem with your purchase request'
+STDMSG_PRICE_CHANGE_PLEASE_RETRY            = 0x00019003 # 'There has been a price change, retry purchase if desired'
+STDMSG_NOT_ENOUGH_FUNDS                     = 0x00019004 # 'You do not have enough funds to complete the transaction'
 STDMSG_MUST_UPGRADE_TO_VIP                  = 0x00019338 # 'You must upgrade your account to VIP Status'
 STDMSG_VOTE_BY_X_KICK_PLAYER_X_YES_NO       = 0x0001942F # 'Vote by @@kicker_player_name@@: kick @@player_name@@? (No: F5) (Yes: F6)
 STDMSG_PLAYER_X_HAS_BEEN_KICKED             = 0x00019430 # '@@player_name@@ has been kicked'
@@ -2863,7 +2871,7 @@ class a003d(enumblockarray):
     def set_player(self, player):
         self.findbytype(m0348).set(player.unique_id)
         self.findbytype(m034a).set(player.display_name)
-        self.findbytype(m06de).set(player.tag)
+        self.findbytype(m06de).set(player.player_settings.clan_tag)
 
         loadout_arrays = []
         loadout_overall_idx = 0

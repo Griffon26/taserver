@@ -32,7 +32,7 @@ from common.statetracer import statetracer, RefOnly
 from common.game_items import get_game_setting_modes, UNMODDED_GAME_SETTING_MODE
 
 
-@statetracer('unique_id', 'login_name', 'display_name', 'tag', 'address_pair', 'port', 'registered',
+@statetracer('unique_id', 'login_name', 'display_name', 'address_pair', 'player_settings', 'port', 'registered',
              RefOnly('game_server'), 'vote', 'team')
 class Player(Peer):
 
@@ -52,7 +52,6 @@ class Player(Peer):
         self.login_name: str = None
         self.display_name: str = None
         self.password_hash: str = None
-        self.tag: str = ''
         self.port = address[1]
         self.registered = False
         self.last_received_seq = 0

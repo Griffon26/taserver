@@ -20,20 +20,35 @@
 
 import json
 from common.game_items import UNMODDED_GAME_SETTING_MODE
+from common.statetracer import statetracer
+
+defaults = {
+    'clan_tag': '',
+    'game_setting_mode': UNMODDED_GAME_SETTING_MODE
+}
 
 
+@statetracer('clan_tag', 'game_setting_mode')
 class PlayerSettings:
     def __init__(self):
-        self.game_setting_mode = UNMODDED_GAME_SETTING_MODE
+        self.clan_tag = None
+        self.game_setting_mode = None
+        self.init_settings_from_dict({})
+
+    def init_settings_from_dict(self, d):
+        for key in defaults:
+            setattr(self, key, d.get(key, defaults[key]))
 
     def load(self, filename):
         try:
             with open(filename, 'rt') as infile:
                 d = json.load(infile)
-                self.game_setting_mode = d.get('game_setting_mode', 'ootb')
         except OSError:
-            self.game_setting_mode = 'ootb'
+            d = {}
+
+        self.init_settings_from_dict(d)
 
     def save(self, filename):
+        current_values = {key: getattr(self, key) for key in defaults}
         with open(filename, 'wt') as outfile:
-            json.dump(vars(self), outfile, indent=4, sort_keys=True)
+            json.dump(current_values, outfile, indent=4, sort_keys=True)

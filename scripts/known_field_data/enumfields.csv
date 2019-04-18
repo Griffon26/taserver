@@ -244,7 +244,7 @@
 0x0597,FourBytes,
 0x05B8,FourBytes,
 0x05CC,FourBytes,"currency? (0x0645=gold, 0x27f9=xp)"
-0x05CF,FourBytes,
+0x05CF,FourBytes,purchase seqnr
 0x05D3,FourBytes,player gold
 0x05DC,FourBytes,player rank progress
 0x05E9,FourBytes,

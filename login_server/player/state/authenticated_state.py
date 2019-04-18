@@ -74,7 +74,7 @@ class AuthenticatedState(PlayerState):
     def handle_menu(self, request):
         menu_part = request.findbytype(m02ab).value
         menu_fragments = {
-            0x01de: originalfragment(0x38d17, 0x3d0fe),
+            PURCHASE_TYPE_SERVER: originalfragment(0x38d17, 0x3d0fe),
             0x01ed: a0177().setdata(0x01ed, get_unmodded_class_menu_data().class_purchases, False),  # Classes
             0x01f0: a0177().setdata(0x01f0, {item
                                              for _, class_items
@@ -111,8 +111,8 @@ class AuthenticatedState(PlayerState):
                                     False),  # Skins
             0x01fa: originalfragment(0x221a6, 0x22723),
             0x01fb: originalfragment(0x2272b, 0x235b8),
-            0x01fc: originalfragment(0x235c0, 0x239dd),
-            0x0200: originalfragment(0x239e5, 0x23acf),  # Name change
+            PURCHASE_TYPE_BOOSTERS: originalfragment(0x235c0, 0x239dd),
+            PURCHASE_TYPE_NAME: originalfragment(0x239e5, 0x23acf),  # Name change
             0x0206: originalfragment(0x2620e, 0x28ac1),
             0x0214: originalfragment(0x23ad7, 0x26206),  # Purchaseable loadouts
             0x0218: originalfragment(0x28ac9, 0x2f4d7),
@@ -123,7 +123,7 @@ class AuthenticatedState(PlayerState):
                                              for item
                                              in get_unmodded_class_menu_data().voices},
                                     False),  # Voices
-            0x0221: originalfragment(0x2f4df, 0x2f69f),  # Modify Clantag
+            PURCHASE_TYPE_TAG: originalfragment(0x2f4df, 0x2f69f),  # Modify Clantag
             0x0227: originalfragment(0x2f6a7, 0x38d0f),  # GOTY
         }
         if menu_part in menu_fragments:
@@ -220,7 +220,7 @@ class AuthenticatedState(PlayerState):
 
         if message_type == MESSAGE_TEAM:
             request.content.append(m02fe().set(self.player.display_name))
-            request.content.append(m06de().set(self.player.tag))
+            request.content.append(m06de().set(self.player.player_settings.clan_tag))
 
             if self.player.game_server and self.player.team is not None:
                 self.player.game_server.send_all_players_on_team(request,
@@ -231,7 +231,7 @@ class AuthenticatedState(PlayerState):
             addressed_player = self.player.login_server.find_player_by_display_name(addressed_player_name)
             if addressed_player:
                 request.content.append(m02fe().set(self.player.display_name))
-                request.content.append(m06de().set(self.player.tag))
+                request.content.append(m06de().set(self.player.player_settings.clan_tag))
                 self.player.send(request)
 
                 request.findbytype(m034a).set(addressed_player.display_name)
@@ -255,7 +255,7 @@ class AuthenticatedState(PlayerState):
             self.handle_control_message(msg)
         else:  # MESSAGE_PUBLIC
             request.content.append(m02fe().set(self.player.display_name))
-            request.content.append(m06de().set(self.player.tag))
+            request.content.append(m06de().set(self.player.player_settings.clan_tag))
 
             # Uncomment this to easily print a mapping between message IDs and message texts
             # (only works when a map is loaded)
@@ -309,6 +309,34 @@ class AuthenticatedState(PlayerState):
         promotion_code = request.findbytype(m0669)
         if promotion_code:
             self._handle_verification_code(promotion_code.value)
+        else:
+            purchase_type = request.findbytype(m02ab).value
+            if purchase_type == PURCHASE_TYPE_TAG:
+                tag_field = request.findbytype(m02fe)
+                self.player.player_settings.clan_tag = tag_field.value if tag_field else ''
+
+                tag_change_msg = a006d().set([
+                    m0348().set(self.player.unique_id),
+                    m06de().set(self.player.player_settings.clan_tag)
+                ])
+                self.player.send(tag_change_msg)
+
+                reply_msg = a0175().set([
+                    m0442().set(1),
+                    m02fc().set(0),
+                    request.findbytype(m05cf),
+                    request.findbytype(m04d9),
+                    request.findbytype(m02ab),
+                    request.findbytype(m04d9),
+                    request.findbytype(m05cc),
+                    request.findbytype(m035a),
+                    m0683().set(7)
+                ])
+                self.player.send(reply_msg)
+            else:
+                # not implemented
+                pass
+
 
     def _handle_verification_code(self, authcode):
         if (self.player.login_name in self.player.login_server.accounts and
