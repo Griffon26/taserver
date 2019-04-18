@@ -35,12 +35,20 @@ class Friends:
         self.social_network = social_network
 
     def add(self, unique_id, login_name):
-        self.friends_dict[unique_id] = { 'login_name' : login_name }
-        self.social_network.add_friend(self.this_player.unique_id, unique_id)
+        if unique_id not in self.friends_dict:
+            self.friends_dict[unique_id] = { 'login_name' : login_name }
+            self.social_network.add_friend(self.this_player.unique_id, unique_id)
+            return True
+        else:
+            return False
 
     def remove(self, unique_id):
-        self.friends_dict.pop(unique_id, None)
-        self.social_network.remove_friend(self.this_player.unique_id, unique_id)
+        if unique_id in self.friends_dict:
+            self.friends_dict.pop(unique_id, None)
+            self.social_network.remove_friend(self.this_player.unique_id, unique_id)
+            return True
+        else:
+            return False
 
     def load(self, filename):
         try:

@@ -322,7 +322,7 @@ class AuthenticatedState(PlayerState):
                 self.player.send(tag_change_msg)
 
                 reply_msg = a0175().set([
-                    m0442().set(1),
+                    m0442().set_success(True),
                     m02fc().set(0),
                     request.findbytype(m05cf),
                     request.findbytype(m04d9),
@@ -406,10 +406,25 @@ class AuthenticatedState(PlayerState):
             if add:
                 name = request.findbytype(m034a).value
                 # TODO: also make this work for registered players that are offline
-                other_player = self.player.login_server.find_player_by(login_name=name)
+                other_player = self.player.login_server.find_player_by_display_name(name)
 
+                reply = None
                 if other_player and other_player.registered:
-                    self.player.friends.add(other_player.unique_id, name)
+                    if not self.player.friends.add(other_player.unique_id, name):
+                        request.content.extend([
+                            m0442().set_success(False),
+                            m02fc().set(STDMSG_PLAYER_X_IS_ALREADY_YOUR_FRIEND)
+                        ])
+                        reply = request
+                else:
+                    request.content.extend([
+                        m0442().set_success(False),
+                        m02fc().set(STDMSG_PLAYER_X_NOT_FOUND)
+                    ])
+                    reply = request
+
+                if reply:
+                    self.player.send(reply)
 
             else:  # remove
                 unique_id = request.findbytype(m020d).value
