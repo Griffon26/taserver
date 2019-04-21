@@ -20,6 +20,7 @@
 
 from distutils.version import StrictVersion
 import gevent
+import json
 import logging
 
 from common.errors import FatalError
@@ -34,7 +35,7 @@ from .gameserverhandler import StartGameServerMessage, StopGameServerMessage, Ga
 from .loginserverhandler import LoginServer
 
 game_server_ports = [7777, 7778]
-
+map_rotation_state_path = 'data/maprotationstate.json'
 
 def get_other_port(port):
     for other_port in game_server_ports:
@@ -64,7 +65,11 @@ class Launcher:
         self.active_server_port = None
         self.pending_server_port = None
         self.server_stopping = False
-        self.controller_context = {}
+        try:
+            with open(map_rotation_state_path, 'rt') as f:
+                self.controller_context = json.load(f)
+        except IOError:
+            self.controller_context = {}
 
         self.last_server_info_message = None
         self.last_map_info_message = None
@@ -310,6 +315,9 @@ class Launcher:
 
         self.game_controller = None
         self.controller_context = msg.controller_context
+
+        with open(map_rotation_state_path, 'wt') as f:
+            json.dump(self.controller_context, f)
 
         msg = Launcher2LoginMatchEndMessage()
         if self.login_server:
