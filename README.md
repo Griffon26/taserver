@@ -35,24 +35,14 @@ connect to the replacement login server, follow these steps:
 
 2. Get the code for [this project](https://github.com/Griffon26/taserver) from github
 
-3. Run the `download_compatible_controller.py` script to download the latest compatible
-   version of `TAMods-Server.dll`. TAMods-Server is responsible for all game-related settings,
-   including server description, message of the day and password. 
-   Consult the [TAMods-Server documentation](https://www.tamods.org/docs/doc_srv_api_overview.html)
-   on how to change any of these.
-
-4. Run the `download_udpproxy.py` script to download the `udpproxy.exe` program used by the 
-   taserver firewall script. This is a precompiled version of the C++ source code in the `udpproxy`
-   subdirectory.
-   
-5. Install the **x86 version** of the
+3. Install the **x86 version** of the
    [Visual C++ Redistributable for Visual Studio 2015](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
    It contains `msvcp140.dll`, which is needed by TAMods-Server and the UDP proxy used by the
    firewall script.
 
-6. Install python 3
+4. Install python 3
 
-7. Install the gevent module for python. From an administrator command prompt you should be able 
+5. Install the gevent module for python. From an administrator command prompt you should be able 
    to do it with:
 
     ```
@@ -65,13 +55,23 @@ connect to the replacement login server, follow these steps:
     C:\Program Files (x86)\Python36\Scripts\pip install gevent
     ```
 
-8. Modify `dir` under the `[gameserver]` section in `data/gameserverlauncher.ini` to point to 
+6. Modify `dir` under the `[gameserver]` section in `data/gameserverlauncher.ini` to point to 
    the directory where your TribesAscend.exe is located. For instance:
 
     ```
     C:\Games\Tribes Ascend\Binaries\Win32
     ```
     
+7. Run the `download_compatible_controller.py` script to download the latest compatible
+   version of `TAMods-Server.dll`. TAMods-Server is responsible for all game-related settings,
+   including server description, message of the day and password. 
+   Consult the [TAMods-Server documentation](https://www.tamods.org/docs/doc_srv_api_overview.html)
+   on how to change any of these.
+
+8. Run the `download_udpproxy.py` script to download the `udpproxy.exe` program used by the 
+   taserver firewall script. This is a precompiled version of the C++ source code in the `udpproxy`
+   subdirectory.
+   
 9. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
    important. This script will manage firewall rules to keep kicked players out and only allow 
    logged in players on the game server. Without this script running you will not be able to get
@@ -122,18 +122,14 @@ for anyone else connecting to this login server.
 One scenario where you would want to run your own login server is when you want to play
 on a LAN disconnected from the internet. In that case, follow these steps to set it up:
 
-1. Run the `download_udpproxy.py` script to download the `udpproxy.exe` program used by the 
-   taserver firewall script. This is a precompiled version of the C++ source code in the `udpproxy`
-   subdirectory.
-   
-2. Install the **x86 version** of the
+1. Install the **x86 version** of the
    [Visual C++ Redistributable for Visual Studio 2015](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
    It contains `msvcp140.dll`, which is needed by TAMods-Server and the UDP proxy used by the
    firewall script.
 
-3. Install python 3
+2. Install python 3
 
-4. Install the gevent module for python. From an administrator command prompt you should be able 
+3. Install the gevent module for python. From an administrator command prompt you should be able 
    to do it with:
 
     ```
@@ -146,6 +142,10 @@ on a LAN disconnected from the internet. In that case, follow these steps to set
     C:\Program Files (x86)\Python36\Scripts\pip install gevent
     ```
 
+4. Run the `download_udpproxy.py` script to download the `udpproxy.exe` program used by the 
+   taserver firewall script. This is a precompiled version of the C++ source code in the `udpproxy`
+   subdirectory.
+   
 5. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
    important if you want to make votekick work against "unkickable" hackers, but can be skipped
    if that does not interest you.
