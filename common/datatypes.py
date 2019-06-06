@@ -157,6 +157,10 @@ MENU_AREA_MEDIUM_LOADOUT_H = 0x02990EFD
 MENU_AREA_MEDIUM_LOADOUT_I = 0x02990EFE
 
 
+class AlreadyLoggedInError(Exception):
+    pass
+
+
 class ParseError(Exception):
     pass
 

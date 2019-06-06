@@ -138,6 +138,9 @@ class LoginServer:
             return None
 
     def change_player_unique_id(self, old_id, new_id):
+        if new_id in self.players:
+            raise AlreadyLoggedInError()
+
         assert old_id in self.players
         assert new_id not in self.players
 

@@ -83,38 +83,57 @@ class UnauthenticatedState(PlayerState):
                                  (self.player.login_name.encode('latin1'), validation_failure))
 
             else:
-                if (self.player.login_name in accounts and
-                        self.player.password_hash == accounts[self.player.login_name].password_hash):
-                    self.logger.info('User successfully authenticated with user name %s '
-                                     '(ID %d -> %d)' %
-                                         (self.player.login_name,
-                                         self.player.unique_id,
-                                         accounts[self.player.login_name].unique_id))
-                    self.player.login_server.change_player_unique_id(self.player.unique_id,
-                                                                     accounts[self.player.login_name].unique_id)
-                    self.player.registered = True
+                try:
+                    if (self.player.login_name in accounts and
+                            self.player.password_hash == accounts[self.player.login_name].password_hash):
+                        new_unique_id = accounts[self.player.login_name].unique_id
+                        self.logger.info('User successfully authenticated with user name %s '
+                                         '(ID %d -> %d)' % (self.player.login_name,
+                                                            self.player.unique_id,
+                                                            new_unique_id))
+                        self.player.login_server.change_player_unique_id(self.player.unique_id,
+                                                                         new_unique_id)
+                        self.player.registered = True
+                except AlreadyLoggedInError:
+                    self.player.send([
+                        a003d().set([
+                            m0442().set_success(False),
+                            m02fc().set(STDMSG_ALREADY_IN_MATCH_QUEUE),
+                            m0219(),
+                            m0019(),
+                            m0623(),
+                            m05d6(),
+                            m03e3(),
+                            m00ba()
+                        ])
+                    ])
+                    self.logger.info('Login of user %d:%s from IP %s rejected, because this account is already in use from IP %s.' %
+                                     (new_unique_id,
+                                      self.player.login_name,
+                                      self.player.address_pair,
+                                      self.player.login_server.players[new_unique_id].address_pair))
 
-                names_in_use = [p.display_name for p in self.player.login_server.players.values()
-                                if p.display_name is not None]
-                self.player.display_name = choose_display_name(self.player.login_name,
-                                                               self.player.registered,
-                                                               names_in_use,
-                                                               self.player.max_name_length)
-                self.player.load()
-                self.player.send([
-                    a003d()
-                        .set_menu_data(get_unmodded_class_menu_data())
-                        .set_player(self.player),
-                    m0662().set_original_bytes(0x8898, 0xdaff),
-                    m0633().set_original_bytes(0xdaff, 0x19116),
-                    m063e().set_original_bytes(0x19116, 0x1c6ee),
-                    m067e().set_original_bytes(0x1c6ee, 0x1ec45),
-                    m0442().set_success(True),
-                    m02fc().set(STDMSG_LOGIN_IS_VALID),
-                    m0219(),
-                    m0019(),
-                    m0623(),
-                    m05d6(),
-                    m00ba()
-                ])
-                self.player.set_state(AuthenticatedState)
+                else:
+                    names_in_use = [p.display_name for p in self.player.login_server.players.values()
+                                    if p.display_name is not None]
+                    self.player.display_name = choose_display_name(self.player.login_name,
+                                                                   self.player.registered,
+                                                                   names_in_use,
+                                                                   self.player.max_name_length)
+                    self.player.load()
+                    self.player.send([
+                        a003d().set_menu_data(get_unmodded_class_menu_data())
+                               .set_player(self.player),
+                        m0662().set_original_bytes(0x8898, 0xdaff),
+                        m0633().set_original_bytes(0xdaff, 0x19116),
+                        m063e().set_original_bytes(0x19116, 0x1c6ee),
+                        m067e().set_original_bytes(0x1c6ee, 0x1ec45),
+                        m0442().set_success(True),
+                        m02fc().set(STDMSG_LOGIN_IS_VALID),
+                        m0219(),
+                        m0019(),
+                        m0623(),
+                        m05d6(),
+                        m00ba()
+                    ])
+                    self.player.set_state(AuthenticatedState)
