@@ -51,7 +51,7 @@ from common.migration_mechanism import taserver_migration, upgrades_all_players
 # @upgrades_all_players()
 # def _migration_2(data, player: str):
 #     print('Performing pure migration for player: %s' % player)
-#     # Transform data in some sway
+#     # Transform data in some way
 #     return data
 
 
@@ -69,5 +69,25 @@ def _migration_ootb_and_goty_loadouts(data, player: str):
         data['ootb_loadouts'] = data['loadouts']
 
     del data['loadouts']
+
+    return data
+
+
+@taserver_migration(schema_version=2)
+@upgrades_all_players()
+def _migration_to_valid_clan_tags(data, player: str):
+    if 'settings' not in data:
+        return data
+
+    if 'clan_tag' not in data['settings']:
+        return data
+
+    try:
+        ascii_bytes = data['settings']['clan_tag'].encode('ascii')
+    except UnicodeError:
+        data['settings']['clan_tag'] = ''
+    else:
+        valid_bytes = bytes([c if (33 <= c <= 126 and chr(c) not in '~`\\') else ord('?') for c in ascii_bytes[:4]])
+        data['settings']['clan_tag'] = valid_bytes.decode('ascii')
 
     return data
