@@ -51,6 +51,9 @@ PURCHASE_TYPE_BOOSTERS = 0x01fc
 PURCHASE_TYPE_NAME = 0x0200
 PURCHASE_TYPE_TAG = 0x0221
 
+PURCHASE_ITEM_CHANGE_TAG = 0x000024d1
+PURCHASE_ITEM_REMOVE_TAG = 0x000024d2
+
 STDMSG_PLAYER_NOT_FOUND_ONLINE              = 0x0000457b # 'Player @@PLAYER_NAME@@ not found online. Check spelling of player name?'
 STDMSG_NAME_HAS_LEFT_AGENCY                 = 0x00004583 # '@@name@@ has left the agency
 
@@ -87,6 +90,9 @@ STDMSG_PLAYER_X_IS_NOT_ON_YOUR_IGNORE_LIST  = 0x0000a5c0 # '@@PLAYER_NAME@@ is n
 STDMSG_PLAYER_X_NOT_FOUND                   = 0x0000a5c1 # 'Player @@PLAYER_NAME@@ not found.'
 STDMSG_PLAYER_X_IS_FRIEND_CANT_BE_IGNORED   = 0x0000a5c5 # '@@PLAYER_NAME@@ is on your friends list and cannot be ignored.'
 STDMSG_PLAYER_X_IS_ON_YOUR_BLOCKED_LIST     = 0x0000a5c6 # '@@PLAYER_NAME@@ is on your Blocked list.'
+
+STDMSG_THAT_NAME_MAY_NOT_BE_USED            = 0x00018ea7 # 'That name may not be used."
+STDMSG_THAT_NAME_IS_UNAVAILABLE             = 0x00018ea8 # 'That name is unavailable."
 
 STDMSG_SHOPPING_NOT_AVAILABLE               = 0x00019001 # 'Shopping is not available at this time'
 STDMSG_PROBLEM_WITH_YOUR_PURCHASE_REQUEST   = 0x00019002 # 'There was a problem with your purchase request'

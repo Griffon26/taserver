@@ -25,7 +25,6 @@ from common.datatypes import *
 from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode, \
     Login2ClientModeInfo, Login2ClientMenuData, Login2ClientLoadouts, Client2LoginLoadoutChange, \
     parse_message_from_string
-from ..friends import FRIEND_STATE_VISIBLE
 from .player_state import PlayerState, handles, handles_control_message
 from common.game_items import get_game_setting_modes, get_class_menu_data_modded_defs, get_unmodded_class_menu_data
 
@@ -305,38 +304,17 @@ class AuthenticatedState(PlayerState):
         player.send(msg)
 
     @handles(packet=a0175)
-    def handle_promotion_code_redemption(self, request):
+    def handle_purchase_or_promo_code(self, request):
         promotion_code = request.findbytype(m0669)
         if promotion_code:
             self._handle_verification_code(promotion_code.value)
         else:
             purchase_type = request.findbytype(m02ab).value
             if purchase_type == PURCHASE_TYPE_TAG:
-                tag_field = request.findbytype(m02fe)
-                self.player.player_settings.clan_tag = tag_field.value if tag_field else ''
-
-                tag_change_msg = a006d().set([
-                    m0348().set(self.player.unique_id),
-                    m06de().set(self.player.player_settings.clan_tag)
-                ])
-                self.player.send(tag_change_msg)
-
-                reply_msg = a0175().set([
-                    m0442().set_success(True),
-                    m02fc().set(0),
-                    request.findbytype(m05cf),
-                    request.findbytype(m04d9),
-                    request.findbytype(m02ab),
-                    request.findbytype(m04d9),
-                    request.findbytype(m05cc),
-                    request.findbytype(m035a),
-                    m0683().set(7)
-                ])
-                self.player.send(reply_msg)
+                self._handle_purchase_tag(request)
             else:
                 # not implemented
                 pass
-
 
     def _handle_verification_code(self, authcode):
         if (self.player.login_name in self.player.login_server.accounts and
@@ -351,6 +329,82 @@ class AuthenticatedState(PlayerState):
             invalid_code_msg.findbytype(m02fc).set(STDMSG_NOT_A_VALID_PROMOTION_CODE)  # message type
             invalid_code_msg.findbytype(m0669).set(authcode)
             self.player.send(invalid_code_msg)
+
+    def is_valid_clan_tag(self, clan_tag):
+        if len(clan_tag) > 4:
+            return False
+
+        try:
+            ascii_bytes = clan_tag.encode('ascii')
+        except UnicodeError:
+            return False
+
+        if not all((33 <= c <= 126 and chr(c) not in '~`\\') for c in ascii_bytes):
+            return False
+
+        return True
+
+    def _handle_purchase_tag(self, request):
+        purchase_item = request.findbytype(m04d9).value
+
+        if purchase_item == PURCHASE_ITEM_CHANGE_TAG:
+            tag_field = request.findbytype(m02fe)
+
+            if tag_field and self.is_valid_clan_tag(tag_field.value):
+                self.player.player_settings.clan_tag = tag_field.value
+
+                tag_change_msg = a006d().set([
+                    m0348().set(self.player.unique_id),
+                    m06de().set(self.player.player_settings.clan_tag)
+                ])
+                self.player.send(tag_change_msg)
+
+                reply_msg = a0175().set([
+                    m0442().set_success(True),
+                    m02fc().set(0),
+                    request.findbytype(m05cf),
+                    request.findbytype(m02ab),
+                    request.findbytype(m04d9),
+                    request.findbytype(m05cc),
+                    request.findbytype(m035a),
+                    m0683().set(7)
+                ])
+                self.player.send(reply_msg)
+            else:
+                reply_msg = a0175().set([
+                    m0442().set_success(False),
+                    m02fc().set(STDMSG_THAT_NAME_MAY_NOT_BE_USED),
+                    request.findbytype(m05cf),
+                    request.findbytype(m02ab),
+                    request.findbytype(m04d9),
+                    request.findbytype(m05cc),
+                    request.findbytype(m035a),
+                    m0683().set(6),
+                    m049e().set(1)
+                ])
+                self.player.send(reply_msg)
+
+        else: # remove tag
+
+            self.player.player_settings.clan_tag = ''
+
+            tag_change_msg = a006d().set([
+                m0348().set(self.player.unique_id),
+                m06de().set(self.player.player_settings.clan_tag)
+            ])
+            self.player.send(tag_change_msg)
+
+            reply_msg = a0175().set([
+                m0442().set_success(True),
+                m02fc().set(0),
+                request.findbytype(m05cf),
+                request.findbytype(m02ab),
+                request.findbytype(m04d9),
+                request.findbytype(m05cc),
+                request.findbytype(m035a),
+                m0683().set(7)
+            ])
+            self.player.send(reply_msg)
 
     @handles(packet=a006d)
     def handle_menuchange(self, request):
