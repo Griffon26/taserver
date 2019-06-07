@@ -18,8 +18,6 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import copy
-
 from common.migration_mechanism import taserver_migration, upgrades_all_players
 
 # Writing a migration function
@@ -87,7 +85,7 @@ def _migration_to_valid_clan_tags(data, player: str):
     except UnicodeError:
         data['settings']['clan_tag'] = ''
     else:
-        valid_bytes = bytes([c if (33 <= c <= 126 and chr(c) not in '~`\\') else ord('?') for c in ascii_bytes[:4]])
+        valid_bytes = bytes([c if (33 <= c <= 126 and chr(c) not in r'#/:?\`~') else ord('.') for c in ascii_bytes[:4]])
         data['settings']['clan_tag'] = valid_bytes.decode('ascii')
 
     return data

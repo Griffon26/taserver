@@ -23,3 +23,7 @@ def first_unused_number_above(numbers, minimum):
     used_numbers = (n for n in numbers if n >= minimum)
     first_number_above = next(i for i, e in enumerate(sorted(used_numbers) + [None], start=minimum) if i != e)
     return first_number_above
+
+
+def is_valid_ascii_for_name(ascii_bytes):
+    return all((33 <= c <= 126 and chr(c) not in r'#/:?\`~') for c in ascii_bytes)

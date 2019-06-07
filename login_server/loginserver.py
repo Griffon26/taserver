@@ -40,7 +40,7 @@ from .player.state.offline_state import OfflineState
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
 from .social_network import SocialNetwork
-from .utils import first_unused_number_above
+from . import utils
 
 
 @statetracer('address_pair', 'game_servers', 'players')
@@ -160,7 +160,7 @@ class LoginServer:
         except UnicodeError:
             return 'User name contains invalid (i.e. non-ascii) characters'
 
-        if not all((33 <= c <= 126 and chr(c) not in '~`\\') for c in ascii_bytes):
+        if not utils.is_valid_ascii_for_name(ascii_bytes):
             return 'User name contains invalid characters'
 
         return None
@@ -187,7 +187,7 @@ class LoginServer:
 
     def handle_client_connected_message(self, msg):
         if isinstance(msg.peer, Player):
-            unique_id = first_unused_number_above(self.players.keys(), 10000000)
+            unique_id = utils.first_unused_number_above(self.players.keys(), 10000000)
 
             player = msg.peer
             player.friends.connect_to_social_network(self.social_network)
@@ -197,7 +197,7 @@ class LoginServer:
             player.set_state(UnauthenticatedState)
             self.players[unique_id] = player
         elif isinstance(msg.peer, GameServer):
-            server_id = first_unused_number_above(self.all_game_servers().keys(), 1)
+            server_id = utils.first_unused_number_above(self.all_game_servers().keys(), 1)
 
             game_server = msg.peer
             game_server.server_id = server_id

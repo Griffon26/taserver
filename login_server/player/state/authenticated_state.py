@@ -22,11 +22,12 @@
 import datetime
 
 from common.datatypes import *
+from common.game_items import get_game_setting_modes, get_class_menu_data_modded_defs, get_unmodded_class_menu_data
 from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode, \
     Login2ClientModeInfo, Login2ClientMenuData, Login2ClientLoadouts, Client2LoginLoadoutChange, \
     parse_message_from_string
 from .player_state import PlayerState, handles, handles_control_message
-from common.game_items import get_game_setting_modes, get_class_menu_data_modded_defs, get_unmodded_class_menu_data
+from ... import utils
 
 
 class AuthenticatedState(PlayerState):
@@ -339,7 +340,7 @@ class AuthenticatedState(PlayerState):
         except UnicodeError:
             return False
 
-        if not all((33 <= c <= 126 and chr(c) not in '~`\\') for c in ascii_bytes):
+        if not utils.is_valid_ascii_for_name(ascii_bytes):
             return False
 
         return True
