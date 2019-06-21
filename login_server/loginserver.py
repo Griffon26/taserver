@@ -45,10 +45,11 @@ from . import utils
 
 @statetracer('address_pair', 'game_servers', 'players')
 class LoginServer:
-    def __init__(self, server_queue, client_queues, accounts, configuration):
+    def __init__(self, server_queue, client_queues, server_stats_queue, accounts):
         self.logger = logging.getLogger(__name__)
         self.server_queue = server_queue
         self.client_queues = client_queues
+        self.server_stats_queue = server_stats_queue
 
         self.game_servers = TracingDict()
 
@@ -164,6 +165,15 @@ class LoginServer:
             return 'User name contains invalid characters'
 
         return None
+
+    def send_server_stats(self):
+        stats = [
+            {'locked':      gs.password_hash is not None,
+             'mode':        gs.game_setting_mode,
+             'description': gs.description,
+             'nplayers':    len(gs.players)} for gs in self.game_servers.values() if gs.joinable
+        ]
+        self.server_stats_queue.put(stats)
 
     def handle_authcode_request_message(self, msg):
         authcode_requester = msg.peer

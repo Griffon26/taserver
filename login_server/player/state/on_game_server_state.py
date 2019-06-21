@@ -37,6 +37,7 @@ class OnGameServerState(AuthenticatedState):
         self.player.game_server.set_player_loadouts(self.player)
         self.player.team = None
         self.player.friends.notify_on_game_server()
+        self.player.login_server.send_server_stats()
 
     def on_exit(self):
         self.logger.info("%s is exiting state %s" % (self.player, type(self).__name__))
@@ -44,6 +45,7 @@ class OnGameServerState(AuthenticatedState):
         self.player.game_server.remove_player(self.player)
         self.player.game_server = None
         self.player.team = None
+        self.player.login_server.send_server_stats()
 
     @handles(packet=a00b3)
     def handle_server_disconnect(self, request):  # server disconnect

@@ -18,23 +18,30 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from gevent import monkey
+monkey.patch_all()
+
 import argparse
-import sys
+import configparser
 import gevent
 import gevent.queue
 import logging
+import os
+import sys
 
 from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from common.migration_mechanism import run_migrations
 from .accounts import Accounts
 from .authcodehandler import handle_authcodes
-from .configuration import Configuration
 from .gameserverlauncherhandler import handle_game_server_launcher
 from .gameclienthandler import handle_game_client
 from .httphandler import handle_http
 from .trafficdumper import TrafficDumper, dumpfilename
 from .loginserver import LoginServer
+from .webhookhandler import handle_webhook
+
+INI_PATH = os.path.join('data', 'loginserver.ini')
 
 
 def handle_dump(dumpqueue):
@@ -44,8 +51,8 @@ def handle_dump(dumpqueue):
         traffic_dumper.run()
 
 
-def handle_server(server_queue, client_queues, accounts, configuration):
-    server = LoginServer(server_queue, client_queues, accounts, configuration)
+def handle_server(server_queue, client_queues, server_stats_queue, accounts):
+    server = LoginServer(server_queue, client_queues, server_stats_queue, accounts)
     # server.trace_as('loginserver')
     server.run()
 
@@ -74,21 +81,28 @@ def main():
     
     client_queues = {}
     server_queue = gevent.queue.Queue()
+    server_stats_queue = gevent.queue.Queue()
     dump_queue = gevent.queue.Queue() if args.dump else None
 
     accounts = Accounts('data/accountdatabase.json')
-    configuration = Configuration()
+    config = configparser.ConfigParser()
+    with open(INI_PATH) as f:
+        config.read_file(f)
 
     tasks = [
         gevent_spawn("login server's handle_server",
                      handle_server,
                      server_queue,
                      client_queues,
-                     accounts,
-                     configuration),
+                     server_stats_queue,
+                     accounts),
         gevent_spawn("login server's handle_authcodes",
                      handle_authcodes,
                      server_queue),
+        gevent_spawn("login server's handle_webhook",
+                     handle_webhook,
+                     server_stats_queue,
+                     config['loginserver']),
         gevent_spawn("login server's handle_http",
                      handle_http,
                      server_queue),
