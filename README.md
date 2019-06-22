@@ -61,23 +61,25 @@ connect to the replacement login server, follow these steps:
     ```
     C:\Games\Tribes Ascend\Binaries\Win32
     ```
-    
-7. Run the `download_compatible_controller.py` script to download the latest compatible
+
+7. Open an administrator command prompt and go to the directory containing the taserver files
+
+8. Run the `download_compatible_controller.py` script to download the latest compatible
    version of `TAMods-Server.dll`. TAMods-Server is responsible for all game-related settings,
    including server description, message of the day and password. 
    Consult the [TAMods-Server documentation](https://www.tamods.org/docs/doc_srv_api_overview.html)
    on how to change any of these.
 
-8. Run the `download_udpproxy.py` script to download the `udpproxy.exe` program used by the 
+9. Run the `download_udpproxy.py` script to download the `udpproxy.exe` program used by the 
    taserver firewall script. This is a precompiled version of the C++ source code in the `udpproxy`
    subdirectory.
    
-9. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
+10. As an administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
    important. This script will manage firewall rules to keep kicked players out and only allow 
    logged in players on the game server. Without this script running you will not be able to get
    rid of hackers that are normally "unkickable".
 
-10. If the game server is running behind a router you'll need to forward the following ports to
+11. If the game server is running behind a router you'll need to forward the following ports to
     the game server:
     
     * 7777/UDP
@@ -89,7 +91,10 @@ connect to the replacement login server, follow these steps:
     **Do not manually open these ports in the firewall on the machine where the game server runs,
       otherwise votekick may not work correctly. taserver itself will manage the firewall rules**
 
-11. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
+12. Open a second command prompt (doesn't need to be an administrator one) and go to the
+    directory containing the taserver files
+ 
+13. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
     root of this repository.
 
 Your server should now show up in the list for anyone connecting to the login server.
@@ -142,16 +147,17 @@ on a LAN disconnected from the internet. In that case, follow these steps to set
     C:\Program Files (x86)\Python36\Scripts\pip install gevent
     ```
 
-4. Run the `download_udpproxy.py` script to download the `udpproxy.exe` program used by the 
+4. Open an administrator command prompt and go to the directory containing the taserver files
+
+5. Run the `download_udpproxy.py` script to download the `udpproxy.exe` program used by the 
    taserver firewall script. This is a precompiled version of the C++ source code in the `udpproxy`
    subdirectory.
    
-5. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
+6. As administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
    important if you want to make votekick work against "unkickable" hackers, but can be skipped
    if that does not interest you.
-   
 
-6. If the login server is running behind a router you'll need to forward the following ports to
+7. If the login server is running behind a router you'll need to forward the following ports to
    the login server:
     
    * 9000/TCP
@@ -161,11 +167,13 @@ on a LAN disconnected from the internet. In that case, follow these steps to set
    **Do not manually open these ports in the firewall on the machine where the login server runs,
      otherwise votekick may not work correctly. taserver itself will manage the firewall rules**
 
-7. Start the login server by running the `start_login_server.py` script in the root of this 
-   repository (preferably from a command window so you can read the errors if it exits for 
-   some reason).
+8. Open a second command prompt (doesn't need to be an administrator one) and go to the
+   directory containing the taserver files
 
-8. Change `host` under the `[loginserver]` section in `data/gameserverlauncher.ini` to `127.0.0.1`
+9. Start the login server by running the `start_login_server.py` script in the root of this 
+   repository.
+
+10. Change `host` under the `[loginserver]` section in `data/gameserverlauncher.ini` to `127.0.0.1`
    to have any [game server that you start](#hosting-a-dedicated-server) connect to your locally
    running login server. Note: setting `host` to `127.0.0.1` will prevent anyone else from
    connecting to your game server. For LAN play you should set `host` to the LAN IP of the computer
