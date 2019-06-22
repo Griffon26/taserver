@@ -35,11 +35,15 @@ class WebhookHandler:
         self.server_stats_queue.put(None)
 
     def run(self):
-        current_stats = []
-        last_notification_time = 0
         last_reported_player_count = 0
 
         while True:
+            current_stats = self.server_stats_queue.get()
+            if not current_stats:
+                break
+
+            gevent.sleep(60)
+
             try:
                 current_stats = self.server_stats_queue.get_nowait()
                 if not current_stats:
@@ -48,13 +52,9 @@ class WebhookHandler:
             except gevent.queue.Empty:
                 pass
 
-            current_time = time.time()
             player_count = sum(gs_stats['nplayers'] for gs_stats in current_stats)
 
-            worth_notifying = (
-                (player_count > last_reported_player_count and current_time > last_notification_time + 10) or
-                (player_count < last_reported_player_count and current_time > last_notification_time + 60)
-            )
+            worth_notifying = (player_count != last_reported_player_count)
 
             if self.webhook_url and worth_notifying:
                 current_stats.sort(key=lambda gs: gs['description'].lower())
@@ -79,10 +79,7 @@ class WebhookHandler:
                     # TODO: do proper error logging
                     pass
 
-                last_notification_time = current_time
                 last_reported_player_count = player_count
-
-            gevent.sleep(5)
 
 
 def handle_webhook(server_stats_queue, config):
