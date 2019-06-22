@@ -57,10 +57,13 @@ class WebhookHandler:
             )
 
             if self.webhook_url and worth_notifying:
+                current_stats.sort(key=lambda gs: gs['description'].lower())
+                current_stats.sort(key=lambda gs: gs['mode'], reverse=True)
+
                 stat_msg = 'Server stats:\n'
                 stat_msg += '```\n'
-                stat_msg += '   mode   %-30.30s players\n' % 'name'
-                stat_msg += ''.join(['%s %s | %-30.30s %2d/28\n' % ('\N{Lock}' if gs['locked'] else '  ',
+                stat_msg += '   mode   %-21.21s players\n' % 'name'
+                stat_msg += ''.join(['%s %s | %-21.21s %2d/28\n' % ('\N{Lock}' if gs['locked'] else '  ',
                                                                     gs['mode'].upper(),
                                                                     gs['description'],
                                                                     gs['nplayers'])
