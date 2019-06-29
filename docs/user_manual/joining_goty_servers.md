@@ -16,29 +16,30 @@ it is possible to have both GOTY and OOTB game servers listed in the same server
 Because of the drastic differences between GOTY and OOTB, TAMods is required on the client side
 for playing in GOTY mode. The instructions below explain where to get it and how to use it.
 
-1) Make sure you have a recent version of the Tribes launcher installed (Version 1.0.4 or above).
-   The download can be found here. https://github.com/mcoot/TribesLauncher/releases
+1) Make sure you have TribesLauncherSharp installed. 
+   The download can be found here: https://github.com/mcoot/TribesLauncherSharp/releases
+   
+2) Start TribesLauncherSharp 
 
-2) Open your Tribes Launcher and click "Configure Launcher" near the top. 
+3) In the window that opens make sure GamePath points to your TribesAscend.exe
 
-    a) Under "Log In Server" select "Unofficial"
-
-    b) Uncheck "Launch via Steam"
+4) Under "Log In Server" select "Community"
     
-    c) Click Save
-    
-3) If the button in the bottom right says "Update TAMods" then click it to update.
+5) If the button in the bottom right says "Update TAMods" then click it to update.
 
-4) Launch Tribes through the Tribes launcher.
+6) Click the Launch button to start Tribes Ascend through the launcher.
 
-5) Log in as usual or choose a new username and password and log in with that
+7) Wait until you hear a sound that indicates that TAMods has been injected successfully.
+   This should take about 20 seconds.
 
-6) Once you are logged in, you may notice your username is prefixed by unvrf-.
+8) Log in as usual or choose a new username and password and log in with that
+
+9) Once you are logged in, you may notice your username is prefixed by unvrf-.
    Settings such as loadouts will not be remembered across sessions unless you get verified.
    You can [read more about getting verified on this page](/docs/user_manual/getting_verified.md).
 
-7) Press the "Switch to GOTY" menu option and you should see a message indicating you are 
-   now in GOTY mode. The current mode is shown under "Play Now". If it still says OOTB mode,
-   press "Switch to GOTY" again.
+10) Press the "Switch to GOTY" menu option and you should see a message indicating you are 
+    now in GOTY mode. The current mode is shown under "Play Now". If it still says OOTB mode,
+    press "Switch to GOTY" again.
    
 You should now be able to join GOTY game servers.
