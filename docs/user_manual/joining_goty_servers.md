@@ -25,7 +25,7 @@ for playing in GOTY mode. The instructions below explain where to get it and how
 
 4) Under "Log In Server" select "Community"
     
-5) If the button in the bottom right says "Update TAMods" then click it to update.
+5) If the button in the bottom right says "Update" then click it to update.
 
 6) Click the Launch button to start Tribes Ascend through the launcher.
 
