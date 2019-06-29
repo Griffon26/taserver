@@ -16,10 +16,11 @@ it is possible to have both GOTY and OOTB game servers listed in the same server
 Because of the drastic differences between GOTY and OOTB, TAMods is required on the client side
 for playing in GOTY mode. The instructions below explain where to get it and how to use it.
 
-1) Make sure you have TribesLauncherSharp installed. 
-   The download can be found here: https://github.com/mcoot/TribesLauncherSharp/releases
+1) If you don't have TribesLauncherSharp installed, download TribesLauncherSharp.zip from
+   https://github.com/mcoot/TribesLauncherSharp/releases and extract it to a directory of your
+   choosing.
    
-2) Start TribesLauncherSharp 
+2) Start TribesLauncherSharp.exe
 
 3) In the window that opens make sure GamePath points to your TribesAscend.exe
 
