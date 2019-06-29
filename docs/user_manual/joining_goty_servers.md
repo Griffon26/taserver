@@ -24,22 +24,24 @@ for playing in GOTY mode. The instructions below explain where to get it and how
 
 3) In the window that opens make sure GamePath points to your TribesAscend.exe
 
-4) Under "Log In Server" select "Community"
+4) Set "Injection" to automatic
+
+5) Under "Log In Server" select "Community"
     
-5) If the button in the bottom right says "Update" then click it to update.
+6) If the button in the bottom right says "Update" then click it to update.
 
-6) Click the Launch button to start Tribes Ascend through the launcher.
+7) Click the Launch button to start Tribes Ascend through the launcher.
 
-7) Wait until you hear a sound that indicates that TAMods has been injected successfully.
+8) Wait until you hear a sound that indicates that TAMods has been injected successfully.
    This should take about 20 seconds.
 
-8) Log in as usual or choose a new username and password and log in with that
+9) Log in as usual or choose a new username and password and log in with that
 
-9) Once you are logged in, you may notice your username is prefixed by unvrf-.
-   Settings such as loadouts will not be remembered across sessions unless you get verified.
-   You can [read more about getting verified on this page](/docs/user_manual/getting_verified.md).
+10) Once you are logged in, you may notice your username is prefixed by unvrf-.
+    Settings such as loadouts will not be remembered across sessions unless you get verified.
+    You can [read more about getting verified on this page](/docs/user_manual/getting_verified.md).
 
-10) Press the "Switch to GOTY" menu option and you should see a message indicating you are 
+11) Press the "Switch to GOTY" menu option and you should see a message indicating you are 
     now in GOTY mode. The current mode is shown under "Play Now". If it still says OOTB mode,
     press "Switch to GOTY" again.
    
