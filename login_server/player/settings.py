@@ -19,12 +19,39 @@
 #
 
 import json
+import datetime
 from common.game_items import UNMODDED_GAME_SETTING_MODE
 from common.statetracer import statetracer
 
+DEFAULT_LAST_WIN_DATETIME_STAMP = datetime.datetime(1970, 1, 1).isoformat()
+
+
+class PlayerProgression:
+    def __init__(self, rank_xp=0, last_win_timestamp=DEFAULT_LAST_WIN_DATETIME_STAMP):
+        self.rank_xp = rank_xp
+        self.last_win_time = datetime.datetime.fromisoformat(last_win_timestamp)
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(d.get('rank_xp', 0), d.get('last_win_time',
+                                              datetime.datetime.fromisoformat(DEFAULT_LAST_WIN_DATETIME_STAMP)))
+
+    def to_dict(self):
+        return {key: getattr(self, key) for key in vars(self)}
+
+
 defaults = {
     'clan_tag': '',
-    'game_setting_mode': UNMODDED_GAME_SETTING_MODE
+    'game_setting_mode': UNMODDED_GAME_SETTING_MODE,
+    'progression': dict()
+}
+
+load_transforms = {
+    'progression': PlayerProgression.from_dict
+}
+
+save_transforms = {
+    'progression': PlayerProgression.to_dict
 }
 
 
@@ -33,11 +60,15 @@ class PlayerSettings:
     def __init__(self):
         self.clan_tag = None
         self.game_setting_mode = None
+        self.progression = {}
         self.init_settings_from_dict({})
 
     def init_settings_from_dict(self, d):
         for key in defaults:
-            setattr(self, key, d.get(key, defaults[key]))
+            val = d.get(key, defaults[key])
+            if key in load_transforms:
+                val = load_transforms[key](val)
+            setattr(self, key, val)
 
     def load(self, filename):
         try:
@@ -50,5 +81,7 @@ class PlayerSettings:
 
     def save(self, filename):
         current_values = {key: getattr(self, key) for key in defaults}
+        for key, transform in save_transforms.items():
+            current_values[key] = transform(current_values[key])
         with open(filename, 'wt') as outfile:
             json.dump(current_values, outfile, indent=4, sort_keys=True)
