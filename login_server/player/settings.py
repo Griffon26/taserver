@@ -23,21 +23,20 @@ import datetime
 from common.game_items import UNMODDED_GAME_SETTING_MODE
 from common.statetracer import statetracer
 
-DEFAULT_LAST_WIN_DATETIME_STAMP = datetime.datetime(1970, 1, 1).isoformat()
+DEFAULT_LAST_WIN_DATETIME = datetime.datetime(1970, 1, 1)
 
 
 class PlayerProgression:
-    def __init__(self, rank_xp=0, last_win_timestamp=DEFAULT_LAST_WIN_DATETIME_STAMP):
+    def __init__(self, rank_xp=0, last_win_time=DEFAULT_LAST_WIN_DATETIME):
         self.rank_xp = rank_xp
-        self.last_win_time = datetime.datetime.fromisoformat(last_win_timestamp)
+        self.last_win_time = last_win_time
 
     @classmethod
     def from_dict(cls, d):
-        return cls(d.get('rank_xp', 0), d.get('last_win_time',
-                                              datetime.datetime.fromisoformat(DEFAULT_LAST_WIN_DATETIME_STAMP)))
+        return cls(d.get('rank_xp', 0), d.get('last_win_time', DEFAULT_LAST_WIN_DATETIME))
 
     def to_dict(self):
-        return {key: getattr(self, key) for key in vars(self)}
+        return {'rank_xp': self.rank_xp, 'last_win_time': self.last_win_time}
 
 
 defaults = {
