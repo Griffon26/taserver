@@ -29,6 +29,7 @@ from common.ipaddresspair import IPAddressPair
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.statetracer import statetracer, TracingDict
+from common.pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
 from common import versions
 from .gamecontrollerhandler import GameController
 from .gameserverhandler import StartGameServerMessage, StopGameServerMessage, GameServerTerminatedMessage
@@ -54,6 +55,8 @@ class Launcher:
     def __init__(self, game_server_config, incoming_queue, server_handler_queue):
         gevent.getcurrent().name = 'launcher'
 
+        self.pending_callbacks = PendingCallbacks(incoming_queue)
+
         self.logger = logging.getLogger(__name__)
         self.game_server_config = game_server_config
         self.incoming_queue = incoming_queue
@@ -64,6 +67,7 @@ class Launcher:
 
         self.active_server_port = None
         self.pending_server_port = None
+        self.min_next_switch_time = None
         self.server_stopping = False
         try:
             with open(map_rotation_state_path, 'rt') as f:
@@ -115,6 +119,7 @@ class Launcher:
             Game2LauncherMatchEndMessage: self.handle_match_end_message,
             Game2LauncherLoadoutRequest: self.handle_loadout_request_message,
             GameServerTerminatedMessage: self.handle_game_server_terminated_message,
+            ExecuteCallbackMessage: self.handle_execute_callback_message
         }
 
     def run(self):
@@ -190,6 +195,10 @@ class Launcher:
             self.login_server = None
         else:
             assert False, "Invalid disconnection message received"
+
+    def handle_execute_callback_message(self, msg):
+        callback_id = msg.callback_id
+        self.pending_callbacks.execute(callback_id)
 
     def handle_login_server_protocol_version_message(self, msg):
         # The only time we get a message with the login server's protocol version
@@ -297,6 +306,13 @@ class Launcher:
         else:
             self.last_score_info_message = msg
 
+    def set_server_ready(self):
+        msg = Launcher2LoginServerReadyMessage(self.pending_server_port)
+        if self.login_server:
+            self.login_server.send(msg)
+        else:
+            self.last_server_ready_message = msg
+
     def handle_match_time_message(self, msg):
         self.logger.info('launcher: received match time from game controller')
 
@@ -307,11 +323,13 @@ class Launcher:
             self.last_match_time_message = msg
 
         if self.pending_server_port != self.active_server_port:
-            msg = Launcher2LoginServerReadyMessage(self.pending_server_port)
-            if self.login_server:
-                self.login_server.send(msg)
+            if self.min_next_switch_time is None or datetime.datetime.utcnow() > self.min_next_switch_time:
+                self.set_server_ready()
             else:
-                self.last_server_ready_message = msg
+                time_left = self.min_next_switch_time - datetime.datetime.utcnow()
+                if time_left < datetime.timedelta(0):
+                    time_left = datetime.timedelta(seconds=1)
+                self.pending_callbacks.add(self, time_left.total_seconds(), self.set_server_ready)
 
     def handle_match_end_message(self, msg):
         self.logger.info('launcher: received match end from game controller (controller context = %s)' % msg.controller_context)
@@ -322,13 +340,15 @@ class Launcher:
         with open(map_rotation_state_path, 'wt') as f:
             json.dump(self.controller_context, f)
 
-        msg = Launcher2LoginMatchEndMessage(msg.player_earned_xps)
+        msg_to_login = Launcher2LoginMatchEndMessage(msg.player_earned_xps)
         if self.login_server:
-            self.login_server.send(msg)
+            self.login_server.send(msg_to_login)
         else:
-            self.last_match_end_message = msg
+            self.last_match_end_message = msg_to_login
 
         self.pending_server_port = get_other_port(self.active_server_port)
+
+        self.min_next_switch_time = datetime.datetime.utcnow() + datetime.timedelta(seconds=msg.next_map_wait_time)
         self.server_handler_queue.put(StartGameServerMessage(self.pending_server_port))
 
     def handle_loadout_request_message(self, msg):

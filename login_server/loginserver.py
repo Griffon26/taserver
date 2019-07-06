@@ -34,13 +34,13 @@ from common.statetracer import statetracer, TracingDict
 from common.versions import launcher2loginserver_protocol_version
 from .authcodehandler import AuthCodeRequester
 from .gameserver import GameServer
-from .pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
+from common.pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
 from .player.player import Player
 from .player.state.offline_state import OfflineState
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
 from .social_network import SocialNetwork
-from . import utils
+from common import utils
 
 
 @statetracer('address_pair', 'game_servers', 'players')

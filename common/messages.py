@@ -284,6 +284,7 @@ class Game2LauncherMatchTimeMessage(Message):
 
 # Example json: {
 #                  'controller_context' : opaque_json_structure,
+#                  'next_map_wait_time': 30,
 #                 'player_earned_xps': {
 #                      '5': { 'xp': 1250, 'first_win': true },
 #                      '1000002': { 'xp': 180, 'first_win': false }
@@ -294,9 +295,10 @@ class Game2LauncherMatchTimeMessage(Message):
 class Game2LauncherMatchEndMessage(Message):
     msg_id = _MSGID_GAME2LAUNCHER_MATCHEND
 
-    def __init__(self, controller_context, player_earned_xps):
+    def __init__(self, controller_context, player_earned_xps, next_map_wait_time: int):
         self.controller_context = controller_context
         self.player_earned_xps = player_earned_xps
+        self.next_map_wait_time = next_map_wait_time
 
 
 # Example json: { 'player_unique_id' : 123, 'class_id' : 1683, 'loadout_number' : 0 }

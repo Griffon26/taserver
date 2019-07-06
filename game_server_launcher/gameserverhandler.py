@@ -35,13 +35,16 @@ class ConfigurationError(FatalError):
     def __init__(self, message):
         super().__init__('Configuration error: %s' % message)
 
+
 class StartGameServerMessage:
     def __init__(self, port):
         self.port = port
 
+
 class StopGameServerMessage:
     def __init__(self, port):
         self.port = port
+
 
 class GameServerTerminatedMessage:
     def __init__(self, port):

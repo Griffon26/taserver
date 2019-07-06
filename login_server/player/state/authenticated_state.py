@@ -27,7 +27,7 @@ from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode
     Login2ClientModeInfo, Login2ClientMenuData, Login2ClientLoadouts, Client2LoginLoadoutChange, \
     parse_message_from_string
 from .player_state import PlayerState, handles, handles_control_message
-from ... import utils
+from common import utils
 
 
 class AuthenticatedState(PlayerState):

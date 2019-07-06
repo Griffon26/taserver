@@ -20,7 +20,7 @@
 
 import gevent
 
-from .utils import first_unused_number_above
+from common.utils import first_unused_number_above
 
 
 class ExecuteCallbackMessage():
