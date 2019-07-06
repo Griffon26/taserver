@@ -27,16 +27,29 @@ DEFAULT_LAST_WIN_DATETIME = datetime.datetime(1970, 1, 1)
 
 
 class PlayerProgression:
-    def __init__(self, rank_xp=0, last_win_time=DEFAULT_LAST_WIN_DATETIME):
+    def __init__(self, rank_xp=0, last_first_win_time=DEFAULT_LAST_WIN_DATETIME):
         self.rank_xp = rank_xp
-        self.last_win_time = last_win_time
+        self.last_first_win_time = last_first_win_time
+
+    def is_eligible_for_first_win(self) -> bool:
+        # Eligible for first win after midnight of every day
+        next_eligible_date = self.last_first_win_time.date() + datetime.timedelta(days=1)
+        next_eligible_time = datetime.datetime.combine(next_eligible_date, datetime.time(0, 0, 0))
+        return datetime.datetime.utcnow() > next_eligible_time
 
     @classmethod
     def from_dict(cls, d):
-        return cls(d.get('rank_xp', 0), d.get('last_win_time', DEFAULT_LAST_WIN_DATETIME))
+        last_first_win_time = DEFAULT_LAST_WIN_DATETIME
+        if 'last_first_win_time' in d:
+            try:
+                last_first_win_time = datetime.datetime.strptime(d['last_first_win_time'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            except ValueError:
+                # Ignore invalid last first win time
+                pass
+        return cls(d.get('rank_xp', 0), last_first_win_time)
 
     def to_dict(self):
-        return {'rank_xp': self.rank_xp, 'last_win_time': self.last_win_time}
+        return {'rank_xp': self.rank_xp, 'last_first_win_time': self.last_first_win_time.isoformat()}
 
 
 defaults = {

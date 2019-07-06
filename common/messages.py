@@ -57,6 +57,7 @@ _MSGID_LAUNCHER2GAME_LOADOUT = 0x4000
 _MSGID_LAUNCHER2GAME_NEXTMAP = 0x4001
 _MSGID_LAUNCHER2GAME_PINGS = 0x4002
 _MSGID_LAUNCHER2GAME_INIT = 0x4003
+_MSGID_LAUNCHER2GAME_PLAYER_INFO = 0x4004
 
 _MSGID_CLIENT2LOGIN_CONNECT = 0x5000
 _MSGID_CLIENT2LOGIN_SWITCHMODE = 0x5001
@@ -90,7 +91,6 @@ class Message:
         return cls(**members)
 
 
-
 class Login2LauncherNextMapMessage(Message):
     msg_id = _MSGID_LOGIN2LAUNCHER_NEXTMAP
 
@@ -118,13 +118,15 @@ class Login2LauncherProtocolVersionMessage(Message):
         self.version = version
 
 
-# Example json: { 'unique_id' : 123, 'ip' : '1.2.3.4' }
+# Example json: { 'unique_id' : 123, 'ip' : '1.2.3.4', 'eligible_for_first_win': false }
 class Login2LauncherAddPlayer(Message):
     msg_id = _MSGID_LOGIN2LAUNCHER_ADD_PLAYER
 
-    def __init__(self, unique_id: int, ip: str):
+    def __init__(self, unique_id: int, ip: str, rank_xp: int, eligible_for_first_win: bool):
         self.unique_id = unique_id
         self.ip = ip
+        self.rank_xp = rank_xp
+        self.eligible_for_first_win = eligible_for_first_win
 
 
 # Example json: { 'unique_id' : 123, 'ip' : '1.2.3.4' }
@@ -192,8 +194,8 @@ class Launcher2LoginMatchTimeMessage(Message):
 class Launcher2LoginMatchEndMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MATCHEND
 
-    def __init__(self):
-        pass
+    def __init__(self, player_earned_xps):
+        self.player_earned_xps = player_earned_xps
 
 
 class Launcher2LoginAddressInfoMessage(Message):
@@ -280,14 +282,21 @@ class Game2LauncherMatchTimeMessage(Message):
         self.counting = counting
 
 
-# Example json: { 'controller_context' : opaque_json_structure }
+# Example json: {
+#                  'controller_context' : opaque_json_structure,
+#                 'player_earned_xps': {
+#                      '5': { 'xp': 1250, 'first_win': true },
+#                      '1000002': { 'xp': 180, 'first_win': false }
+#                  }
+#               }
 # Where 'opaque_json_structure' is a structure chosen by the controller and that will
 #       be passed to the next controller instance after map change
 class Game2LauncherMatchEndMessage(Message):
     msg_id = _MSGID_GAME2LAUNCHER_MATCHEND
 
-    def __init__(self, controller_context):
+    def __init__(self, controller_context, player_earned_xps):
         self.controller_context = controller_context
+        self.player_earned_xps = player_earned_xps
 
 
 # Example json: { 'player_unique_id' : 123, 'class_id' : 1683, 'loadout_number' : 0 }
@@ -349,6 +358,16 @@ class Launcher2GamePings(Message):
 
     def __init__(self, player_pings):
         self.player_pings = player_pings
+
+
+# Example json: { 'player_unique_id' : 123456, 'rank_xp': 1234567, 'eligible_for_first_win': false }
+class Launcher2GamePlayerInfo(Message):
+    msg_id = _MSGID_LAUNCHER2GAME_PLAYER_INFO
+
+    def __init__(self, player_unique_id: int, rank_xp: int, eligible_for_first_win: bool):
+        self.player_unique_id = player_unique_id
+        self.rank_xp = rank_xp
+        self.eligible_for_first_win = eligible_for_first_win
 
 
 # Example json: { 'controller_context': opaque_json_structure }
@@ -435,6 +454,7 @@ _message_classes = [
     Launcher2GameNextMapMessage,
     Launcher2GamePings,
     Launcher2GameInit,
+    Launcher2GamePlayerInfo,
 
     Client2LoginConnect,
     Client2LoginSwitchMode,

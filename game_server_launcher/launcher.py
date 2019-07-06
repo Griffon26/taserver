@@ -221,6 +221,9 @@ class Launcher:
         if msg.ip:
             self.logger.info('launcher: login server added player %d with ip %s' % (msg.unique_id, msg.ip))
             modify_firewall('whitelist', 'add', msg.unique_id, msg.ip)
+            if self.game_controller:
+                self.game_controller.send(
+                    Launcher2GamePlayerInfo(msg.unique_id, msg.rank_xp, msg.eligible_for_first_win))
         else:
             self.logger.info('launcher: login server added local player %d' % msg.unique_id)
 
@@ -319,7 +322,7 @@ class Launcher:
         with open(map_rotation_state_path, 'wt') as f:
             json.dump(self.controller_context, f)
 
-        msg = Launcher2LoginMatchEndMessage()
+        msg = Launcher2LoginMatchEndMessage(msg.player_earned_xps)
         if self.login_server:
             self.login_server.send(msg)
         else:

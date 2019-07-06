@@ -340,4 +340,23 @@ class LoginServer:
 
     def handle_match_end_message(self, msg):
         game_server = msg.peer
+        for player in game_server.players.values():
+            if str(player.unique_id) in msg.player_earned_xps:
+                earned_xp = msg.player_earned_xps[str(player.unique_id)]['xp']
+                was_first_win = msg.player_earned_xps[str(player.unique_id)]['first_win']
+
+                # Save the player's new XP
+                player.player_settings.progression.rank_xp += earned_xp
+                if was_first_win:
+                    player.player_settings.progression.last_first_win_time = datetime.datetime.utcnow()
+
+                # Update the XP in the UI
+                player.send(a006d().set([
+                    m04cb(),
+                    m05dc().set(player.player_settings.progression.rank_xp),
+                    m03ce().set(0x434D0000),
+                    m00fe().set([]),
+                    m0632(),
+                    m0296(),
+                ]))
         self.logger.info('server: match ended on server %s.' % game_server.server_id)
