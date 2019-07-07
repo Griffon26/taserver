@@ -65,11 +65,12 @@ def get_available_tamods_versions():
 
 
 def load_version_map():
-    result = urlreq.urlopen(compatibility_csv)
-    result = open('data/tamods_compatibility.csv', 'r')
+    response = urlreq.urlopen(compatibility_csv)
+    encoding = response.info().get_content_charset()
+    content = response.read().decode(encoding)
 
     version_map = {}
-    for line in result:
+    for line in content.splitlines():
         if not line.strip() or line.strip().startswith('#'):
             continue
 
