@@ -24,5 +24,6 @@ from .player_state import PlayerState
 class OfflineState(PlayerState):
 
     def on_enter(self):
+        self.player.save()
         self.logger.info("%s is entering state %s" % (self.player, type(self).__name__))
         self.player.friends.notify_offline()

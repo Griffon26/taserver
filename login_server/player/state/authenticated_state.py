@@ -42,7 +42,6 @@ class AuthenticatedState(PlayerState):
 
     def on_exit(self):
         self.logger.info("%s is exiting state %s" % (self.player, type(self).__name__))
-        self.player.save()
 
     @handles(packet=a00d5)
     def handle_a00d5(self, request):
