@@ -49,7 +49,10 @@ class PlayerProgression:
         return cls(d.get('rank_xp', 0), last_first_win_time)
 
     def to_dict(self):
-        return {'rank_xp': self.rank_xp, 'last_first_win_time': self.last_first_win_time.isoformat()}
+        return {
+            'rank_xp': self.rank_xp,
+            'last_first_win_time': self.last_first_win_time.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        }
 
 
 defaults = {

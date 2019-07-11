@@ -349,7 +349,6 @@ class LoginServer:
                 player.player_settings.progression.rank_xp += earned_xp
                 if was_first_win:
                     player.player_settings.progression.last_first_win_time = datetime.datetime.utcnow()
-
                 # Update the XP in the UI
                 player.send(a006d().set([
                     m04cb(),
