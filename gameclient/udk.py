@@ -49,13 +49,38 @@ class ParserState():
         }
 
         TrPlayerPawnProps = {
+            '1010000': {'name': 'bNetOwner',
+                        'type': bool},
+            '1101000': {'name': 'RemoteRole',
+                        'type': bitarray,
+                        'size': 2},
+            '1111000': {'name': 'Owner',
+                        'type': bitarray,
+                        'size': 11},
+            '1100100': {'name': 'Rotation',
+                        'type': bitarray,
+                        'size': 11},
             '1001100': {'name': 'InvManager',
                         'type': bitarray,
                         'size': 11},
+            '0111100': {'name': 'PlayerReplicationInfo',
+                        'type': bitarray,
+                        'size': 11},
+            '1111100': {'name': 'HealthMax',
+                        'type': int},
             '0000010': {'name': 'Health',
                         'type': int},
+            '1000010': {'name': 'AirControl',
+                        'type': int},
+            '0110010': {'name': 'GroundSpeed',
+                        'type': int},
+            '1101010': {'name': 'bCanSwatTurn',
+                        'type': bool},
             '0011010': {'name': 'bSimulateGravity',
                         'type': bool},
+            '1111010': {'name': 'Controller',
+                        'type': bitarray,
+                        'size': 11},
             # size varies:
             # 10101000000
             # 000
@@ -68,6 +93,10 @@ class ParserState():
                         'type': bitarray,
                         'size': 139},
             '1001001': {'name': 'CurrentWeaponAttachmentClass',
+                        'type': int},
+            '1100101': {'name': 'r_fPowerPoolRechargeRate',
+                        'type': int},
+            '0010101': {'name': 'r_fMaxPowerPool',
                         'type': int},
             '1010101': {'name': 'r_fCurrentPowerPool',
                         'type': int},
@@ -195,30 +224,72 @@ class ParserState():
             # '11010100': {'name': 'RPC ClientHearSound',
             #            'type': bitarray,
             #            'size': 48},
-            '11011100': {'name': 'RPC VeryShortClientAdjustPosition',
-                         'type': bitarray,
-                         'size': 165},
-            # the size of this one varies... figure out how to pick the right one
-            # These appear to be valid values:
-            # 1111100 0001010111100011100100001011001110011101001010011111100101000011101000111100100101011010011001000011000101101110011101011111011100101000110
-            # 1000010 11101100110010010010000010111100100111101001100001110010101100010101011000111001010100100111110001111101000101110011010111100000001001101000100
-            # 1011100 101000101100110001010000101111001001111010011000011100101011000101010110001110010101001001111111001111010001011100110000000101011100011010001000110100010010010000
-            # 1110000 010101101111010110110000101100111001110111010101000101101111000101100011100101001110011011110011110100011110011110111011111100010010100010101011000110000111110000000000000
-            # 1111010 111000001001001011010000101111001001110111011000000000011111010101100011111001011001111001111100001100011111010101110110001011111010100010100110010111001011110000000000000
-            # 1100100 111011001001001011010000101111001001110111011000000000011111010101100011111001011001111001111100001100011111010101110110001011111010100010100110010111001011110000000000000
+            # 1110001010011101100000100010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
+            # 1011010111110111100100100010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
+            # 1001100001100100010010100010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
+            # 1011001101110100010110100010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
+            # 1110111010101100010001100010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
+            # 1001001011110111111001101010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
+            # 1001100100101111111111011010000 10110000010111111100010110011100010101110110101001011111011101100010101001111000001001110101111000010100111000101110111110000000000000
+            # 1011111100000100011100010110000 1011111001001011100001100101110 0010101100001010000101111010011 1000101001000000001011011000001 00100011100111000101110111110000000000000
 
+            '11011100': {'name': 'RPC VeryShortClientAdjustPosition',
+                         'type': [
+                             {'name': 'TimeStamp',
+                              'type': float},
+                             {'name': 'NewLocX',
+                              'type': float},
+                             {'name': 'NewLocY',
+                              'type': float},
+                             {'name': 'NewLocZ',
+                              'type': float},
+                             {'name': 'newBase',
+                              'type': bitarray,
+                              'size': 32}
+                         ]},
             '00111100': {'name': 'RPC ShortClientAdjustPosition',
-                         'type': bitarray,
-                         'size': 150},
+                         'type': [
+                             {'name': 'TimeStamp',
+                              'type': float},
+                             {'name': 'newState + newPhysics',
+                              'type': bitarray,
+                              'size': 16},
+                             {'name': 'NewLocX',
+                              'type': float},
+                             {'name': 'NewLocY',
+                              'type': float},
+                             {'name': 'NewLocZ',
+                              'type': float},
+                             {'name': 'newBase',
+                              'type': bitarray,
+                              'size': 32}
+                         ]},
             '01111100': {'name': 'RPC ClientAckGoodMove',
                        'type': bitarray,
                        'size': 33},
-            # Size appears to vary
-            # 101010010100100110011111011000010111100100111101001000110011110010100101111011000111110000111100111101110100011000111111010010101101000111100101000101000100001100011010001100110000111110110111110111101111111001000101001011011000100111111011001000110
-            # 11111010011000111011111101100001011110010011111011110001011111110111100011101100011100100000111111001101011110100011100100101110100010010111100100010100110101000000000110010100100010110100011001000110001101100100010110110101100000001111101011000011101001011111001111110000000000000
             '11111100': {'name': 'RPC ClientAdjustPosition',
-                         'type': bitarray,
-                         'size': 281},
+                         'type': [
+                             {'name': 'TimeStamp',
+                              'type': float},
+                             {'name': 'newState + newPhysics',
+                              'type': bitarray,
+                              'size': 16},
+                             {'name': 'NewLocX',
+                              'type': float},
+                             {'name': 'NewLocY',
+                              'type': float},
+                             {'name': 'NewLocZ',
+                              'type': float},
+                             {'name': 'NewVelX',
+                              'type': float},
+                             {'name': 'NewVelY',
+                              'type': float},
+                             {'name': 'NewVelZ',
+                              'type': float},
+                             {'name': 'newBase',
+                              'type': bitarray,
+                              'size': 32}
+                         ]},
             '00110010': {'name': 'RPC ClientGameEnded',
                          'type': bitarray,
                          'size': 2},
@@ -395,6 +466,8 @@ class ParserState():
             '101010' : { 'name' : 'UniqueId',
                          'type' : bitarray,
                          'size' : 64 },
+            '011010' : { 'name' : 'Unknown field',
+                         'type' : int },
             '110110' : { 'name' : 'bWaitingPlayer', 'type' : bool },
             '000110' : { 'name' : 'bBot', 'type' : bool },
             '101110' : { 'name' : 'bIsSpectator', 'type' : bool },
@@ -543,6 +616,14 @@ def toint(bits):
     zerobytes = bytes( (0,0,0,0) )
     longbytes = (bits.tobytes() + zerobytes)[0:4]
     return struct.unpack('<L', longbytes)[0]
+
+def float2bitarray(val):
+    bits = bitarray(endian='little')
+    bits.frombytes(struct.pack('<f', val))
+    return bits
+
+def tofloat(bits):
+    return struct.unpack('<f', bits.tobytes())[0]
 
 def getnbits(n, bits):
     if n > len(bits):
@@ -721,6 +802,31 @@ class PropertyValueInt():
             text = '%sempty\n' % indent_prefix
         return text
 
+
+class PropertyValueFloat():
+    def __init__(self):
+        self.value = None
+
+    @debugbits
+    def frombitarray(self, bits, debug=False):
+        valuebits, bits = getnbits(32, bits)
+        self.value = tofloat(valuebits)
+        return bits
+
+    def tobitarray(self):
+        return float2bitarray(self.value) if self.value is not None else bitarray()
+
+    def tostring(self, indent=0):
+        indent_prefix = ' ' * indent
+        if self.value is not None:
+            text = '%s%s (value = %f)\n' % (indent_prefix,
+                                            self.tobitarray().to01(),
+                                            self.value)
+        else:
+            text = '%sempty\n' % indent_prefix
+        return text
+
+
 class PropertyValueBool():
     def __init__(self):
         self.value = None
@@ -817,19 +923,18 @@ class PropertyValueMystery1():
                 self.string3.tobitarray())
 
     def tostring(self, indent = 0):
-            indent_prefix = ' ' * indent
-            items = []
-            items.append(self.int1.tostring(indent))
-            items.append(self.int2.tostring(indent))
-            items.append(self.int3.tostring(indent))
-            items.append(self.int4.tostring(indent))
-            items.append(self.string1.tostring(indent))
-            items.append(self.string2.tostring(indent))
-            items.append(self.int5.tostring(indent))
-            items.append(self.int6.tostring(indent))
-            items.append(self.string3.tostring(indent))
-            text = ''.join(items)
-            return text
+        items = []
+        items.append(self.int1.tostring(indent))
+        items.append(self.int2.tostring(indent))
+        items.append(self.int3.tostring(indent))
+        items.append(self.int4.tostring(indent))
+        items.append(self.string1.tostring(indent))
+        items.append(self.string2.tostring(indent))
+        items.append(self.int5.tostring(indent))
+        items.append(self.int6.tostring(indent))
+        items.append(self.string3.tostring(indent))
+        text = ''.join(items)
+        return text
 
 class PropertyValueMystery2():
     def __init__(self):
@@ -850,13 +955,12 @@ class PropertyValueMystery2():
                 self.string3.tobitarray())
 
     def tostring(self, indent = 0):
-            indent_prefix = ' ' * indent
-            items = []
-            items.append(self.string1.tostring(indent))
-            items.append(self.string2.tostring(indent))
-            items.append(self.string3.tostring(indent))
-            text = ''.join(items)
-            return text
+        items = []
+        items.append(self.string1.tostring(indent))
+        items.append(self.string2.tostring(indent))
+        items.append(self.string3.tostring(indent))
+        text = ''.join(items)
+        return text
 
 class PropertyValueMystery3():
     def __init__(self):
@@ -874,12 +978,121 @@ class PropertyValueMystery3():
                 self.string2.tobitarray())
 
     def tostring(self, indent = 0):
-            indent_prefix = ' ' * indent
-            items = []
-            items.append(self.string1.tostring(indent))
-            items.append(self.string2.tostring(indent))
-            text = ''.join(items)
-            return text
+        items = []
+        items.append(self.string1.tostring(indent))
+        items.append(self.string2.tostring(indent))
+        text = ''.join(items)
+        return text
+
+
+def parse_basic_property(propertytype, bits, size=None, debug=False):
+    if propertytype is str:
+        value = PropertyValueString()
+        bits = value.frombitarray(bits, debug=debug)
+    elif propertytype is int:
+        value = PropertyValueInt()
+        bits = value.frombitarray(bits, debug=debug)
+    elif propertytype is float:
+        value = PropertyValueFloat()
+        bits = value.frombitarray(bits, debug=debug)
+    elif propertytype is bool:
+        value = PropertyValueBool()
+        bits = value.frombitarray(bits, debug=debug)
+    elif propertytype is 'flag':
+        value = PropertyValueFlag()
+        bits = value.frombitarray(bits, debug=debug)
+    elif propertytype is bitarray:
+        value = PropertyValueBitarray()
+        #if size is None:
+        #    raise RuntimeError("Coding error: size can't be None for bitarray")
+        bits = value.frombitarray(bits, size, debug=debug)
+    elif propertytype == PropertyValueMystery1:
+        value = PropertyValueMystery1()
+        bits = value.frombitarray(bits, debug=debug)
+    elif propertytype == PropertyValueMystery2:
+        value = PropertyValueMystery2()
+        bits = value.frombitarray(bits, debug=debug)
+    elif propertytype == PropertyValueMystery3:
+        value = PropertyValueMystery3()
+        bits = value.frombitarray(bits, debug=debug)
+    else:
+        raise RuntimeError('Coding error: propertytype has invalid value: %s' % propertytype)
+
+    return value, bits
+
+
+class PropertyValueStruct():
+    def __init__(self, member_list):
+        self.member_list = member_list
+        self.values = []
+
+    @debugbits
+    def frombitarray(self, bits, debug = False):
+        self.values = []
+        for member in self.member_list:
+            propertytype = member.get('type', None)
+            propertysize = member.get('size', None)
+            value, bits = parse_basic_property(propertytype, bits, propertysize, debug = debug)
+            self.values.append(value)
+
+        return bits
+
+    def tobitarray(self):
+        allbits = bitarray()
+        for member in self.values:
+            allbits += member.tobitarray()
+        return allbits
+
+    def tostring(self, indent = 0):
+        items = []
+        for member, value in zip(self.member_list, self.values):
+            items.append(value.tostring(indent)[:-1] + '(%s)\n' % member['name'])
+        text = ''.join(items)
+        return text
+
+
+class PropertyValueParams():
+    def __init__(self, param_list):
+        self.param_list = param_list
+        self.values = []
+
+    @debugbits
+    def frombitarray(self, bits, debug = False):
+        self.values = []
+        for member in self.param_list:
+            propertytype = member.get('type', None)
+            propertysize = member.get('size', None)
+
+            present, bits = getnbits(1, bits)
+            if present[0] == 1:
+                value, bits = parse_basic_property(propertytype, bits, propertysize, debug = debug)
+            else:
+                value = None
+            self.values.append(value)
+
+        return bits
+
+    def tobitarray(self):
+        allbits = bitarray()
+        for value in self.values:
+            if value is not None:
+                allbits += bitarray([1])
+                allbits += value.tobitarray()
+            else:
+                allbits += bitarray([0])
+        return allbits
+
+    def tostring(self, indent = 0):
+        indent_prefix = ' ' * indent
+        items = []
+        for member, value in zip(self.param_list, self.values):
+            if value is not None:
+                items.append('%s1 (%s param present)\n' % (indent_prefix, member['name']))
+                items.append(value.tostring(indent)[:-1] + '(%s)\n' % member['name'])
+            else:
+                items.append('%s0 (%s param absent)\n' % (indent_prefix, member['name']))
+        text = ''.join(items)
+        return text
 
 
 class ObjectProperty():
@@ -906,33 +1119,18 @@ class ObjectProperty():
             bits = self.value.frombitarray(bits, propertysize, propertyvalues, debug = debug)
         
         elif propertytype:
-            if propertytype is str:
-                self.value = PropertyValueString()
-                bits = self.value.frombitarray(bits, debug = debug)
-            elif propertytype is int:
-                self.value = PropertyValueInt()
-                bits = self.value.frombitarray(bits, debug = debug)
-            elif propertytype is bool:
-                self.value = PropertyValueBool()
-                bits = self.value.frombitarray(bits, debug = debug)
-            elif propertytype is 'flag':
-                self.value = PropertyValueFlag()
-                bits = self.value.frombitarray(bits, debug = debug)
-            elif propertytype is bitarray:
-                self.value = PropertyValueBitarray()
-                bits = self.value.frombitarray(bits, propertysize, debug = debug)
-            elif propertytype == PropertyValueMystery1:
-                self.value = PropertyValueMystery1()
-                bits = self.value.frombitarray(bits, debug = debug)
-            elif propertytype == PropertyValueMystery2:
-                self.value = PropertyValueMystery2()
+            if isinstance(propertytype, list):
+                self.value = PropertyValueParams(propertytype)
                 bits = self.value.frombitarray(bits, debug=debug)
-            elif propertytype == PropertyValueMystery3:
-                self.value = PropertyValueMystery3()
+            elif isinstance(propertytype, tuple):
+                self.value = PropertyValueStruct(propertytype)
                 bits = self.value.frombitarray(bits, debug=debug)
             else:
-                raise RuntimeError('Coding error')
-            
+                try:
+                    self.value, bits = parse_basic_property(propertytype, bits, propertysize, debug = debug)
+                except:
+                    self.value = PropertyValueBitarray()
+                    raise
         else:
             raise ParseError('Unknown property %s for class %s' %
                                  (propertykey, class_['name']),
@@ -991,14 +1189,17 @@ class ObjectClass():
         self.classid = None
 
     def getclasskey(self):
-        return int2bitarray(self.classid, 32).to01()
+        classbits = int2bitarray(self.classid, 32)
+        if classbits[0:5] == bitarray('10001'):
+            classbits[5:] = False
+        return classbits.to01()
 
     @debugbits
     def frombitarray(self, bits, state, debug = False):
         classbits, bits = getnbits(32, bits)
         self.classid = toint(classbits)
         
-        classkey = classbits.to01()
+        classkey = self.getclasskey()
         if classkey not in state.class_dict:
             classname = 'unknown%d' % len(state.class_dict)
             state.class_dict[classkey] = { 'name' : classname,
