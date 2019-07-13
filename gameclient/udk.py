@@ -251,9 +251,12 @@ class ParserState():
                          'type': [
                              {'name': 'TimeStamp',
                               'type': float},
-                             {'name': 'newState + newPhysics',
+                             {'name': 'newState',
                               'type': bitarray,
-                              'size': 16},
+                              'size': 11},
+                             {'name': 'newPhysics',
+                              'type': bitarray,
+                              'size': 4},
                              {'name': 'NewLocX',
                               'type': float},
                              {'name': 'NewLocY',
@@ -271,9 +274,12 @@ class ParserState():
                          'type': [
                              {'name': 'TimeStamp',
                               'type': float},
-                             {'name': 'newState + newPhysics',
+                             {'name': 'newState',
                               'type': bitarray,
-                              'size': 16},
+                              'size': 11},
+                             {'name': 'newPhysics',
+                              'type': bitarray,
+                              'size': 4},
                              {'name': 'NewLocX',
                               'type': float},
                              {'name': 'NewLocY',
@@ -1479,7 +1485,7 @@ class Packet():
         parsed_nbits = len(self.tobitarray())
 
         if len(bits) != original_nbits - parsed_nbits:
-            raise RuntimeError('Coding error: parsed bits + unparsed bits does not equal total bits')
+            raise RuntimeError('Coding error: parsed bits + unparsed bits does not equal total bits: parsed so far: %s' % self.tostring(0))
 
         nr_of_padding_bits = 8 - (parsed_nbits % 8)
         if len(bits) != nr_of_padding_bits:
