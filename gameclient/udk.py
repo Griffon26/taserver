@@ -108,9 +108,19 @@ class ParserState():
             '1110011': {'name': 'r_bIsSkiing',
                         'type': bitarray,
                         'size': 1},
+            '0111011': {'name': 'RPC ClientUpdateHUDHealth',
+                        'type': [
+                            {'name': 'NewHealth',
+                             'type': None},
+                            {'name': 'NewHealthMax',
+                             'type': int}
+                        ]},
             '1111011': {'name': 'RPC PlayHardLandingEffect',
                         'type': bitarray,
-                        'size': 53}
+                        'size': 53},
+            '1100111': {'name': 'r_nFlashReloadSecondaryWeapon',
+                        'type': bitarray,
+                        'size': 8}
         }
 
         TrDeviceProps = {
@@ -181,8 +191,12 @@ class ParserState():
                          'type': bitarray,
                          'size': 2},
             '11000000': {'name': 'RPC ClientMatchOver',
-                         'type': bitarray,
-                         'size': 91},
+                         'type': [
+                             {'name': 'Winner?',
+                              'type': bool},
+                             {'name': 'WinnerName',
+                              'type': str}
+                         ]},
             '00100000': {'name': '!!!!!!!!!INTERESTING Unknown INTERESTING!!!!!!!!!',
                          'type': bitarray,
                          'size': 10},
@@ -196,8 +210,12 @@ class ParserState():
                          'type': bitarray,
                          'size': 11},
             '01100000': {'name': 'RPC UpdateMatchCountdown',
-                         'type': bitarray,
-                         'size': 34},
+                         'type': [
+                             {'name': 'unknown',
+                              'type': 'flag'},
+                             {'name': 'Seconds',
+                              'type': int}
+                         ]},
             '01101000': {'name': 'Pawn',
                          'type': bitarray,
                          'size': 11},
@@ -209,30 +227,44 @@ class ParserState():
                          'size': 1},
             # # variable length, so currently it screws up what follows
             '00100100': {'name': 'RPC ClientGotoState',
-                         'type': bitarray,
-                         'size': 13},
+                         'type': [
+                             {'name': 'NewState',
+                              'type': bitarray,
+                              'size': 11},
+                             {'name': 'NewLabel',
+                              'type': bitarray,
+                              'size': 11}
+                         ]},
             '01100100': {'name': 'RPC GivePawn',
-                         'type': bitarray,
-                         'size': 12},
+                         'type': [
+                             {'name': 'NewPawn',
+                              'type': bitarray,
+                              'size': 11}
+                         ]},
             # the size of this one varies... these appear to be valid:
-            # 10111111100001011010000000000000010000000010000000000000000000000011111000000000
-            # 101111111000010110100000000000000110100000000000000000000000000000000
-            # 100000000011111101100000000000000111100000000000000000000000000000000
+            # 1 01100110010011100000000000000000 1 11000000000000000000000000000000 1 11110000000 0 1 10101000000
+            # 1 01101100100010010100000000000000 1 10000000000000000000000000000000 0 1 11110000000 1 01000111110001010100000000000000
+            # 1 01111111000010110100000000000000 1 00000000100000000000000000000000 1 11110000000 0 0
+            # 1 01111111000010110100000000000000 1 10100000000000000000000000000000 0 0 0
+            # 1 00000000011111101100000000000000 1 11100000000000000000000000000000 0 0 0
             '10010100': {'name': 'RPC ReceiveLocalizedMessage',
-                         'type': bitarray,
-                         'size': 69}, # used to be 80
+                         'type': [
+                             {'name': 'Message',
+                              'type': int},
+                             {'name': 'Switch',
+                              'type': int},
+                             {'name': 'RelatedPRI_1',
+                              'type': bitarray,
+                              'size': 11},
+                             {'name': 'RelatedPRI_2',
+                              'type': int},
+                             {'name': 'OptionalObject',
+                              'type': bitarray,
+                              'size': 11},
+                         ]},
             # '11010100': {'name': 'RPC ClientHearSound',
             #            'type': bitarray,
             #            'size': 48},
-            # 1110001010011101100000100010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
-            # 1011010111110111100100100010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
-            # 1001100001100100010010100010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
-            # 1011001101110100010110100010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
-            # 1110111010101100010001100010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
-            # 1001001011110111111001101010000 10100010111011110011001010111100010110011110101110100110100111100010100001100101011001111010100100011100111000101110111110000000000000
-            # 1001100100101111111111011010000 10110000010111111100010110011100010101110110101001011111011101100010101001111000001001110101111000010100111000101110111110000000000000
-            # 1011111100000100011100010110000 1011111001001011100001100101110 0010101100001010000101111010011 1000101001000000001011011000001 00100011100111000101110111110000000000000
-
             '11011100': {'name': 'RPC VeryShortClientAdjustPosition',
                          'type': [
                              {'name': 'TimeStamp',
@@ -268,8 +300,10 @@ class ParserState():
                               'size': 32}
                          ]},
             '01111100': {'name': 'RPC ClientAckGoodMove',
-                       'type': bitarray,
-                       'size': 33},
+                       'type': [
+                           {'name': 'TimeStamp',
+                            'type': float}
+                        ]},
             '11111100': {'name': 'RPC ClientAdjustPosition',
                          'type': [
                              {'name': 'TimeStamp',
@@ -296,29 +330,54 @@ class ParserState():
                               'type': bitarray,
                               'size': 32}
                          ]},
+
+            # reliable client function ClientGameEnded(optional Actor EndGameFocus, optional bool bIsWinner)
             '00110010': {'name': 'RPC ClientGameEnded',
                          'type': bitarray,
                          'size': 2},
+#                         'type': [
+#                             {'name': 'param1',
+#                              'type': bool},
+#                             {'name': 'param2',
+#                              'type': bool}
+#                          ]},
+            # 110101110000 100000000000000000000000000000000100000000000000000000000000000000100
+            # 110100000000 100000000000000000000000000000000100000000000000000000000000000000100
+            # 100001010000 101011110000000000000 100000000000000000000000000000000100000000000000000000000000000000100
             '10110010': {'name': 'RPC ClientSetViewTarget',
+                         # 'type': [
+                         #     {'name': 'PlayerReplicationInfo',
+                         #      'type': bitarray,
+                         #      'size': 11},
+                         #     {'name':
                          'type': bitarray,
                          'size': 81},
             '11101010': {'name': 'RPC ClientPlayForceFeedbackWaveform',
-                         'type': bitarray,
-                         'size': 34},
+                         'type': [
+                             {'name': 'FFWaveform',
+                              'type': int},
+                             {'name': 'FFWaveformInstigator',
+                              'type': None}
+                         ]},
             # '00111010': {'name': 'bNetOwner',
             #            'type': bitarray,
             #            'size': 2},
             '10110110': {'name': 'RPC ClientWriteLeaderboardStats',
-                         'type': bitarray,
-                         'size': 1},
+                         'type': [
+                             {'name': 'OnlineStatsWriteClass',
+                              'type': None}
+                         ]},
             '11101110': {'name': 'RPC ClientEndOnlineGame',
                          'type': 'flag'},
             # '01110001': {'name': 'Rotation',
             #              'type': bitarray,
             #              'size': 12},
             '01001001': {'name': 'RPC PlayStartupMessage',
-                         'type': bitarray,
-                         'size': 9},
+                         'type': [
+                             {'name': 'StartupStage',
+                              'type': bitarray,
+                              'size': 8}
+                         ]},
             # varies in size:
             # 11110100000011001111001101000110101011111101100000110001010100000000000000
             # 0101111110101011001010001010100000000000000
@@ -333,6 +392,11 @@ class ParserState():
             # '00011101': {'name': 'RemoteRole',
             #              'type': bitarray,
             #              'size': 3},
+            '00101011': {'name': 'RPC ClientEndTeamSelect',
+                         'type': [
+                             {'name': 'RequestedTeamNum',
+                              'type': int}
+                         ]},
             '10111101': {'name': 'r_nCurrentCredits',
                          'type': bitarray,
                          'size': 32},
@@ -341,8 +405,10 @@ class ParserState():
             '11000011': {'name': 'r_bNeedTeam',
                          'type': bool},
             '11100011': {'name': 'RPC ClientSeekingMissileTargetingSelfEvent',
-                         'type': bitarray,
-                         'size': 33},
+                         'type': [
+                             {'name': 'EventSwitch',
+                              'type': int}
+                         ]},
         }
 
         TrBaseTurretProps = {
@@ -367,6 +433,21 @@ class ParserState():
             '000001' : { 'name' : 'Velocity',
                          'type' : bitarray,
                          'size' : 42 }
+        }
+
+        TrProj_SpinfusorProps = {
+            '10000': {'name': 'bCollideActors',
+                      'type': bool},
+            #'10000': {'name': 'bNetOwner',
+            #          'type': bool},
+            '11100': {'name': 'bTearOff',
+                      'type': bool},
+            '10110': {'name': 'Base',
+                      'type': bitarray,
+                      'size': 31},
+            '10011': {'name': 'r_vSpawnLocation',
+                      'type': bitarray,
+                      'size': 52}
         }
 
         TrDroppedPickupProps = {
@@ -425,38 +506,37 @@ class ParserState():
         }
 
         TrFlagCTFProps = {
-            '100000' : { 'name' : 'bCollideActors1', 'type' : 'flag'},
-            '110000' : { 'name' : 'bHardAttach', 'type' : 'flag'},
-            '000100' : { 'name' : 'Physics',
+            '10000' : { 'name' : 'bCollideActors', 'type' : bool},
+            '11000' : { 'name' : 'bHardAttach', 'type' : bool},
+            '00010' : { 'name' : 'Physics',
                          'type' : bitarray,
-                         'size' : 3 },
-            '000010' : { 'name' : 'Location',
+                         'size' : 4 },
+            '00001' : { 'name' : 'Location',
                          'type' : bitarray,
-                         'size' : 51 },
-            '100010' : { 'name' : 'RelativeLocation',
+                         'size' : 52 },
+            '10001' : { 'name' : 'RelativeLocation',
                          'type' : bitarray,
-                         'size' : 21 },
-            '110010' : { 'name' : 'Rotation',
+                         'size' : 22 },
+            '11001' : { 'name' : 'Rotation',
                          'type' : bitarray,
-                         'size' : 10 },
-            '001010' : { 'name' : 'Velocity',
+                         'size' : 11 },
+            '00101' : { 'name' : 'Velocity',
                          'type' : bitarray,
-                         'size' : 39 },
-            '101110' : { 'name' : 'Base',
-                         'type' : bitarray,
-                         'size' : 9 },
-            '100001' : { 'name' : 'bCollideActors2', 'type' : 'flag'},
-            '010001' : { 'name' : 'bCollideWorld', 'type' : 'flag'},
-            '011010' : { 'name' : 'bHome', 'type' : 'flag'},
-            '010011' : { 'name' : 'RelativeRotation',
-                         'type' : bitarray,
-                         'size' : 26 },
-            '111011' : { 'name' : 'Team',
+                         'size' : 40 },
+            '10111' : { 'name' : 'Base',
                          'type' : bitarray,
                          'size' : 10 },
-            '000111' : { 'name' : 'HolderPRI',
-                         'type' : bitarray,
-                         'size' : 10 }
+            '01000' : { 'name' : 'bCollideWorld', 'type' : bool},
+            '01101' : { 'name' : 'bHome', 'type' : bool},
+            '01001' : { 'name' : 'RelativeRotation',
+                        'type' : bitarray,
+                        'size' : 27 },
+            '11101' : { 'name' : 'Team',
+                        'type' : bitarray,
+                        'size' : 11 },
+            '00011' : { 'name' : 'HolderPRI',
+                        'type' : bitarray,
+                        'size' : 11 }
         }
 
         TrPlayerReplicationInfoProps = {
@@ -560,6 +640,7 @@ class ParserState():
         }
 
         self.class_dict = {
+            None:                               {'name': 'FirstServerObject', 'props': FirstServerObjectProps},
             '00001000100000000111111011011000': {'name': 'FirstClientObject', 'props': FirstClientObjectProps},
             '10001000000000000000000000000000': {'name': 'FirstServerObject', 'props': FirstServerObjectProps},
             '00101100100100010000000000000000': {'name': 'MatineeActor', 'props': MatineeActorProps},
@@ -570,10 +651,14 @@ class ParserState():
             '01111000100110010100000000000000': {'name': 'TrDevice_Blink', 'props': TrDeviceProps},
             '01000011100110010100000000000000': {'name': 'TrDevice_ConcussionGrenade', 'props': TrDeviceProps},
             '01100101110110010100000000000000': {'name': 'TrDevice_GrenadeLauncher_Light', 'props': TrDeviceProps},
+            '00111001001110010100000000000000': {'name': 'TrDevice_Twinfusor', 'props': TrDeviceProps},
             '01001000101110010100000000000000': {'name': 'TrDevice_LaserTargeter', 'props': TrDeviceProps},
             '01101100101110010100000000000000': {'name': 'TrDevice_LightAssaultRifle', 'props': TrDeviceProps},
             '01111100101110010100000000000000': {'name': 'TrDevice_LightSpinfusor', 'props': TrDeviceProps},
             '00100111101110010100000000000000': {'name': 'TrDevice_Melee_DS', 'props': TrDeviceProps},
+            '01011001000001010100000000000000': {'name': 'TrDevice_Spinfusor_100X', 'props': TrDeviceProps},
+            '01011000100001010100000000000000': {'name': 'TrDevice_UtilityPack_Soldier', 'props': TrDeviceProps},
+            '01110101110110010100000000000000': {'name': 'TrDevice_GrenadeXL', 'props': TrDeviceProps},
             '01001011001001010100000000000000': {'name': 'TrDroppedPickup', 'props': TrDroppedPickupProps},
             '00100100101111010100000000000000': {'name': 'TrFlagCTF_BloodEagle', 'props': TrFlagCTFProps},
             '00110100101111010100000000000000': {'name': 'TrFlagCTF_DiamondSword', 'props': TrFlagCTFProps},
@@ -592,16 +677,17 @@ class ParserState():
             '00111100100101011110000000000000': {'name': 'TrPowerGenerator_BloodEagle', 'props': TrPowerGeneratorProps},
             '01111100100101011110000000000000': {'name': 'TrPowerGenerator_DiamondSword', 'props': TrPowerGeneratorProps},
             '01111010010000101100000000000000': {'name': 'TrProj_BaseTurret', 'props': TrProj_BaseTurretProps},
+            '00101010111000101100000000000000': {'name': 'TrProj_Spinfusor_100X', 'props': TrProj_SpinfusorProps},
             '01110010100010101100000000000000': {'name': 'TrRadarStation_BloodEagle', 'props': TrRadarStationProps},
             '01001010100010101100000000000000': {'name': 'TrRadarStation_DiamondSword', 'props': TrRadarStationProps},
+            '00000000110010101100000000000000': {'name': 'TrRepairStationCollision', 'props': TrRepairStationProps},
+            '00010011100001101100000000000000': {'name': 'TrServerSettingsInfo', 'props': TrServerSettingsInfoProps},
+            '00000011110100001100000000000000': {'name': 'TrStationCollision', 'props': {}},
             '00100010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0010?', 'props': TrRepairStationProps},
             '01010010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0101?', 'props': TrRepairStationProps},
             '00110010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0011?', 'props': TrRepairStationProps},
             '01100010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0110?', 'props': TrRepairStationProps},
             '01011010100101011110000000000000': {'name': 'TrRepairStation_DiamondSword', 'props': TrRepairStationProps},
-            '00000000110010101100000000000000': {'name': 'TrRepairStationCollision', 'props': TrRepairStationProps},
-            '00010011100001101100000000000000': {'name': 'TrServerSettingsInfo', 'props': TrServerSettingsInfoProps},
-            '00000011110100001100000000000000': {'name': 'TrStationCollision', 'props': {}},
             '00100110100101011110000000000000': {'name': 'TrVehicleStation_BloodEagle', 'props': {}},
             '01100110100101011110000000000000': {'name': 'TrVehicleStation_DiamondSword', 'props': {}},
             '00100111010010011000000000000000': {'name': 'UTTeamInfo', 'props': UTTeamInfoFlags},
@@ -1064,6 +1150,7 @@ class PropertyValueParams():
 
     @debugbits
     def frombitarray(self, bits, debug = False):
+
         self.values = []
         for member in self.param_list:
             propertytype = member.get('type', None)
@@ -1244,7 +1331,7 @@ class PayloadData():
                 self.object_class = ObjectClass()
                 payloadbits = self.object_class.frombitarray(payloadbits, state, debug = debug)
 
-                class_ = state.class_dict[self.object_class.getclasskey()]
+                class_ = state.class_dict[self.object_class.getclasskey() if channel != 0 else None]
                 classname = class_['name']
 
                 prop_keys = list(class_['props'].keys())
