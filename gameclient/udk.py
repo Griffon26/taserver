@@ -19,6 +19,7 @@
 #
 
 from bitarray import bitarray
+from itertools import zip_longest
 import string
 import struct
 
@@ -111,7 +112,7 @@ class ParserState():
             '0111011': {'name': 'RPC ClientUpdateHUDHealth',
                         'type': [
                             {'name': 'NewHealth',
-                             'type': None},
+                             'type': int},
                             {'name': 'NewHealthMax',
                              'type': int}
                         ]},
@@ -192,8 +193,10 @@ class ParserState():
                          'size': 2},
             '11000000': {'name': 'RPC ClientMatchOver',
                          'type': [
-                             {'name': 'Winner?',
-                              'type': bool},
+                             {'name': 'unknown',
+                              'type': 'flag'},
+                             {'name': 'Winner',
+                              'type': int},
                              {'name': 'WinnerName',
                               'type': str}
                          ]},
@@ -757,7 +760,7 @@ def debugbits(func):
                   (self.__class__.__name__, bitsbefore.to01()[:nbits_consumed]))
 
             if bitsbefore[:nbits_consumed] != self.tobitarray():
-                raise RuntimeError('Object %s serialized into bits is not equal to bits parsed:\n' % self.__name__ +
+                raise RuntimeError('Object %s serialized into bits is not equal to bits parsed:\n' % repr(self) +
                                    'in : %s\n' % bitsbefore[:nbits_consumed].to01() +
                                    'out: %s\n' % self.tobitarray().to01())
 
@@ -1077,7 +1080,7 @@ class PropertyValueMystery3():
         return text
 
 
-def parse_basic_property(propertytype, bits, size=None, debug=False):
+def parse_basic_property(propertyname, propertytype, bits, size=None, debug=False):
     if propertytype is str:
         value = PropertyValueString()
         bits = value.frombitarray(bits, debug=debug)
@@ -1108,7 +1111,7 @@ def parse_basic_property(propertytype, bits, size=None, debug=False):
         value = PropertyValueMystery3()
         bits = value.frombitarray(bits, debug=debug)
     else:
-        raise RuntimeError('Coding error: propertytype has invalid value: %s' % propertytype)
+        raise RuntimeError('Coding error: propertytype of property %s has invalid value: %s' % (propertyname, propertytype))
 
     return value, bits
 
@@ -1122,9 +1125,10 @@ class PropertyValueStruct():
     def frombitarray(self, bits, debug = False):
         self.values = []
         for member in self.member_list:
+            propertyname = member.get('name', None)
             propertytype = member.get('type', None)
             propertysize = member.get('size', None)
-            value, bits = parse_basic_property(propertytype, bits, propertysize, debug = debug)
+            value, bits = parse_basic_property(propertyname, propertytype, bits, propertysize, debug = debug)
             self.values.append(value)
 
         return bits
@@ -1146,6 +1150,7 @@ class PropertyValueStruct():
 class PropertyValueParams():
     def __init__(self, param_list):
         self.param_list = param_list
+        self.presence = []
         self.values = []
 
     @debugbits
@@ -1153,12 +1158,14 @@ class PropertyValueParams():
 
         self.values = []
         for member in self.param_list:
+            propertyname = member.get('name', None)
             propertytype = member.get('type', None)
             propertysize = member.get('size', None)
 
             present, bits = getnbits(1, bits)
+            self.presence.append(present[0])
             if present[0] == 1:
-                value, bits = parse_basic_property(propertytype, bits, propertysize, debug = debug)
+                value, bits = parse_basic_property(propertyname, propertytype, bits, propertysize, debug = debug)
             else:
                 value = None
             self.values.append(value)
@@ -1167,10 +1174,11 @@ class PropertyValueParams():
 
     def tobitarray(self):
         allbits = bitarray()
-        for value in self.values:
-            if value is not None:
+        for present, value in zip_longest(self.presence, self.values):
+            if present:
                 allbits += bitarray([1])
-                allbits += value.tobitarray()
+                if value is not None:
+                    allbits += value.tobitarray()
             else:
                 allbits += bitarray([0])
         return allbits
@@ -1178,10 +1186,11 @@ class PropertyValueParams():
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
         items = []
-        for member, value in zip(self.param_list, self.values):
-            if value is not None:
+        for member, present, value in zip_longest(self.param_list, self.presence, self.values):
+            if present:
                 items.append('%s1 (%s param present)\n' % (indent_prefix, member['name']))
-                items.append(value.tostring(indent)[:-1] + '(%s)\n' % member['name'])
+                if value is not None:
+                    items.append(value.tostring(indent)[:-1] + '(%s)\n' % member['name'])
             else:
                 items.append('%s0 (%s param absent)\n' % (indent_prefix, member['name']))
         text = ''.join(items)
@@ -1204,6 +1213,7 @@ class ObjectProperty():
         property_ = class_['props'].get(propertykey, {'name' : 'Unknown'})
         self.property_ = property_
 
+        propertyname = property_.get('name', None)
         propertytype = property_.get('type', None)
         propertysize = property_.get('size', None)
         propertyvalues = property_.get('values', None)
@@ -1220,7 +1230,7 @@ class ObjectProperty():
                 bits = self.value.frombitarray(bits, debug=debug)
             else:
                 try:
-                    self.value, bits = parse_basic_property(propertytype, bits, propertysize, debug = debug)
+                    self.value, bits = parse_basic_property(propertyname, propertytype, bits, propertysize, debug = debug)
                 except:
                     self.value = PropertyValueBitarray()
                     raise
@@ -1580,10 +1590,7 @@ class Packet():
                              bits)
 
         self.paddingbits, bits = getnbits(nr_of_padding_bits, bits)
-
-        # No need to return bits, because if we didn't parse everything
-        # we would have raised an exception anyway
-        return None
+        return bits
 
     def tobitarray(self):
         bits = int2bitarray(self.seqnr, 14)
@@ -1594,6 +1601,8 @@ class Packet():
                 bits.extend('1')
             bits.extend(part.tobitarray())
         bits.extend('1')
+        if self.paddingbits:
+            bits += self.paddingbits
         return bits
 
     def tostring(self, indent = 0):
