@@ -1,3 +1,26 @@
+### taserver v2.2.0
+
+Features added:
+* the game server launcher now remembers map rotation state across restarts
+* add support for clan tags
+* have the login server send server stats to discord
+* add status command to authbot for requesting server stats
+* have login server serve status info over http (port 9080)
+* improve user documentation, in particular the new guide for creating a shortcut 
+
+Bugs fixed:
+* avoid downloading a too new TAMods-Server.dll from download_compatible_controller.py
+* invalid characters in clan tag or name are now disallowed
+* a second login on the same account is now refused with a proper message
+* 'add friend' has been fixed to be case insensitive
+* fixed some bugs in votekick
+* correctly show ping of NA servers again after Hirez moved one of their servers
+
+Compatibility notes:
+* people hosting a game server will need to upgrade to get the persistent map
+  rotation state feature and the fix for downloading a too new TAMods-Server.dll.
+  All other changes are on the side of the login server only.
+
 ### taserver v2.1.1
 
 This is a bug fix release.
