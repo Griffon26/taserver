@@ -30,7 +30,7 @@
 0x0177,EnumBlockArray,
 0x0182,EnumBlockArray,
 0x0183,EnumBlockArray,
-0x018A,EnumBlockArray,
+0x018A,EnumBlockArray,/sc command
 0x018B,EnumBlockArray,
 0x018C,EnumBlockArray,/votekick command
 0x0197,EnumBlockArray,
