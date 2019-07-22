@@ -230,11 +230,10 @@ class Launcher:
         if msg.ip:
             self.logger.info('launcher: login server added player %d with ip %s' % (msg.unique_id, msg.ip))
             modify_firewall('whitelist', 'add', msg.unique_id, msg.ip)
-            if self.game_controller:
-                self.game_controller.send(
-                    Launcher2GamePlayerInfo(msg.unique_id, msg.rank_xp, msg.eligible_for_first_win))
         else:
             self.logger.info('launcher: login server added local player %d' % msg.unique_id)
+        self.game_controller.send(
+            Launcher2GamePlayerInfo(msg.unique_id, msg.rank_xp, msg.eligible_for_first_win))
 
     def handle_remove_player_message(self, msg):
         if msg.ip:
