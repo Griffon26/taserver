@@ -327,8 +327,9 @@ class Launcher:
             else:
                 time_left = self.min_next_switch_time - datetime.datetime.utcnow()
                 if time_left < datetime.timedelta(0):
-                    time_left = datetime.timedelta(seconds=3)
-                self.pending_callbacks.add(self, time_left.total_seconds(), self.set_server_ready)
+                    self.set_server_ready()
+                else:
+                    self.pending_callbacks.add(self, time_left.total_seconds(), self.set_server_ready)
 
     def handle_match_end_message(self, msg):
         self.logger.info('launcher: received match end from game controller (controller context = %s)' % msg.controller_context)
