@@ -152,7 +152,9 @@ class GameServer(Peer):
         player.vote = None
         player_ip = player.address_pair.get_address_seen_from(self.address_pair)
         msg = Login2LauncherAddPlayer(player.unique_id,
-                                      str(player_ip) if player_ip is not None else '')
+                                      str(player_ip) if player_ip is not None else '',
+                                      player.player_settings.progression.rank_xp,
+                                      player.player_settings.progression.is_eligible_for_first_win())
         self.send(msg)
 
     def remove_player(self, player):

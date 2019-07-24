@@ -27,7 +27,7 @@ from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode
     Login2ClientModeInfo, Login2ClientMenuData, Login2ClientLoadouts, Client2LoginLoadoutChange, \
     parse_message_from_string
 from .player_state import PlayerState, handles, handles_control_message
-from ... import utils
+from common import utils
 
 
 class AuthenticatedState(PlayerState):
@@ -42,7 +42,6 @@ class AuthenticatedState(PlayerState):
 
     def on_exit(self):
         self.logger.info("%s is exiting state %s" % (self.player, type(self).__name__))
-        self.player.save()
 
     @handles(packet=a00d5)
     def handle_a00d5(self, request):

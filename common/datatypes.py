@@ -2894,6 +2894,7 @@ class a003d(enumblockarray):
         self.findbytype(m0348).set(player.unique_id)
         self.findbytype(m034a).set(player.display_name)
         self.findbytype(m06de).set(player.player_settings.clan_tag)
+        self.findbytype(m05dc).set(player.player_settings.progression.rank_xp)
 
         loadout_arrays = []
         loadout_overall_idx = 0

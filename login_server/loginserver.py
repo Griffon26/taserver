@@ -34,13 +34,13 @@ from common.statetracer import statetracer, TracingDict
 from common.versions import launcher2loginserver_protocol_version
 from .authcodehandler import AuthCodeRequester
 from .gameserver import GameServer
-from .pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
+from common.pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
 from .player.player import Player
 from .player.state.offline_state import OfflineState
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .protocol_errors import ProtocolViolationError
 from .social_network import SocialNetwork
-from . import utils
+from common import utils
 
 
 @statetracer('address_pair', 'game_servers', 'players')
@@ -340,4 +340,22 @@ class LoginServer:
 
     def handle_match_end_message(self, msg):
         game_server = msg.peer
+        for player in game_server.players.values():
+            if str(player.unique_id) in msg.player_earned_xps:
+                earned_xp = msg.player_earned_xps[str(player.unique_id)]['xp']
+                was_first_win = msg.player_earned_xps[str(player.unique_id)]['first_win']
+
+                # Save the player's new XP
+                player.player_settings.progression.rank_xp += earned_xp
+                if was_first_win:
+                    player.player_settings.progression.last_first_win_time = datetime.datetime.utcnow()
+                # Update the XP in the UI
+                player.send(a006d().set([
+                    m04cb(),
+                    m05dc().set(player.player_settings.progression.rank_xp),
+                    m03ce().set(0x434D0000),
+                    m00fe().set([]),
+                    m0632(),
+                    m0296(),
+                ]))
         self.logger.info('server: match ended on server %s.' % game_server.server_id)
