@@ -322,14 +322,15 @@ class Launcher:
             self.last_match_time_message = msg
 
         if self.pending_server_port != self.active_server_port:
-            if self.min_next_switch_time is None or datetime.datetime.utcnow() > self.min_next_switch_time:
-                self.set_server_ready()
+            if self.min_next_switch_time:
+                time_left = (self.min_next_switch_time - datetime.datetime.utcnow()).total_seconds()
             else:
-                time_left = self.min_next_switch_time - datetime.datetime.utcnow()
-                if time_left < datetime.timedelta(0):
-                    self.set_server_ready()
-                else:
-                    self.pending_callbacks.add(self, time_left.total_seconds(), self.set_server_ready)
+                time_left = 0
+
+            if time_left > 0:
+                self.pending_callbacks.add(self, time_left, self.set_server_ready)
+            else:
+                self.set_server_ready()
 
     def handle_match_end_message(self, msg):
         self.logger.info('launcher: received match end from game controller (controller context = %s)' % msg.controller_context)
