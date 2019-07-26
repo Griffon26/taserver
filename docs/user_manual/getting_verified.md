@@ -37,10 +37,10 @@ Getting registered for the login server run by Griffon26 is an automated process
 
     `Say> @taserverbot authcode`
 
-3. Now log in to Griffon26's login server with the in-game name you have on the Hirez
-   server and a password of your choosing. Note that your in-game name could differ
-   from your account name on Hirez servers. On Griffon26's login server your in-game
-   name will be your account name.
+3. Now log in to Griffon26's login server ("the community servers") with the in-game
+   name you have on the Hirez server and a password of your choosing. Note that your
+   in-game name could differ from your account name on Hirez servers. On the community
+   servers your in-game name will be your account name.
  
 4. After logging in go to the "Store" menu and select "Redeem promotion"
 
