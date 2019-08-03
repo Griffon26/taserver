@@ -786,173 +786,6 @@ def debugbits(func):
     return wrapper
 
 
-class PropertyValueArray:
-    def __init__(self):
-        self.length = None
-        self.fields = []
-
-    @debugbits
-    def frombitarray(self, bits, debug=False):
-        lengthbits, bits = getnbits(16, bits)
-        self.length = toint(lengthbits)
-
-        self.fields = []
-        for i in range(self.length):
-            field = PropertyValueField()
-            self.fields.append(field)
-            bits = field.frombitarray(bits, debug=debug)
-
-        return bits
-
-    def tobitarray(self):
-        bits = int2bitarray(self.length, 16)
-        for field in self.fields:
-            bits.extend(field.tobitarray())
-        return bits
-
-    def tostring(self, indent=0):
-        indent_prefix = ' ' * indent
-        if self.length is not None:
-            text = '%s%s (length = %d)\n' % (indent_prefix, int2bitarray(self.length, 16).to01(), self.length)
-
-            for field in self.fields:
-                text += field.tostring(indent + 4)
-        else:
-            text = '%sempty\n' % indent_prefix
-
-        return text
-
-
-class PropertyValueArrayOfArrays:
-    def __init__(self):
-        self.length = None
-        self.arrays = []
-
-    @debugbits
-    def frombitarray(self, bits, debug=False):
-        lengthbits, bits = getnbits(16, bits)
-        self.length = toint(lengthbits)
-
-        self.arrays = []
-        for i in range(self.length):
-            array = PropertyValueArray()
-            self.arrays.append(array)
-            bits = array.frombitarray(bits, debug=debug)
-
-        return bits
-
-    def tobitarray(self):
-        bits = int2bitarray(self.length, 16)
-        for array in self.arrays:
-            bits.extend(array.tobitarray())
-        return bits
-
-    def tostring(self, indent=0):
-        indent_prefix = ' ' * indent
-        if self.length is not None:
-            text = '%s%s (length = %d)\n' % (indent_prefix, int2bitarray(self.length, 16).to01(), self.length)
-
-            for array in self.arrays:
-                text += array.tostring(indent + 4)
-        else:
-            text = '%sempty\n' % indent_prefix
-
-        return text
-
-
-
-class PropertyValueField:
-    fieldmap = {
-        '0000111010000000': PropertyValueArrayOfArrays,
-        '1111011010000000': PropertyValueArrayOfArrays,
-        '0011011000100000': 64
-    }
-
-    def __init__(self):
-        self.ident = None
-        self.data = None
-
-    @debugbits
-    def frombitarray(self, bits, debug=False):
-        idbits, bits = getnbits(16, bits)
-        self.ident = toint(idbits)
-
-        if idbits.to01() in self.fieldmap:
-            fielddef = self.fieldmap[idbits.to01()]
-            if isinstance(fielddef, int):
-                self.data, bits = getnbits(fielddef, bits)
-            else:
-                self.data = fielddef()
-                bits = self.data.frombitarray(bits, debug=debug)
-        else:
-            self.data = PropertyValueInt()
-            bits = self.data.frombitarray(bits, debug=debug)
-
-        return bits
-
-    def tobitarray(self):
-        bits = int2bitarray(self.ident, 16)
-        if isinstance(self.data, bitarray):
-            bits.extend(self.data)
-        else:
-            bits.extend(self.data.tobitarray())
-        return bits
-
-    def tostring(self, indent=0):
-        indent_prefix = ' ' * indent
-        if self.ident is not None:
-            text = '%s%s (field ident = %04X)\n' % (indent_prefix, int2bitarray(self.ident, 16).to01(), self.ident)
-            if isinstance(self.data, bitarray):
-                text += '%s%s (field value)\n' % (' ' * (indent + 16), self.data.to01())
-            else:
-                text += self.data.tostring(indent + 16)
-        else:
-            text = '%sempty\n' % indent_prefix
-
-        return text
-
-
-class PropertyValueInteresting:
-    def __init__(self):
-        self.prefixbits = None
-        self.length = None
-        self.fields = []
-
-    @debugbits
-    def frombitarray(self, bits, debug=False):
-        self.prefixbits, bits = getnbits(44, bits)
-
-        lengthbits, bits = getnbits(16, bits)
-        self.length = toint(lengthbits)
-
-        self.fields = []
-        for i in range(self.length):
-            field = PropertyValueField()
-            self.fields.append(field)
-            bits = field.frombitarray(bits, debug=debug)
-
-        return bits
-
-    def tobitarray(self):
-        bits = self.prefixbits[:]
-        bits.extend(int2bitarray(self.length, 16))
-        for field in self.fields:
-            bits.extend(field.tobitarray())
-        return bits
-
-    def tostring(self, indent=0):
-        indent_prefix = ' ' * indent
-        if self.prefixbits is not None:
-            text = '%s%s (prefix)\n' % (indent_prefix, self.prefixbits.to01())
-
-            for field in self.fields:
-                text += field.tostring(indent)
-        else:
-            text = '%sempty\n' % indent_prefix
-
-        return text
-
-
 class PropertyValueMultipleChoice():
     def __init__(self):
         self.value = None
@@ -1075,9 +908,10 @@ class PropertyValueInt():
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
         if self.value is not None:
-            text = '%s%s (value = %d)\n' % (indent_prefix,
-                                            self.tobitarray().to01(),
-                                            self.value)
+            text = '%s%s (value = %d %08X)\n' % (indent_prefix,
+                                                 self.tobitarray().to01(),
+                                                 self.value,
+                                                 self.value)
         else:
             text = '%sempty\n' % indent_prefix
         return text
@@ -1263,6 +1097,174 @@ class PropertyValueMystery3():
         items.append(self.string2.tostring(indent))
         text = ''.join(items)
         return text
+
+class PropertyValueArray:
+    def __init__(self):
+        self.length = None
+        self.fields = []
+
+    @debugbits
+    def frombitarray(self, bits, debug=False):
+        lengthbits, bits = getnbits(16, bits)
+        self.length = toint(lengthbits)
+
+        self.fields = []
+        for i in range(self.length):
+            field = PropertyValueField()
+            self.fields.append(field)
+            bits = field.frombitarray(bits, debug=debug)
+
+        return bits
+
+    def tobitarray(self):
+        bits = int2bitarray(self.length, 16)
+        for field in self.fields:
+            bits.extend(field.tobitarray())
+        return bits
+
+    def tostring(self, indent=0):
+        indent_prefix = ' ' * indent
+        if self.length is not None:
+            text = '%s%s (length = %d)\n' % (indent_prefix, int2bitarray(self.length, 16).to01(), self.length)
+
+            for field in self.fields:
+                text += field.tostring(indent + 4)
+        else:
+            text = '%sempty\n' % indent_prefix
+
+        return text
+
+
+class PropertyValueArrayOfArrays:
+    def __init__(self):
+        self.length = None
+        self.arrays = []
+
+    @debugbits
+    def frombitarray(self, bits, debug=False):
+        lengthbits, bits = getnbits(16, bits)
+        self.length = toint(lengthbits)
+
+        self.arrays = []
+        for i in range(self.length):
+            array = PropertyValueArray()
+            self.arrays.append(array)
+            bits = array.frombitarray(bits, debug=debug)
+
+        return bits
+
+    def tobitarray(self):
+        bits = int2bitarray(self.length, 16)
+        for array in self.arrays:
+            bits.extend(array.tobitarray())
+        return bits
+
+    def tostring(self, indent=0):
+        indent_prefix = ' ' * indent
+        if self.length is not None:
+            text = '%s%s (length = %d)\n' % (indent_prefix, int2bitarray(self.length, 16).to01(), self.length)
+
+            for array in self.arrays:
+                text += array.tostring(indent + 4)
+        else:
+            text = '%sempty\n' % indent_prefix
+
+        return text
+
+
+
+class PropertyValueField:
+    fieldmap = {
+        '0000111010000000': PropertyValueArrayOfArrays,
+        '1111011010000000': PropertyValueArrayOfArrays,
+        '0011011000100000': 64,
+        '1101100100100000': PropertyValueFloat
+    }
+
+    def __init__(self):
+        self.ident = None
+        self.data = None
+
+    @debugbits
+    def frombitarray(self, bits, debug=False):
+        idbits, bits = getnbits(16, bits)
+        self.ident = toint(idbits)
+
+        if idbits.to01() in self.fieldmap:
+            fielddef = self.fieldmap[idbits.to01()]
+            if isinstance(fielddef, int):
+                self.data, bits = getnbits(fielddef, bits)
+            else:
+                self.data = fielddef()
+                bits = self.data.frombitarray(bits, debug=debug)
+        else:
+            self.data = PropertyValueInt()
+            bits = self.data.frombitarray(bits, debug=debug)
+
+        return bits
+
+    def tobitarray(self):
+        bits = int2bitarray(self.ident, 16)
+        if isinstance(self.data, bitarray):
+            bits.extend(self.data)
+        else:
+            bits.extend(self.data.tobitarray())
+        return bits
+
+    def tostring(self, indent=0):
+        indent_prefix = ' ' * indent
+        if self.ident is not None:
+            text = '%s%s (field ident = %04X)\n' % (indent_prefix, int2bitarray(self.ident, 16).to01(), self.ident)
+            if isinstance(self.data, bitarray):
+                text += '%s%s (field value)\n' % (' ' * (indent + 16), self.data.to01())
+            else:
+                text += self.data.tostring(indent + 16)
+        else:
+            text = '%sempty\n' % indent_prefix
+
+        return text
+
+
+class PropertyValueInteresting:
+    def __init__(self):
+        self.prefixbits = None
+        self.length = None
+        self.fields = []
+
+    @debugbits
+    def frombitarray(self, bits, debug=False):
+        self.prefixbits, bits = getnbits(44, bits)
+
+        lengthbits, bits = getnbits(16, bits)
+        self.length = toint(lengthbits)
+
+        self.fields = []
+        for i in range(self.length):
+            field = PropertyValueField()
+            self.fields.append(field)
+            bits = field.frombitarray(bits, debug=debug)
+
+        return bits
+
+    def tobitarray(self):
+        bits = self.prefixbits[:]
+        bits.extend(int2bitarray(self.length, 16))
+        for field in self.fields:
+            bits.extend(field.tobitarray())
+        return bits
+
+    def tostring(self, indent=0):
+        indent_prefix = ' ' * indent
+        if self.prefixbits is not None:
+            text = '%s%s (prefix)\n' % (indent_prefix, self.prefixbits.to01())
+
+            for field in self.fields:
+                text += field.tostring(indent)
+        else:
+            text = '%sempty\n' % indent_prefix
+
+        return text
+
 
 def parse_basic_property(propertyname, propertytype, bits, size=None, debug=False):
     if propertytype is str:
@@ -1823,9 +1825,10 @@ class Packet():
             else:
                 text.append('%s1 (flag1 = 1)\n' % indent_prefix)
             text.append(part.tostring(indent = indent + 1))
+
+        text.append('%s1 (flag1 = 1)\n' % indent_prefix)
             
         if self.paddingbits:
-            text.append('%s1 (flag1 = 1)\n' % indent_prefix)
             text.append('    Bits left over in the last byte: %s\n' % self.paddingbits.to01())
         
         return ''.join(text)
