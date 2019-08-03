@@ -18,8 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import gevent
-
+from common.geventwrapper import gevent_spawn_later
 from common.utils import first_unused_number_above
 
 
@@ -38,7 +37,7 @@ class PendingCallbacks:
 
         self.callbacks[callback_id] = { 'receiver_id' : id(receiver),
                                         'callback_func' : callback_func }
-        gevent.spawn_later(seconds_from_now, self._post_callback, callback_id)
+        gevent_spawn_later('pending callback for %s' % receiver, seconds_from_now, self._post_callback, callback_id)
 
     def remove_receiver(self, receiver):
         for callback_id, callback in self.callbacks.items():

@@ -20,7 +20,7 @@
 
 import gevent
 import gevent.queue
-import time
+import logging
 import urllib.error
 import urllib.request
 import urllib.parse
@@ -28,10 +28,12 @@ import urllib.parse
 
 class WebhookHandler:
     def __init__(self, server_stats_queue, config):
+        self.logger = logging.getLogger(__name__)
         self.server_stats_queue = server_stats_queue
         self.webhook_url = config.get('webhook_url')
 
     def disconnect(self, e):
+        self.logger.error('webhook: disconnect called with exception: %s' % e)
         self.server_stats_queue.put(None)
 
     def run(self):
@@ -39,14 +41,14 @@ class WebhookHandler:
 
         while True:
             current_stats = self.server_stats_queue.get()
-            if not current_stats:
+            if current_stats is None:
                 break
 
             gevent.sleep(60)
 
             try:
                 current_stats = self.server_stats_queue.get_nowait()
-                if not current_stats:
+                if current_stats is None:
                     break
 
             except gevent.queue.Empty:
@@ -76,6 +78,7 @@ class WebhookHandler:
                 try:
                     urllib.request.urlopen(req, data)
                 except urllib.error.URLError:
+                    self.logger.warning('webhook: URLError')
                     # TODO: do proper error logging
                     pass
 

@@ -26,6 +26,7 @@ def gevent_spawn(task_name: str, func, *args, **kwargs):
 
     def wrapper_func(*args, **kwargs):
         logger = logging.getLogger('gevent_spawn')
+        gevent.getcurrent().name = task_name
 
         try:
             return func(*args, **kwargs)
@@ -34,3 +35,18 @@ def gevent_spawn(task_name: str, func, *args, **kwargs):
             raise
 
     return gevent.spawn(wrapper_func, *args, **kwargs)
+
+
+def gevent_spawn_later(task_name: str, seconds, func, *args, **kwargs):
+
+    def wrapper_func(*args, **kwargs):
+        logger = logging.getLogger('gevent_spawn_later')
+        gevent.getcurrent().name = task_name
+
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            logger.exception('%s greenlet terminated with an unhandled exception:' % task_name, exc_info=e)
+            raise
+
+    return gevent.spawn_later(seconds, wrapper_func, *args, **kwargs)
