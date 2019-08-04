@@ -1,3 +1,16 @@
+### taserver v2.3.0
+
+Features added:
+* player rank and XP are now tracked and stored
+
+Bugs fixed:
+* avoid a crash of the login server when a webhook update was sent without
+  any online servers
+
+Compatibility notes:
+* this release is not backwards compatible; both login server and 
+  game servers must be upgraded to v2.3.0 simultaneously
+
 ### taserver v2.2.0
 
 Features added:
