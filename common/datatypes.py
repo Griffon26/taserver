@@ -2650,7 +2650,7 @@ class m068b(arrayofenumblockarrays):
                 m06e9(),
                 m02ff().set(1),
                 m0300().set("North America"),
-                m0246().set(IPv4Address('69.147.242.154'), PING_PORT)
+                m0246().set(IPv4Address('69.147.237.186'), PING_PORT)
             ],
             [
                 m0448().set(REGION_EUROPE),
@@ -2658,7 +2658,7 @@ class m068b(arrayofenumblockarrays):
                 m06e9(),
                 m02ff().set(2),
                 m0300().set("Europe"),
-                m0246().set(IPv4Address('95.211.127.134'), PING_PORT)
+                m0246().set(IPv4Address('95.211.127.133'), PING_PORT)
             ],
             [
                 m0448().set(REGION_OCEANIA_AUSTRALIA),
