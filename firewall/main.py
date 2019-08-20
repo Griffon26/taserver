@@ -175,6 +175,8 @@ class Firewall:
 
 
 def main():
+    print('Running on Python %s' % sys.version)
+
     try:
         udp_proxy_proc1 = sp.Popen('udpproxy.exe %d' % GAME_PORT1)
         udp_proxy_proc2 = sp.Popen('udpproxy.exe %d' % GAME_PORT2)
