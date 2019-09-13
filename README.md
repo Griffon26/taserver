@@ -18,8 +18,9 @@ shortcut](docs/user_manual/creating_a_shortcut.md).
 
 ![Shortcut dialog](docs/images/tashortcut_nonsteam.png?raw=true)
 
-Start the game through the shortcut and log in with any name and password. The servers
-listed in the server browser will be servers hosted by fellow players.
+Start the game through the shortcut and log in **with any name and password**. The login name
+you use will be the name that others see in-game. The servers listed in the server browser
+will be servers hosted by fellow players.
 
 If you want to join any of the GOTY servers in the list then you must be using TAMods.
 [Read more about joining a GOTY servers here](docs/user_manual/joining_goty_servers.md)
