@@ -16,3 +16,10 @@
 * optionally choose a different name for this shortcut by clicking on the `General` tab and editing the name field at the top
 * click `OK` to close the dialog
 * you have now created a shortcut that you can use to start Tribes Ascend for playing on the community hosted servers
+* after starting the game you can log in with any name and password, but be aware that 
+  on the community servers **the login name you choose will also be your in-game name**.
+  You can log in under a different name at any time though.
+
+Possible next steps:
+* [Getting verified](docs/user_manual/getting_verified.md)
+* [Joining a GOTY server](docs/user_manual/joining_goty_servers.md)
