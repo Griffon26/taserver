@@ -21,5 +21,5 @@
   You can log in under a different name at any time though.
 
 Possible next steps:
-* [Getting verified](docs/user_manual/getting_verified.md)
-* [Joining a GOTY server](docs/user_manual/joining_goty_servers.md)
+* [Getting verified](getting_verified.md)
+* [Joining a GOTY server](joining_goty_servers.md)
