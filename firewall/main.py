@@ -155,6 +155,7 @@ class Firewall:
 
         self.utils.add_rule('TAserverfirewall-general', 'any', 9001, 'tcp', 'allow') # for game servers
         self.utils.add_rule('TAserverfirewall-general', 'any', 9080, 'tcp', 'allow') # for REST
+        self.utils.add_rule('TAserverfirewall-general', 'any', 9002, 'udp', 'allow') # for in-game pings
         self.whitelist.reset()
         self.blacklist.reset()
 
