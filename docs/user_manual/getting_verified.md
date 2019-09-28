@@ -32,21 +32,32 @@ because that server is where most game servers are listed.
 Getting registered for the login server run by Griffon26 is an automated process:
 
 1. First log in to the Hirez servers
-1. Join a game server
-1. Open the Chat Console. (This might not have a keybinding, add one through `Settings > Keybindings > Interface`). Note: This console is different to the Unreal Console (~)
-1. Send a private chat message to `@taserverbot` with only the word `authcode` in it:
 
-    `@taserverbot authcode`
+2. Join a game server
 
-1. If you get an error saying the player taserverbot is not online, message Griffon26 in Discord
-1. Now log in to Griffon26's login server ("the community servers") with the in-game
+3. Open the Chat Console by pressing `T` (Default keybinding. If it's missing, add one through
+   `Settings > Keybindings > Interface`). Note: This console is different to the
+   Unreal Console (~)
+
+4. With the chat console open, send a private chat message to `@taserverbot` with only the word `authcode` in it:
+
+   `@taserverbot authcode`
+
+5. If you get an error saying the player taserverbot is not online,
+   message Griffon26 in Discord
+   
+6. Now log in to Griffon26's login server ("the community servers") with the in-game
    name you have on the Hirez server and a password of your choosing. Note that your
    in-game name could differ from your account name on Hirez servers. On the community
    servers your in-game name will be your account name.
-1. After logging in go to the "Store" menu and select "Redeem promotion"
-1. Fill in the authentication code and press OK
-1. If you don't get an error message, registration was successful.
-1. Restart Tribes Ascend and log in to Griffon26's server again to remove the "unvrf-" prefix.
+
+7. After logging in go to the "Store" menu and select "Redeem promotion"
+
+8. Fill in the authentication code and press OK
+
+9. If you don't get an error message, registration was successful.
+
+10. Restart Tribes Ascend and log in to Griffon26's server again to remove the "unvrf-" prefix.
 
 ### For any other login server
 
