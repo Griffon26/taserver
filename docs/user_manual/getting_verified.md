@@ -36,10 +36,11 @@ Getting registered for the login server run by Griffon26 is an automated process
 2. Join a game server
 
 3. Open the Chat Console by pressing `T` (Default keybinding. If it's missing, add one through
-   `Settings > Keybindings > Interface`). Note: This console is different to the
+   `Settings > Keybindings > Interface`). Note: This chat console is different to the
    Unreal Console (~)
 
-4. With the chat console open, send a private chat message to `@taserverbot` with only the word `authcode` in it:
+4. With the chat console open, send a private chat message to `taserverbot` with only the word
+   `authcode` in it. To private message someone directly, use the `@` symbol prefix, e.g.:
 
    `@taserverbot authcode`
 
