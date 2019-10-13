@@ -483,6 +483,7 @@ _hierarchical_definitions_ootb = {
                 'Brute_Pack_HeavyShield': 7826,
                 'Doombringer_Pack_ForceField': 7411,
                 'Brute_Pack_SurvivalPack': 8255,
+                'Brute_Pack_MinorEnergy': 7830,
             },
             'skins': {
                 'Skin JUG': 8331,
