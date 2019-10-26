@@ -22,6 +22,7 @@ import gevent
 from gevent.server import DatagramServer
 
 from common.errors import PortInUseError
+from common.datatypes import PING_PORT
 
 
 class EchoServer(DatagramServer):
@@ -32,7 +33,7 @@ class EchoServer(DatagramServer):
 def handle_ping():
     gevent.getcurrent().name = 'pinghandler'
     address = '0.0.0.0'
-    port = 9002
+    port = PING_PORT
     try:
         EchoServer('%s:%d' % (address, port)).serve_forever()
     except OSError as e:
