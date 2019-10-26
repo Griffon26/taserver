@@ -323,6 +323,8 @@ class AuthenticatedState(PlayerState):
             self.player.login_server.accounts[self.player.login_name].password_hash = self.player.password_hash
             self.player.login_server.accounts[self.player.login_name].authcode = None
             self.player.login_server.accounts.save()
+
+            self._send_private_msg_from_server(self.player, 'Verification successful. Now restart Tribes.')
         else:
             invalid_code_msg = a0175()
             invalid_code_msg.findbytype(m0442).set_success(False)
