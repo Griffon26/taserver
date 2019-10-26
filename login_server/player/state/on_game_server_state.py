@@ -57,7 +57,7 @@ class OnGameServerState(AuthenticatedState):
         response = request.findbytype(m0592)
 
         if response is None:  # votekick initiation
-            other_player = self.player.login_server.find_player_by(display_name=request.findbytype(m034a).value)
+            other_player = self.player.login_server.find_player_by_display_name(request.findbytype(m034a).value)
 
             if other_player and self.player.game_server:
                 self.player.game_server.start_votekick(self.player, other_player)
