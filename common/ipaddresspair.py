@@ -50,7 +50,9 @@ class IPAddressPair:
         assert detected_ip == self.external_ip or detected_ip == self.internal_ip
 
     def get_address_seen_from(self, source_address_pair):
-        if (self.external_ip is None or
+        if self.internal_ip is None:
+            return self.external_ip
+        elif (self.external_ip is None or
                 source_address_pair.external_ip is None or
                 self.external_ip == source_address_pair.external_ip):
             return self.internal_ip
