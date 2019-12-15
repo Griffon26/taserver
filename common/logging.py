@@ -37,9 +37,11 @@ def set_up_logging(filename):
                 'stream': 'ext://sys.stdout'
             },
             'file': {
-                'class': 'logging.FileHandler',
+                'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'default',
                 'filename': filename,
+                'maxBytes': 20 * 1024 * 1024,
+                'backupCount': 5,
             }
         },
         'loggers': {
