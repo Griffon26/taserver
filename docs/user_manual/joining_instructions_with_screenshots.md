@@ -1,4 +1,4 @@
-# Creating a shortcut
+# Joining - Instructions with animated screenshots
 
 This guide will show you step by step and with screenshots how to create a shortcut that you can 
 use to launch Tribes Ascend and connect to the community hosted servers. You will only need to do
