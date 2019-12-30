@@ -33,22 +33,32 @@ Getting registered for the login server run by Griffon26 is an automated process
 
 1. First log in to the Hirez servers
 
-2. Send a private chat message to `taserverbot` with only the word authcode in it:
+2. Load a map by either joining a game server or starting one of the trainings
 
-    `Say> @taserverbot authcode`
+3. Open the Chat Console by pressing `esc` to open the menu and then pressing `t`.
+   Note: This chat console is different to the Unreal Console (~)
+   
+4. Send a private chat message to `taserverbot` with only the word authcode in it:
 
-3. Now log in to Griffon26's login server ("the community servers") with the in-game
-   name you have on the Hirez server and a password of your choosing. Note that your
-   in-game name could differ from your account name on Hirez servers. On the community
-   servers your in-game name will be your account name.
+   ![asking for an authcode](../images/ask_for_authcode.gif?raw=true)
+    
+5. If you get an error saying the player taserverbot is not online,
+   message Griffon26 in Discord
+
+6. Now log in to Griffon26's login server ("the community servers") with the in-game
+   name you have on the Hirez server and a password of your choosing.
+   
+   **Note: on Hirez servers your account name and in-game name may differ,
+   but on the community servers they will be the same. For successful verification
+   you will have to log in using your Hirez in-game name.**
  
-4. After logging in go to the "Store" menu and select "Redeem promotion"
+7. After logging in go to the "Store" menu and select "Redeem promotion"
 
-5. Fill in the authentication code and press OK
+8. Fill in the authentication code and press OK
 
-6. If you don't get an error message, registration was successful.
+9. If you don't get an error message, registration was successful.
 
-7. Restart Tribes Ascend and log in to Griffon26's server again to remove the "unvrf-" prefix.
+10. Restart Tribes Ascend and log in to Griffon26's server again to remove the "unvrf-" prefix.
 
 ### For any other login server
 
