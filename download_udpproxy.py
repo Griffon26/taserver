@@ -24,7 +24,7 @@ import urllib.request as urlreq
 
 
 target_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'udpproxy.exe')
-download_url = 'http://kfk4ever.com/~griffon26/udpproxy.exe'
+download_url = 'https://github.com/Griffon26/taserver/releases/download/v2.1.0/udpproxy.exe'
 
 
 class UserError(Exception):
