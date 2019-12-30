@@ -1,3 +1,21 @@
+### taserver v2.3.1
+
+Features added:
+* overhauled the user documentation about joining:
+  - it was split up into more pages to avoid information overload
+  - added shortcut creator executable as an automated alternative to the manual shortcut creation instructions  
+* all logs are now rotated when they grow beyond 20MB (5 logs are kept)
+* various improvements to design documentation
+
+Bugs fixed:
+* added missing Heavy energy pack for OOTB 
+* votekick is now case insensitive
+* running client and server on the same machine directly connected to the internet is now supported
+* updated IP of EU + NA ping servers
+
+Compatibility notes:
+* no incompatible changes
+
 ### taserver v2.3.0
 
 Features added:
