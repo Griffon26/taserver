@@ -245,7 +245,7 @@ class GameServer(Peer):
             p.address_pair.get_address_seen_from(self.login_server.address_pair): p.vote
             for p in self.players.values()
         }
-        votes = {v for v in eligible_voters_votes.values() if v is not None}
+        votes = [v for v in eligible_voters_votes.values() if v is not None]
         yes_votes = [v for v in votes if v]
 
         vote_passed = len(votes) >= 4 and len(yes_votes) / len(votes) >= 0.5
