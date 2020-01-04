@@ -364,7 +364,14 @@ class Launcher:
         loadout_key = str(msg.loadout_number)
 
         if msg.player_unique_id in self.players:
-            loadout = self.players[player_key][class_key][loadout_key]
+            try:
+                loadout = self.players[player_key][class_key][loadout_key]
+            except KeyError:
+                # TODO: This is a temporary solution to a bug in tamods-server that causes an incorrect class to be sent ('1686')
+                # We should figure out what's going on and then remove this code again.
+                self.logger.warning('launcher: Incorrect params for loadout of player %d [class = %s, loadout = %s]. Sending empty loadout.' %
+                                    (msg.player_unique_id, class_key, loadout_key))
+                loadout = {}
         else:
             self.logger.warning('launcher: Unable to find player %d\'s loadouts. Sending empty loadout.' % msg.player_unique_id)
             loadout = {}

@@ -567,6 +567,7 @@ class ParserState():
                                       '11110000000' : 'BloodEagle' } },
             '000001' : { 'name' : 'PlayerID', 'type' : int },
             '100001' : { 'name' : 'PlayerName', 'type' : str },
+            '010001' : { 'name' : '???', 'type' : bitarray, 'size': 8 },
             '110001' : { 'name' : 'Deaths', 'type' : int },
             '001001' : { 'name' : 'Score', 'type' : int },
             '011001' : { 'name' : 'CharClassInfo', 'type' : int },
