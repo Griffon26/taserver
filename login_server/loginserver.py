@@ -342,8 +342,8 @@ class LoginServer:
         game_server = msg.peer
         for player in game_server.players.values():
             if str(player.unique_id) in msg.players_time_played:
-                time_played = msg.player_earned_xps[str(player.unique_id)]['time']
-                was_win = msg.player_earned_xps[str(player.unique_id)]['win']
+                time_played = msg.players_time_played[str(player.unique_id)]['time']
+                was_win = msg.players_time_played[str(player.unique_id)]['win']
 
                 # Calculate and save the player's earned XP from this map
                 player.player_settings.progression.earn_xp(time_played, was_win)

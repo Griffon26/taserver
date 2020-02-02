@@ -48,7 +48,12 @@ class PlayerProgression:
             xp_earned += FIRST_WIN_XP_BONUS
             self.last_first_win_time = datetime.datetime.utcnow()
 
+        # Round down, XP must be an integer value
+        xp_earned = int(xp_earned)
+
+        print(f'Earning XP {xp_earned}')
         self.rank_xp += xp_earned
+        print(f'Total XP {self.rank_xp}')
 
 
     @classmethod
