@@ -341,14 +341,13 @@ class LoginServer:
     def handle_match_end_message(self, msg):
         game_server = msg.peer
         for player in game_server.players.values():
-            if str(player.unique_id) in msg.player_earned_xps:
-                earned_xp = msg.player_earned_xps[str(player.unique_id)]['xp']
-                was_first_win = msg.player_earned_xps[str(player.unique_id)]['first_win']
+            if str(player.unique_id) in msg.players_time_played:
+                time_played = msg.player_earned_xps[str(player.unique_id)]['time']
+                was_win = msg.player_earned_xps[str(player.unique_id)]['win']
 
-                # Save the player's new XP
-                player.player_settings.progression.rank_xp += earned_xp
-                if was_first_win:
-                    player.player_settings.progression.last_first_win_time = datetime.datetime.utcnow()
+                # Calculate and save the player's earned XP from this map
+                player.player_settings.progression.earn_xp(time_played, was_win)
+
                 # Update the XP in the UI
                 player.send(a006d().set([
                     m04cb(),
