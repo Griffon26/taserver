@@ -51,9 +51,7 @@ class PlayerProgression:
         # Round down, XP must be an integer value
         xp_earned = int(xp_earned)
 
-        print(f'Earning XP {xp_earned}')
         self.rank_xp += xp_earned
-        print(f'Total XP {self.rank_xp}')
 
 
     @classmethod
