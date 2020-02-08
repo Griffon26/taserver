@@ -53,7 +53,6 @@ class PlayerProgression:
 
         self.rank_xp += xp_earned
 
-
     @classmethod
     def from_dict(cls, d):
         last_first_win_time = DEFAULT_LAST_WIN_DATETIME
