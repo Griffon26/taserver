@@ -60,7 +60,6 @@ class Player(Peer):
         self.is_modded: bool = False
         self.login_server = None
         self.game_server = None
-        self.game_server_last_join_time = None
         self.loadouts: Dict[Loadouts] = {mode: Loadouts(mode) for mode in get_game_setting_modes()}
         self.friends = Friends(self)
         self.player_settings = PlayerSettings()

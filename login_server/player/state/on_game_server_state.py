@@ -36,7 +36,6 @@ class OnGameServerState(AuthenticatedState):
         self.player.game_server = self.game_server
         self.player.game_server.add_player(self.player)
         self.player.game_server.set_player_loadouts(self.player)
-        self.player.game_server_last_join_time = datetime.datetime.utcnow()
         self.player.team = None
         self.player.friends.notify_on_game_server()
         self.player.login_server.send_server_stats()
