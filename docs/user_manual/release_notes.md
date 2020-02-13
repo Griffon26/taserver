@@ -1,3 +1,16 @@
+### taserver v2.4.0
+
+Bugs fixed:
+* implemented a work-around for an unsolved bug to at least not crash the game server
+* fixed a problem in counting votes for votekick
+* moved xp calculation to the login server 
+
+Compatibility notes:
+* this release is not backwards compatible; both login server and 
+  game servers must be upgraded to v2.4.0 simultaneously.
+  After the upgrade a new controller must be downloaded by running
+  the download_compatible_controller.py script.
+
 ### taserver v2.3.1
 
 Features added:
