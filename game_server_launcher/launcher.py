@@ -341,7 +341,7 @@ class Launcher:
         with open(map_rotation_state_path, 'wt') as f:
             json.dump(self.controller_context, f)
 
-        msg_to_login = Launcher2LoginMatchEndMessage(msg.player_earned_xps)
+        msg_to_login = Launcher2LoginMatchEndMessage(msg.players_time_played)
         if self.login_server:
             self.login_server.send(msg_to_login)
         else:

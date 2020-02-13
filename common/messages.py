@@ -194,8 +194,8 @@ class Launcher2LoginMatchTimeMessage(Message):
 class Launcher2LoginMatchEndMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MATCHEND
 
-    def __init__(self, player_earned_xps):
-        self.player_earned_xps = player_earned_xps
+    def __init__(self, players_time_played):
+        self.players_time_played = players_time_played
 
 
 class Launcher2LoginAddressInfoMessage(Message):
@@ -285,19 +285,19 @@ class Game2LauncherMatchTimeMessage(Message):
 # Example json: {
 #                  'controller_context' : opaque_json_structure,
 #                  'next_map_wait_time': 30,
-#                 'player_earned_xps': {
-#                      '5': { 'xp': 1250, 'first_win': true },
-#                      '1000002': { 'xp': 180, 'first_win': false }
-#                  }
+#                 'players_time_played': {
+#                      '5': { 'time': 350, 'win': true },
+#                      '1000002': { 'time': 183, 'win': false }
+#                  },
 #               }
 # Where 'opaque_json_structure' is a structure chosen by the controller and that will
 #       be passed to the next controller instance after map change
 class Game2LauncherMatchEndMessage(Message):
     msg_id = _MSGID_GAME2LAUNCHER_MATCHEND
 
-    def __init__(self, controller_context, player_earned_xps, next_map_wait_time: int):
+    def __init__(self, controller_context, players_time_played, next_map_wait_time: int):
         self.controller_context = controller_context
-        self.player_earned_xps = player_earned_xps
+        self.players_time_played = players_time_played
         self.next_map_wait_time = next_map_wait_time
 
 

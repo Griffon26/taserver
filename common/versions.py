@@ -21,5 +21,5 @@
 from distutils.version import StrictVersion
 
 # These versions must follow the MAJOR.MINOR.PATCH format of SemVer (https://semver.org/)
-launcher2controller_protocol_version = StrictVersion('3.0.0')
-launcher2loginserver_protocol_version = StrictVersion('7.0.0')
+launcher2controller_protocol_version = StrictVersion('4.0.0')
+launcher2loginserver_protocol_version = StrictVersion('8.0.0')

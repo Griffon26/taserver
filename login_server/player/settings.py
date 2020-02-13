@@ -24,6 +24,8 @@ from common.game_items import UNMODDED_GAME_SETTING_MODE
 from common.statetracer import statetracer
 
 DEFAULT_LAST_WIN_DATETIME = datetime.datetime(1970, 1, 1)
+BASE_XP_PER_SECOND = 0.5833
+FIRST_WIN_XP_BONUS = 1200
 
 
 class PlayerProgression:
@@ -36,6 +38,20 @@ class PlayerProgression:
         next_eligible_date = self.last_first_win_time.date() + datetime.timedelta(days=1)
         next_eligible_time = datetime.datetime.combine(next_eligible_date, datetime.time(0, 0, 0))
         return datetime.datetime.utcnow() > next_eligible_time
+
+    def earn_xp(self, time_played: int, was_win: bool) -> None:
+        # Base XP (purely from time played)
+        xp_earned = time_played * BASE_XP_PER_SECOND
+
+        # First Win of the Day bonus
+        if self.is_eligible_for_first_win() and was_win:
+            xp_earned += FIRST_WIN_XP_BONUS
+            self.last_first_win_time = datetime.datetime.utcnow()
+
+        # Round down, XP must be an integer value
+        xp_earned = int(xp_earned)
+
+        self.rank_xp += xp_earned
 
     @classmethod
     def from_dict(cls, d):

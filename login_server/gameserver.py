@@ -21,6 +21,7 @@
 import gevent.monkey
 gevent.monkey.patch_all()
 
+import datetime
 import json
 import logging
 import time
@@ -73,6 +74,8 @@ class GameServer(Peer):
         self.ds_score = 0
         self.map_id = 0
 
+        self.start_time = None
+
         if self.detected_ip.is_global:
             response = urllib.request.urlopen('http://tools.keycdn.com/geo.json?host=%s' % self.detected_ip)
             result = response.read()
@@ -121,6 +124,7 @@ class GameServer(Peer):
             self.ds_score = 0
             self.port = port
             self.joinable = True
+            self.start_time = datetime.datetime.utcnow()
 
             for unique_id, player in self.players.items():
                 b4msg = a00b4().set_server(self).set_player(unique_id)
