@@ -340,7 +340,7 @@ class LoginServer:
 
     def handle_match_end_message(self, msg):
         game_server = msg.peer
-        server_uptime = (datetime.datetime.utcnow() - game_server.start_time).total_seconds()
+        server_uptime = int((datetime.datetime.utcnow() - game_server.start_time).total_seconds())
         for player in game_server.players.values():
             if str(player.unique_id) in msg.players_time_played:
                 time_played = msg.players_time_played[str(player.unique_id)]['time']
@@ -348,7 +348,6 @@ class LoginServer:
 
                 # Cap playtime by the time the server has been active
                 time_played = min(time_played, server_uptime)
-
                 # Calculate and save the player's earned XP from this map
                 player.player_settings.progression.earn_xp(time_played, was_win)
 
