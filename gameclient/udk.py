@@ -20,8 +20,97 @@
 
 from bitarray import bitarray
 from itertools import zip_longest
-import string
 import struct
+
+known_int_values = {
+    203001: 'CONST_STAT_ACO_KS_FIVE',
+    203002: 'CONST_STAT_ACO_KS_TEN',
+    203003: 'CONST_STAT_ACO_KS_FIFTEEN',
+    203004: 'CONST_STAT_ACO_KS_TWENTY',
+    203005: 'CONST_STAT_ACO_KS_TWENTYFIVE',
+    203006: 'CONST_STAT_ACO_KS_FIVE_SNIPING',
+    203007: 'CONST_STAT_ACO_KS_TEN_SNIPING',
+    203008: 'CONST_STAT_ACO_KS_FIFTEEN_SNIPING',
+    203009: 'CONST_STAT_ACO_KS_FIVE_EXPLOSIVE',
+    203010: 'CONST_STAT_ACO_KS_TEN_EXPLOSIVE',
+    203011: 'CONST_STAT_ACO_KS_FIFTEEN_EXPLOSIVE',
+    203012: 'CONST_STAT_ACO_KS_FIVE_SPINFUSOR',
+    203013: 'CONST_STAT_ACO_KS_TEN_SPINFUSOR',
+    203014: 'CONST_STAT_ACO_KS_FIFTEEN_SPINFUSOR',
+    203015: 'CONST_STAT_ACO_MK_DOUBLE',
+    203016: 'CONST_STAT_ACO_MK_TRIPLE',
+    203017: 'CONST_STAT_ACO_MK_QUATRA',
+    203018: 'CONST_STAT_ACO_MK_ULTRA',
+    203019: 'CONST_STAT_ACO_MK_TEAM',
+    203020: 'CONST_STAT_ACO_NOJOY',
+    203021: 'CONST_STAT_ACO_REVENGE',
+    203022: 'CONST_STAT_ACO_AFTERMATH',
+    203023: 'CONST_STAT_ACO_FIRSTBLOOD',
+    203024: 'CONST_STAT_ACO_BLUEPLATESPECIAL',
+    203025: 'CONST_STAT_ACO_STICKYKILL',
+    203026: 'CONST_STAT_ACO_HEADSHOT',
+    203027: 'CONST_STAT_ACO_ARTILLERYSTRIKE',
+    203028: 'CONST_STAT_ACO_MELEE',
+    203029: 'CONST_STAT_ACO_ROADKILL',
+    203030: 'CONST_STAT_ACO_FLAG_CAPTURE',
+    203031: 'CONST_STAT_ACO_FLAG_GRAB',
+    203032: 'CONST_STAT_ACO_BK_GEN',
+    203033: 'CONST_STAT_ACO_RABBITKILL',
+    203034: 'CONST_STAT_ACO_KILLASRABBIT',
+    203035: 'CONST_STAT_ACO_FINALBLOW',
+    203036: 'CONST_STAT_ACO_REPAIR',
+    203037: 'CONST_STAT_ACO_BK_TURRET',
+    203039: 'CONST_STAT_ACO_ASSIST',
+    203040: 'CONST_STAT_ACO_FLAG_RETURN',
+    203041: 'CONST_STAT_ACO_BK_RADAR',
+    203042: 'CONST_STAT_ACO_FLAG_ASSIST',
+    203043: 'CONST_STAT_ACO_AIRMAIL',
+    203044: 'CONST_STAT_ACO_GAME_COMPLETE',
+    203045: 'CONST_STAT_ACO_GAME_WINNER',
+    203046: 'CONST_STAT_ACO_FLAG_GRABDM',
+    203047: 'CONST_STAT_ACO_FLAG_HOLDER',
+    203048: 'CONST_STAT_ACO_FLAG_KILLER',
+    203049: 'CONST_STAT_ACO_FLAG_GRABFAST',
+    203050: 'CONST_STAT_ACO_DEFENSE_GEN',
+    203051: 'CONST_STAT_ACO_DEFENSE_FLAG',
+    203052: 'CONST_STAT_ACO_VD_BIKE',
+    203053: 'CONST_STAT_ACO_VD_TANK',
+    203054: 'CONST_STAT_ACO_VD_SHRIKE',
+    203055: 'CONST_STAT_ACO_FLAG_GRABE',
+    203056: 'CONST_STAT_ACO_FLAG_GRABLLAMA',
+    203057: 'CONST_STAT_ACO_ASSIST_VEHICLE',
+    203058: 'CONST_STAT_ACO_FLAG_GRABULTRA',
+    203059: 'CONST_STAT_ACO_BENCHEM',
+    203060: 'CONST_STAT_ACO_DOUBLEDOWN',
+    203061: 'CONST_STAT_ACO_LASTMANSTANDING',
+    203062: 'CONST_STAT_ACO_MIRACLE',
+    203063: 'CONST_STAT_ACO_NOTAMONGEQUALS',
+    203064: 'CONST_STAT_ACO_ONEMANARMY',
+    203065: 'CONST_STAT_ACO_TRIBALHONOR',
+    203066: 'CONST_STAT_ACO_UNITEDWESTAND',
+    203067: 'CONST_STAT_ACO_HOLDTHELINE',
+    203068: 'CONST_STAT_ACO_CAPTUREANDHOLD',
+    203069: 'CONST_STAT_ACO_BASEASSIST',
+    203070: 'CONST_STAT_ACO_TURRETASSIST',
+    203071: 'CONST_STAT_ACO_HOTAIR',
+    204001: 'CONST_STAT_AWD_CREDITS_EARNED',
+    204002: 'CONST_STAT_AWD_CREDITS_SPENT',
+    204003: 'CONST_STAT_AWD_DESTRUCTION_DEPLOYABLE',
+    204004: 'CONST_STAT_AWD_DESTRUCTION_VEHICLE',
+    204005: 'CONST_STAT_AWD_DISTANCE_HEADSHOT',
+    204006: 'CONST_STAT_AWD_DISTANCE_KILL',
+    204007: 'CONST_STAT_AWD_DISTANCE_SKIED',
+    204008: 'CONST_STAT_AWD_KILLS',
+    204009: 'CONST_STAT_AWD_KILLS_DEPLOYABLE',
+    204010: 'CONST_STAT_AWD_KILLS_MIDAIR',
+    204011: 'CONST_STAT_AWD_KILLS_VEHICLE',
+    204012: 'CONST_STAT_AWD_REPAIRS',
+    204013: 'CONST_STAT_AWD_SPEED_FLAGCAP',
+    204014: 'CONST_STAT_AWD_SPEED_FLAGGRAB',
+    204015: 'CONST_STAT_AWD_SPEED_SKIED',
+    204016: 'CONST_STAT_AWD_FLAG_RETURNS',
+    204017: 'CONST_STAT_AWD_DEATHS',
+}
 
 class ParseError(Exception):
     def __init__(self, message, bitsleft):
@@ -909,10 +998,11 @@ class PropertyValueInt():
     def tostring(self, indent = 0):
         indent_prefix = ' ' * indent
         if self.value is not None:
-            text = '%s%s (value = %d %08X)\n' % (indent_prefix,
-                                                 self.tobitarray().to01(),
-                                                 self.value,
-                                                 self.value)
+            text = '%s%s (value = %d %08X%s)\n' % (indent_prefix,
+                                                   self.tobitarray().to01(),
+                                                   self.value,
+                                                   self.value,
+                                                   (' %s' % known_int_values.get(self.value, 'unknown')) if self.value in known_int_values else '')
         else:
             text = '%sempty\n' % indent_prefix
         return text
@@ -1258,6 +1348,7 @@ class PropertyValueInteresting:
         indent_prefix = ' ' * indent
         if self.prefixbits is not None:
             text = '%s%s (prefix)\n' % (indent_prefix, self.prefixbits.to01())
+            text += '%s%s (number of fields = %d)\n' % (indent_prefix, int2bitarray(self.length, 16).to01(), self.length)
 
             for field in self.fields:
                 text += field.tostring(indent)
