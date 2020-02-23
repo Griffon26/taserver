@@ -53,7 +53,7 @@ class GameServerTerminatedMessage:
 
 class GameServerHandler:
 
-    def __init__(self, game_server_config, server_handler_queue, launcher_queue):
+    def __init__(self, game_server_config, game_controller_config, server_handler_queue, launcher_queue):
         gevent.getcurrent().name = 'gameserver'
 
         self.servers = {}
@@ -69,6 +69,11 @@ class GameServerHandler:
             self.dll_config_path = game_server_config['controller_config']
         except KeyError as e:
             raise ConfigurationError("%s is a required configuration item under [gameserver]" % str(e))
+
+        try:
+            self.control_port = int(game_controller_config['port'])
+        except KeyError as e:
+            raise ConfigurationError("%s is a required configuration item under [gamecontroller]" % str(e))
 
         self.exe_path = os.path.join(self.working_dir, 'TribesAscend.exe')
 
@@ -146,7 +151,10 @@ class GameServerHandler:
         self.logger.info('gameserver: Starting a new TribesAscend server on port %d...' % port)
         # Add 100 to the port, because it's the udpproxy that's actually listening on the port itself
         # and it forwards traffic to port + 100
-        args = [self.exe_path, 'server', '-Log=tagameserver%d.log' % port, '-port=%d' % (port + 100)]
+        args = [self.exe_path, 'server',
+                '-Log=tagameserver%d.log' % port,
+                '-port=%d' % (port + 100),
+                '-controlport', str(self.control_port)]
         if self.dll_config_path is not None:
             args.extend(['-tamodsconfig', self.dll_config_path])
         process = sp.Popen(args, cwd=self.working_dir)
@@ -195,6 +203,9 @@ class GameServerHandler:
             self.terminate_all_servers()
 
 
-def handle_game_server(game_server_config, server_handler_queue, incoming_queue):
-    game_server_handler = GameServerHandler(game_server_config, server_handler_queue, incoming_queue)
+def handle_game_server(game_server_config, game_controller_config, server_handler_queue, incoming_queue):
+    game_server_handler = GameServerHandler(game_server_config,
+                                            game_controller_config,
+                                            server_handler_queue,
+                                            incoming_queue)
     game_server_handler.run()
