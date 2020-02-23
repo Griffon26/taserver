@@ -118,11 +118,12 @@ class GameServer(Peer):
         else:
             self.match_end_time_rel_or_abs = seconds_remaining
 
-    def set_ready(self, port):
+    def set_ready(self, port, pingport):
         if port is not None:
             self.be_score = 0
             self.ds_score = 0
             self.port = port
+            self.pingport = pingport
             self.joinable = True
             self.start_time = datetime.datetime.utcnow()
 

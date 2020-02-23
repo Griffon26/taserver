@@ -35,14 +35,7 @@ from .gamecontrollerhandler import GameController
 from .gameserverhandler import StartGameServerMessage, StopGameServerMessage, GameServerTerminatedMessage
 from .loginserverhandler import LoginServer
 
-game_server_ports = [7777, 7778]
 map_rotation_state_path = 'data/maprotationstate.json'
-
-def get_other_port(port):
-    for other_port in game_server_ports:
-        if other_port != port:
-            return other_port
-    assert(False)
 
 
 class IncompatibleVersionError(FatalError):
@@ -52,12 +45,13 @@ class IncompatibleVersionError(FatalError):
 
 @statetracer('address_pair', 'players')
 class Launcher:
-    def __init__(self, game_server_config, incoming_queue, server_handler_queue):
+    def __init__(self, game_server_config, ports, incoming_queue, server_handler_queue):
         gevent.getcurrent().name = 'launcher'
 
         self.pending_callbacks = PendingCallbacks(incoming_queue)
 
         self.logger = logging.getLogger(__name__)
+        self.ports = ports
         self.game_server_config = game_server_config
         self.incoming_queue = incoming_queue
         self.server_handler_queue = server_handler_queue
@@ -65,8 +59,8 @@ class Launcher:
         self.game_controller = None
         self.login_server = None
 
-        self.active_server_port = None
-        self.pending_server_port = None
+        self.active_server = None
+        self.pending_server = None
         self.min_next_switch_time = None
         self.server_stopping = False
         try:
@@ -124,12 +118,18 @@ class Launcher:
 
     def run(self):
         reset_firewall('whitelist')
-        self.pending_server_port = game_server_ports[0]
-        self.server_handler_queue.put(StartGameServerMessage(self.pending_server_port))
+        self.pending_server = 'gameserver1'
+        self.server_handler_queue.put(StartGameServerMessage(self.pending_server))
         while True:
             for message in self.incoming_queue:
                 handler = self.message_handlers[type(message)]
                 handler(message)
+
+    def get_other_server(self, server):
+        for other_server in ['gameserver1', 'gameserver2']:
+            if other_server != server:
+                return other_server
+        assert False
 
     def handle_peer_connected(self, msg):
         if isinstance(msg.peer, GameController):
@@ -211,12 +211,12 @@ class Launcher:
                                         StrictVersion(msg.version)))
 
     def handle_next_map_message(self, msg):
-        self.logger.info('launcher: switching to new server instance on port %d' % self.pending_server_port)
-        if self.active_server_port:
-            self.server_handler_queue.put(StopGameServerMessage(self.active_server_port))
+        self.logger.info('launcher: switching to new server instance on port %d' % self.ports[self.pending_server])
+        if self.active_server:
+            self.server_handler_queue.put(StopGameServerMessage(self.active_server))
             self.server_stopping = True
 
-        self.active_server_port = self.pending_server_port
+        self.active_server = self.pending_server
 
     def handle_set_player_loadouts_message(self, msg):
         self.logger.info('launcher: loadouts changed for player %d' % msg.unique_id)
@@ -306,7 +306,7 @@ class Launcher:
             self.last_score_info_message = msg
 
     def set_server_ready(self):
-        msg = Launcher2LoginServerReadyMessage(self.pending_server_port)
+        msg = Launcher2LoginServerReadyMessage(self.ports[self.pending_server], self.ports['launcherping'])
         if self.login_server:
             self.login_server.send(msg)
         else:
@@ -321,7 +321,7 @@ class Launcher:
         else:
             self.last_match_time_message = msg
 
-        if self.pending_server_port != self.active_server_port:
+        if self.pending_server != self.active_server:
             if self.min_next_switch_time:
                 time_left = (self.min_next_switch_time - datetime.datetime.utcnow()).total_seconds()
             else:
@@ -347,10 +347,10 @@ class Launcher:
         else:
             self.last_match_end_message = msg_to_login
 
-        self.pending_server_port = get_other_port(self.active_server_port)
+        self.pending_server = self.get_other_server(self.active_server)
 
         self.min_next_switch_time = datetime.datetime.utcnow() + datetime.timedelta(seconds=msg.next_map_wait_time)
-        self.server_handler_queue.put(StartGameServerMessage(self.pending_server_port))
+        self.server_handler_queue.put(StartGameServerMessage(self.pending_server))
 
     def handle_loadout_request_message(self, msg):
         self.logger.info('launcher: received loadout request from game controller')
@@ -386,21 +386,20 @@ class Launcher:
             self.logger.info('launcher: game server process terminated.')
             self.server_stopping = False
         else:
-            self.pending_server_port = get_other_port(self.active_server_port)
-            self.active_server_port = None
+            self.pending_server = self.get_other_server(self.active_server)
+            self.active_server = None
             self.logger.info('launcher: game server process terminated unexpectedly. Starting a new one on port %d.' %
-                             self.pending_server_port)
-            self.server_handler_queue.put(StartGameServerMessage(self.pending_server_port))
+                             self.ports[self.pending_server])
+            self.server_handler_queue.put(StartGameServerMessage(self.pending_server))
 
-            msg = Launcher2LoginServerReadyMessage(None)
+            msg = Launcher2LoginServerReadyMessage(None, None)
             if self.login_server:
                 self.login_server.send(msg)
             else:
                 self.last_server_ready_message = msg
 
 
-
-def handle_launcher(game_server_config, incoming_queue, server_handler_queue):
-    launcher = Launcher(game_server_config, incoming_queue, server_handler_queue)
+def handle_launcher(game_server_config, ports, incoming_queue, server_handler_queue):
+    launcher = Launcher(game_server_config, ports, incoming_queue, server_handler_queue)
     # launcher.trace_as('launcher')
     launcher.run()

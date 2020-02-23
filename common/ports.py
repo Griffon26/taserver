@@ -41,9 +41,9 @@ class Ports:
     def __getitem__(self, key):
         if key in self.ports:
             return self.ports[key] + self.portOffset
-        elif key.endswith('proxy') and key[:5] in self.ports:
-            return self.ports[key[:5]] + 100 + self.portOffset
-        elif key.endswith('firewall') and key[:5] in self.ports:
-            return self.ports[key[:5]] + 200 + self.portOffset
+        elif key.endswith('proxy') and key[:-5] in self.ports:
+            return self.ports[key[:-5]] + 100 + self.portOffset
+        elif key.endswith('firewall') and key[:-8] in self.ports:
+            return self.ports[key[:-8]] + 200 + self.portOffset
         else:
             raise KeyError(f'{key} is not a valid port descriptor.')

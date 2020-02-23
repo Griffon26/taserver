@@ -37,10 +37,10 @@ class GameController(Peer):
 
 
 class GameControllerHandler(IncomingConnectionHandler):
-    def __init__(self, config, incoming_queue):
+    def __init__(self, ports, incoming_queue):
         super().__init__('gamecontroller',
                          '127.0.0.1',
-                         int(config['port']),
+                         ports['game2launcher'],
                          incoming_queue)
 
     def create_connection_instances(self, sock, address):

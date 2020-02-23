@@ -214,12 +214,13 @@ class Launcher2LoginProtocolVersionMessage(Message):
         self.version = version
 
 
-# Example json: { 'port' : 7777 }
+# Example json: { 'port' : 7777, 'pingport' : 9002 }
 class Launcher2LoginServerReadyMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_SERVERREADY
 
-    def __init__(self, port: Optional[int]):
+    def __init__(self, port: Optional[int], pingport: Optional[int]):
         self.port = port
+        self.pingport = pingport
 
 
 # Example json: { 'version' : '0.1.0' }

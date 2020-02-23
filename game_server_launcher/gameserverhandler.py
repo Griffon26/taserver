@@ -37,23 +37,23 @@ class ConfigurationError(FatalError):
 
 
 class StartGameServerMessage:
-    def __init__(self, port):
-        self.port = port
+    def __init__(self, server):
+        self.server = server
 
 
 class StopGameServerMessage:
-    def __init__(self, port):
-        self.port = port
+    def __init__(self, server):
+        self.server = server
 
 
 class GameServerTerminatedMessage:
-    def __init__(self, port):
-        self.port = port
+    def __init__(self, server):
+        self.server = server
 
 
 class GameServerHandler:
 
-    def __init__(self, game_server_config, game_controller_config, server_handler_queue, launcher_queue):
+    def __init__(self, game_server_config, ports, server_handler_queue, launcher_queue):
         gevent.getcurrent().name = 'gameserver'
 
         self.servers = {}
@@ -62,6 +62,7 @@ class GameServerHandler:
         self.launcher_queue = launcher_queue
 
         self.logger = logging.getLogger(__name__)
+        self.ports = ports
 
         try:
             self.working_dir = game_server_config['dir']
@@ -69,11 +70,6 @@ class GameServerHandler:
             self.dll_config_path = game_server_config['controller_config']
         except KeyError as e:
             raise ConfigurationError("%s is a required configuration item under [gameserver]" % str(e))
-
-        try:
-            self.control_port = int(game_controller_config['port'])
-        except KeyError as e:
-            raise ConfigurationError("%s is a required configuration item under [gamecontroller]" % str(e))
 
         self.exe_path = os.path.join(self.working_dir, 'TribesAscend.exe')
 
@@ -129,18 +125,20 @@ class GameServerHandler:
             raise RuntimeError('For some reason requesting the location of the Documents folder failed')
         return buf.value
 
-    def server_process_watcher(self, process, port):
+    def server_process_watcher(self, process, server):
         self.logger.info('gameserver: Starting server process watcher')
         process.wait()
-        if port in self.servers:
+        if server in self.servers:
             self.logger.info('gameserver: server terminated, notifying launcher')
-            del self.servers[port]
-            self.launcher_queue.put( GameServerTerminatedMessage(port) )
+            del self.servers[server]
+            self.launcher_queue.put(GameServerTerminatedMessage(server))
 
-    def start_server_process(self, port):
+    def start_server_process(self, server):
+        external_port = self.ports[server]
+        internal_port = self.ports[f'{server}proxy']
         log_filename = os.path.join(self.get_my_documents_folder(),
                                     'My Games', 'Tribes Ascend',
-                                    'TribesGame', 'Logs', 'tagameserver%d.log' % port)
+                                    'TribesGame', 'Logs', 'tagameserver%d.log' % external_port)
 
         try:
             self.logger.info('gameserver: Removing previous log file %s' % log_filename)
@@ -148,17 +146,17 @@ class GameServerHandler:
         except FileNotFoundError:
             pass
 
-        self.logger.info('gameserver: Starting a new TribesAscend server on port %d...' % port)
+        self.logger.info('gameserver: Starting a new TribesAscend server on port %d...' % external_port)
         # Add 100 to the port, because it's the udpproxy that's actually listening on the port itself
         # and it forwards traffic to port + 100
         args = [self.exe_path, 'server',
-                '-Log=tagameserver%d.log' % port,
-                '-port=%d' % (port + 100),
-                '-controlport', str(self.control_port)]
+                '-Log=tagameserver%d.log' % external_port,
+                '-port=%d' % internal_port,
+                '-controlport', str(self.ports['game2launcher'])]
         if self.dll_config_path is not None:
             args.extend(['-tamodsconfig', self.dll_config_path])
         process = sp.Popen(args, cwd=self.working_dir)
-        self.servers[port] = process
+        self.servers[server] = process
         self.logger.info('gameserver: Started process with pid: %s' % process.pid)
 
         # Check if it doesn't exit right away
@@ -176,12 +174,12 @@ class GameServerHandler:
         inject(process.pid, self.dll_to_inject)
         self.logger.info('gameserver: Injection done.')
 
-        self.watcher_task = gevent_spawn('gameserver process watcher', self.server_process_watcher, process, port)
+        self.watcher_task = gevent_spawn('gameserver process watcher', self.server_process_watcher, process, server)
 
-    def stop_server_process(self, port):
-        if port in self.servers:
-            process = self.servers[port]
-            self.logger.info('gameserver: Terminating game server on port %u, process %u' % (port, process.pid))
+    def stop_server_process(self, server):
+        if server in self.servers:
+            process = self.servers[server]
+            self.logger.info('gameserver: Terminating game server on port %u, process %u' % (self.ports[server], process.pid))
             process.terminate()
 
     def terminate_all_servers(self):
@@ -195,17 +193,17 @@ class GameServerHandler:
         try:
             for msg in self.server_handler_queue:
                 if isinstance(msg, StartGameServerMessage):
-                    self.start_server_process(msg.port)
+                    self.start_server_process(msg.server)
                 else:
                     assert(isinstance(msg, StopGameServerMessage))
-                    self.stop_server_process(msg.port)
+                    self.stop_server_process(msg.server)
         finally:
             self.terminate_all_servers()
 
 
-def handle_game_server(game_server_config, game_controller_config, server_handler_queue, incoming_queue):
+def handle_game_server(game_server_config, ports, server_handler_queue, incoming_queue):
     game_server_handler = GameServerHandler(game_server_config,
-                                            game_controller_config,
+                                            ports,
                                             server_handler_queue,
                                             incoming_queue)
     game_server_handler.run()

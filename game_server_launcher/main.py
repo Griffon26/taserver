@@ -27,21 +27,27 @@ import os
 from common.errors import FatalError
 from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
+from common.ports import Ports
 from .gamecontrollerhandler import handle_game_controller
 from .gameserverhandler import handle_game_server
 from .launcher import handle_launcher, IncompatibleVersionError
 from .loginserverhandler import handle_login_server
 from .pinghandler import handle_ping
 
-INI_PATH = os.path.join('data', 'gameserverlauncher.ini')
+LAUNCHER_INI_PATH = os.path.join('data', 'gameserverlauncher.ini')
+SHARED_INI_PATH = os.path.join('data', 'shared.ini')
 
 
 def main():
     set_up_logging('game_server_launcher.log')
     logger = logging.getLogger(__name__)
     config = configparser.ConfigParser()
-    with open(INI_PATH) as f:
+    with open(LAUNCHER_INI_PATH) as f:
         config.read_file(f)
+    with open(SHARED_INI_PATH) as f:
+        config.read_file(f)
+
+    ports = Ports(int(config['shared']['port_offset']))
 
     restart = True
     restart_delay = 10
@@ -53,11 +59,12 @@ def main():
 
             tasks = [
                 gevent_spawn("game server launcher's handle_ping",
-                             handle_ping),
+                             handle_ping,
+                             ports),
                 gevent_spawn("game server launcher's handle_game_server",
                              handle_game_server,
                              config['gameserver'],
-                             config['gamecontroller'],
+                             ports,
                              server_handler_queue,
                              incoming_queue),
                 gevent_spawn("game server launcher's handle_login_server",
@@ -66,11 +73,12 @@ def main():
                              incoming_queue),
                 gevent_spawn("game server launcher's handle_game_controller",
                              handle_game_controller,
-                             config['gamecontroller'],
+                             ports,
                              incoming_queue),
                 gevent_spawn("game server launcher's handle_launcher",
                              handle_launcher,
                              config['gameserver'],
+                             ports,
                              incoming_queue,
                              server_handler_queue)
             ]
