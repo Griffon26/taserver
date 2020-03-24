@@ -16,9 +16,24 @@ section of the README accompanying this project.
 
 ### Tribes Ascend Parting gifts version
 
-The zip file containing the Tribes Ascend Parting gifts version can be
-[downloaded from hirez](http://lwcdn.hi-rezgame.net/media/iso/Tribes_Ascend_Parting_Gifts.zip).
-Extract this to a directory of your choice.
+The zip file containing the Tribes Ascend Parting gifts version can no longer be
+downloaded from Hirez. Tribes Ascend itself is still available on steam, but for
+installation on a server you may prefer to get the zip file using
+[this direct download link](https://drive.google.com/uc?id=1hsjXFWJ2yvBCPNAy8SxQ2hT3XLIPvsrE&export=download).
+
+You can check if your download matches the zip file originally published by Hirez by
+calculating its hash with the following command (don't forget the SHA256 at the end):
+
+    certutil -hashfile Tribes_Ascend_Parting_Gifts.zip SHA256
+
+That should give you the following code:
+   
+    e0b1302db701986383a4dabda60e834313afc0e3c1322b5f80d443791811e046
+
+If the code you get is different, this means that someone tampered with the contents
+of the file and you should download a safe copy from another location. 
+
+Once you have determined that the file has not been tampered with, extract it to a directory of your choice.
 
 ### DirectX End-User Runtimes (June 2010)
 
