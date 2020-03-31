@@ -8,3 +8,5 @@ You can select one of them below.
 * [Short textual instructions](joining_games_short_textual.md)
 * [Instructions with animated screenshots](joining_games_illustrated.md)
 * [Completely automated setup](joining_games_automated.md)
+
+If you need any help with this, join the [discord server](https://discordapp.com/invite/8enekHQ) for this project.
