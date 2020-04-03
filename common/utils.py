@@ -18,6 +18,10 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
+
+SHARED_INI_PATH = os.path.join('data', 'shared.ini')
+
 
 def first_unused_number_above(numbers, minimum):
     used_numbers = (n for n in numbers if n >= minimum)

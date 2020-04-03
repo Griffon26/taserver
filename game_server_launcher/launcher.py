@@ -24,7 +24,7 @@ import json
 import logging
 
 from common.errors import FatalError
-from common.firewall import reset_firewall, modify_firewall
+from common.firewall import FirewallClient
 from common.ipaddresspair import IPAddressPair
 from common.messages import *
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
@@ -52,6 +52,7 @@ class Launcher:
 
         self.logger = logging.getLogger(__name__)
         self.ports = ports
+        self.firewall = FirewallClient(ports)
         self.game_server_config = game_server_config
         self.incoming_queue = incoming_queue
         self.server_handler_queue = server_handler_queue
@@ -117,7 +118,7 @@ class Launcher:
         }
 
     def run(self):
-        reset_firewall('whitelist')
+        self.firewall.reset_firewall('whitelist')
         self.pending_server = 'gameserver1'
         self.server_handler_queue.put(StartGameServerMessage(self.pending_server))
         while True:
@@ -229,7 +230,7 @@ class Launcher:
     def handle_add_player_message(self, msg):
         if msg.ip:
             self.logger.info('launcher: login server added player %d with ip %s' % (msg.unique_id, msg.ip))
-            modify_firewall('whitelist', 'add', msg.unique_id, msg.ip)
+            self.firewall.modify_firewall('whitelist', 'add', msg.unique_id, msg.ip)
         else:
             self.logger.info('launcher: login server added local player %d' % msg.unique_id)
         self.game_controller.send(
@@ -238,7 +239,7 @@ class Launcher:
     def handle_remove_player_message(self, msg):
         if msg.ip:
             self.logger.info('launcher: login server removed player %d with ip %s' % (msg.unique_id, msg.ip))
-            modify_firewall('whitelist', 'remove', msg.unique_id, msg.ip)
+            self.firewall.modify_firewall('whitelist', 'remove', msg.unique_id, msg.ip)
         else:
             self.logger.info('launcher: login server removed local player %d' % msg.unique_id)
 

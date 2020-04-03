@@ -30,7 +30,7 @@ import urllib.request
 
 from common.connectionhandler import Peer
 from common.datatypes import *
-from common.firewall import modify_firewall
+from common.firewall import FirewallClient
 from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherSetPlayerLoadoutsMessage, \
                             Login2LauncherRemovePlayerLoadoutsMessage, \
@@ -48,10 +48,11 @@ PING_UPDATE_TIME = 3
              'players', 'player_being_kicked', 'match_end_time_rel_or_abs', 'match_time_counting',
              'be_score', 'ds_score', 'map_id', )
 class GameServer(Peer):
-    def __init__(self, detected_ip: IPv4Address):
+    def __init__(self, detected_ip: IPv4Address, ports):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
+        self.firewall = FirewallClient(ports)
         self.login_server = None
         self.server_id = None
         self.match_id = None
@@ -290,10 +291,10 @@ class GameServer(Peer):
             player_to_kick.set_state(UnauthenticatedState)
 
             ip_to_ban_on_login_server = player_to_kick.address_pair.get_address_seen_from(self.login_server.address_pair)
-            modify_firewall('blacklist', 'add', player_to_kick.unique_id, ip_to_ban_on_login_server)
+            self.firewall.modify_firewall('blacklist', 'add', player_to_kick.unique_id, ip_to_ban_on_login_server)
 
             def remove_blacklist_rule():
-                modify_firewall('blacklist', 'remove', player_to_kick.unique_id, ip_to_ban_on_login_server)
+                self.firewall.modify_firewall('blacklist', 'remove', player_to_kick.unique_id, ip_to_ban_on_login_server)
 
             self.login_server.pending_callbacks.add(self.login_server, 8 * 3600, remove_blacklist_rule)
 

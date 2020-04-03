@@ -21,16 +21,19 @@
 
 class Ports:
 
-    ports = {
+    fixed_ports = {
+        'client2login': 9000,  # TCP
+        'launcher2login': 9001,  # TCP
+        'restapi': 9080,  # TCP
+    }
+
+    variable_ports = {
         'gameserver1': 7777,     # UDP
         'gameserver2': 7778,     # UDP
         # gameserverNproxy    = gameserverN + 100   # UDP
         # gameserverNfirewall = gameserverN + 200   # TCP
-        'client2login': 9000,    # TCP
-        'launcher2login': 9001,  # TCP
         'game2launcher': 9002,   # TCP
         'launcherping': 9002,    # UDP
-        'restapi': 9080,         # TCP
         'firewall': 9801,        # TCP
     }
 
@@ -39,11 +42,13 @@ class Ports:
         self.portOffset = portOffset
 
     def __getitem__(self, key):
-        if key in self.ports:
-            return self.ports[key] + self.portOffset
-        elif key.endswith('proxy') and key[:-5] in self.ports:
-            return self.ports[key[:-5]] + 100 + self.portOffset
-        elif key.endswith('firewall') and key[:-8] in self.ports:
-            return self.ports[key[:-8]] + 200 + self.portOffset
+        if key in self.fixed_ports:
+            return self.fixed_ports[key]
+        elif key in self.variable_ports:
+            return self.variable_ports[key] + self.portOffset
+        elif key.endswith('proxy') and key[:-5] in self.variable_ports:
+            return self.variable_ports[key[:-5]] + 100 + self.portOffset
+        elif key.endswith('firewall') and key[:-8] in self.variable_ports:
+            return self.variable_ports[key[:-8]] + 200 + self.portOffset
         else:
             raise KeyError(f'{key} is not a valid port descriptor.')

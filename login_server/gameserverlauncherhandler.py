@@ -37,19 +37,20 @@ class GameServerLauncherWriter(TcpMessageConnectionWriter):
 
 
 class GameServerLauncherHandler(IncomingConnectionHandler):
-    def __init__(self, incoming_queue):
+    def __init__(self, incoming_queue, ports):
         super().__init__('gameserverlauncher',
                          '0.0.0.0',
-                         9001,
+                         ports['launcher2login'],
                          incoming_queue)
+        self.ports = ports
 
     def create_connection_instances(self, sock, address):
         reader = GameServerLauncherReader(sock)
         writer = GameServerLauncherWriter(sock)
-        peer = GameServer(IPv4Address(address[0]))
+        peer = GameServer(IPv4Address(address[0]), self.ports)
         return reader, writer, peer
 
 
-def handle_game_server_launcher(incoming_queue):
-    game_controller_handler = GameServerLauncherHandler(incoming_queue)
+def handle_game_server_launcher(incoming_queue, ports):
+    game_controller_handler = GameServerLauncherHandler(incoming_queue, ports)
     game_controller_handler.run()

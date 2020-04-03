@@ -28,6 +28,7 @@ from common.errors import FatalError
 from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from common.ports import Ports
+from common.utils import SHARED_INI_PATH
 from .gamecontrollerhandler import handle_game_controller
 from .gameserverhandler import handle_game_server
 from .launcher import handle_launcher, IncompatibleVersionError
@@ -35,7 +36,6 @@ from .loginserverhandler import handle_login_server
 from .pinghandler import handle_ping
 
 LAUNCHER_INI_PATH = os.path.join('data', 'gameserverlauncher.ini')
-SHARED_INI_PATH = os.path.join('data', 'shared.ini')
 
 
 def main():

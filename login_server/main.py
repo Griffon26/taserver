@@ -32,6 +32,8 @@ import sys
 from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from common.migration_mechanism import run_migrations
+from common.ports import Ports
+from common.utils import SHARED_INI_PATH
 from .accounts import Accounts
 from .authcodehandler import handle_authcodes
 from .gameserverlauncherhandler import handle_game_server_launcher
@@ -51,8 +53,8 @@ def handle_dump(dumpqueue):
         traffic_dumper.run()
 
 
-def handle_server(server_queue, client_queues, server_stats_queue, accounts):
-    server = LoginServer(server_queue, client_queues, server_stats_queue, accounts)
+def handle_server(server_queue, client_queues, server_stats_queue, ports, accounts):
+    server = LoginServer(server_queue, client_queues, server_stats_queue, ports, accounts)
     # server.trace_as('loginserver')
     server.run()
 
@@ -88,6 +90,10 @@ def main():
     config = configparser.ConfigParser()
     with open(INI_PATH) as f:
         config.read_file(f)
+    with open(SHARED_INI_PATH) as f:
+        config.read_file(f)
+
+    ports = Ports(int(config['shared']['port_offset']))
 
     tasks = [
         gevent_spawn("login server's handle_server",
@@ -95,6 +101,7 @@ def main():
                      server_queue,
                      client_queues,
                      server_stats_queue,
+                     ports,
                      accounts),
         gevent_spawn("login server's handle_authcodes",
                      handle_authcodes,
@@ -105,13 +112,15 @@ def main():
                      config['loginserver']),
         gevent_spawn("login server's handle_http",
                      handle_http,
-                     server_queue),
+                     server_queue,
+                     ports),
         gevent_spawn("login server's handle_game_client",
                      handle_game_client,
                      server_queue, dump_queue),
         gevent_spawn("login server's handle_game_server_launcher",
                      handle_game_server_launcher,
-                     server_queue)
+                     server_queue,
+                     ports)
     ]
     # Give the greenlets enough time to start up, otherwise killall can block
     gevent.sleep(1)

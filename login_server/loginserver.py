@@ -26,7 +26,7 @@ import string
 
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.datatypes import *
-from common.firewall import reset_firewall
+from common.firewall import FirewallClient
 from common.ipaddresspair import IPAddressPair
 from common.loginprotocol import LoginProtocolMessage
 from common.messages import *
@@ -45,7 +45,7 @@ from common import utils
 
 @statetracer('address_pair', 'game_servers', 'players')
 class LoginServer:
-    def __init__(self, server_queue, client_queues, server_stats_queue, accounts):
+    def __init__(self, server_queue, client_queues, server_stats_queue, ports, accounts):
         self.logger = logging.getLogger(__name__)
         self.server_queue = server_queue
         self.client_queues = client_queues
@@ -55,6 +55,7 @@ class LoginServer:
 
         self.players = TracingDict()
         self.social_network = SocialNetwork()
+        self.firewall = FirewallClient(ports)
         self.accounts = accounts
         self.message_handlers = {
             AuthCodeRequestMessage: self.handle_authcode_request_message,
@@ -87,7 +88,7 @@ class LoginServer:
     def run(self):
         gevent.getcurrent().name = 'loginserver'
         self.logger.info('server: login server started')
-        reset_firewall('blacklist')
+        self.firewall.reset_firewall('blacklist')
         while True:
             for message in self.server_queue:
                 handler = self.message_handlers[type(message)]

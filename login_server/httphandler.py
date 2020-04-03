@@ -24,11 +24,10 @@ import logging
 
 from common.datatypes import HttpRequestMessage
 
-HTTP_PORT = 9080
-
 
 class HttpHandler:
-    def __init__(self, incoming_queue):
+    def __init__(self, incoming_queue, ports):
+        self.ports = ports
         self.incoming_queue = incoming_queue
         self.response_queue = gevent.queue.Queue()
 
@@ -54,11 +53,11 @@ class HttpHandler:
         self.response_queue.put(e)
 
     def run(self):
-        server = pywsgi.WSGIServer(('0.0.0.0', HTTP_PORT),
+        server = pywsgi.WSGIServer(('0.0.0.0', self.ports['restapi']),
                                    self.handle_http_request)
         server.serve_forever()
 
 
-def handle_http(incoming_queue):
-    http_handler = HttpHandler(incoming_queue)
+def handle_http(incoming_queue, ports):
+    http_handler = HttpHandler(incoming_queue, ports)
     http_handler.run()
