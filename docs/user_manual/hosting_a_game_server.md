@@ -72,6 +72,8 @@ connect to the replacement login server, follow these steps:
 Your server should now show up in the list for anyone connecting to the login server.
 Try it out by following the instructions under [Joining games](joining_games.md)
 
+### GOTY
+
 The server is in OOTB mode by default. If you want to run it in GOTY mode instead there are two
 more steps below.
 
@@ -88,3 +90,8 @@ more steps below.
 
 Read more about GOTY and how people can join GOTY servers on 
 [this page](joining_goty_servers.md).
+
+### Multiple game servers on the same machine
+
+If you're interested in running more than one game server on a single machine then
+[read here how to do that](hosting_multiple_game_servers.md). 
