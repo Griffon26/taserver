@@ -1,3 +1,11 @@
+### taserver v2.5.1
+
+Bugs fixed:
+* the login server did not use the correct ping port in case of non-zero port_offset
+
+Compatibility notes:
+* no incompatible changes
+
 ### taserver v2.5.0
 
 Features added:
