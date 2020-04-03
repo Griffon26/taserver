@@ -58,6 +58,7 @@ class GameServer(Peer):
         self.detected_ip = detected_ip
         self.address_pair = None
         self.port = None
+        self.pingport = None
         self.description = None
         self.motd = None
         self.password_hash = None
