@@ -8,7 +8,7 @@ Running a second game server on the same machine can be achieved like this:
 
 1. Make a copy of your taserver directory
 
-2. Modify the serverconfig.lua as appropriate (at least change the server description).
+2. Modify the `serverconfig.lua` as appropriate (at least change the server description).
 
 3. Open `data/shared.ini` and change `port_offset` to a low multiple of 2.
    (Setting this offset too high will cause port conflicts, so keep it under 90)   

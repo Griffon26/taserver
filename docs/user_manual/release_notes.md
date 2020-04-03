@@ -1,3 +1,19 @@
+### taserver v2.5.0
+
+Features added:
+* hosting more than one game server on a single machine is now supported
+
+Bugs fixed:
+* updated the download link for the Tribes Ascend Parting Gifts zip and
+  provided the expected hash
+
+Compatibility notes:
+* this release is not backwards compatible; both login server and 
+  game servers must be upgraded to v2.5.0 simultaneously. If you plan to
+  host multiple servers on one machine, you will also have to download
+  a new controller by running the download_compatible_controller.py
+  script.
+
 ### taserver v2.4.0
 
 Bugs fixed:
