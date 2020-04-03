@@ -1,3 +1,13 @@
+### taserver v2.5.2
+
+Bugs fixed:
+* distinguish between login server ports that should not include the port_offset 
+  and other ports that do, even on the login server
+* also use port_offset for connecting to the firewall and the proxies
+
+Compatibility notes:
+* no incompatible changes
+
 ### taserver v2.5.1
 
 Bugs fixed:
