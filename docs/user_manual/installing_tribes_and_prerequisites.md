@@ -1,24 +1,19 @@
 ## Installing Tribes Ascend and prerequisites
 
-If you want to run a game server you may find yourself installing
-the game on a clean system that does not have all the packages that 
-it requires.
+If you want to run Tribes Ascend you may find that your system does not have 
+all the packages that it requires.
 
-For running Tribes Ascend as a server you will need:
+For running Tribes Ascend you will need:
 
 1. [Tribes Ascend Parting gifts version](#Tribes-Ascend-Parting-gifts-version)
 2. [DirectX End-User Runtimes (June 2010)](#DirectX-End-User-Runtimes-June-2010)
 3. [Visual C++ Redistributable for Visual Studio 2015 (x86 version)](#Visual-C++-Redistributable-for-Visual-Studio-2015-x86-version)
 
-If you actually want to use the Tribes Ascend installation that you 
-now have, follow the instructions in the [Hosting a dedicated server](../../README.md#Hosting a dedicated server)
-section of the README accompanying this project.
-
 ### Tribes Ascend Parting gifts version
 
-The zip file containing the Tribes Ascend Parting gifts version can no longer be
-downloaded from Hirez. Tribes Ascend itself is still available on steam, but for
-installation on a server you may prefer to get the zip file using
+The zip file containing the Tribes Ascend Parting gifts version can no longer be downloaded from Hirez.
+The game [is still available through steam](https://store.steampowered.com/app/17080/Tribes_Ascend/),
+but in case you cannot or do not want to install steam you can get the zip file using
 [this direct download link](https://drive.google.com/uc?id=1hsjXFWJ2yvBCPNAy8SxQ2hT3XLIPvsrE&export=download).
 
 You can check if your download matches the zip file originally published by Hirez by
@@ -49,4 +44,3 @@ This will install any missing DirectX files.
 
 Download the [Visual C++ Redistributable for Visual Studio 2015](https://www.microsoft.com/en-us/download/details.aspx?id=48145)
 from Microsoft and install it. Be sure to choose the x86 version. 
-

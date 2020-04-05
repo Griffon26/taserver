@@ -1,6 +1,7 @@
 # Joining games
 
-In order to join the OOTB games on community servers, you do not need to download anything.
+In order to join the OOTB games on community servers, you only need to 
+[have Tribes Ascend installed](installing_tribes_and_prerequisites.md).
 
 I have written three different sets of instructions showing you how to join.
 You can select one of them below.
