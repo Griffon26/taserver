@@ -133,7 +133,7 @@ class LoginServer:
 
     def find_player_by_display_name(self, display_name):
         matching_players = [p for p in self.players.values()
-                            if p.display_name.lower() == display_name.lower()]
+                            if p.display_name is not None and p.display_name.lower() == display_name.lower()]
         if matching_players:
             return matching_players[0]
         else:
