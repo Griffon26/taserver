@@ -46,6 +46,16 @@ class StopGameServerMessage:
         self.server = server
 
 
+class FreezeGameServerMessage:
+    def __init__(self, server):
+        self.server = server
+
+
+class UnfreezeGameServerMessage:
+    def __init__(self, server):
+        self.server = server
+
+
 class GameServerTerminatedMessage:
     def __init__(self, server):
         self.server = server
@@ -104,7 +114,6 @@ class GameServerHandler:
                 gevent.sleep(period)
             i += 1
         return False
-
 
     def get_my_documents_folder(self):
         S_OK = 0
@@ -182,6 +191,20 @@ class GameServerHandler:
             self.logger.info('gameserver: Terminating game server on port %u, process %u' % (self.ports[server], process.pid))
             process.terminate()
 
+    def freeze_server_process(self, server):
+        pid = self.servers[server].pid
+        if not ctypes.windll.kernel32.DebugActiveProcess(pid):
+            self.logger.error('gameserver: Failed to freeze game server process %u' % pid)
+        else:
+            self.logger.info('gameserver: Game server process %u frozen' % pid)
+
+    def unfreeze_server_process(self, server):
+        pid = self.servers[server].pid
+        if not ctypes.windll.kernel32.DebugActiveProcessStop(pid):
+            self.logger.error('gameserver: Failed to unfreeze game server process %u' % pid)
+        else:
+            self.logger.info('gameserver: Game server process %u unfrozen' % pid)
+
     def terminate_all_servers(self):
         processes = self.servers.values()
         self.servers = {}
@@ -194,9 +217,14 @@ class GameServerHandler:
             for msg in self.server_handler_queue:
                 if isinstance(msg, StartGameServerMessage):
                     self.start_server_process(msg.server)
-                else:
-                    assert(isinstance(msg, StopGameServerMessage))
+                elif isinstance(msg, StopGameServerMessage):
                     self.stop_server_process(msg.server)
+                elif isinstance(msg, FreezeGameServerMessage):
+                    self.freeze_server_process(msg.server)
+                else:
+                    assert isinstance(msg, UnfreezeGameServerMessage)
+                    self.unfreeze_server_process(msg.server)
+
         finally:
             self.terminate_all_servers()
 

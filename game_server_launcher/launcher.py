@@ -32,7 +32,9 @@ from common.statetracer import statetracer, TracingDict
 from common.pendingcallbacks import PendingCallbacks, ExecuteCallbackMessage
 from common import versions
 from .gamecontrollerhandler import GameController
-from .gameserverhandler import StartGameServerMessage, StopGameServerMessage, GameServerTerminatedMessage
+from .gameserverhandler import StartGameServerMessage, StopGameServerMessage, \
+                                FreezeGameServerMessage, UnfreezeGameServerMessage, \
+                                GameServerTerminatedMessage
 from .loginserverhandler import LoginServer
 
 map_rotation_state_path = 'data/maprotationstate.json'
@@ -225,7 +227,7 @@ class Launcher:
 
     def handle_remove_player_loadouts_message(self, msg):
         self.logger.info('launcher: loadouts removed for player %d' % msg.unique_id)
-        del(self.players[msg.unique_id])
+        self.players[msg.unique_id] = None
 
     def handle_add_player_message(self, msg):
         if msg.ip:
@@ -233,6 +235,11 @@ class Launcher:
             self.firewall.modify_firewall('whitelist', 'add', msg.unique_id, msg.ip)
         else:
             self.logger.info('launcher: login server added local player %d' % msg.unique_id)
+
+        if len(self.players) == 0:
+            self.server_handler_queue.put(UnfreezeGameServerMessage(self.active_server))
+        self.players[msg.unique_id] = None
+
         self.game_controller.send(
             Launcher2GamePlayerInfo(msg.unique_id, msg.rank_xp, msg.eligible_for_first_win))
 
@@ -242,6 +249,10 @@ class Launcher:
             self.firewall.modify_firewall('whitelist', 'remove', msg.unique_id, msg.ip)
         else:
             self.logger.info('launcher: login server removed local player %d' % msg.unique_id)
+
+        del (self.players[msg.unique_id])
+        if len(self.players) == 0:
+            self.server_handler_queue.put(FreezeGameServerMessage(self.active_server))
 
     def handle_pings_message(self, msg):
         if self.game_controller:
@@ -307,6 +318,8 @@ class Launcher:
             self.last_score_info_message = msg
 
     def set_server_ready(self):
+        self.server_handler_queue.put(FreezeGameServerMessage(self.pending_server))
+
         msg = Launcher2LoginServerReadyMessage(self.ports[self.pending_server], self.ports['launcherping'])
         if self.login_server:
             self.login_server.send(msg)
