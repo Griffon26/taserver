@@ -94,8 +94,8 @@ class GameServerHandler:
             self.dll_to_inject = os.path.abspath(self.dll_to_inject)
         if not os.path.isabs(self.dll_config_path):
             self.dll_config_path = os.path.abspath(self.dll_config_path)
-        self.logger.info('gameserver: Path to controller DLL is %s' % self.dll_to_inject)
-        self.logger.info('gameserver: Path to controller configuration is %s' % self.dll_config_path)
+        self.logger.info(f'gameserver: path to controller DLL is {self.dll_to_inject}')
+        self.logger.info(f'gameserver: path to controller configuration is {self.dll_config_path}')
 
         if not os.path.exists(self.dll_to_inject):
             raise ConfigurationError(
@@ -135,10 +135,10 @@ class GameServerHandler:
         return buf.value
 
     def server_process_watcher(self, process, server):
-        self.logger.info('gameserver: Starting server process watcher')
+        self.logger.info(f'{server}: starting server process watcher')
         process.wait()
         if server in self.servers:
-            self.logger.info('gameserver: server terminated, notifying launcher')
+            self.logger.info(f'{server}: server with pid {process.pid} terminated, notifying launcher')
             del self.servers[server]
             self.launcher_queue.put(GameServerTerminatedMessage(server))
 
@@ -150,12 +150,12 @@ class GameServerHandler:
                                     'TribesGame', 'Logs', 'tagameserver%d.log' % external_port)
 
         try:
-            self.logger.info('gameserver: Removing previous log file %s' % log_filename)
+            self.logger.info(f'{server}: removing previous log file {log_filename}')
             os.remove(log_filename)
         except FileNotFoundError:
             pass
 
-        self.logger.info('gameserver: Starting a new TribesAscend server on port %d...' % external_port)
+        self.logger.info(f'{server}: starting a new TribesAscend server on port {external_port}...')
         # Add 100 to the port, because it's the udpproxy that's actually listening on the port itself
         # and it forwards traffic to port + 100
         args = [self.exe_path, 'server',
@@ -166,7 +166,7 @@ class GameServerHandler:
             args.extend(['-tamodsconfig', self.dll_config_path])
         process = sp.Popen(args, cwd=self.working_dir)
         self.servers[server] = process
-        self.logger.info('gameserver: Started process with pid: %s' % process.pid)
+        self.logger.info(f'{server}: started process with pid {process.pid}')
 
         # Check if it doesn't exit right away
         time.sleep(2)
@@ -175,41 +175,41 @@ class GameServerHandler:
             raise FatalError('The game server process terminated almost immediately with exit code %08X' %
                              ret_code)
 
-        self.logger.info('gameserver: Waiting until game server has finished starting up...')
+        self.logger.info(f'{server}: waiting until game server has finished starting up...')
         if not self.wait_until_file_contains_string(log_filename, 'Log: Bringing up level for play took:', timeout = 30):
-            self.logger.warning('gameserver: timeout waiting for log entry, continuing with injection...')
+            self.logger.warning(f'{server}: timeout waiting for log entry, continuing with injection...')
 
-        self.logger.info('gameserver: Injecting game controller DLL into game server...')
+        self.logger.info(f'{server}: injecting game controller DLL into game server...')
         inject(process.pid, self.dll_to_inject)
-        self.logger.info('gameserver: Injection done.')
+        self.logger.info(f'{server}: injection done.')
 
-        self.watcher_task = gevent_spawn('gameserver process watcher', self.server_process_watcher, process, server)
+        self.watcher_task = gevent_spawn('gameserver process watcher for server %s' % server, self.server_process_watcher, process, server)
 
     def stop_server_process(self, server):
         if server in self.servers:
             process = self.servers[server]
-            self.logger.info('gameserver: Terminating game server on port %u, process %u' % (self.ports[server], process.pid))
+            self.logger.info(f'{server}: terminating game server process {process.pid}')
             process.terminate()
 
     def freeze_server_process(self, server):
         pid = self.servers[server].pid
         if not ctypes.windll.kernel32.DebugActiveProcess(pid):
-            self.logger.error('gameserver: Failed to freeze game server process %u' % pid)
+            self.logger.error(f'{server}: failed to freeze game server process {pid}')
         else:
-            self.logger.info('gameserver: Game server process %u frozen' % pid)
+            self.logger.info(f'{server}: game server process {pid} frozen')
 
     def unfreeze_server_process(self, server):
         pid = self.servers[server].pid
         if not ctypes.windll.kernel32.DebugActiveProcessStop(pid):
-            self.logger.error('gameserver: Failed to unfreeze game server process %u' % pid)
+            self.logger.error(f'{server}: failed to unfreeze game server process {pid}')
         else:
-            self.logger.info('gameserver: Game server process %u unfrozen' % pid)
+            self.logger.info(f'{server}: game server process {pid} unfrozen')
 
     def terminate_all_servers(self):
-        processes = self.servers.values()
+        existing_servers = self.servers
         self.servers = {}
-        for process in processes:
-            self.logger.info('gameserver: Terminating game server process %u' % process.pid)
+        for server, process in existing_servers.items():
+            self.logger.info(f'{server}: terminating game server process {process.pid}')
             process.terminate()
 
     def run(self):

@@ -35,8 +35,8 @@ class PendingCallbacks:
     def add(self, receiver, seconds_from_now, callback_func):
         callback_id = first_unused_number_above(self.callbacks.keys(), 0)
 
-        self.callbacks[callback_id] = { 'receiver_id' : id(receiver),
-                                        'callback_func' : callback_func }
+        self.callbacks[callback_id] = {'receiver_id': id(receiver),
+                                       'callback_func': callback_func }
         gevent_spawn_later('pending callback for %s' % receiver, seconds_from_now, self._post_callback, callback_id)
 
     def remove_receiver(self, receiver):

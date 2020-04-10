@@ -20,7 +20,6 @@
 
 from distutils.version import StrictVersion
 import gevent
-import json
 import logging
 
 from common.errors import FatalError
@@ -38,6 +37,43 @@ from .gameserverhandler import StartGameServerMessage, StopGameServerMessage, \
 from .loginserverhandler import LoginServer
 
 map_rotation_state_path = 'data/maprotationstate.json'
+
+
+class GameServerProcess:
+    def __init__(self, name, ports, server_handler_queue):
+        self.name = name
+        self.port = ports[name]
+        self.server_handler_queue = server_handler_queue
+        self.running = False
+        self.ready = False
+        self.frozen = False
+        self.stopping = False
+
+    def start(self):
+        self.server_handler_queue.put(StartGameServerMessage(self.name))
+        self.running = True
+        self.ready = False
+
+    def stop(self):
+        self.server_handler_queue.put(StopGameServerMessage(self.name))
+        self.stopping = True
+
+    def freeze(self):
+        self.server_handler_queue.put(FreezeGameServerMessage(self.name))
+        self.frozen = True
+
+    def unfreeze(self):
+        self.server_handler_queue.put(UnfreezeGameServerMessage(self.name))
+        self.frozen = False
+
+    def set_ready(self):
+        self.ready = True
+
+    def terminated(self):
+        self.running = False
+        self.ready = False
+        self.frozen = False
+        self.stopping = False
 
 
 class IncompatibleVersionError(FatalError):
@@ -62,10 +98,9 @@ class Launcher:
         self.game_controller = None
         self.login_server = None
 
-        self.active_server = None
-        self.pending_server = None
+        self.active_server = GameServerProcess('gameserver1', self.ports, server_handler_queue)
+        self.pending_server = GameServerProcess('gameserver2', self.ports, server_handler_queue)
         self.min_next_switch_time = None
-        self.server_stopping = False
         try:
             with open(map_rotation_state_path, 'rt') as f:
                 self.controller_context = json.load(f)
@@ -121,8 +156,7 @@ class Launcher:
 
     def run(self):
         self.firewall.reset_firewall('whitelist')
-        self.pending_server = 'gameserver1'
-        self.server_handler_queue.put(StartGameServerMessage(self.pending_server))
+        self.pending_server.start()
         while True:
             for message in self.incoming_queue:
                 handler = self.message_handlers[type(message)]
@@ -214,12 +248,12 @@ class Launcher:
                                         StrictVersion(msg.version)))
 
     def handle_next_map_message(self, msg):
-        self.logger.info('launcher: switching to new server instance on port %d' % self.ports[self.pending_server])
-        if self.active_server:
-            self.server_handler_queue.put(StopGameServerMessage(self.active_server))
-            self.server_stopping = True
+        self.logger.info(f'launcher: switching to {self.pending_server.name} on port {self.pending_server.port}')
+        if self.active_server.running:
+            self.logger.info(f'launcher: stopping {self.active_server.name}')
+            self.active_server.stop()
 
-        self.active_server = self.pending_server
+        self.active_server, self.pending_server = self.pending_server, self.active_server
 
     def handle_set_player_loadouts_message(self, msg):
         self.logger.info('launcher: loadouts changed for player %d' % msg.unique_id)
@@ -236,8 +270,8 @@ class Launcher:
         else:
             self.logger.info('launcher: login server added local player %d' % msg.unique_id)
 
-        if len(self.players) == 0:
-            self.server_handler_queue.put(UnfreezeGameServerMessage(self.active_server))
+        if len(self.players) == 0 and self.active_server.frozen:
+            self.active_server.unfreeze()
         self.players[msg.unique_id] = None
 
         self.game_controller.send(
@@ -251,8 +285,8 @@ class Launcher:
             self.logger.info('launcher: login server removed local player %d' % msg.unique_id)
 
         del (self.players[msg.unique_id])
-        if len(self.players) == 0:
-            self.server_handler_queue.put(FreezeGameServerMessage(self.active_server))
+        if len(self.players) == 0 and not self.active_server.frozen:
+            self.active_server.freeze()
 
     def handle_pings_message(self, msg):
         if self.game_controller:
@@ -317,10 +351,17 @@ class Launcher:
         else:
             self.last_score_info_message = msg
 
-    def set_server_ready(self):
-        self.server_handler_queue.put(FreezeGameServerMessage(self.pending_server))
+    def freeze_server_if_empty(self):
+        if len(self.players) == 0 and not self.active_server.frozen:
+            self.active_server.freeze()
 
-        msg = Launcher2LoginServerReadyMessage(self.ports[self.pending_server], self.ports['launcherping'])
+    def set_server_ready(self):
+        self.pending_server.set_ready()
+        self.pending_callbacks.add(self, 5, self.freeze_server_if_empty)
+
+        self.logger.info(f'launcher: reporting {self.pending_server.name} as ready')
+
+        msg = Launcher2LoginServerReadyMessage(self.pending_server.port, self.ports['launcherping'])
         if self.login_server:
             self.login_server.send(msg)
         else:
@@ -335,7 +376,7 @@ class Launcher:
         else:
             self.last_match_time_message = msg
 
-        if self.pending_server != self.active_server:
+        if self.pending_server.running and not self.pending_server.ready:
             if self.min_next_switch_time:
                 time_left = (self.min_next_switch_time - datetime.datetime.utcnow()).total_seconds()
             else:
@@ -361,10 +402,8 @@ class Launcher:
         else:
             self.last_match_end_message = msg_to_login
 
-        self.pending_server = self.get_other_server(self.active_server)
-
         self.min_next_switch_time = datetime.datetime.utcnow() + datetime.timedelta(seconds=msg.next_map_wait_time)
-        self.server_handler_queue.put(StartGameServerMessage(self.pending_server))
+        self.pending_server.start()
 
     def handle_loadout_request_message(self, msg):
         self.logger.info('launcher: received loadout request from game controller')
@@ -396,15 +435,20 @@ class Launcher:
         self.game_controller.send(msg)
 
     def handle_game_server_terminated_message(self, msg):
-        if self.server_stopping:
-            self.logger.info('launcher: game server process terminated.')
-            self.server_stopping = False
+        terminated_server = self.active_server if self.active_server.name == msg.server else self.pending_server
+        was_already_stopping = terminated_server.stopping
+        terminated_server.terminated()
+
+        if was_already_stopping:
+            self.logger.info(f'launcher: {terminated_server.name} process terminated.')
         else:
-            self.pending_server = self.get_other_server(self.active_server)
-            self.active_server = None
-            self.logger.info('launcher: game server process terminated unexpectedly. Starting a new one on port %d.' %
-                             self.ports[self.pending_server])
-            self.server_handler_queue.put(StartGameServerMessage(self.pending_server))
+            if self.pending_server.running:
+                self.logger.info(f'launcher: {terminated_server.name} process terminated unexpectedly; '
+                                 f'{self.pending_server.name} already starting.')
+            else:
+                self.logger.info(f'launcher: {terminated_server.name} process terminated unexpectedly; '
+                                 f'starting {self.pending_server.name} to take over.')
+                self.pending_server.start()
 
             msg = Launcher2LoginServerReadyMessage(None, None)
             if self.login_server:
