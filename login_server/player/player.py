@@ -104,10 +104,11 @@ class Player(Peer):
         return self.loadouts[UNMODDED_GAME_SETTING_MODE]
 
     def get_current_loadouts(self) -> Loadouts:
-        return self.loadouts[self.player_settings.game_setting_mode]
+        effective_mode = self.player_settings.game_setting_mode if self.is_modded else UNMODDED_GAME_SETTING_MODE
+        return self.loadouts[effective_mode]
 
     def get_loadout_modded_defs(self):
-        return self.loadouts[self.player_settings.game_setting_mode].get_loadout_modded_defs()
+        return self.get_current_loadouts().get_loadout_modded_defs()
 
     def load(self):
         if self.registered:
