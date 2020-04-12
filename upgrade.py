@@ -151,7 +151,7 @@ def main():
 
     available_releases = get_available_releases()
     print(f'Which release do you want to switch to?')
-    print(f'{1:>4}: master')
+    print(f"{1:>4}: master (warning: don't upgrade master unless you need to, because it will break downgrading)")
     for i, available_version in enumerate(available_releases):
         print(f'{i + 2:>4}: {available_version}')
     release_index = -1
