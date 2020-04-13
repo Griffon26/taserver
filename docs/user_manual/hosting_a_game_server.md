@@ -14,7 +14,7 @@ connect to the replacement login server, follow these steps:
 
 4. Install python 3.
 
-   Make sure you check the `Add Python to PATH` checkbox (see image). Otherwise you will have some issues with the next steps.
+   It is recommended during installation to include the py launcher (to be able to start scripts without running them as python <scriptname>) and to have python added to the PATH environment variable, see below image (so you can start python and pip without having to type the full path to the executables). If you don't do this then remember to specify python.exe <scriptname> or even something like C:\Program Files (x86)\Python36\python <scriptname> whenever the instructions tell you to run a script. The py launcher should be included by default. 
 
   ![python_setup](./images/../../images/python_installer.PNG)
 
