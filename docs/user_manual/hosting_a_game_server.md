@@ -12,7 +12,11 @@ connect to the replacement login server, follow these steps:
    It contains `msvcp140.dll`, which is needed by TAMods-Server and the UDP proxy used by the
    firewall script.
 
-4. Install python 3
+4. Install python 3.
+
+   Make sure you check the `Add Python to PATH` checkbox (see image). Otherwise you will have some issues with the next steps.
+
+  ![python_setup](./images/../../images/python_installer.PNG)
 
 5. Install the gevent module for python. From an administrator command prompt you should be able 
    to do it with:
@@ -49,9 +53,11 @@ connect to the replacement login server, follow these steps:
 10. As an administrator run `start_taserver_firewall.py` in the root of this repository. This is very 
    important. This script will manage firewall rules to keep kicked players out and only allow 
    logged in players on the game server. Without this script running you will not be able to get
-   rid of hackers that are normally "unkickable".
+   rid of hackers that are normally "unkickable". 
 
-11. If the game server is running behind a router you'll need to forward the following ports to
+      **You will need to run the firewall everytime you want to run the server.**
+
+11. If the game server is running behind a router, you'll need to forward the following ports to
     the game server:
     
     * 7777/UDP
@@ -62,15 +68,38 @@ connect to the replacement login server, follow these steps:
     
     **Do not manually open these ports in the firewall on the machine where the game server runs,
       otherwise votekick may not work correctly. taserver itself will manage the firewall rules**
+   
+    In the router, you will need to redirect those ports on the machine you are hosting the server on.
+    If you don't know how to get the ip for this machine, open a command prompt and type `ipconfig` and
+    check `IPV4 address`.
+      
+    *If you skip this step, no one will be able join your server.*
 
-12. Open a second command prompt (doesn't need to be an administrator one) and go to the
-    directory containing the taserver files
+12. Go into the 
+    
+         .../taserver/data/gamesettings/ootb
+
+    folder and open the `servercongig.lua` file with your favorite
+    text editor to changes your server settings, like server name, message of the day and other 
+    settings. You don't need to restart the server everytime and make changes to this file. 
+    The settings will be applied on the next map change.
+
+13. Open a second command prompt (doesn't need to be an administrator one) and go to the
+    directory containing the taserver files.
+
+    *You can also shift+right click an empty space in the folder containing the server files 
+    and select `Open PowerShell here`.*
  
-13. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
+14. Start the game server launcher by running the `start_game_server_launcher.py` script in the 
     root of this repository.
+
 
 Your server should now show up in the list for anyone connecting to the login server.
 Try it out by following the instructions under [Joining games](joining_games.md)
+
+*Note : If you host the server on your main computer and are using TAMods, 
+make sure you inject it by Process ID (in the advanced tab) and not by name. Otherwise, it could accidentally inject
+the server and it might crash.*
 
 ### GOTY
 
