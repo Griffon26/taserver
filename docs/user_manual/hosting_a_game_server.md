@@ -69,9 +69,9 @@ connect to the replacement login server, follow these steps:
     **Do not manually open these ports in the firewall on the machine where the game server runs,
       otherwise votekick may not work correctly. taserver itself will manage the firewall rules**
    
-    In the router, you will need to redirect those ports on the machine you are hosting the server on.
+    In the router, you will need to redirect those ports to the machine you are hosting the server on.
     If you don't know how to get the ip for this machine, open a command prompt and type `ipconfig` and
-    check `IPV4 address`.
+    check `IPv4 address`.
       
     *If you skip this step, no one will be able join your server.*
 
@@ -79,8 +79,8 @@ connect to the replacement login server, follow these steps:
     
          .../taserver/data/gamesettings/ootb
 
-    folder and open the `servercongig.lua` file with your favorite
-    text editor to changes your server settings, like server name, message of the day and other 
+    folder and open the `serverconfig.lua` file with your favorite
+    text editor to change your server settings, like server name, message of the day and other 
     settings. You don't need to restart the server everytime and make changes to this file. 
     The settings will be applied on the next map change.
 
