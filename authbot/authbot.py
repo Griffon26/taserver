@@ -38,6 +38,9 @@ from common.statetracer import statetracer
 from .communityloginserverhandler import CommunityLoginServer
 from .hirezloginserverhandler import HirezLoginServer
 
+SOURCE_HIREZ = 'hirez'
+SOURCE_COMMUNITY = 'community'
+
 
 class LoginFailedError(FatalError):
     def __init__(self):
@@ -134,6 +137,7 @@ class AuthBot:
             PeerConnectedMessage: self.handle_peer_connected,
             PeerDisconnectedMessage: self.handle_peer_disconnected,
             Login2AuthAuthCodeResult: self.handle_authcode_result_message,
+            Login2AuthChatMessage: self.handle_auth_channel_chat_message,
             LoginProtocolMessage: self.handle_login_protocol_message,
         }
 
@@ -153,7 +157,7 @@ class AuthBot:
             )
         gevent.spawn_later(30, self.send_and_schedule_keepalive_message)
 
-    def send_reply_message(self, who, what):
+    def send_reply_message_via_hirez_server(self, who, what):
         self.hirez_login_server.send(
             a0070().set([
                 m009e().set(MESSAGE_PRIVATE),
@@ -162,6 +166,15 @@ class AuthBot:
                 m0574()
             ])
         )
+
+    def send_reply_message_via_auth_channel(self, who, what):
+        self.community_login_server.send(Auth2LoginChatMessage(who, what))
+
+    def send_reply_message(self, source, who, what):
+        if source == SOURCE_HIREZ:
+            self.send_reply_message_via_hirez_server(who, what)
+        else:
+            self.send_reply_message_via_auth_channel(who, what)
 
     def handle_peer_connected(self, msg):
         if isinstance(msg.peer, HirezLoginServer):
@@ -178,8 +191,7 @@ class AuthBot:
             assert self.community_login_server is None
             self.logger.info('authbot: connected to community login server')
             self.community_login_server = msg.peer
-            # self.community_login_server.send(Auth2LoginRegisterAsBot())
-            # self.community_login_server.send(Auth2LoginAuthCodeRequest('bladiblaat'))
+            self.community_login_server.send(Auth2LoginRegisterAsBot())
         else:
             pass
 
@@ -199,9 +211,38 @@ class AuthBot:
 
     def handle_authcode_result_message(self, msg):
         if msg.authcode:
-            self.send_reply_message(msg.login_name, f'Your authcode is {msg.authcode}')
+            self.send_reply_message(msg.source, msg.login_name, f'Your authcode is {msg.authcode}')
         else:
-            self.send_reply_message(msg.login_name, f'{msg.error_message}')
+            self.send_reply_message(msg.source, msg.login_name, f'{msg.error_message}')
+
+    def handle_chat_helper(self, source, login_name, message_text):
+
+        self.last_requests = {k: v for k, v in self.last_requests.items() if time.time() - v < 5}
+
+        if message_text == 'authcode':
+            if login_name in self.last_requests:
+                self.send_reply_message(source, login_name, 'Jeez.. I just gave you an authcode five seconds ago! Stop being so pushy!')
+            else:
+                self.last_requests[login_name] = time.time()
+                self.community_login_server.send(Auth2LoginAuthCodeRequest(source, login_name))
+
+        elif message_text == 'status':
+            server_info = json.loads(urlreq.urlopen('http://localhost:9080/status').read())
+
+            try:
+                self.send_reply_message(source, login_name, 'There are %s players and %s servers online' %
+                                                            (server_info['online_players'],
+                                                             server_info['online_servers']))
+            except KeyError as e:
+                self.logger.error('authbot: invalid status received from server: %s' % e)
+                self.send_reply_message(source, login_name, 'Something went wrong. Please contact the administrator '
+                                                            'of this bot or try again later.')
+
+        else:
+            self.send_reply_message(source, login_name, f'Hi {login_name}. Valid commands are "authcode" or "status".')
+
+    def handle_auth_channel_chat_message(self, msg):
+        self.handle_chat_helper(SOURCE_COMMUNITY, msg.login_name, msg.text)
 
     def handle_login_protocol_message(self, msg):
         msg.peer.last_received_seq = msg.clientseq
@@ -260,7 +301,7 @@ class AuthBot:
             raise LoginFailedError()
 
     @handles(packet=a0070)
-    def handle_chat(self, request):
+    def handle_hirez_server_chat_message(self, request):
         assert self.display_name is not None
 
         message_type = request.findbytype(m009e).value
@@ -268,29 +309,7 @@ class AuthBot:
         sender_name = request.findbytype(m02fe).value
 
         if message_type == MESSAGE_PRIVATE and sender_name != self.display_name:
-            self.last_requests = {k: v for k, v in self.last_requests.items() if time.time() - v < 5}
-
-            if message_text == 'authcode':
-                if sender_name in self.last_requests:
-                    self.send_reply_message(sender_name, 'Jeez.. I just gave you an authcode five seconds ago! Stop being so pushy!')
-                else:
-                    self.last_requests[sender_name] = time.time()
-                    self.community_login_server.send(Auth2LoginAuthCodeRequest(sender_name))
-
-            elif message_text == 'status':
-                server_info = json.loads(urlreq.urlopen('http://localhost:9080/status').read())
-
-                try:
-                    self.send_reply_message(sender_name, 'There are %s players and %s servers online' %
-                                                         (server_info['online_players'],
-                                                          server_info['online_servers']))
-                except KeyError as e:
-                    self.logger.error('authbot: invalid status received from server: %s' % e)
-                    self.send_reply_message(sender_name, 'Something went wrong. Please contact the administrator '
-                                                         'of this bot or try again later.')
-
-            else:
-                self.send_reply_message(sender_name, f'Hi {sender_name}. Valid commands are "authcode" or "status".')
+            self.handle_chat_helper(SOURCE_HIREZ, sender_name, message_text)
 
 
 def handle_authbot(config, incoming_queue):

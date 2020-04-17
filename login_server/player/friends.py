@@ -36,7 +36,7 @@ class Friends:
 
     def add(self, unique_id, login_name):
         if unique_id not in self.friends_dict:
-            self.friends_dict[unique_id] = { 'login_name' : login_name }
+            self.friends_dict[unique_id] = {'login_name': login_name}
             self.social_network.add_friend(self.this_player.unique_id, unique_id)
             return True
         else:

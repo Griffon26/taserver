@@ -59,6 +59,8 @@ class LoginServer:
         self.accounts = accounts
         self.message_handlers = {
             Auth2LoginAuthCodeRequest: self.handle_authcode_request_message,
+            Auth2LoginChatMessage: self.handle_auth_channel_chat_message,
+            Auth2LoginRegisterAsBot: self.handle_register_as_bot_message,
             ExecuteCallbackMessage: self.handle_execute_callback_message,
             HttpRequestMessage: self.handle_http_request_message,
             PeerConnectedMessage: self.handle_client_connected_message,
@@ -192,13 +194,33 @@ class LoginServer:
             self.accounts.save()
             authcode_requester.send(Login2AuthAuthCodeResult(msg.login_name, authcode, None))
 
+    def handle_auth_channel_chat_message(self, msg):
+        player = self.find_player_by(login_name = msg.login_name)
+        msg = a0070().set([
+            m009e().set(MESSAGE_PRIVATE),
+            m02e6().set(msg.text),
+            m034a().set(player.display_name),
+            m0574(),
+            m02fe().set('taserverbot'),
+            m06de().set('')
+        ])
+        player.send(msg)
+
+    def handle_register_as_bot_message(self, msg):
+        bot = msg.peer.authbot
+        self.players[utils.AUTHBOT_ID] = bot
+        bot.friends.connect_to_social_network(self.social_network)
+        bot.friends.notify_online()
+
     def handle_execute_callback_message(self, msg):
         callback_id = msg.callback_id
         self.pending_callbacks.execute(callback_id)
 
     def handle_client_connected_message(self, msg):
         if isinstance(msg.peer, Player):
-            unique_id = utils.first_unused_number_above(self.players.keys(), 10000000)
+            unique_id = utils.first_unused_number_above(self.players.keys(),
+                                                        utils.MIN_UNVERIFIED_ID,
+                                                        utils.MAX_UNVERIFIED_ID)
 
             player = msg.peer
             player.friends.connect_to_social_network(self.social_network)

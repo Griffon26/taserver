@@ -20,6 +20,9 @@
 
 from common.connectionhandler import *
 from common.messages import parse_message_from_bytes
+from common import utils
+from common.datatypes import *
+from .player.friends import Friends
 
 
 class AuthCodeReader(TcpMessageConnectionReader):
@@ -32,8 +35,25 @@ class AuthCodeWriter(TcpMessageConnectionWriter):
         return msg.to_bytes()
 
 
+class AuthBot:
+    def __init__(self, peer):
+        self.peer = peer
+        self.login_name = 'taserverbot'
+        self.display_name = 'taserverbot'
+        self.game_server = None
+        self.unique_id = utils.AUTHBOT_ID
+        self.registered = True
+        self.friends = Friends(self)
+
+    def send(self, msg):
+        # Ignore anything that would normally be sent from the login server to the client
+        pass
+
+
 class AuthCodeRequester(Peer):
-    pass
+    def __init__(self):
+        super().__init__()
+        self.authbot = AuthBot(self)
 
 
 class AuthCodeHandler(IncomingConnectionHandler):

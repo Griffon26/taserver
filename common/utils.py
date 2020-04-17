@@ -22,10 +22,20 @@ import os
 
 SHARED_INI_PATH = os.path.join('data', 'shared.ini')
 
+MIN_UNVERIFIED_ID = 1000000
+MAX_UNVERIFIED_ID = 2000000
 
-def first_unused_number_above(numbers, minimum):
+AUTHBOT_ID = MIN_UNVERIFIED_ID - 1
+
+MIN_VERIFIED_ID = 1
+MAX_VERIFIED_ID = AUTHBOT_ID - 1
+
+
+def first_unused_number_above(numbers, minimum, maximum=None):
     used_numbers = (n for n in numbers if n >= minimum)
     first_number_above = next(i for i, e in enumerate(sorted(used_numbers) + [None], start=minimum) if i != e)
+    if maximum is not None and first_number_above > maximum:
+        raise RuntimeError('Unable to allocate an unused number between {minimum} and {maximum}. All are in use.')
     return first_number_above
 
 

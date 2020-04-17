@@ -25,7 +25,7 @@ from common.datatypes import *
 from common.game_items import get_game_setting_modes, get_class_menu_data_modded_defs, get_unmodded_class_menu_data
 from common.messages import Message, Client2LoginConnect, Client2LoginSwitchMode, \
     Login2ClientModeInfo, Login2ClientMenuData, Login2ClientLoadouts, Client2LoginLoadoutChange, \
-    parse_message_from_string
+    Login2AuthChatMessage, parse_message_from_string
 from .player_state import PlayerState, handles, handles_control_message
 from common import utils
 
@@ -229,12 +229,17 @@ class AuthenticatedState(PlayerState):
             addressed_player_name = request.findbytype(m034a).value
             addressed_player = self.player.login_server.find_player_by_display_name(addressed_player_name)
             if addressed_player:
-                request.content.append(m02fe().set(self.player.display_name))
-                request.content.append(m06de().set(self.player.player_settings.clan_tag))
-                self.player.send(request)
+                if addressed_player.unique_id == utils.AUTHBOT_ID:
+                    message_text = request.findbytype(m02e6).value
+                    addressed_player.peer.send(Login2AuthChatMessage(self.player.login_name,
+                                                                     message_text))
+                else:
+                    request.content.append(m02fe().set(self.player.display_name))
+                    request.content.append(m06de().set(self.player.player_settings.clan_tag))
+                    self.player.send(request)
 
-                request.findbytype(m034a).set(addressed_player.display_name)
-                addressed_player.send(request)
+                    request.findbytype(m034a).set(addressed_player.display_name)
+                    addressed_player.send(request)
             else:
                 reply = a0070().set([
                     m009e().set(MESSAGE_UNKNOWNTYPE),

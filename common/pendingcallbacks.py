@@ -19,7 +19,7 @@
 #
 
 from common.geventwrapper import gevent_spawn_later
-from common.utils import first_unused_number_above
+from common import utils
 
 
 class ExecuteCallbackMessage():
@@ -33,7 +33,7 @@ class PendingCallbacks:
         self.callbacks = {}
 
     def add(self, receiver, seconds_from_now, callback_func):
-        callback_id = first_unused_number_above(self.callbacks.keys(), 0)
+        callback_id = utils.first_unused_number_above(self.callbacks.keys(), 0)
 
         self.callbacks[callback_id] = {'receiver_id': id(receiver),
                                        'callback_func': callback_func }

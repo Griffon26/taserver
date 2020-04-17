@@ -432,11 +432,14 @@ class Login2ClientLoadouts(Message):
         self.loadout_item = loadout_item
 
 
-# Example json: { 'login_name': 'Griffon26' }
+# The source is an arbitrary string that will be sent back together with the AuthCodeResult to allow the handler
+# to forward the result to the originator of the request (on hirez or on community server).
+# Example json: { 'source': 'hirez', 'login_name': 'Griffon26' }
 class Auth2LoginAuthCodeRequest(Message):
     msg_id = _MSGID_AUTH2LOGIN_AUTHCODE_REQUEST
 
-    def __init__(self, login_name):
+    def __init__(self, source: str, login_name: str):
+        self.source = source
         self.login_name = login_name
 
 
@@ -455,11 +458,12 @@ class Auth2LoginChatMessage(Message):
 
 
 # If authentication failed then authcode will be None
-# Example json: { 'login_name': 'Griffon26', 'authcode': 'someauthcode', 'clarification': 'This account is not available' }
+# Example json: { 'source': 'hirez', 'login_name': 'Griffon26', 'authcode': 'someauthcode', 'clarification': 'This account is not available' }
 class Login2AuthAuthCodeResult(Message):
     msg_id = _MSGID_LOGIN2AUTH_AUTHCODE_RESULT
 
-    def __init__(self, login_name: str, authcode: Optional[str], error_message: Optional[str]):
+    def __init__(self, source: str, login_name: str, authcode: Optional[str], error_message: Optional[str]):
+        self.source = source
         self.login_name = login_name
         self.authcode = authcode
         self.error_message = error_message

@@ -21,7 +21,7 @@
 import base64
 import json
 
-from common.utils import first_unused_number_above
+from common import utils
 
 
 class AccountInfo():
@@ -84,5 +84,5 @@ class Accounts():
             unique_id = self.accounts[login_name].unique_id
         else:
             used_ids = {account.unique_id for account in self.accounts.values()}
-            unique_id = first_unused_number_above(used_ids, 1)
+            unique_id = utils.first_unused_number_above(used_ids, utils.MIN_VERIFIED_ID, utils.MAX_VERIFIED_ID)
         self.accounts[login_name] = AccountInfo(unique_id, login_name, authcode)
