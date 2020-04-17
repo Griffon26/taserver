@@ -27,10 +27,12 @@ import gevent.queue
 import logging
 import os
 
+from common.ports import Ports
 from common.errors import FatalError
 from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from .authbot import handle_authbot
+from .communityloginserverhandler import handle_community_login_server
 from .hirezloginserverhandler import handle_hirez_login_server
 
 INI_PATH = os.path.join('data', 'authbot.ini')
@@ -42,6 +44,9 @@ def main():
     config = configparser.ConfigParser()
     with open(INI_PATH) as f:
         config.read_file(f)
+
+    # We're only gonna use fixed ports, so no need to read port offset from the config
+    ports = Ports(0)
 
     restart = True
     restart_delay = 10
@@ -58,6 +63,11 @@ def main():
                 gevent_spawn("authbot's handle_hirez_login_server",
                              handle_hirez_login_server,
                              config['authbot'],
+                             ports,
+                             incoming_queue),
+                gevent_spawn("authbot's handle_community_login_server",
+                             handle_community_login_server,
+                             ports,
                              incoming_queue),
             ]
 

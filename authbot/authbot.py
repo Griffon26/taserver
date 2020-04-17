@@ -21,7 +21,6 @@
 import base64
 from functools import wraps
 import gevent
-import gevent.subprocess as sp
 import inspect
 import itertools
 import json
@@ -33,8 +32,10 @@ from common.datatypes import *
 from common.errors import FatalError
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.loginprotocol import LoginProtocolMessage
-from common.statetracer import statetracer, TracingDict
+from common.messages import *
+from common.statetracer import statetracer
 
+from .communityloginserverhandler import CommunityLoginServer
 from .hirezloginserverhandler import HirezLoginServer
 
 
@@ -122,7 +123,8 @@ class AuthBot:
 
         self.logger = logging.getLogger(__name__)
         self.incoming_queue = incoming_queue
-        self.login_server = None
+        self.community_login_server = None
+        self.hirez_login_server = None
         self.login_name = config['login_name']
         self.display_name = None
         self.password_hash = base64.b64decode(config['password_hash'])
@@ -131,7 +133,8 @@ class AuthBot:
         self.message_handlers = {
             PeerConnectedMessage: self.handle_peer_connected,
             PeerDisconnectedMessage: self.handle_peer_disconnected,
-            LoginProtocolMessage: self.handle_login_protocol_message
+            Login2AuthAuthCodeResult: self.handle_authcode_result_message,
+            LoginProtocolMessage: self.handle_login_protocol_message,
         }
 
     def run(self):
@@ -142,35 +145,63 @@ class AuthBot:
                 handler(message)
 
     def send_and_schedule_keepalive_message(self):
-        if self.login_server and self.display_name:
-            self.login_server.send(
-                a0070().set([
-                    m009e().set(MESSAGE_PRIVATE),
-                    m02e6().set("Ah, ha, ha, ha, stayin' alive, stayin' alive"),
-                    m034a().set(self.display_name),
-                    m0574()
+        if self.hirez_login_server and self.display_name:
+            self.hirez_login_server.send(
+                a01c8().set([
+                    m068b().set([])
                 ])
             )
-        gevent.spawn_later(60, self.send_and_schedule_keepalive_message)
+        gevent.spawn_later(30, self.send_and_schedule_keepalive_message)
 
-    def handle_peer_connected(self, msg):
-        assert isinstance(msg.peer, HirezLoginServer)
-        assert self.login_server is None
-        self.logger.info('authbot: hirez login server connected')
-        self.login_server = msg.peer
-        self.login_server.send(
-            a01bc().set([
-                m049e(),
-                m0489()
+    def send_reply_message(self, who, what):
+        self.hirez_login_server.send(
+            a0070().set([
+                m009e().set(MESSAGE_PRIVATE),
+                m02e6().set(what),
+                m034a().set(who),
+                m0574()
             ])
         )
 
+    def handle_peer_connected(self, msg):
+        if isinstance(msg.peer, HirezLoginServer):
+            assert self.hirez_login_server is None
+            self.logger.info('authbot: connected to hirez login server')
+            self.hirez_login_server = msg.peer
+            self.hirez_login_server.send(
+                a01bc().set([
+                    m049e(),
+                    m0489()
+                ])
+            )
+        elif isinstance(msg.peer, CommunityLoginServer):
+            assert self.community_login_server is None
+            self.logger.info('authbot: connected to community login server')
+            self.community_login_server = msg.peer
+            # self.community_login_server.send(Auth2LoginRegisterAsBot())
+            # self.community_login_server.send(Auth2LoginAuthCodeRequest('bladiblaat'))
+        else:
+            pass
+
     def handle_peer_disconnected(self, msg):
-        assert isinstance(msg.peer, HirezLoginServer)
-        assert self.login_server is msg.peer
-        msg.peer.disconnect()
-        self.logger.info('authbot: hirez login server disconnected')
-        self.login_server = None
+        if isinstance(msg.peer, HirezLoginServer):
+            assert self.hirez_login_server is msg.peer
+            msg.peer.disconnect()
+            self.logger.info('authbot: hirez login server disconnected')
+            self.hirez_login_server = None
+        elif isinstance(msg.peer, CommunityLoginServer):
+            assert self.community_login_server is msg.peer
+            msg.peer.disconnect()
+            self.logger.info('authbot: community login server disconnected')
+            self.community_login_server = None
+        else:
+            pass
+
+    def handle_authcode_result_message(self, msg):
+        if msg.authcode:
+            self.send_reply_message(msg.login_name, f'Your authcode is {msg.authcode}')
+        else:
+            self.send_reply_message(msg.login_name, f'{msg.error_message}')
 
     def handle_login_protocol_message(self, msg):
         msg.peer.last_received_seq = msg.clientseq
@@ -197,12 +228,12 @@ class AuthBot:
 
     @handles(packet=a0197)
     def handle_a0197(self, request):
-        self.login_server.send(a003a())
+        self.hirez_login_server.send(a003a())
 
     @handles(packet=a003a)
     def handle_a003a(self, request):
         salt = request.findbytype(m03e3).value
-        self.login_server.send(
+        self.hirez_login_server.send(
             a003a().set([
                 m0056().set(xor_password_hash(self.password_hash, salt)),
                 m0494().set(self.login_name),
@@ -237,55 +268,30 @@ class AuthBot:
         sender_name = request.findbytype(m02fe).value
 
         if message_type == MESSAGE_PRIVATE and sender_name != self.display_name:
-            reply = self.process_chat_message(sender_name, message_text)
-            self.login_server.send(
-                a0070().set([
-                    m009e().set(MESSAGE_PRIVATE),
-                    m02e6().set(reply),
-                    m034a().set(sender_name),
-                    m0574()
-                ])
-            )
+            self.last_requests = {k: v for k, v in self.last_requests.items() if time.time() - v < 5}
 
-    def process_chat_message(self, sender_name, message_text):
-
-        self.last_requests = {k: v for k, v in self.last_requests.items() if time.time() - v < 5}
-
-        generic_error_reply = 'Something went wrong. Please contact the administrator of this bot or try again later.'
-
-        if message_text == 'authcode':
-            try:
+            if message_text == 'authcode':
                 if sender_name in self.last_requests:
-                    return 'Jeez.. I just gave you an authcode five seconds ago! Stop being so pushy!'
+                    self.send_reply_message(sender_name, 'Jeez.. I just gave you an authcode five seconds ago! Stop being so pushy!')
                 else:
-                    output = sp.run('getauthcode.py %s' % sender_name,
-                                    shell=True, check=True, capture_output=True, text=True).stdout
-                    if output.startswith('Received authcode'):
-                        authcode = output.split()[2]
-                        self.last_requests[sender_name] = time.time()
-                        return 'Your authcode is %s' % authcode
-                    else:
-                        self.logger.error('authbot: unexpected output from getauthcode.py: %s' % output)
-                        return generic_error_reply
+                    self.last_requests[sender_name] = time.time()
+                    self.community_login_server.send(Auth2LoginAuthCodeRequest(sender_name))
 
-            except sp.CalledProcessError as e:
-                error_message = e.stderr if e.stderr else str(e)
-                self.logger.error('authbot: failed to run getauthcode.py: %s' % error_message)
-                return generic_error_reply
+            elif message_text == 'status':
+                server_info = json.loads(urlreq.urlopen('http://localhost:9080/status').read())
 
-        elif message_text == 'status':
-            server_info = json.loads(urlreq.urlopen('http://localhost:9080/status').read())
+                try:
+                    self.send_reply_message(sender_name, 'There are %s players and %s servers online' %
+                                                         (server_info['online_players'],
+                                                          server_info['online_servers']))
+                except KeyError as e:
+                    self.logger.error('authbot: invalid status received from server: %s' % e)
+                    self.send_reply_message(sender_name, 'Something went wrong. Please contact the administrator '
+                                                         'of this bot or try again later.')
 
-            try:
-                return 'There are %s players and %s servers online' % (server_info['online_players'],
-                                                                       server_info['online_servers'])
-            except KeyError as e:
-                self.logger.error('authbot: invalid status received from server: %s' % e)
-                return generic_error_reply
+            else:
+                self.send_reply_message(sender_name, f'Hi {sender_name}. Valid commands are "authcode" or "status".')
 
-
-        else:
-            return 'Hi %s. Valid commands are "authcode" or "status".' % sender_name
 
 def handle_authbot(config, incoming_queue):
     authbot = AuthBot(config, incoming_queue)

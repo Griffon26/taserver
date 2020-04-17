@@ -25,6 +25,7 @@ class Ports:
         'client2login': 9000,  # TCP
         'launcher2login': 9001,  # TCP
         'restapi': 9080,  # TCP
+        'authchannel': 9800 # TCP
     }
 
     variable_ports = {

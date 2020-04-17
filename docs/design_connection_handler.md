@@ -42,7 +42,7 @@ bytes in chunks of the `max_message_size`, each preceded by a 16-bit short
 indicating length (0 when equal to `max_message_size`). This simple 
 packet structure will probably suffice for most connections.
 
-The same holds for `ConnectionReader` and `TcpMessageConnectionWriter`
+The same holds for `ConnectionReader` and `TcpMessageConnectionReader`
 and the `receive` and `decode` methods.
 
 The `Peer` subclass can be left empty, but it has to be a subclass so
@@ -55,6 +55,6 @@ for each established connection.
 
 For more details take a look at the connection handler implementations in these files:
 
-* `gamecontrollerhandler.py` (for a single incoming connection)
-* `loginserverhandler.py` (for a single outgoing connection)   
-* `gameserverlauncherhandler.py` (for multiple incoming connections)
+* `game_server_launcher/gamecontrollerhandler.py` (for a single incoming connection)
+* `game_server_launcher/loginserverhandler.py` (for a single outgoing connection)   
+* `login_server/gameserverlauncherhandler.py` (for multiple incoming connections)

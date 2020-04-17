@@ -22,8 +22,12 @@ import argparse
 from gevent import socket
 
 from common.tcpmessage import TcpMessageReader, TcpMessageWriter
+from common.connectionhandler import *
+from common.messages import *
 
 server_address = ("127.0.0.1", 9800)
+
+
 
 
 def main(args):
@@ -32,14 +36,13 @@ def main(args):
     writer = TcpMessageWriter(sock)
     reader = TcpMessageReader(sock)
 
-    writer.send(args.username.encode('utf8'))
-    authcode = reader.receive().decode('utf8')
+    writer.send(Auth2LoginAuthCodeRequest(args.username).to_bytes())
+    result = parse_message_from_bytes(reader.receive())
 
-    if authcode.startswith('Error'):
-        error_message = authcode
-        print(error_message)
+    if not isinstance(result, Login2AuthAuthCodeResult) or result.authcode is None:
+        print(result.error_message)
     else:
-        print('Received authcode %s for username %s' % (authcode, args.username))
+        print(f'Received authcode {result.authcode} for username {result.login_name}')
 
 
 if __name__ == '__main__':

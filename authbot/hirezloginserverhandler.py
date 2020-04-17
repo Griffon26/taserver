@@ -22,8 +22,6 @@ from common.connectionhandler import *
 from common.loginprotocol import LoginProtocolReader, LoginProtocolWriter
 from ipaddress import IPv4Address
 
-LOGIN_SERVER_PORT = 9000
-
 
 class HirezLoginServer(Peer):
     def __init__(self, ip, port):
@@ -37,14 +35,14 @@ class HirezLoginServer(Peer):
 
 
 class HirezLoginServerHandler(OutgoingConnectionHandler):
-    def __init__(self, config, incoming_queue):
+    def __init__(self, config, ports, incoming_queue):
         super().__init__('hirezloginserver',
                          socket.gethostbyname(config['hirez_login_server']),
-                         LOGIN_SERVER_PORT,
+                         ports['client2login'],
                          incoming_queue)
         self.logger.info('%s(%s): Connecting to HiRez login server at %s:%s...' %
                          (self.task_name, id(gevent.getcurrent()),
-                          config['hirez_login_server'], LOGIN_SERVER_PORT))
+                          config['hirez_login_server'], ports['client2login']))
 
     def create_connection_instances(self, sock, address):
         reader = LoginProtocolReader(sock, None)
@@ -53,6 +51,6 @@ class HirezLoginServerHandler(OutgoingConnectionHandler):
         return reader, writer, peer
 
 
-def handle_hirez_login_server(hirez_login_server_config, incoming_queue):
-    hirez_login_server_handler = HirezLoginServerHandler(hirez_login_server_config, incoming_queue)
+def handle_hirez_login_server(hirez_login_server_config, ports, incoming_queue):
+    hirez_login_server_handler = HirezLoginServerHandler(hirez_login_server_config, ports, incoming_queue)
     hirez_login_server_handler.run(retry_time=10)

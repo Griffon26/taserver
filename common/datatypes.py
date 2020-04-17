@@ -176,11 +176,6 @@ class GameServerDisconnectedMessage():
         self.game_server_id = game_server_id
 
 
-class AuthCodeRequestMessage():
-    def __init__(self, login_name):
-        self.login_name = login_name
-
-
 class HttpRequestMessage():
     def __init__(self, peer, env):
         self.peer = peer

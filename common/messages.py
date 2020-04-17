@@ -67,6 +67,14 @@ _MSGID_LOGIN2CLIENT_MODEINFO = 0x6000
 _MSGID_LOGIN2CLIENT_MENUDATA = 0x6001
 _MSGID_LOGIN2CLIENT_LOADOUTS = 0x6002
 
+_MSGID_AUTH2LOGIN_AUTHCODE_REQUEST = 0x7000
+_MSGID_AUTH2LOGIN_REGISTER_AS_BOT = 0x7001
+_MSGID_AUTH2LOGIN_CHAT_MESSAGE = 0x7002
+
+_MSGID_LOGIN2AUTH_AUTHCODE_RESULT = 0x8000
+_MSGID_LOGIN2AUTH_CHAT_MESSAGE = 0x8001
+
+
 class Message:
     def to_bytes(self):
         return struct.pack('<H', self.msg_id) + bytes(json.dumps(self.__dict__), encoding='utf8')
@@ -424,6 +432,48 @@ class Login2ClientLoadouts(Message):
         self.loadout_item = loadout_item
 
 
+# Example json: { 'login_name': 'Griffon26' }
+class Auth2LoginAuthCodeRequest(Message):
+    msg_id = _MSGID_AUTH2LOGIN_AUTHCODE_REQUEST
+
+    def __init__(self, login_name):
+        self.login_name = login_name
+
+
+# Example json: { }
+class Auth2LoginRegisterAsBot(Message):
+    msg_id = _MSGID_AUTH2LOGIN_REGISTER_AS_BOT
+
+
+# Example json: { 'login_name': 'Griffon26', 'text': 'Hey there!' }
+class Auth2LoginChatMessage(Message):
+    msg_id = _MSGID_AUTH2LOGIN_CHAT_MESSAGE
+
+    def __init__(self, login_name, text):
+        self.login_name = login_name
+        self.text = text
+
+
+# If authentication failed then authcode will be None
+# Example json: { 'login_name': 'Griffon26', 'authcode': 'someauthcode', 'clarification': 'This account is not available' }
+class Login2AuthAuthCodeResult(Message):
+    msg_id = _MSGID_LOGIN2AUTH_AUTHCODE_RESULT
+
+    def __init__(self, login_name: str, authcode: Optional[str], error_message: Optional[str]):
+        self.login_name = login_name
+        self.authcode = authcode
+        self.error_message = error_message
+
+
+# Example json: { 'login_name': 'Griffon26', 'text': 'Hey there!' }
+class Login2AuthChatMessage(Message):
+    msg_id = _MSGID_LOGIN2AUTH_CHAT_MESSAGE
+
+    def __init__(self, login_name, text):
+        self.login_name = login_name
+        self.text = text
+
+
 _message_classes = [
 
     Login2LauncherProtocolVersionMessage,
@@ -466,9 +516,16 @@ _message_classes = [
     Login2ClientModeInfo,
     Login2ClientMenuData,
     Login2ClientLoadouts,
+
+    Auth2LoginAuthCodeRequest,
+    Auth2LoginRegisterAsBot,
+    Auth2LoginChatMessage,
+
+    Login2AuthAuthCodeResult,
+    Login2AuthChatMessage
 ]
 
-_message_map = { msg_class.msg_id : msg_class for msg_class in _message_classes }
+_message_map = {msg_class.msg_id: msg_class for msg_class in _message_classes}
 
 
 def parse_message_from_bytes(message_bytes):

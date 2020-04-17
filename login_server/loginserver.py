@@ -58,7 +58,7 @@ class LoginServer:
         self.firewall = FirewallClient(ports)
         self.accounts = accounts
         self.message_handlers = {
-            AuthCodeRequestMessage: self.handle_authcode_request_message,
+            Auth2LoginAuthCodeRequest: self.handle_authcode_request_message,
             ExecuteCallbackMessage: self.handle_execute_callback_message,
             HttpRequestMessage: self.handle_http_request_message,
             PeerConnectedMessage: self.handle_client_connected_message,
@@ -190,7 +190,7 @@ class LoginServer:
             self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
             self.accounts.add_account(msg.login_name, authcode)
             self.accounts.save()
-            authcode_requester.send(authcode)
+            authcode_requester.send(Login2AuthAuthCodeResult(msg.login_name, authcode, None))
 
     def handle_execute_callback_message(self, msg):
         callback_id = msg.callback_id
