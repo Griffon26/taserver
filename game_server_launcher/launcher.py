@@ -285,7 +285,7 @@ class Launcher:
             self.logger.info('launcher: login server removed local player %d' % msg.unique_id)
 
         del (self.players[msg.unique_id])
-        if len(self.players) == 0 and not self.active_server.frozen:
+        if len(self.players) == 0 and self.active_server.running and not self.active_server.frozen:
             self.active_server.freeze()
 
     def handle_pings_message(self, msg):
