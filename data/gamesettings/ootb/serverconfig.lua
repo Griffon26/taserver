@@ -24,6 +24,15 @@ ServerSettings.MutuallyExclusiveItems.add("Light", "BXT1A", "Light", "Light Util
 ServerSettings.MutuallyExclusiveItems.add("Light", "Phase Rifle", "Light", "Light Utility Pack")
 ServerSettings.MutuallyExclusiveItems.add("Light", "SAP20", "Light", "Light Utility Pack")
 
+-- Some other settings you might need, just uncomment those lines
+-- If you need more settings, check the documentation at : https://www.tamods.org/docs/doc_srv_api_serverconfig.html
+
+-- ServerSettings.WarmupTime = 60
+-- ServerSettings.FriendlyFire = true
+-- ServerSettings.CTFCapLimit = 7
+-- ServerSettings.BannedItems.add("Light", "BXT1")
+
+
 -- The default map rotation is: Katabatic, ArxNovena, DangerousCrossing, Crossfire, Drydock, Terminus, Sunstar
 -- You can override the default map rotation by uncommenting any of the maps below.
 
