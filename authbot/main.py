@@ -27,7 +27,7 @@ import gevent.queue
 import logging
 import os
 
-from common.errors import FatalError
+from common.errors import FatalError, MajorError
 from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from .authbot import handle_authbot
@@ -44,7 +44,6 @@ def main():
         config.read_file(f)
 
     restart = True
-    restart_delay = 10
     tasks = []
     try:
         while restart:
@@ -66,6 +65,8 @@ def main():
 
             logger.warning('The following greenlets terminated: %s' % ','.join([g.name for g in finished_greenlets]))
 
+            restart_delay = 10
+
             fatal_errors = ['  %s' % g.exception for g in finished_greenlets
                             if isinstance(g.exception, FatalError)]
             if fatal_errors:
@@ -76,6 +77,17 @@ def main():
                     '\n-------------------------------------------\n'
                 )
                 restart = False
+
+            major_errors = ['  %s' % g.exception for g in finished_greenlets
+                            if isinstance(g.exception, MajorError)]
+            if major_errors:
+                logger.critical('\n' +
+                    '\n-------------------------------------------\n' +
+                    'The following major errors occurred:\n' +
+                    '\n'.join(major_errors) +
+                    '\n-------------------------------------------\n'
+                )
+                restart_delay = 15 * 60
 
             logger.info('Killing all tasks...')
             gevent.killall(tasks)
