@@ -192,15 +192,22 @@ class LoginServer:
             authcode = ''.join([random.choice(availablechars) for i in range(8)])
             email_hash = hashlib.sha256(msg.email_address.encode('utf-8')).hexdigest()
 
-            self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
-            self.accounts.add_account(msg.login_name, email_hash, authcode)
-            self.accounts.save()
+            if msg.login_name not in self.accounts or self.accounts[msg.login_name].email_hash == email_hash:
+                self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
+                self.accounts.add_account(msg.login_name, email_hash, authcode)
+                self.accounts.save()
 
-            authcode_requester.send(Login2AuthAuthCodeResult(msg.source,
-                                                             msg.login_name,
-                                                             msg.email_address,
-                                                             authcode,
-                                                             None))
+                authcode_requester.send(Login2AuthAuthCodeResult(msg.source,
+                                                                 msg.login_name,
+                                                                 msg.email_address,
+                                                                 authcode,
+                                                                 None))
+            else:
+                authcode_requester.send(Login2AuthAuthCodeResult(msg.source,
+                                                                 msg.login_name,
+                                                                 msg.email_address,
+                                                                 None,
+                                                                 'The specified email address does not match the one stored for the account'))
 
     def handle_auth_channel_chat_message(self, msg):
         player = self.find_player_by(login_name = msg.login_name)
