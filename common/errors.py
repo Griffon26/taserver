@@ -23,6 +23,10 @@ class FatalError(Exception):
     pass
 
 
+class MajorError(Exception):
+    pass
+
+
 class PortInUseError(FatalError):
     def __init__(self, protocol: str, address: str, port: int):
         super().__init__('Port %s:%d/%s is already in use on this machine' % (address, port, protocol))

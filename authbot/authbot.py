@@ -30,7 +30,7 @@ import time
 import urllib.request as urlreq
 
 from common.datatypes import *
-from common.errors import FatalError
+from common.errors import MajorError
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.loginprotocol import LoginProtocolMessage
 from common.messages import *
@@ -43,9 +43,9 @@ SOURCE_HIREZ = 'hirez'
 SOURCE_COMMUNITY = 'community'
 
 
-class LoginFailedError(FatalError):
+class LoginFailedError(MajorError):
     def __init__(self):
-        super().__init__('Failed to login with the specified credentials. Check your authbot.ini')
+        super().__init__('Failed to login with the specified credentials. This can happen if the Hirez server has been down. If that is not the case, check the credentials in authbot.ini')
 
 
 def handles(packet):

@@ -247,6 +247,10 @@ class Launcher:
                                         self.login_server.port,
                                         StrictVersion(msg.version)))
 
+    def freeze_active_server_if_empty(self):
+        if len(self.players) == 0 and self.active_server.running and not self.active_server.frozen:
+            self.active_server.freeze()
+
     def handle_next_map_message(self, msg):
         self.logger.info(f'launcher: switching to {self.pending_server.name} on port {self.pending_server.port}')
         if self.active_server.running:
@@ -254,6 +258,8 @@ class Launcher:
             self.active_server.stop()
 
         self.active_server, self.pending_server = self.pending_server, self.active_server
+
+        self.pending_callbacks.add(self, 5, self.freeze_active_server_if_empty)
 
     def handle_set_player_loadouts_message(self, msg):
         self.logger.info('launcher: loadouts changed for player %d' % msg.unique_id)
@@ -285,8 +291,7 @@ class Launcher:
             self.logger.info('launcher: login server removed local player %d' % msg.unique_id)
 
         del (self.players[msg.unique_id])
-        if len(self.players) == 0 and self.active_server.running and not self.active_server.frozen:
-            self.active_server.freeze()
+        self.freeze_active_server_if_empty()
 
     def handle_pings_message(self, msg):
         if self.game_controller:
@@ -351,13 +356,8 @@ class Launcher:
         else:
             self.last_score_info_message = msg
 
-    def freeze_server_if_empty(self):
-        if len(self.players) == 0 and not self.active_server.frozen:
-            self.active_server.freeze()
-
     def set_server_ready(self):
         self.pending_server.set_ready()
-        self.pending_callbacks.add(self, 5, self.freeze_server_if_empty)
 
         self.logger.info(f'launcher: reporting {self.pending_server.name} as ready')
 
