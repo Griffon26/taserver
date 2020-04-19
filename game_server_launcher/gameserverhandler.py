@@ -100,6 +100,10 @@ class GameServerHandler:
         if not os.path.exists(self.dll_to_inject):
             raise ConfigurationError(
                 "Invalid 'controller_dll' specified under [gameserver]: the specified file does not exist.")
+        if not os.path.exists(self.dll_config_path):
+            raise ConfigurationError(
+                "Invalid 'controller_config' specified under [gameserver]: the specified file does not exist")
+
 
     def wait_until_file_contains_string(self, filename, string, timeout = 0):
         i = 0
