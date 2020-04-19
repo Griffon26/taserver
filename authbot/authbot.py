@@ -288,7 +288,6 @@ class AuthBot:
             return 'Hi %s. Valid commands are "authcode" or "status".' % sender_name
 
 def handle_authbot(config, incoming_queue):
-    raise LoginFailedError()
     authbot = AuthBot(config, incoming_queue)
     # launcher.trace_as('authbot')
     authbot.run()
