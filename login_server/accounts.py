@@ -25,12 +25,12 @@ from common import utils
 
 
 class AccountInfo():
-    def __init__(self, unique_id, login_name, authcode=None, password_hash=None, email_hash=None):
+    def __init__(self, unique_id, login_name, email_hash, authcode=None, password_hash=None):
         self.unique_id = unique_id
         self.login_name = login_name
+        self.email_hash = email_hash
         self.authcode = authcode
         self.password_hash = password_hash
-        self.email_hash = email_hash
 
 class Accounts():
     def __init__(self, filename):
@@ -47,16 +47,16 @@ class Accounts():
                 for accountentry in accountlist:
                     unique_id = accountentry['unique_id']
                     login_name = accountentry['login_name'].lower()
+                    email_hash = accountentry['email_hash']
                     authcode = accountentry['authcode']
                     password_hash = accountentry['password_hash']
                     if password_hash is not None:
                         password_hash = base64.b64decode(password_hash)
-                    email_hash = accountentry['email_hash']
                     self.accounts[login_name] = AccountInfo(unique_id,
                                                             login_name,
+                                                            email_hash,
                                                             authcode,
-                                                            password_hash,
-                                                            email_hash)
+                                                            password_hash)
         except FileNotFoundError:
             pass
 
@@ -70,9 +70,9 @@ class Accounts():
                 accountlist.append({
                     'unique_id' : accountinfo.unique_id,
                     'login_name' : accountinfo.login_name.lower(),
+                    'email_hash': accountinfo.email_hash,
                     'authcode' : accountinfo.authcode,
                     'password_hash' : password_hash,
-                    'email_hash': accountinfo.email_hash,
                 })
             json.dump(accountlist, f, indent = 4)
 
@@ -82,11 +82,11 @@ class Accounts():
     def __contains__(self, key):
         return key.lower() in self.accounts
     
-    def add_account(self, login_name, authcode, email_address):
+    def add_account(self, login_name, email_hash, authcode):
         login_name = login_name.lower()
         if login_name in self.accounts:
             unique_id = self.accounts[login_name].unique_id
         else:
             used_ids = {account.unique_id for account in self.accounts.values()}
             unique_id = utils.first_unused_number_above(used_ids, utils.MIN_VERIFIED_ID, utils.MAX_VERIFIED_ID)
-        self.accounts[login_name] = AccountInfo(unique_id, login_name, authcode, email_address)
+        self.accounts[login_name] = AccountInfo(unique_id, login_name, email_hash, authcode)

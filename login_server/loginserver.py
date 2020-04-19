@@ -20,6 +20,7 @@
 
 from distutils.version import StrictVersion
 import gevent
+import hashlib
 import logging
 import random
 import string
@@ -189,9 +190,10 @@ class LoginServer:
         else:
             availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
             authcode = ''.join([random.choice(availablechars) for i in range(8)])
+            email_hash = hashlib.sha256(msg.email_address.encode('utf-8')).hexdigest()
 
             self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
-            self.accounts.add_account(msg.login_name, authcode, msg.email_address)
+            self.accounts.add_account(msg.login_name, email_hash, authcode)
             self.accounts.save()
 
             authcode_requester.send(Login2AuthAuthCodeResult(msg.source,
