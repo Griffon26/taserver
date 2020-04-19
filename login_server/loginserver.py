@@ -189,10 +189,16 @@ class LoginServer:
         else:
             availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
             authcode = ''.join([random.choice(availablechars) for i in range(8)])
+
             self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
             self.accounts.add_account(msg.login_name, authcode)
             self.accounts.save()
-            authcode_requester.send(Login2AuthAuthCodeResult(msg.login_name, authcode, None))
+
+            authcode_requester.send(Login2AuthAuthCodeResult(msg.source,
+                                                             msg.login_name,
+                                                             msg.email_address,
+                                                             authcode,
+                                                             None))
 
     def handle_auth_channel_chat_message(self, msg):
         player = self.find_player_by(login_name = msg.login_name)

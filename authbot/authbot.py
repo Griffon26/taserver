@@ -25,6 +25,7 @@ import inspect
 import itertools
 import json
 import logging
+import re
 import time
 import urllib.request as urlreq
 
@@ -215,18 +216,27 @@ class AuthBot:
         else:
             self.send_reply_message(msg.source, msg.login_name, f'{msg.error_message}')
 
+    def looks_like_email_address(self, text):
+        return re.match(r'.*@.*\..*', text)
+
     def handle_chat_helper(self, source, login_name, message_text):
 
         self.last_requests = {k: v for k, v in self.last_requests.items() if time.time() - v < 5}
 
-        if message_text == 'authcode':
-            if login_name in self.last_requests:
-                self.send_reply_message(source, login_name, 'Jeez.. I just gave you an authcode five seconds ago! Stop being so pushy!')
-            else:
-                self.last_requests[login_name] = time.time()
-                self.community_login_server.send(Auth2LoginAuthCodeRequest(source, login_name))
+        message_words = message_text.split()
+        if len(message_words) == 2 and message_words[0] == 'authcode':
+            email_address = message_words[1]
+            if self.looks_like_email_address(email_address):
 
-        elif message_text == 'status':
+                if login_name in self.last_requests:
+                    self.send_reply_message(source, login_name, 'Jeez.. I just gave you an authcode five seconds ago! Stop being so pushy!')
+                else:
+                    self.last_requests[login_name] = time.time()
+                    self.community_login_server.send(Auth2LoginAuthCodeRequest(source, login_name, email_address))
+            else:
+                self.send_reply_message(source, login_name, f'{email_address} does not look like an email address.')
+
+        elif len(message_words) == 1 and message_words[0] == 'status':
             server_info = json.loads(urlreq.urlopen('http://localhost:9080/status').read())
 
             try:
@@ -239,7 +249,7 @@ class AuthBot:
                                                             'of this bot or try again later.')
 
         else:
-            self.send_reply_message(source, login_name, f'Hi {login_name}. Valid commands are "authcode" or "status".')
+            self.send_reply_message(source, login_name, f'Hi {login_name}. Valid commands are "authcode <email>" or "status".')
 
     def handle_auth_channel_chat_message(self, msg):
         self.handle_chat_helper(SOURCE_COMMUNITY, msg.login_name, msg.text)
