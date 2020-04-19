@@ -36,7 +36,7 @@ def main(args):
     writer = TcpMessageWriter(sock)
     reader = TcpMessageReader(sock)
 
-    writer.send(Auth2LoginAuthCodeRequest(args.username).to_bytes())
+    writer.send(Auth2LoginAuthCodeRequest('getauthcode', args.username, args.email).to_bytes())
     result = parse_message_from_bytes(reader.receive())
 
     if not isinstance(result, Login2AuthAuthCodeResult) or result.authcode is None:
@@ -50,5 +50,8 @@ if __name__ == '__main__':
     parser.add_argument('username',
                         type=str,
                         help='username for which to request an authentication code')
+    parser.add_argument('email',
+                        type=str,
+                        help='email address belonging to this user')
     args = parser.parse_args()
     main(args)
