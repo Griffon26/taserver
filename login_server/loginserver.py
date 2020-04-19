@@ -191,7 +191,7 @@ class LoginServer:
             authcode = ''.join([random.choice(availablechars) for i in range(8)])
 
             self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
-            self.accounts.add_account(msg.login_name, authcode)
+            self.accounts.add_account(msg.login_name, authcode, msg.email_address)
             self.accounts.save()
 
             authcode_requester.send(Login2AuthAuthCodeResult(msg.source,

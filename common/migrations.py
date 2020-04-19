@@ -19,6 +19,8 @@
 #
 
 from common.migration_mechanism import taserver_migration, upgrades_all_players
+import json
+from pathlib import Path
 
 # Writing a migration function
 #
@@ -89,3 +91,18 @@ def _migration_to_valid_clan_tags(data, player: str):
         data['settings']['clan_tag'] = valid_bytes.decode('ascii')
 
     return data
+
+
+@taserver_migration(schema_version=3)
+def _migration_adding_email_hash_to_accounts(data_root: str):
+    path_to_account_database = Path(data_root)/'accountdatabase.json'
+    with open(path_to_account_database, 'r') as f:
+        accountlist = json.load(f)
+
+    for account in accountlist:
+        if 'email_hash' in account:
+            raise ValueError('Upgrading failed because the account database already had entries with an email_hash in them')
+        account['email_hash'] = None
+
+    with open(path_to_account_database, 'w') as f:
+        json.dump(accountlist, f, indent=4)

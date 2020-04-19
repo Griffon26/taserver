@@ -25,7 +25,6 @@ from functools import wraps
 import os
 import shutil
 import json
-import copy
 import glob
 
 # Known migrations
@@ -133,8 +132,8 @@ def run_migrations(data_root_path: str) -> None:
 def taserver_migration(schema_version: int):
     """
     Decorator denoting a TAServer schema migration
-    Should decorate a function taking no arguments and returning nothing. The migration function is essentially a script
-    performing whatever migration required
+    Should decorate a function taking the path to the data directory and returning nothing.
+    The migration function is essentially a script performing whatever migration required
 
     Migrations should raise a ValueError if the data they attempt to upgrade is invalid
 
