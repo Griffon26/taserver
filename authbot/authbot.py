@@ -19,6 +19,8 @@
 #
 
 import base64
+from common.ipaddresspair import IPAddressPair
+from email.message import EmailMessage
 from functools import wraps
 import gevent
 import inspect
@@ -26,11 +28,12 @@ import itertools
 import json
 import logging
 import re
+import smtplib
 import time
 import urllib.request as urlreq
 
 from common.datatypes import *
-from common.errors import MajorError
+from common.errors import FatalError, MajorError
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.loginprotocol import LoginProtocolMessage
 from common.messages import *
@@ -46,6 +49,11 @@ SOURCE_COMMUNITY = 'community'
 class LoginFailedError(MajorError):
     def __init__(self):
         super().__init__('Failed to login with the specified credentials. This can happen if the Hirez server has been down. If that is not the case, check the credentials in authbot.ini')
+
+
+class NoPublicIpAddressError(FatalError):
+    def __init__(self, error):
+        super().__init__(f'Failed to detect the public IP address: {error}. Authbot refuses to start up without it, because it needs this IP address when sending verification mail.')
 
 
 def handles(packet):
@@ -134,6 +142,13 @@ class AuthBot:
         self.password_hash = base64.b64decode(config['password_hash'])
         self.last_requests = {}
 
+        self.smtp_server = config['smtp_server']
+        self.smtp_port = int(config['smtp_port'])
+        self.smtp_user = config['smtp_user']
+        self.smtp_password = config['smtp_password']
+        self.smtp_sender = config['smtp_sender']
+        self.smtp_usetls = config.getboolean('smtp_usetls')
+
         self.message_handlers = {
             PeerConnectedMessage: self.handle_peer_connected,
             PeerDisconnectedMessage: self.handle_peer_disconnected,
@@ -141,6 +156,13 @@ class AuthBot:
             Login2AuthChatMessage: self.handle_auth_channel_chat_message,
             LoginProtocolMessage: self.handle_login_protocol_message,
         }
+
+        address_pair, errormsg = IPAddressPair.detect()
+        if not address_pair.external_ip:
+            raise NoPublicIpAddressError(errormsg)
+        else:
+            self.logger.info('authbot: detected external IP: %s' % address_pair.external_ip)
+        self.login_server_address = address_pair.external_ip
 
     def run(self):
         self.send_and_schedule_keepalive_message()
@@ -210,11 +232,49 @@ class AuthBot:
         else:
             pass
 
+    def send_authcode_email(self, recipient, login_name, authcode):
+        msg = EmailMessage()
+        msg['Subject'] = 'taserver verification mail'
+        msg['From'] = self.smtp_sender
+        msg['To'] = recipient
+        msg.set_content(f"We have received a request to send an authentication code to this email address for \n"
+                        f"user '{login_name}' on the taserver installation running at {self.login_server_address}.\n"
+                        f"\n"
+                        f"If you requested this code, please connect to the login server mentioned above \n"
+                        f"and login as '{login_name}' with a password of your choosing. After logging in \n"
+                        f"go to the 'Store' menu, select 'Redeem promotion' and type in the following code:\n"
+                        f"\n"
+                        f"  {authcode}\n"
+                        f"\n"
+                        f"Your account will be verified once you have restarted and logged in again with the \n"
+                        f"same name and password.\n"
+                        f"\n"
+                        f"If you did NOT request an authentication code then you can safely ignore this message.\n"
+                        f"\n")
+
+        try:
+            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+            if self.smtp_usetls:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+            if self.smtp_user != '':
+                server.login(self.smtp_user, self.smtp_password)
+            server.send_message(msg)
+            server.close()
+        except Exception as e:
+            self.logger.error(f'authbot: failed to send verification mail to {recipient} for user {login_name}: {str(e)}')
+        else:
+            self.logger.info(f'authbot: successfully sent verification mail to {recipient} for user {login_name}')
+
     def handle_authcode_result_message(self, msg):
         if msg.authcode:
-            self.send_reply_message(msg.source, msg.login_name, f'Your authcode is {msg.authcode}')
+            self.send_authcode_email(msg.email_address, msg.login_name, msg.authcode)
         else:
-            self.send_reply_message(msg.source, msg.login_name, f'{msg.error_message}')
+            self.logger.error(f'authbot: failed to acquire authcode from login server for {msg.login_name}: {msg.error_message}')
+        self.send_reply_message(msg.source, msg.login_name,
+                                'Your authcode request has been processed. If the specified email address '
+                                'was valid for the account, an email has been sent with an authcode.')
 
     def looks_like_email_address(self, text):
         return re.match(r'.*@.*\..*', text)
