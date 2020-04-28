@@ -168,6 +168,9 @@ class LoginServer:
         if not utils.is_valid_ascii_for_name(ascii_bytes):
             return 'User name contains invalid characters'
 
+        if username.lower() == 'taserverbot':
+            return 'User name is reserved'
+
         return None
 
     def send_server_stats(self):
