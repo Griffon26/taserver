@@ -194,7 +194,7 @@ class LoginServer:
 
             if msg.login_name not in self.accounts or self.accounts[msg.login_name].email_hash == email_hash:
                 self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
-                self.accounts.add_account(msg.login_name, email_hash, authcode)
+                self.accounts.update_account(msg.login_name, email_hash, authcode)
                 self.accounts.save()
 
                 authcode_requester.send(Login2AuthAuthCodeResult(msg.source,

@@ -272,9 +272,6 @@ class AuthBot:
             self.send_authcode_email(msg.email_address, msg.login_name, msg.authcode)
         else:
             self.logger.error(f'authbot: failed to acquire authcode from login server for {msg.login_name}: {msg.error_message}')
-        self.send_reply_message(msg.source, msg.login_name,
-                                'Your authcode request has been processed. If the specified email address '
-                                'was valid for the account, an email has been sent with an authcode.')
 
     def looks_like_email_address(self, text):
         return re.match(r'.*@.*\..*', text)
@@ -293,6 +290,9 @@ class AuthBot:
                 else:
                     self.last_requests[login_name] = time.time()
                     self.community_login_server.send(Auth2LoginAuthCodeRequest(source, login_name, email_address))
+                    self.send_reply_message(source, login_name,
+                                            'Your authcode request has been processed. If the specified email address '
+                                            'was valid for the account, an email has been sent with an authcode.')
             else:
                 self.send_reply_message(source, login_name, f'{email_address} does not look like an email address.')
 

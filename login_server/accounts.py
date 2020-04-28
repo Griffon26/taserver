@@ -82,11 +82,15 @@ class Accounts():
     def __contains__(self, key):
         return key.lower() in self.accounts
     
-    def add_account(self, login_name, email_hash, authcode):
+    def update_account(self, login_name, email_hash, authcode):
         login_name = login_name.lower()
+
         if login_name in self.accounts:
-            unique_id = self.accounts[login_name].unique_id
+            account = self.accounts[login_name]
+            assert account.email_hash == email_hash, "An existing account cannot be updated with a different email hash"
+            account.authcode = authcode
         else:
             used_ids = {account.unique_id for account in self.accounts.values()}
             unique_id = utils.first_unused_number_above(used_ids, utils.MIN_VERIFIED_ID, utils.MAX_VERIFIED_ID)
-        self.accounts[login_name] = AccountInfo(unique_id, login_name, email_hash, authcode)
+            account = AccountInfo(unique_id, login_name, email_hash, authcode)
+            self.accounts[login_name] = account
