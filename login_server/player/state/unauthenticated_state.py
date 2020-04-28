@@ -91,6 +91,8 @@ class UnauthenticatedState(PlayerState):
                                          '(ID %d -> %d)' % (self.player.login_name,
                                                             self.player.unique_id,
                                                             new_unique_id))
+                        if accounts.reset_authcode(self.player.login_name):
+                            accounts.save()
                         self.player.login_server.change_player_unique_id(self.player.unique_id,
                                                                          new_unique_id)
                         self.player.registered = True

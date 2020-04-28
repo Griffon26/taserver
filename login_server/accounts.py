@@ -94,3 +94,12 @@ class Accounts():
             unique_id = utils.first_unused_number_above(used_ids, utils.MIN_VERIFIED_ID, utils.MAX_VERIFIED_ID)
             account = AccountInfo(unique_id, login_name, email_hash, authcode)
             self.accounts[login_name] = account
+
+    def reset_authcode(self, login_name):
+        login_name = login_name.lower()
+        assert login_name in self.accounts
+        if self.accounts[login_name].authcode is not None:
+            self.accounts[login_name].authcode = None
+            return True
+        else:
+            return False
