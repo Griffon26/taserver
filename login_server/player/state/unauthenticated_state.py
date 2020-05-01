@@ -25,8 +25,8 @@ from .authenticated_state import AuthenticatedState
 from ..state.player_state import PlayerState, handles
 
 
-def choose_display_name(login_name, registered, names_in_use, max_name_length):
-    if registered:
+def choose_display_name(login_name, verified, names_in_use, max_name_length):
+    if verified:
         display_name = login_name[:max_name_length]
     else:
         prefix = 'unvrf-'
@@ -95,7 +95,7 @@ class UnauthenticatedState(PlayerState):
                             accounts.save()
                         self.player.login_server.change_player_unique_id(self.player.unique_id,
                                                                          new_unique_id)
-                        self.player.registered = True
+                        self.player.verified = True
                 except AlreadyLoggedInError:
                     self.player.send([
                         a003d().set([
@@ -119,7 +119,7 @@ class UnauthenticatedState(PlayerState):
                     names_in_use = [p.display_name for p in self.player.login_server.players.values()
                                     if p.display_name is not None]
                     self.player.display_name = choose_display_name(self.player.login_name,
-                                                                   self.player.registered,
+                                                                   self.player.verified,
                                                                    names_in_use,
                                                                    self.player.max_name_length)
                     self.player.load()

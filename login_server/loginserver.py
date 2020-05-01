@@ -59,9 +59,10 @@ class LoginServer:
         self.firewall = FirewallClient(ports)
         self.accounts = accounts
         self.message_handlers = {
-            Auth2LoginAuthCodeRequest: self.handle_authcode_request_message,
+            Auth2LoginAuthCodeRequestMessage: self.handle_authcode_request_message,
             Auth2LoginChatMessage: self.handle_auth_channel_chat_message,
-            Auth2LoginRegisterAsBot: self.handle_register_as_bot_message,
+            Auth2LoginRegisterAsBotMessage: self.handle_register_as_bot_message,
+            Auth2LoginSetEmailMessage: self.handle_set_email_message,
             ExecuteCallbackMessage: self.handle_execute_callback_message,
             HttpRequestMessage: self.handle_http_request_message,
             PeerConnectedMessage: self.handle_client_connected_message,
@@ -182,6 +183,10 @@ class LoginServer:
         ]
         self.server_stats_queue.put(stats)
 
+    def email_address_to_hash(self, email_address):
+        email_hash = hashlib.sha256(email_address.encode('utf-8')).hexdigest()
+        return email_hash
+
     def handle_authcode_request_message(self, msg):
         authcode_requester = msg.peer
 
@@ -193,23 +198,23 @@ class LoginServer:
         else:
             availablechars = ''.join(c for c in (string.ascii_letters + string.digits) if c not in 'O0Il')
             authcode = ''.join([random.choice(availablechars) for i in range(8)])
-            email_hash = hashlib.sha256(msg.email_address.encode('utf-8')).hexdigest()
+            email_hash = self.email_address_to_hash(msg.email_address)
 
             if msg.login_name not in self.accounts or self.accounts[msg.login_name].email_hash == email_hash:
                 self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
                 self.accounts.update_account(msg.login_name, email_hash, authcode)
                 self.accounts.save()
 
-                authcode_requester.send(Login2AuthAuthCodeResult(msg.source,
-                                                                 msg.login_name,
-                                                                 msg.email_address,
-                                                                 authcode,
-                                                                 None))
+                authcode_requester.send(Login2AuthAuthCodeResultMessage(msg.source,
+                                                                        msg.login_name,
+                                                                        msg.email_address,
+                                                                        authcode,
+                                                                        None))
             else:
-                authcode_requester.send(Login2AuthAuthCodeResult(msg.source,
-                                                                 msg.login_name,
-                                                                 msg.email_address,
-                                                                 None,
+                authcode_requester.send(Login2AuthAuthCodeResultMessage(msg.source,
+                                                                        msg.login_name,
+                                                                        msg.email_address,
+                                                                        None,
                                                                  'The specified email address does not match the one stored for the account'))
 
     def handle_auth_channel_chat_message(self, msg):
@@ -229,6 +234,9 @@ class LoginServer:
         self.players[utils.AUTHBOT_ID] = bot
         bot.friends.connect_to_social_network(self.social_network)
         bot.friends.notify_online()
+
+    def handle_set_email_message(self, msg):
+        self.accounts.update_email_hash(msg.login_name, msg.email_address)
 
     def handle_execute_callback_message(self, msg):
         callback_id = msg.callback_id

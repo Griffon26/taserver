@@ -152,7 +152,7 @@ class AuthBot:
         self.message_handlers = {
             PeerConnectedMessage: self.handle_peer_connected,
             PeerDisconnectedMessage: self.handle_peer_disconnected,
-            Login2AuthAuthCodeResult: self.handle_authcode_result_message,
+            Login2AuthAuthCodeResultMessage: self.handle_authcode_result_message,
             Login2AuthChatMessage: self.handle_auth_channel_chat_message,
             LoginProtocolMessage: self.handle_login_protocol_message,
         }
@@ -214,7 +214,7 @@ class AuthBot:
             assert self.community_login_server is None
             self.logger.info('authbot: connected to community login server')
             self.community_login_server = msg.peer
-            self.community_login_server.send(Auth2LoginRegisterAsBot())
+            self.community_login_server.send(Auth2LoginRegisterAsBotMessage())
         else:
             pass
 
@@ -276,7 +276,7 @@ class AuthBot:
     def looks_like_email_address(self, text):
         return re.match(r'.*@.*\..*', text)
 
-    def handle_chat_helper(self, source, login_name, message_text):
+    def handle_chat_helper(self, source, login_name, verified, message_text):
 
         self.last_requests = {k: v for k, v in self.last_requests.items() if time.time() - v < 5}
 
@@ -289,7 +289,7 @@ class AuthBot:
                     self.send_reply_message(source, login_name, 'Jeez.. I just gave you an authcode five seconds ago! Stop being so pushy!')
                 else:
                     self.last_requests[login_name] = time.time()
-                    self.community_login_server.send(Auth2LoginAuthCodeRequest(source, login_name, email_address))
+                    self.community_login_server.send(Auth2LoginAuthCodeRequestMessage(source, login_name, email_address))
                     self.send_reply_message(source, login_name,
                                             'Your authcode request has been processed. If the specified email address '
                                             'was valid for the account, an email has been sent with an authcode.')
@@ -308,11 +308,23 @@ class AuthBot:
                 self.send_reply_message(source, login_name, 'Something went wrong. Please contact the administrator '
                                                             'of this bot or try again later.')
 
+        elif source == SOURCE_COMMUNITY and len(message_words) == 2 and message_words[0] == 'setemail':
+            email_address = message_words[1]
+            if not verified:
+                self.send_reply_message(source, login_name,
+                                        'You cannot change your email address unless you are verified.')
+            elif self.looks_like_email_address(email_address):
+                self.community_login_server.send(Auth2LoginSetEmailMessage(login_name, email_address))
+                self.send_reply_message(source, login_name,
+                                        'The email address for user {login_name} has been updated to {email_address}.')
+            else:
+                self.send_reply_message(source, login_name, f'{email_address} does not look like an email address.')
+
         else:
             self.send_reply_message(source, login_name, f'Hi {login_name}. Valid commands are "authcode <email>" or "status".')
 
     def handle_auth_channel_chat_message(self, msg):
-        self.handle_chat_helper(SOURCE_COMMUNITY, msg.login_name, msg.text)
+        self.handle_chat_helper(SOURCE_COMMUNITY, msg.login_name, msg.verified, msg.text)
 
     def handle_login_protocol_message(self, msg):
         msg.peer.last_received_seq = msg.clientseq
@@ -379,7 +391,7 @@ class AuthBot:
         sender_name = request.findbytype(m02fe).value
 
         if message_type == MESSAGE_PRIVATE and sender_name != self.display_name:
-            self.handle_chat_helper(SOURCE_HIREZ, sender_name, message_text)
+            self.handle_chat_helper(SOURCE_HIREZ, sender_name, False, message_text)
 
 
 def handle_authbot(config, incoming_queue):

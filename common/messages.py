@@ -69,7 +69,8 @@ _MSGID_LOGIN2CLIENT_LOADOUTS = 0x6002
 
 _MSGID_AUTH2LOGIN_AUTHCODE_REQUEST = 0x7000
 _MSGID_AUTH2LOGIN_REGISTER_AS_BOT = 0x7001
-_MSGID_AUTH2LOGIN_CHAT_MESSAGE = 0x7002
+_MSGID_AUTH2LOGIN_CHAT = 0x7002
+_MSGID_AUTH2LOGIN_SET_EMAIL = 0x7003
 
 _MSGID_LOGIN2AUTH_AUTHCODE_RESULT = 0x8000
 _MSGID_LOGIN2AUTH_CHAT_MESSAGE = 0x8001
@@ -435,7 +436,7 @@ class Login2ClientLoadouts(Message):
 # The source is an arbitrary string that will be sent back together with the AuthCodeResult to allow the handler
 # to forward the result to the originator of the request (on hirez or on community server).
 # Example json: { 'source': 'hirez', 'login_name': 'Griffon26', 'email_address': 'griffon26@kfk4ever.com' }
-class Auth2LoginAuthCodeRequest(Message):
+class Auth2LoginAuthCodeRequestMessage(Message):
     msg_id = _MSGID_AUTH2LOGIN_AUTHCODE_REQUEST
 
     def __init__(self, source: str, login_name: str, email_address: str):
@@ -445,23 +446,31 @@ class Auth2LoginAuthCodeRequest(Message):
 
 
 # Example json: { }
-class Auth2LoginRegisterAsBot(Message):
+class Auth2LoginRegisterAsBotMessage(Message):
     msg_id = _MSGID_AUTH2LOGIN_REGISTER_AS_BOT
 
 
 # Example json: { 'login_name': 'Griffon26', 'text': 'Hey there!' }
 class Auth2LoginChatMessage(Message):
-    msg_id = _MSGID_AUTH2LOGIN_CHAT_MESSAGE
+    msg_id = _MSGID_AUTH2LOGIN_CHAT
 
     def __init__(self, login_name, text):
         self.login_name = login_name
         self.text = text
 
 
+class Auth2LoginSetEmailMessage(Message):
+    msg_id = _MSGID_AUTH2LOGIN_SET_EMAIL
+
+    def __init__(self, login_name: str, email_address: str):
+        self.login_name = login_name
+        self.email_address = email_address
+
+
 # If authentication failed then authcode will be None
 # Example json: { 'source': 'hirez', 'login_name': 'Griffon26', 'email_address': 'griffon26@kfk4ever.com',
 #                 'authcode': 'someauthcode', 'clarification': 'This account is not available' }
-class Login2AuthAuthCodeResult(Message):
+class Login2AuthAuthCodeResultMessage(Message):
     msg_id = _MSGID_LOGIN2AUTH_AUTHCODE_RESULT
 
     def __init__(self, source: str, login_name: str, email_address: str,
@@ -477,8 +486,9 @@ class Login2AuthAuthCodeResult(Message):
 class Login2AuthChatMessage(Message):
     msg_id = _MSGID_LOGIN2AUTH_CHAT_MESSAGE
 
-    def __init__(self, login_name, text):
+    def __init__(self, login_name: str, verified: bool, text: str):
         self.login_name = login_name
+        self.verified = verified
         self.text = text
 
 
@@ -525,11 +535,12 @@ _message_classes = [
     Login2ClientMenuData,
     Login2ClientLoadouts,
 
-    Auth2LoginAuthCodeRequest,
-    Auth2LoginRegisterAsBot,
+    Auth2LoginAuthCodeRequestMessage,
+    Auth2LoginRegisterAsBotMessage,
     Auth2LoginChatMessage,
+    Auth2LoginSetEmailMessage,
 
-    Login2AuthAuthCodeResult,
+    Login2AuthAuthCodeResultMessage,
     Login2AuthChatMessage
 ]
 

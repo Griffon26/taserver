@@ -36,10 +36,10 @@ def main(args):
     writer = TcpMessageWriter(sock)
     reader = TcpMessageReader(sock)
 
-    writer.send(Auth2LoginAuthCodeRequest('getauthcode', args.username, args.email).to_bytes())
+    writer.send(Auth2LoginAuthCodeRequestMessage('getauthcode', args.username, args.email).to_bytes())
     result = parse_message_from_bytes(reader.receive())
 
-    if not isinstance(result, Login2AuthAuthCodeResult) or result.authcode is None:
+    if not isinstance(result, Login2AuthAuthCodeResultMessage) or result.authcode is None:
         print(result.error_message)
     else:
         print(f'Received authcode {result.authcode} for username {result.login_name}')

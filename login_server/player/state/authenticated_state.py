@@ -236,6 +236,7 @@ class AuthenticatedState(PlayerState):
                 if addressed_player.unique_id == utils.AUTHBOT_ID:
                     message_text = request.findbytype(m02e6).value
                     addressed_player.peer.send(Login2AuthChatMessage(self.player.login_name,
+                                                                     self.player.verified,
                                                                      message_text))
                 else:
                     request.findbytype(m034a).set(addressed_player.display_name)
@@ -462,15 +463,15 @@ class AuthenticatedState(PlayerState):
 
     @handles(packet=a011b)
     def handle_edit_friend_list(self, request):
-        if self.player.registered:
+        if self.player.verified:
             add = request.findbytype(m0592).value
             if add:
                 name = request.findbytype(m034a).value
-                # TODO: also make this work for registered players that are offline
+                # TODO: also make this work for verified players that are offline
                 other_player = self.player.login_server.find_player_by_display_name(name)
 
                 reply = None
-                if other_player and other_player.registered:
+                if other_player and other_player.verified:
                     if not self.player.friends.add(other_player.unique_id, name):
                         request.content.extend([
                             m0442().set_success(False),
@@ -495,7 +496,7 @@ class AuthenticatedState(PlayerState):
     def handle_request_for_friend_list(self, request):
         assert request.content == []
 
-        if self.player.registered:
+        if self.player.verified:
             self.player.login_server.social_network.send_friend_list(self.player.unique_id)
 
     def _send_game_mode_data(self):

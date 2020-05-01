@@ -63,14 +63,14 @@ class Friends:
             json.dump(self.friends_dict, outfile, indent=4, sort_keys=True)
 
     def notify_online(self):
-        if self.this_player.registered:
+        if self.this_player.verified:
             self.social_network.notify_online(self.this_player,
                                               {k: v['login_name'] for k, v in self.friends_dict.items()})
 
     def notify_on_game_server(self):
-        if self.this_player.registered:
+        if self.this_player.verified:
             self.social_network.notify_on_game_server(self.this_player)
 
     def notify_offline(self):
-        if self.this_player.registered:
+        if self.this_player.verified:
             self.social_network.notify_offline(self.this_player)

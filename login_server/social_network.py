@@ -50,7 +50,7 @@ class SocialNetwork:
         self._notify_specific_player(player_id, friend_id)
 
     def notify_online(self, player, friends):
-        assert player.registered
+        assert player.verified
 
         self.players[player.unique_id] = player
         self.player_states[player.unique_id] = SOCIAL_BITMASK_IN_LOBBY

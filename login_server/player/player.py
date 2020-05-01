@@ -32,7 +32,7 @@ from common.statetracer import statetracer, RefOnly
 from common.game_items import get_game_setting_modes, UNMODDED_GAME_SETTING_MODE
 
 
-@statetracer('unique_id', 'login_name', 'display_name', 'address_pair', 'player_settings', 'port', 'registered',
+@statetracer('unique_id', 'login_name', 'display_name', 'address_pair', 'player_settings', 'port', 'verified',
              RefOnly('game_server'), 'vote', 'team')
 class Player(Peer):
 
@@ -53,7 +53,7 @@ class Player(Peer):
         self.display_name: str = None
         self.password_hash: str = None
         self.port = address[1]
-        self.registered = False
+        self.verified = False
         self.last_received_seq = 0
         self.vote = None
         self.state = None
@@ -111,14 +111,14 @@ class Player(Peer):
         return self.get_current_loadouts().get_loadout_modded_defs()
 
     def load(self):
-        if self.registered:
+        if self.verified:
             for mode in get_game_setting_modes():
                 self.loadouts[mode].load(self.loadout_file_path % (self.login_name, mode))
             self.friends.load(self.friends_file_path % self.login_name)
             self.player_settings.load(self.settings_file_path % self.login_name)
 
     def save(self):
-        if self.registered:
+        if self.verified:
             for mode in get_game_setting_modes():
                 self.loadouts[mode].save(self.loadout_file_path % (self.login_name, mode))
             self.friends.save(self.friends_file_path % self.login_name)

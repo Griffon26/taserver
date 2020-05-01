@@ -103,3 +103,9 @@ class Accounts():
             return True
         else:
             return False
+
+    def update_email_hash(self, login_name, email_hash):
+        login_name = login_name.lower()
+
+        if login_name in self.accounts:
+            self.accounts[login_name].email_hash = email_hash

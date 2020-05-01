@@ -42,7 +42,7 @@ class AuthBot:
         self.display_name = 'taserverbot'
         self.game_server = None
         self.unique_id = utils.AUTHBOT_ID
-        self.registered = True
+        self.verified = True
         self.friends = Friends(self)
 
     def send(self, msg):
