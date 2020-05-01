@@ -24,7 +24,7 @@ import json
 from common import utils
 
 
-class AccountInfo():
+class AccountInfo:
     def __init__(self, unique_id, login_name, email_hash, authcode=None, password_hash=None):
         self.unique_id = unique_id
         self.login_name = login_name
@@ -32,7 +32,8 @@ class AccountInfo():
         self.authcode = authcode
         self.password_hash = password_hash
 
-class Accounts():
+
+class Accounts:
     def __init__(self, filename):
         self.filename = filename
         self.accounts = {}

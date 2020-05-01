@@ -218,7 +218,7 @@ class LoginServer:
                                                                  'The specified email address does not match the one stored for the account'))
 
     def handle_auth_channel_chat_message(self, msg):
-        player = self.find_player_by(login_name = msg.login_name)
+        player = self.find_player_by(login_name=msg.login_name)
         msg = a0070().set([
             m009e().set(MESSAGE_PRIVATE),
             m02e6().set(msg.text),
@@ -236,7 +236,9 @@ class LoginServer:
         bot.friends.notify_online()
 
     def handle_set_email_message(self, msg):
-        self.accounts.update_email_hash(msg.login_name, msg.email_address)
+        email_hash = self.email_address_to_hash(msg.email_address)
+        self.accounts.update_email_hash(msg.login_name, email_hash)
+        self.accounts.save()
 
     def handle_execute_callback_message(self, msg):
         callback_id = msg.callback_id
@@ -290,7 +292,7 @@ class LoginServer:
             del (self.game_servers[game_server.server_id])
 
         elif isinstance(msg.peer, AuthCodeRequester):
-            if self.players[utils.AUTHBOT_ID] == msg.peer.authbot:
+            if utils.AUTHBOT_ID in self.players and self.players[utils.AUTHBOT_ID] == msg.peer.authbot:
                 msg.peer.authbot.friends.notify_offline()
             msg.peer.disconnect()
 
