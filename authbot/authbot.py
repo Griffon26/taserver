@@ -316,12 +316,13 @@ class AuthBot:
             elif self.looks_like_email_address(email_address):
                 self.community_login_server.send(Auth2LoginSetEmailMessage(login_name, email_address))
                 self.send_reply_message(source, login_name,
-                                        'The email address for user {login_name} has been updated to {email_address}.')
+                                        f'The email address for user {login_name} has been updated to {email_address}.')
             else:
                 self.send_reply_message(source, login_name, f'{email_address} does not look like an email address.')
 
         else:
-            self.send_reply_message(source, login_name, f'Hi {login_name}. Valid commands are "authcode <email>" or "status".')
+            setemail_command =  ', "setemail <email>"' if source == SOURCE_COMMUNITY else ''
+            self.send_reply_message(source, login_name, f'Hi {login_name}. Valid commands are "authcode <email>"{setemail_command} and "status".')
 
     def handle_auth_channel_chat_message(self, msg):
         self.handle_chat_helper(SOURCE_COMMUNITY, msg.login_name, msg.verified, msg.text)
