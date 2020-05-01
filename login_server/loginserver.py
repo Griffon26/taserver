@@ -290,6 +290,8 @@ class LoginServer:
             del (self.game_servers[game_server.server_id])
 
         elif isinstance(msg.peer, AuthCodeRequester):
+            if self.players[utils.AUTHBOT_ID] == msg.peer.authbot:
+                msg.peer.authbot.friends.notify_offline()
             msg.peer.disconnect()
 
         else:
