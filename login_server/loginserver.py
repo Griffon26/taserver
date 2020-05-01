@@ -236,6 +236,7 @@ class LoginServer:
         bot.friends.notify_online()
 
     def handle_set_email_message(self, msg):
+        self.logger.info(f'server: new email set for {msg.login_name}')
         email_hash = self.email_address_to_hash(msg.email_address)
         self.accounts.update_email_hash(msg.login_name, email_hash)
         self.accounts.save()
