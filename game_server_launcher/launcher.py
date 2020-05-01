@@ -248,7 +248,7 @@ class Launcher:
                                         StrictVersion(msg.version)))
 
     def freeze_active_server_if_empty(self):
-        if len(self.players) == 0 and self.active_server.running and not self.active_server.frozen:
+        if len(self.players) == 0 and self.active_server.ready and not self.active_server.frozen:
             self.active_server.freeze()
 
     def handle_next_map_message(self, msg):
