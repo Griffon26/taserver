@@ -66,8 +66,8 @@ class GameServerProcess:
         self.server_handler_queue.put(UnfreezeGameServerMessage(self.name))
         self.frozen = False
 
-    def set_ready(self):
-        self.ready = True
+    def set_ready(self, ready):
+        self.ready = ready
 
     def terminated(self):
         self.running = False
@@ -248,7 +248,7 @@ class Launcher:
                                         StrictVersion(msg.version)))
 
     def freeze_active_server_if_empty(self):
-        if len(self.players) == 0 and self.active_server.running and not self.active_server.frozen:
+        if len(self.players) == 0 and self.active_server.ready and not self.active_server.frozen:
             self.active_server.freeze()
 
     def handle_next_map_message(self, msg):
@@ -280,8 +280,12 @@ class Launcher:
             self.active_server.unfreeze()
         self.players[msg.unique_id] = None
 
-        self.game_controller.send(
-            Launcher2GamePlayerInfo(msg.unique_id, msg.rank_xp, msg.eligible_for_first_win))
+        # If the active server is not ready then we are between match end and the switch to the pending server.
+        # It's ok to just drop this message in that case, because when the players are redirected to the pending
+        # server another add_player message will come.
+        if self.active_server.ready:
+            self.game_controller.send(
+                Launcher2GamePlayerInfo(msg.unique_id, msg.rank_xp, msg.eligible_for_first_win))
 
     def handle_remove_player_message(self, msg):
         if msg.ip:
@@ -357,7 +361,7 @@ class Launcher:
             self.last_score_info_message = msg
 
     def set_server_ready(self):
-        self.pending_server.set_ready()
+        self.pending_server.set_ready(True)
 
         self.logger.info(f'launcher: reporting {self.pending_server.name} as ready')
 
@@ -391,6 +395,7 @@ class Launcher:
         self.logger.info('launcher: received match end from game controller (controller context = %s)' % msg.controller_context)
 
         self.game_controller = None
+        self.active_server.set_ready(False)
         self.controller_context = msg.controller_context
 
         with open(map_rotation_state_path, 'wt') as f:

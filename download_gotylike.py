@@ -27,7 +27,7 @@ import zipfile
 
 
 destination_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'gamesettings', 'gotylike')
-download_url = 'https://github.com/mcoot/tamods-server-gotylike/archive/master.zip'
+download_url = 'https://github.com/Griffon26/tamods-server-gotylike/archive/master.zip'
 
 
 class UserError(Exception):

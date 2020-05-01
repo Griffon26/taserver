@@ -426,6 +426,7 @@ _hierarchical_definitions_ootb = {
                 'Raider_Belt_WhiteOut': 7432,
                 'Raider_Belt_MIRVGrenade': 8247,
                 'Soldier_Belt_APGrenade': 7434,
+                'Technician_Belt_MotionAlarm': 7426,
             },
             'packs': {
                 'Raider_Pack_Shield': 7832,
@@ -434,7 +435,6 @@ _hierarchical_definitions_ootb = {
                 'Technician_Pack_LightTurret': 7413,
                 'Technician_Pack_EXRTurret': 7417,
                 'Sentinel_Pack_DropJammer': 7456,  # Repurposed
-                'Technician_Belt_MotionAlarm': 7426,
             },
             'skins': {
                 'Skin SLD': 8328,
