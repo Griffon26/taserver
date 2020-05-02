@@ -1,71 +1,57 @@
 # Getting verified
 
-To get rid of the "unvrf-" prefix to your name you need to get registered.
-This document explains why this mechanism exists, how you register and how
-a login server administrator generates authentication codes.
+To get rid of the "unvrf-" prefix to your name and to be able to save loadouts
+and friend lists you need to get verified.
+This document explains why this mechanism exists, how to get verified and how
+a login server administrator can generate authentication codes manually.
 
 ## Why this mechanism
 
-Because the Hirez account database cannot be accessed from the custom login
-server, the login server will have to maintain its own account database.
-However, I wanted to allow someone who has used a certain account name on Hirez 
-servers to be able to claim this same account name on the custom login server.
-Also I did not want anyone else to be able to pose as this person. 
+I believe it would not be good for the community if anyone could just assume
+any name regardless of anyone else using the same name. For this reason I 
+want people to be able to claim a name for themselves.
 
-The only way I can make sure that I'm talking to a certain person is by
-talking to them through private chat on the Hirez servers.
+Until recently this was only possible if you owned said name on the Hirez servers.
+Unfortunately the Hirez servers are now down so often that I can no longer
+rely on them for the verification mechanism. 
 
-So the idea is that I give them an authentication code through private chat 
-that they can then use on the custom login server to claim their account name.
+## How to get verified
 
-Of course anyone running their own login server is free to use a different
-approach to generating and distributing authentication codes.
+Usually the administrator of the login server will be running a bot for
+verification purposes, in which case getting verified is an automated process: 
 
-## How to register
-
-Below are two sets of instructions. One is for Griffon26's login server, the other
-for any other login server. Most people should follow the first set of instructions,
-because that server is where most game servers are listed. 
-
-### For Griffon26's login server
-
-Getting registered for the login server run by Griffon26 is an automated process:
-
-1. First log in to the Hirez servers
+1. Log on to the community servers with the name and password you would like
+   to use.
 
 2. Load a map by either joining a game server or starting one of the trainings
 
 3. Open the Chat Console by pressing `esc` to open the menu and then pressing `t`.
    Note: This chat console is different to the Unreal Console (~)
    
-4. Send a private chat message to `taserverbot` with only the word authcode in it:
+4. Send a private chat message to `taserverbot` containing the word authcode 
+   followed by your email address:
 
    ![asking for an authcode](../images/ask_for_authcode.gif?raw=true)
     
-5. If you get an error saying the player taserverbot is not online,
-   message Griffon26 in Discord
-
-6. Now log in to Griffon26's login server ("the community servers") with the in-game
-   name you have on the Hirez server and a password of your choosing.
-   
-   **Note: on Hirez servers your account name and in-game name may differ,
-   but on the community servers they will be the same. For successful verification
-   you will have to log in using your Hirez in-game name.**
+5. Wait for the verification mail to arrive and look up the authentication code
+   it contains. Check your spam box if you cannot find the mail. If you do not
+   receive any mail it may be because the account already exists and the specified
+   email address does not match the email address for that account.
  
-7. After logging in go to the "Store" menu and select "Redeem promotion"
+6. in Tribes Ascend go to the "Store" menu and select "Redeem promotion"
 
-8. Fill in the authentication code and press OK
+7. Fill in the authentication code and press OK
 
-9. If you don't get an error message, registration was successful.
+8. You will get a message telling you if verification was successful.
 
-10. Restart Tribes Ascend and log in to Griffon26's server again to remove the "unvrf-" prefix.
+9. Restart Tribes Ascend and log in again to remove the "unvrf-" prefix
 
-### For any other login server
+### Getting verified if there is no taserverbot
 
 1. Ask the owner of the login server how to get an authentication code
 
-2. The owner will either ask you for your desired account name or will provide
-   it to you. He will also provide you with an authentication code. 
+2. The owner will ask you for your desired account name and email address,
+   after which he will provide you with an authentication code. 
 
 3. Once you have the authentication code, log on to the custom login server
    with the aforementioned account name and a password of your choosing
@@ -74,7 +60,7 @@ Getting registered for the login server run by Griffon26 is an automated process
 
 5. Fill in the authentication code and press OK
 
-6. If you don't get an error message, registration was successful.
+6. You will get a message telling you if verification was successful.
 
 7. Restart Tribes Ascend and log in to that login server again to remove the "unvrf-" prefix.
    
@@ -83,7 +69,7 @@ Getting registered for the login server run by Griffon26 is an automated process
 Generating an authentication code is simple. Execute the following on the
 machine that is running the login server:
  
-    getauthcode.py <accountname>
+    getauthcode.py <accountname> <email address>
  
 This will put an authentication code in the account database for the specified
 account name. When players register they choose their password. To change it
