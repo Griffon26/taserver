@@ -13,7 +13,7 @@ want people to be able to claim a name for themselves.
 
 Until recently this was only possible if you owned said name on the Hirez servers.
 Unfortunately the Hirez servers are now down so often that I can no longer
-rely on them for the verification mechanism. 
+rely on them for the verification mechanism.
 
 ## How to get verified
 
@@ -28,7 +28,7 @@ verification purposes, in which case getting verified is an automated process:
 3. Open the Chat Console by pressing `esc` to open the menu and then pressing `t`.
    Note: This chat console is different to the Unreal Console (~)
    
-4. Send a private chat message to `taserverbot` containing the word authcode 
+4. Send a private chat message to `taserverbot` containing the word `authcode` 
    followed by your email address:
 
    ![asking for an authcode](../images/ask_for_authcode.gif?raw=true)
@@ -38,6 +38,9 @@ verification purposes, in which case getting verified is an automated process:
    receive any mail it may be because the account already exists and the specified
    email address does not match the email address for that account.
  
+    Note: Authentication codes will remain active for 4 hours. After that you will
+    have to request a new one.
+    
 6. in Tribes Ascend go to the "Store" menu and select "Redeem promotion"
 
 7. Fill in the authentication code and press OK
@@ -46,7 +49,16 @@ verification purposes, in which case getting verified is an automated process:
 
 9. Restart Tribes Ascend and log in again to remove the "unvrf-" prefix
 
-### Getting verified if there is no taserverbot
+## Changing the email address associated with your account
+
+If you want to change the email address associated with your account, follow these steps:
+
+1) Log in to your account on the custom login server 
+
+2) Send a private message to `taserverbot` containing the word `setemail`
+   followed by your email address.
+
+## Getting verified if the server administrator is not using taserverbot
 
 1. Ask the owner of the login server how to get an authentication code
 
