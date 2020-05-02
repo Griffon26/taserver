@@ -43,6 +43,8 @@ from .protocol_errors import ProtocolViolationError
 from .social_network import SocialNetwork
 from common import utils
 
+UNUSED_AUTHCODE_CHECK_TIME = 3600
+
 
 @statetracer('address_pair', 'game_servers', 'players')
 class LoginServer:
@@ -88,6 +90,13 @@ class LoginServer:
                                 'game server is not.' % errormsg)
         else:
             self.logger.info('server: detected external IP: %s' % self.address_pair.external_ip)
+
+        self.pending_callbacks.add(self, 0, self.remove_old_authcodes)
+
+    def remove_old_authcodes(self):
+        if self.accounts.remove_old_authcodes():
+            self.accounts.save()
+        self.pending_callbacks.add(self, UNUSED_AUTHCODE_CHECK_TIME, self.remove_old_authcodes)
 
     def run(self):
         gevent.getcurrent().name = 'loginserver'

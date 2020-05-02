@@ -22,14 +22,17 @@ import base64
 import json
 
 from common import utils
+from datetime import datetime, timedelta
 
+TIMESTAMP_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class AccountInfo:
-    def __init__(self, unique_id, login_name, email_hash, authcode=None, password_hash=None):
+    def __init__(self, unique_id, login_name, email_hash, authcode=None, authcode_time=None, password_hash=None):
         self.unique_id = unique_id
         self.login_name = login_name
         self.email_hash = email_hash
         self.authcode = authcode
+        self.authcode_time = authcode_time
         self.password_hash = password_hash
 
 
@@ -50,6 +53,10 @@ class Accounts:
                     login_name = accountentry['login_name'].lower()
                     email_hash = accountentry['email_hash']
                     authcode = accountentry['authcode']
+                    if authcode is not None and accountentry['authcode_time'] is not None:
+                        authcode_time = datetime.strptime(accountentry['authcode_time'], TIMESTAMP_FORMAT)
+                    else:
+                        authcode_time = None
                     password_hash = accountentry['password_hash']
                     if password_hash is not None:
                         password_hash = base64.b64decode(password_hash)
@@ -57,6 +64,7 @@ class Accounts:
                                                             login_name,
                                                             email_hash,
                                                             authcode,
+                                                            authcode_time,
                                                             password_hash)
         except FileNotFoundError:
             pass
@@ -68,11 +76,15 @@ class Accounts:
                 password_hash = accountinfo.password_hash
                 if password_hash is not None:
                     password_hash = base64.b64encode(password_hash).decode('utf-8')
+                authcode_time = accountinfo.authcode_time
+                if authcode_time is not None:
+                    authcode_time = authcode_time.strftime(TIMESTAMP_FORMAT)
                 accountlist.append({
                     'unique_id' : accountinfo.unique_id,
                     'login_name' : accountinfo.login_name.lower(),
                     'email_hash': accountinfo.email_hash,
                     'authcode' : accountinfo.authcode,
+                    'authcode_time' : authcode_time,
                     'password_hash' : password_hash,
                 })
             json.dump(accountlist, f, indent = 4)
@@ -90,17 +102,34 @@ class Accounts:
             account = self.accounts[login_name]
             assert account.email_hash == email_hash, "An existing account cannot be updated with a different email hash"
             account.authcode = authcode
+            account.authcode_time = datetime.now()
         else:
             used_ids = {account.unique_id for account in self.accounts.values()}
             unique_id = utils.first_unused_number_above(used_ids, utils.MIN_VERIFIED_ID, utils.MAX_VERIFIED_ID)
-            account = AccountInfo(unique_id, login_name, email_hash, authcode)
+            account = AccountInfo(unique_id, login_name, email_hash, authcode, datetime.now())
             self.accounts[login_name] = account
+
+    def remove_old_authcodes(self):
+        anything_removed = False
+        for login_name in list(self.accounts):
+            if self.accounts[login_name].authcode is not None and \
+               self.accounts[login_name].authcode_time is not None and \
+               self.accounts[login_name].authcode_time < datetime.now() - timedelta(hours=4):
+                if self.accounts[login_name].password_hash is None:
+                    del self.accounts[login_name]
+                else:
+                    self.accounts[login_name].authcode = None
+                    self.accounts[login_name].authcode_time = None
+                anything_removed = True
+
+        return anything_removed
 
     def reset_authcode(self, login_name):
         login_name = login_name.lower()
         assert login_name in self.accounts
         if self.accounts[login_name].authcode is not None:
             self.accounts[login_name].authcode = None
+            self.accounts[login_name].authcode_time = None
             return True
         else:
             return False

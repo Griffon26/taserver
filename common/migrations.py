@@ -103,6 +103,7 @@ def _migration_adding_email_hash_to_accounts(data_root: str):
         if 'email_hash' in account:
             raise ValueError('Upgrading failed because the account database already had entries with an email_hash in them')
         account['email_hash'] = None
+        account['authcode_time'] = None
 
     with open(path_to_account_database, 'w') as f:
         json.dump(accountlist, f, indent=4)
