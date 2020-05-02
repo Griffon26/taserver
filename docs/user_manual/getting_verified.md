@@ -15,6 +15,10 @@ Until recently this was only possible if you owned said name on the Hirez server
 Unfortunately the Hirez servers are now down so often that I can no longer
 rely on them for the verification mechanism.
 
+The current verification mechanism relies on email instead. When requesting
+verification your email address is associated with your account, making sure
+that from then on only you can change the account password.
+
 ## How to get verified
 
 Usually the administrator of the login server will be running a bot for
