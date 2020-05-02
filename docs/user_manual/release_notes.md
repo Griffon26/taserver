@@ -1,3 +1,27 @@
+### taserver v2.6.0
+
+Features added:
+* added script to facilitate upgrading to later releases (upgrade.py)  
+* implemented a new verification mechanism that uses email
+* implemented map voting
+* authbot now keeps connecting to hirez servers even when it says credentials are invalid
+* make game server process use 0% CPU while noone is playing there
+* various documentation updates
+
+Bugs fixed:
+* fixed a login server crash caused by sending a private message while someone is logging in
+* always give OOTB loadouts to players playing on OOTB servers
+* fix non-working motion sensor in OOTB
+* fixed a game server crash caused by joining during a map switch
+* download_gotylike.py now downloads from Griffon26's fork. This fork has fixes to be
+  more close to the original GOTY.
+
+Compatibility notes:
+* this release is not backwards compatible; both login server and 
+  game servers must be upgraded to v2.6.0 simultaneously.
+  After the upgrade a new controller must be downloaded by running
+  the download_compatible_controller.py script.
+
 ### taserver v2.5.2
 
 Bugs fixed:
