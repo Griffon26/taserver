@@ -79,6 +79,7 @@ class LoginServer:
             Launcher2LoginMatchTimeMessage: self.handle_match_time_message,
             Launcher2LoginServerReadyMessage: self.handle_server_ready_message,
             Launcher2LoginMatchEndMessage: self.handle_match_end_message,
+            Launcher2LoginWaitingForMap: self.handle_waiting_for_map_message,
         }
         self.pending_callbacks = PendingCallbacks(server_queue)
 
@@ -407,3 +408,8 @@ class LoginServer:
                     m0296(),
                 ]))
         self.logger.info(f'{game_server}: match ended')
+        game_server.initialize_map_vote(msg.votable_maps)
+
+    def handle_waiting_for_map_message(self, msg):
+        game_server = msg.peer
+        game_server.process_map_votes()

@@ -33,6 +33,7 @@ _MSGID_LOGIN2LAUNCHER_PROTOCOL_VERSION = 0x1003
 _MSGID_LOGIN2LAUNCHER_ADD_PLAYER = 0x1004
 _MSGID_LOGIN2LAUNCHER_REMOVE_PLAYER = 0x1005
 _MSGID_LOGIN2LAUNCHER_PINGS = 0x1006
+_MSGID_LOGIN2LAUNCHER_MAPVOTERESULT = 0x1007
 
 _MSGID_LAUNCHER2LOGIN_SERVERINFO = 0x2000
 _MSGID_LAUNCHER2LOGIN_MAPINFO = 0x2001
@@ -43,6 +44,7 @@ _MSGID_LAUNCHER2LOGIN_MATCHEND = 0x2005
 _MSGID_LAUNCHER2LOGIN_PROTOCOL_VERSION = 0x2006
 _MSGID_LAUNCHER2LOGIN_SERVERREADY = 0x2007
 _MSGID_LAUNCHER2LOGIN_ADDRESSINFO = 0x2008
+_MSGID_LAUNCHER2LOGIN_WAITING_FOR_MAP = 0x2009
 
 _MSGID_GAME2LAUNCHER_PROTOCOL_VERSION = 0x3000
 _MSGID_GAME2LAUNCHER_TEAMINFO = 0x3001
@@ -155,6 +157,14 @@ class Login2LauncherPings(Message):
         self.player_pings = player_pings
 
 
+# Example json: { 'map_id': 2 }
+class Login2LauncherMapVoteResult(Message):
+    msg_id = _MSGID_LOGIN2LAUNCHER_MAPVOTERESULT
+
+    def __init__(self, map_id: Optional[int]):
+        self.map_id = map_id
+
+
 # Example json: { 'description' : 'some server',
 #                 'motd' : 'message of the day',
 #                 'game_setting_mode' : 'goty',
@@ -200,10 +210,16 @@ class Launcher2LoginMatchTimeMessage(Message):
         self.counting = counting
 
 
+# Example json: { 'votable_maps' : [ "TrCTF-Katabatic", "TrCTF-ArxNovena" ],
+#                 'players_time_played' : {
+#                    '123': { 'time': 234, 'win': True }
+#                 }
+#               }
 class Launcher2LoginMatchEndMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MATCHEND
 
-    def __init__(self, players_time_played):
+    def __init__(self, votable_maps: List[str], players_time_played):
+        self.votable_maps = votable_maps
         self.players_time_played = players_time_played
 
 
@@ -230,6 +246,13 @@ class Launcher2LoginServerReadyMessage(Message):
     def __init__(self, port: Optional[int], pingport: Optional[int]):
         self.port = port
         self.pingport = pingport
+
+
+class Launcher2LoginWaitingForMap(Message):
+    msg_id = _MSGID_LAUNCHER2LOGIN_WAITING_FOR_MAP
+
+    def __init__(self):
+        pass
 
 
 # Example json: { 'version' : '0.1.0' }
@@ -294,8 +317,9 @@ class Game2LauncherMatchTimeMessage(Message):
 
 # Example json: {
 #                  'controller_context' : opaque_json_structure,
+#                  'votable_maps' : [ "TrCTF-Katabatic", "TrCTF-ArxNovena" ],
 #                  'next_map_wait_time': 30,
-#                 'players_time_played': {
+#                  'players_time_played': {
 #                      '5': { 'time': 350, 'win': true },
 #                      '1000002': { 'time': 183, 'win': false }
 #                  },
@@ -305,8 +329,9 @@ class Game2LauncherMatchTimeMessage(Message):
 class Game2LauncherMatchEndMessage(Message):
     msg_id = _MSGID_GAME2LAUNCHER_MATCHEND
 
-    def __init__(self, controller_context, players_time_played, next_map_wait_time: int):
+    def __init__(self, controller_context, votable_maps, players_time_played, next_map_wait_time: int):
         self.controller_context = controller_context
+        self.votable_maps = votable_maps
         self.players_time_played = players_time_played
         self.next_map_wait_time = next_map_wait_time
 
@@ -501,6 +526,7 @@ _message_classes = [
     Login2LauncherAddPlayer,
     Login2LauncherRemovePlayer,
     Login2LauncherPings,
+    Login2LauncherMapVoteResult,
 
     Launcher2LoginServerInfoMessage,
     Launcher2LoginMapInfoMessage,
@@ -511,6 +537,7 @@ _message_classes = [
     Launcher2LoginProtocolVersionMessage,
     Launcher2LoginServerReadyMessage,
     Launcher2LoginAddressInfoMessage,
+    Launcher2LoginWaitingForMap,
 
     Game2LauncherProtocolVersionMessage,
     Game2LauncherServerInfoMessage,

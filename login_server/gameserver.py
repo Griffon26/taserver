@@ -36,7 +36,8 @@ from common.messages import Login2LauncherNextMapMessage, \
                             Login2LauncherRemovePlayerLoadoutsMessage, \
                             Login2LauncherAddPlayer, \
                             Login2LauncherRemovePlayer, \
-                            Login2LauncherPings
+                            Login2LauncherPings, \
+                            Login2LauncherMapVoteResult
 from common.statetracer import statetracer, TracingDict
 from .player.state.unauthenticated_state import UnauthenticatedState
 from .player.state.authenticated_state import AuthenticatedState
@@ -77,6 +78,9 @@ class GameServer(Peer):
         self.map_id = 0
 
         self.start_time = None
+
+        self.votable_maps = []
+        self.map_votes = {}
 
         if self.detected_ip.is_global:
             response = urllib.request.urlopen('http://tools.keycdn.com/geo.json?host=%s' % self.detected_ip)
@@ -171,6 +175,18 @@ class GameServer(Peer):
         msg = Login2LauncherRemovePlayer(player.unique_id,
                                          str(player_ip) if player_ip is not None else '')
         self.send(msg)
+
+    def _send_public_message_from_server(self, text):
+        for player in self.players.values():
+            msg = a0070().set([
+                m009e().set(MESSAGE_PUBLIC),
+                m02e6().set(text),
+                m034a().set(player.display_name),
+                m0574(),
+                m02fe().set('taserver'),
+                m06de().set('bot')
+            ])
+            player.send(msg)
 
     def send_all_players(self, data):
         for player in self.players.values():
@@ -309,3 +325,38 @@ class GameServer(Peer):
             player_pings[unique_id] = player.pings[self.region] if self.region in player.pings else 999
         self.send(Login2LauncherPings(player_pings))
         self.login_server.pending_callbacks.add(self, PING_UPDATE_TIME, self.send_pings)
+
+    def initialize_map_vote(self, votable_maps):
+        self.votable_maps = votable_maps
+        self.map_votes = {}
+
+        if self.votable_maps:
+            self.logger.info(f'{self}: initiating map vote')
+            self._send_public_message_from_server('Please vote for the next map by typing its number in public chat.')
+            for idx, map in enumerate(votable_maps):
+                self._send_public_message_from_server(f'{idx}. {map}')
+
+    def inspect_message_for_map_vote(self, player, text):
+        if not player.verified:
+            return
+
+        try:
+            idx = int(text)
+        except ValueError:
+            return
+
+        if 0 <= idx < len(self.votable_maps):
+            self.map_votes[player.unique_id] = idx
+
+    def process_map_votes(self):
+        max_votes = 0
+        map_with_max_votes = None
+        for i in range(len(self.votable_maps)):
+            votes = len([map_id for map_id in self.map_votes.values() if map_id is i])
+            if votes > max_votes:
+                max_votes = votes
+                map_with_max_votes = i
+
+        self.logger.info(f'{self}: map with most votes was {map_with_max_votes}')
+
+        self.send(Login2LauncherMapVoteResult(map_with_max_votes))

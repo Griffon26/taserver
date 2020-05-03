@@ -249,7 +249,6 @@ class AuthenticatedState(PlayerState):
                 ])
                 self.player.send(reply)
 
-
         elif message_type == MESSAGE_CONTROL:
             try:
                 msg = parse_message_from_string(request.findbytype(m02e6).value)
@@ -258,6 +257,7 @@ class AuthenticatedState(PlayerState):
                 return
             # Handle the control message
             self.handle_control_message(msg)
+
         else:  # MESSAGE_PUBLIC
             request.content.append(m02fe().set(self.player.display_name))
             request.content.append(m06de().set(self.player.player_settings.clan_tag))
@@ -285,6 +285,7 @@ class AuthenticatedState(PlayerState):
             #         ]))
 
             if self.player.game_server:
+                self.player.game_server.inspect_message_for_map_vote(self.player, request.findbytype(m02e6).value)
                 self.player.game_server.send_all_players(request)
 
     def _send_private_msg_from_server(self, player, text):

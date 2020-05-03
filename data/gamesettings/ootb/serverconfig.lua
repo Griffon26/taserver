@@ -33,9 +33,11 @@ ServerSettings.MutuallyExclusiveItems.add("Light", "SAP20", "Light", "Light Util
 -- ServerSettings.BannedItems.add("Light", "BXT1")
 
 
+
 -- The default map rotation is: Katabatic, ArxNovena, DangerousCrossing, Crossfire, Drydock, Terminus, Sunstar
 -- You can override the default map rotation by uncommenting any of the maps below.
 
+-- ServerSettings.MapRotation.VotingEnabled = true
 -- ServerSettings.MapRotation.add(Maps.CTF.ArxNovena)
 -- ServerSettings.MapRotation.add(Maps.CTF.BellaOmega)
 -- ServerSettings.MapRotation.add(Maps.CTF.Blueshift)

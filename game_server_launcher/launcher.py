@@ -142,6 +142,7 @@ class Launcher:
             Login2LauncherAddPlayer: self.handle_add_player_message,
             Login2LauncherRemovePlayer: self.handle_remove_player_message,
             Login2LauncherPings: self.handle_pings_message,
+            Login2LauncherMapVoteResult: self.handle_map_vote_result,
             Game2LauncherProtocolVersionMessage: self.handle_game_controller_protocol_version_message,
             Game2LauncherServerInfoMessage: self.handle_server_info_message,
             Game2LauncherMapInfoMessage: self.handle_map_info_message,
@@ -314,6 +315,12 @@ class Launcher:
                                             my_version))
 
         self.game_controller = msg.peer
+        self.login_server.send(Launcher2LoginWaitingForMap())
+
+    def handle_map_vote_result(self, msg):
+        self.logger.info(f'launcher: received map vote result from login server: map = {msg.map_id}')
+        if msg.map_id is not None:
+            self.controller_context['next_map_index'] = msg.map_id
         msg = Launcher2GameInit(self.controller_context)
         self.game_controller.send(msg)
 
@@ -401,7 +408,7 @@ class Launcher:
         with open(map_rotation_state_path, 'wt') as f:
             json.dump(self.controller_context, f)
 
-        msg_to_login = Launcher2LoginMatchEndMessage(msg.players_time_played)
+        msg_to_login = Launcher2LoginMatchEndMessage(msg.votable_maps, msg.players_time_played)
         if self.login_server:
             self.login_server.send(msg_to_login)
         else:
