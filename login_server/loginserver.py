@@ -89,7 +89,7 @@ class LoginServer:
                                 'and any players are on the same LAN, but the '
                                 'game server is not.' % errormsg)
         else:
-            self.logger.info('server: detected external IP: %s' % self.address_pair.external_ip)
+            self.logger.info('detected external IP: %s' % self.address_pair.external_ip)
 
         self.pending_callbacks.add(self, 0, self.remove_old_authcodes)
 
@@ -100,7 +100,7 @@ class LoginServer:
 
     def run(self):
         gevent.getcurrent().name = 'loginserver'
-        self.logger.info('server: login server started')
+        self.logger.info('login server started')
         self.firewall.reset_firewall('blacklist')
         while True:
             for message in self.server_queue:
@@ -109,7 +109,7 @@ class LoginServer:
                     handler(message)
                 except Exception as e:
                     if hasattr(message, 'peer'):
-                        self.logger.error('server: an exception occurred while handling a message; passing it on to the peer...')
+                        self.logger.error('an exception occurred while handling a message; passing it on to the peer...')
                         message.peer.disconnect(e)
                     else:
                         raise
@@ -201,7 +201,7 @@ class LoginServer:
 
         validation_failure = self.validate_username(msg.login_name)
         if validation_failure:
-            self.logger.warning("server: authcode requested for invalid user name '%s': %s. Refused."
+            self.logger.warning("authcode requested for invalid user name '%s': %s. Refused."
                                 % (msg.login_name, validation_failure))
             authcode_requester.send('Error: %s' % validation_failure)
         else:
@@ -210,7 +210,7 @@ class LoginServer:
             email_hash = self.email_address_to_hash(msg.email_address)
 
             if msg.login_name not in self.accounts or self.accounts[msg.login_name].email_hash == email_hash:
-                self.logger.info('server: authcode requested for %s, returned %s' % (msg.login_name, authcode))
+                self.logger.info('authcode requested for %s, returned %s' % (msg.login_name, authcode))
                 self.accounts.update_account(msg.login_name, email_hash, authcode)
                 self.accounts.save()
 
@@ -245,7 +245,7 @@ class LoginServer:
         bot.friends.notify_online()
 
     def handle_set_email_message(self, msg):
-        self.logger.info(f'server: new email set for {msg.login_name}')
+        self.logger.info(f'new email set for {msg.login_name}')
         email_hash = self.email_address_to_hash(msg.email_address)
         self.accounts.update_email_hash(msg.login_name, email_hash)
         self.accounts.save()
@@ -278,7 +278,7 @@ class LoginServer:
 
             self.game_servers[server_id] = game_server
 
-            self.logger.info('server: added game server %s (%s)' % (server_id, game_server.detected_ip))
+            self.logger.info(f'{game_server}: added')
         elif isinstance(msg.peer, AuthCodeRequester):
             pass
         else:
@@ -294,9 +294,7 @@ class LoginServer:
 
         elif isinstance(msg.peer, GameServer):
             game_server = msg.peer
-            self.logger.info('server: removed game server %s (%s:%s)' % (game_server.server_id,
-                                                                         game_server.detected_ip,
-                                                                         game_server.port))
+            self.logger.info(f'{game_server}: removed')
             game_server.disconnect()
             self.pending_callbacks.remove_receiver(game_server)
             del (self.game_servers[game_server.server_id])
@@ -314,7 +312,7 @@ class LoginServer:
         current_player.last_received_seq = msg.clientseq
 
         requests = '\n'.join(['  %04X' % req.ident for req in msg.requests])
-        self.logger.info('server: %s sent: %s' % (current_player, requests))
+        self.logger.info('%s sent: %s' % (current_player, requests))
 
         for request in msg.requests:
             current_player.handle_request(request)
@@ -334,13 +332,9 @@ class LoginServer:
 
         if my_version.version[0] != launcher_version.version[0]:
             game_server = msg.peer
-            self.logger.warning("server: game server %s (%s) uses launcher protocol %s which is " 
-                                "not compatible with this login server's protocol version %s. "
-                                "Disconnecting game server..." %
-                                (game_server.server_id,
-                                 game_server.detected_ip,
-                                 launcher_version,
-                                 my_version))
+            self.logger.warning(f"{game_server} uses launcher protocol {launcher_version} which is " 
+                                f"not compatible with this login server's protocol version {my_version}. "
+                                "Disconnecting game server...")
             msg.peer.send(Login2LauncherProtocolVersionMessage(str(my_version)))
             msg.peer.disconnect()
 
@@ -350,19 +344,14 @@ class LoginServer:
         internal_ip = IPv4Address(msg.internal_ip) if msg.internal_ip else None
 
         game_server.set_address_info(IPAddressPair(external_ip, internal_ip))
-        self.logger.info('server: address info received for server %s (%s)' %
-                         (game_server.server_id,
-                          game_server.detected_ip))
+        self.logger.info(f'{game_server}: address info received')
 
     def handle_server_info_message(self, msg):
         game_server = msg.peer
         password_hash = bytes(msg.password_hash) if msg.password_hash is not None else None
 
         game_server.set_info(msg.description, msg.motd, msg.game_setting_mode, password_hash)
-        self.logger.info('server: server info received for %s server %s (%s)' %
-                         (game_server.game_setting_mode,
-                          game_server.server_id,
-                          game_server.detected_ip))
+        self.logger.info(f'{game_server}: server info received')
 
     def handle_map_info_message(self, msg):
         game_server = msg.peer
@@ -375,9 +364,9 @@ class LoginServer:
             if player_id in self.players and self.players[player_id].game_server is game_server:
                 self.players[player_id].team = team_id
             else:
-                self.logger.warning('server: received an invalid message from server %s about '
+                self.logger.warning('received an invalid message from %s about '
                                     'player %d while that player is not on that server' %
-                                    (game_server.server_id, player_id))
+                                    (game_server, player_id))
 
     def handle_score_info_message(self, msg):
         game_server = msg.peer
@@ -386,21 +375,14 @@ class LoginServer:
 
     def handle_match_time_message(self, msg):
         game_server = msg.peer
-        self.logger.info('server: received match time for server %s: %s seconds remaining (counting = %s)' %
-              (game_server.server_id,
-               msg.seconds_remaining,
-               msg.counting))
+        self.logger.info(f'{game_server}: received match time: {msg.seconds_remaining} seconds remaining (counting = {msg.counting})')
         game_server.set_match_time(msg.seconds_remaining, msg.counting)
 
     def handle_server_ready_message(self, msg):
         game_server = msg.peer
         game_server.set_ready(msg.port, msg.pingport)
         status = 'ready' if msg.port else 'not ready'
-        self.logger.info('server: server %s (%s:%s/%s) reports %s' % (game_server.server_id,
-                                                                      game_server.detected_ip,
-                                                                      game_server.port,
-                                                                      game_server.pingport,
-                                                                      status))
+        self.logger.info(f'{game_server}: reports {status}')
 
     def handle_match_end_message(self, msg):
         game_server = msg.peer
@@ -424,4 +406,4 @@ class LoginServer:
                     m0632(),
                     m0296(),
                 ]))
-        self.logger.info('server: match ended on server %s.' % game_server.server_id)
+        self.logger.info(f'{game_server}: match ended')

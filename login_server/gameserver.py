@@ -65,7 +65,7 @@ class GameServer(Peer):
         self.password_hash = None
         self.region = None
 
-        self.game_setting_mode = 'ootb'
+        self.game_setting_mode = None
 
         self.joinable = False
         self.players = TracingDict(refsonly = True)
@@ -95,8 +95,8 @@ class GameServer(Peer):
         else:
             self.region = REGION_EUROPE
 
-    def __str__(self):
-        return 'GameServer(%d)' % self.server_id
+    def __repr__(self):
+        return 'server %d (%s %s:%s/%s)' % (self.server_id, self.game_setting_mode, self.detected_ip, self.port, self.pingport)
 
     def disconnect(self, exception=None):
         for player in list(self.players.values()):
@@ -213,8 +213,9 @@ class GameServer(Peer):
 
             self.player_being_kicked = kickee
 
-            self.logger.info('server: votekick started by %d:"%s" against %d:"%s"' %
-                             (kicker.unique_id, kicker.display_name,
+            self.logger.info('%s: votekick started by %d:"%s" against %d:"%s"' %
+                             (self,
+                              kicker.unique_id, kicker.display_name,
                               kickee.unique_id, kickee.display_name))
 
             self.login_server.pending_callbacks.add(self, 35, self.end_votekick)
@@ -222,8 +223,9 @@ class GameServer(Peer):
     def end_votekick(self):
         if self.player_being_kicked:
             eligible_voters, total_votes, yes_votes, vote_passed = self._tally_votes()
-            self.logger.info('server: votekick %s at timeout with %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
-                  ('passed' if vote_passed else 'failed',
+            self.logger.info('%s: votekick %s at timeout with %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
+                  (self,
+                   'passed' if vote_passed else 'failed',
                    yes_votes,
                    total_votes - yes_votes,
                    eligible_voters - total_votes,
@@ -238,8 +240,9 @@ class GameServer(Peer):
             # If enough people vote yes or the vote is unanimous, end the vote immediately.
             # Otherwise wait for the timeout.
             if (yes_votes >= 8 and vote_passed) or total_votes == eligible_voters:
-                self.logger.info('server: votekick %s immediately %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
-                      ('passed' if vote_passed else 'failed',
+                self.logger.info('%s: votekick %s immediately %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
+                      (self,
+                       'passed' if vote_passed else 'failed',
                        yes_votes,
                        total_votes - yes_votes,
                        eligible_voters - total_votes,
