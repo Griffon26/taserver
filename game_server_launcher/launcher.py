@@ -107,6 +107,7 @@ class Launcher:
         except IOError:
             self.controller_context = {}
 
+        self.last_waiting_for_map_message = None
         self.last_server_info_message = None
         self.last_map_info_message = None
         self.last_team_info_message = None
@@ -188,6 +189,9 @@ class Launcher:
 
             # Send the latest relevant information that was received
             # while the login server was not connected
+            if self.last_waiting_for_map_message:
+                self.login_server.send(self.last_waiting_for_map_message)
+                self.last_waiting_for_map_message = None
             if self.last_server_info_message:
                 self.login_server.send(self.last_server_info_message)
                 self.last_server_info_message = None
@@ -315,7 +319,12 @@ class Launcher:
                                             my_version))
 
         self.game_controller = msg.peer
-        self.login_server.send(Launcher2LoginWaitingForMap())
+
+        msg = Launcher2LoginWaitingForMap()
+        if self.login_server:
+            self.login_server.send(msg)
+        else:
+            self.last_waiting_for_map_message = msg
 
     def handle_map_vote_result(self, msg):
         self.logger.info(f'launcher: received map vote result from login server: map = {msg.map_id}')
@@ -408,7 +417,12 @@ class Launcher:
         with open(map_rotation_state_path, 'wt') as f:
             json.dump(self.controller_context, f)
 
-        msg_to_login = Launcher2LoginMatchEndMessage(msg.votable_maps, msg.players_time_played)
+        if 'next_map_index' in self.controller_context:
+            next_map_idx = self.controller_context['next_map_index']
+        else:
+            next_map_idx = 0
+
+        msg_to_login = Launcher2LoginMatchEndMessage(next_map_idx, msg.votable_maps, msg.players_time_played)
         if self.login_server:
             self.login_server.send(msg_to_login)
         else:

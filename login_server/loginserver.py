@@ -408,8 +408,9 @@ class LoginServer:
                     m0296(),
                 ]))
         self.logger.info(f'{game_server}: match ended')
-        game_server.initialize_map_vote(msg.votable_maps)
+        game_server.initialize_map_vote(msg.next_map_idx, msg.votable_maps)
 
     def handle_waiting_for_map_message(self, msg):
         game_server = msg.peer
+        self.logger.info(f'{game_server}: is waiting to receive the next map')
         game_server.process_map_votes()

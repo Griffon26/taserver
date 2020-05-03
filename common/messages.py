@@ -218,7 +218,8 @@ class Launcher2LoginMatchTimeMessage(Message):
 class Launcher2LoginMatchEndMessage(Message):
     msg_id = _MSGID_LAUNCHER2LOGIN_MATCHEND
 
-    def __init__(self, votable_maps: List[str], players_time_played):
+    def __init__(self, next_map_idx, votable_maps: List[str], players_time_played):
+        self.next_map_idx = next_map_idx
         self.votable_maps = votable_maps
         self.players_time_played = players_time_played
 

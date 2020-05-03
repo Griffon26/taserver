@@ -326,7 +326,7 @@ class GameServer(Peer):
         self.send(Login2LauncherPings(player_pings))
         self.login_server.pending_callbacks.add(self, PING_UPDATE_TIME, self.send_pings)
 
-    def initialize_map_vote(self, votable_maps):
+    def initialize_map_vote(self, next_map_idx, votable_maps):
         self.votable_maps = votable_maps
         self.map_votes = {}
 
@@ -334,7 +334,8 @@ class GameServer(Peer):
             self.logger.info(f'{self}: initiating map vote')
             self._send_public_message_from_server('Please vote for the next map by typing its number in public chat.')
             for idx, map in enumerate(votable_maps):
-                self._send_public_message_from_server(f'{idx}. {map}')
+                suffix = '<-- next in rotation' if idx == next_map_idx else ''
+                self._send_public_message_from_server(f'{idx}. {map}   {suffix}')
 
     def inspect_message_for_map_vote(self, player, text):
         if not player.verified:
