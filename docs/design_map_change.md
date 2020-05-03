@@ -10,14 +10,21 @@ and load the PNG file.
 1. the launcher uses two ports for running game servers 7777 and 7778. Only one of 
    these ports will generally be in use at a time.
 
-2. the controller of a server sends a match end message with controller_context when 
-   the match ends. The controller guarantees that this is the last message that it will send.
+2. the controller of a server sends a match end message with controller_context and a list of
+   maps that can be voted for when the match ends. The controller guarantees that this is the
+   last message that it will send.
    
 3. the launcher launches a new server on the unused port
 
-4. the new controller instance will connect to the launcher and send a controller version message
+4. the new controller instance will connect to the launcher and send a protocol version message
 
-5. in response the launcher will send the controller_context to the new controller instance
+5. the launcher will notify the login server that the game controller is ready to start loading
+   the next map
+   
+6. the login server will reply with a message containing the highest-voted map ID
+
+5. the launcher will put that map ID in the controller_context and send it to
+   the new controller instance, which can then start loading the map
 
 6. when receiving match time from the new server, the launcher will send a server-ready
    message containing the port of the new server to the login server
@@ -31,6 +38,6 @@ and load the PNG file.
    the new one as the active server
 
 At the moment the time between the end of a match and the switch to the new server is
-determined by how long it takes the new server to get ready; the login server has no
-control over this. If in the future we manage to implement the end screen, we'll probably
-change this.
+determined by how long it takes the new server to get ready; the login server could delay
+its response to the "waiting for map" message, but it does not do so at the moment.
+If in the future we implement the match summary screen, we'll probably change this.
