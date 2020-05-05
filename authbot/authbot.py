@@ -233,6 +233,7 @@ class AuthBot:
             pass
 
     def send_authcode_email(self, recipient, login_name, authcode):
+        masked_recipient = ''.join([c if (i == 0 or c in '@.' or recipient[i - 1] in '@.') else '*' for i, c in enumerate(recipient)])
         msg = EmailMessage()
         msg['Subject'] = 'taserver verification mail'
         msg['From'] = self.smtp_sender
@@ -263,9 +264,9 @@ class AuthBot:
             server.send_message(msg)
             server.close()
         except Exception as e:
-            self.logger.error(f'authbot: failed to send verification mail to {recipient} for user {login_name}: {str(e)}')
+            self.logger.error(f'authbot: failed to send verification mail to {masked_recipient} for user {login_name}: {str(e)}')
         else:
-            self.logger.info(f'authbot: successfully sent verification mail to {recipient} for user {login_name}')
+            self.logger.info(f'authbot: successfully sent verification mail to {masked_recipient} for user {login_name}')
 
     def handle_authcode_result_message(self, msg):
         if msg.authcode:
