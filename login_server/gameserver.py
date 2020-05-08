@@ -70,6 +70,7 @@ class GameServer(Peer):
 
         self.joinable = False
         self.players = TracingDict(refsonly = True)
+        self.player_kicking = None
         self.player_being_kicked = None
         self.match_end_time_rel_or_abs = None
         self.match_time_counting = False
@@ -227,6 +228,7 @@ class GameServer(Peer):
             for player in self.players.values():
                 player.vote = None
 
+            self.player_kicking = kicker
             self.player_being_kicked = kickee
 
             self.logger.info('%s: votekick started by %d:"%s" against %d:"%s"' %
@@ -239,8 +241,10 @@ class GameServer(Peer):
     def end_votekick(self):
         if self.player_being_kicked:
             eligible_voters, total_votes, yes_votes, vote_passed = self._tally_votes()
-            self.logger.info('%s: votekick %s at timeout with %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
+            self.logger.info('%s: votekick started by %d:"%s" against %d:"%s" %s at timeout with %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
                   (self,
+                   self.player_kicking.unique_id, self.player_kicking.display_name,
+                   self.player_being_kicked.unique_id, self.player_being_kicked.display_name,
                    'passed' if vote_passed else 'failed',
                    yes_votes,
                    total_votes - yes_votes,
@@ -256,8 +260,10 @@ class GameServer(Peer):
             # If enough people vote yes or the vote is unanimous, end the vote immediately.
             # Otherwise wait for the timeout.
             if (yes_votes >= 8 and vote_passed) or total_votes == eligible_voters:
-                self.logger.info('%s: votekick %s immediately %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
+                self.logger.info('%s: votekick started by %d:"%s" against %d:"%s" %s immediately %d/%d/%d (yes/no/abstain) with %d eligible voters out of %d players' %
                       (self,
+                       self.player_kicking.unique_id, self.player_kicking.display_name,
+                       self.player_being_kicked.unique_id, self.player_being_kicked.display_name,
                        'passed' if vote_passed else 'failed',
                        yes_votes,
                        total_votes - yes_votes,
@@ -317,6 +323,7 @@ class GameServer(Peer):
 
             self.login_server.pending_callbacks.add(self.login_server, 8 * 3600, remove_blacklist_rule)
 
+        self.player_kicking = None
         self.player_being_kicked = None
 
     def send_pings(self):

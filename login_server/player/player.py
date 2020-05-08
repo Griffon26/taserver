@@ -125,7 +125,7 @@ class Player(Peer):
             self.player_settings.save(self.settings_file_path % self.login_name)
 
     def handle_request(self, request):
-        self.state.handle_request(request)
+        return self.state.handle_request(request)
 
     def send(self, data):
         super().send((data, self.last_received_seq))

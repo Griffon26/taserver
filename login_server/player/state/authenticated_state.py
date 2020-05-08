@@ -127,6 +127,7 @@ class AuthenticatedState(PlayerState):
         }
         if menu_part in menu_fragments:
             self.player.send(menu_fragments[menu_part])
+        return True
 
     @handles(packet=a00b1)
     def handle_server_join_first_step(self, request):

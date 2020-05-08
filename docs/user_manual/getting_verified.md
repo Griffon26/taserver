@@ -1,7 +1,11 @@
 # Getting verified
 
-To get rid of the "unvrf-" prefix to your name and to be able to save loadouts
-and friend lists you need to get verified.
+Here is what you get by verifying your account:
+* no one else can use your name
+* no more "unvrf-" in front of your name
+* loadouts and friends will be saved
+* you can vote for the next map
+
 This document explains why this mechanism exists, how to get verified and how
 a login server administrator can generate authentication codes manually.
 

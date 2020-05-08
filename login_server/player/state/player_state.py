@@ -76,12 +76,12 @@ class PlayerState:
         ]
         if not methods:
             self.logger.warning("No handler found for request %s" % request)
-            return
+            return False
 
         if len(methods) > 1:
             raise ValueError("Duplicate handlers found for request")
 
-        methods[0](request)
+        return methods[0](request)
 
     def handle_control_message(self, message: Message):
         methods = [
@@ -104,6 +104,7 @@ class PlayerState:
             region = findbytype(arr, m0448).value
             ping = findbytype(arr, m053d).value
             self.player.pings[region] = ping
+        return True
 
     def on_enter(self):
         self.logger.info("%s is entering state %s" % (self.player, type(self).__name__))

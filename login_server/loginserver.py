@@ -312,18 +312,16 @@ class LoginServer:
         current_player = msg.peer
         current_player.last_received_seq = msg.clientseq
 
-        requests = '\n'.join(['  %04X' % req.ident for req in msg.requests])
-        self.logger.info('%s sent: %s' % (current_player, requests))
-
         for request in msg.requests:
-            current_player.handle_request(request)
+            if not current_player.handle_request(request):
+                self.logger.info('%s sent: %04X' % (current_player, request.ident))
 
     def handle_http_request_message(self, msg):
         if msg.env['PATH_INFO'] == '/status':
             msg.peer.send_response(json.dumps({
                 'online_players': len(self.players),
                 'online_servers': len(self.game_servers)
-            }, sort_keys = True, indent = 4))
+            }, sort_keys=True, indent=4))
         else:
             msg.peer.send_response(None)
 
