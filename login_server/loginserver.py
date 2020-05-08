@@ -82,6 +82,7 @@ class LoginServer:
             Launcher2LoginWaitingForMap: self.handle_waiting_for_map_message,
         }
         self.pending_callbacks = PendingCallbacks(server_queue)
+        self.last_player_update_time = datetime.datetime.utcnow()
 
         self.address_pair, errormsg = IPAddressPair.detect()
         if not self.address_pair.external_ip:
@@ -315,6 +316,13 @@ class LoginServer:
         for request in msg.requests:
             if not current_player.handle_request(request):
                 self.logger.info('%s sent: %04X' % (current_player, request.ident))
+
+        # This output is mostly for debugging of the incorrect number of players/servers online
+        current_time = datetime.datetime.utcnow()
+        if int((current_time - self.last_player_update_time).total_seconds()) > 15 * 60:
+            self.logger.info('currently online players:\n%s' % '\n'.join([f'    {p}' for p in self.players.values()]))
+            self.logger.info('currently online servers:\n%s' % '\n'.join([f'    {s}' for s in self.game_servers.values()]))
+            self.last_player_update_time = current_time
 
     def handle_http_request_message(self, msg):
         if msg.env['PATH_INFO'] == '/status':
