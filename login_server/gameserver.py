@@ -82,6 +82,7 @@ class GameServer(Peer):
 
         self.votable_maps = []
         self.map_votes = {}
+        self.next_map_idx = None
 
         if self.detected_ip.is_global:
             response = urllib.request.urlopen('http://tools.keycdn.com/geo.json?host=%s' % self.detected_ip)
@@ -336,6 +337,7 @@ class GameServer(Peer):
     def initialize_map_vote(self, next_map_idx, votable_maps):
         self.votable_maps = votable_maps
         self.map_votes = {}
+        self.next_map_idx = next_map_idx
 
         if self.votable_maps:
             self.logger.info(f'{self}: initiating map vote')
@@ -358,7 +360,7 @@ class GameServer(Peer):
 
     def process_map_votes(self):
         max_votes = 0
-        map_with_max_votes = None
+        map_with_max_votes = self.next_map_idx
         for i in range(len(self.votable_maps)):
             votes = len([map_id for map_id in self.map_votes.values() if map_id is i])
             if votes > max_votes:
@@ -366,5 +368,6 @@ class GameServer(Peer):
                 map_with_max_votes = i
 
         self.logger.info(f'{self}: map with most votes was {map_with_max_votes}')
+        self._send_public_message_from_server(f'Map vote ended. Next map will be {map_with_max_votes}.')
 
         self.send(Login2LauncherMapVoteResult(map_with_max_votes))
