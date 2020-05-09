@@ -43,6 +43,7 @@ from .player.state.unauthenticated_state import UnauthenticatedState
 from .player.state.authenticated_state import AuthenticatedState
 
 PING_UPDATE_TIME = 3
+LEVEL_15_XP = 109815
 
 
 @statetracer('server_id', 'detected_ip', 'address_pair', 'port', 'game_setting_mode', 'joinable',
@@ -274,6 +275,11 @@ class GameServer(Peer):
                 self._do_kick(vote_passed)
 
     def _tally_votes(self):
+        if self.player_being_kicked.player_settings.progression.rank_xp > LEVEL_15_XP:
+            required_majority = 0.66
+        else:
+            required_majority = 0.5
+
         eligible_voters_votes = {
             p.address_pair.get_address_seen_from(self.login_server.address_pair): p.vote
             for p in self.players.values()
@@ -281,7 +287,7 @@ class GameServer(Peer):
         votes = [v for v in eligible_voters_votes.values() if v is not None]
         yes_votes = [v for v in votes if v]
 
-        vote_passed = len(votes) >= 4 and len(yes_votes) / len(votes) >= 0.5
+        vote_passed = len(votes) >= 4 and (len(yes_votes) / len(votes)) > required_majority
 
         return len(eligible_voters_votes), len(votes), len(yes_votes), vote_passed
 
