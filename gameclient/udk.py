@@ -193,11 +193,11 @@ class ParserState():
             '1000011': {'name': 'r_bDetectedByEnemyScanner',
                         'type': bool},
             '1100011': {'name': 'r_bIsInvulnerable',
-                        'type': bitarray,
-                        'size': 1},
+                        'type': bool},
             '1110011': {'name': 'r_bIsSkiing',
-                        'type': bitarray,
-                        'size': 1},
+                        'type': bool},
+            '0001011': {'name': 'r_bIsHealthRecharging',
+                        'type': bool},
             '0111011': {'name': 'RPC ClientUpdateHUDHealth',
                         'type': [
                             {'name': 'NewHealth',
@@ -224,6 +224,8 @@ class ParserState():
             '001001' : { 'name' : 'r_eEquipAt',
                          'type' : bitarray,
                          'size' : 4 },
+            '000101' : { 'name' : 'r_bTargetLocked',
+                         'type' : bool},
             '111101' : { 'name' : 'Owner',
                          'type' : bitarray,
                          'size' : 10 },
@@ -484,6 +486,12 @@ class ParserState():
             # '00011101': {'name': 'RemoteRole',
             #              'type': bitarray,
             #              'size': 3},
+            '01100011': {'name': 'RPC ClientMySaberLauncherTargetingUpdated',
+                         'type': [
+                             {'name': 'MissileLockValue',
+                              'type': bitarray,
+                              'size': 3}
+                         ]},
             '00101011': {'name': 'RPC ClientEndTeamSelect',
                          'type': [
                              {'name': 'RequestedTeamNum',
@@ -519,12 +527,22 @@ class ParserState():
         }
 
         TrProj_BaseTurretProps = {
-            '011100' : { 'name' : 'Rotation',
-                         'type' : bitarray,
-                         'size' : 18 },
-            '000001' : { 'name' : 'Velocity',
-                         'type' : bitarray,
-                         'size' : 42 }
+            '00000': {'name': 'Velocity',
+                      'type': bitarray,
+                      'size': 43 },
+            '10000': {'name': 'bCollideActors',
+                      'type': bool },
+            '11100': {'name': 'bTearOff',
+                      'type': bool},
+            '10110': {'name': 'Base',
+                      'type': bitarray,
+                      'size': 31 },
+            '01110': {'name': 'Rotation',
+                      'type': bitarray,
+                      'size': 19 },
+            '10011': {'name': 'r_vSpawnLocation',
+                      'type': bitarray,
+                      'size': 52},
         }
 
         TrProj_SpinfusorProps = {
@@ -666,6 +684,7 @@ class ParserState():
                          'type' : bitarray,
                          'size' : 48},
             '000011' : { 'name' : 'r_VoiceClass', 'type': int},
+            '100011' : { 'name' : 'm_LockedTarget', 'type': bitarray, 'size': 11},
             '001011' : { 'name' : 'm_nPlayerClassId', 'type': int},
             '101011' : { 'name' : 'm_nCreditsEarned', 'type': int},
             '000111' : { 'name' : 'm_nPlayerIconIndex', 'type': int},
@@ -769,6 +788,7 @@ class ParserState():
             '01011001000001010100000000000000': {'name': 'TrDevice_Spinfusor_100X', 'props': TrDeviceProps},
             '01011000100001010100000000000000': {'name': 'TrDevice_UtilityPack_Soldier', 'props': TrDeviceProps},
             '01110101110110010100000000000000': {'name': 'TrDevice_GrenadeXL', 'props': TrDeviceProps},
+            '01110111111110010100000000000000': {'name': 'TrDevice_SaberLauncher', 'props': TrDeviceProps},
             '01001011001001010100000000000000': {'name': 'TrDroppedPickup', 'props': TrDroppedPickupProps},
             '00100100101111010100000000000000': {'name': 'TrFlagCTF_BloodEagle', 'props': TrFlagCTFProps},
             '00110100101111010100000000000000': {'name': 'TrFlagCTF_DiamondSword', 'props': TrFlagCTFProps},
