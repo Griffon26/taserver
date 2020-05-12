@@ -367,13 +367,15 @@ class GameServer(Peer):
     def process_map_votes(self):
         max_votes = 0
         map_with_max_votes = self.next_map_idx
-        for i in range(len(self.votable_maps)):
-            votes = len([map_id for map_id in self.map_votes.values() if map_id is i])
-            if votes > max_votes:
-                max_votes = votes
-                map_with_max_votes = i
 
-        self.logger.info(f'{self}: map with most votes was {map_with_max_votes}')
-        self._send_public_message_from_server(f'Map vote ended. Next map will be {map_with_max_votes}.')
+        if self.votable_maps:
+            for i in range(len(self.votable_maps)):
+                votes = len([map_id for map_id in self.map_votes.values() if map_id is i])
+                if votes > max_votes:
+                    max_votes = votes
+                    map_with_max_votes = i
+
+            self.logger.info(f'{self}: map with most votes was {map_with_max_votes}')
+            self._send_public_message_from_server(f'Map vote ended. Next map will be {map_with_max_votes}.')
 
         self.send(Login2LauncherMapVoteResult(map_with_max_votes))
