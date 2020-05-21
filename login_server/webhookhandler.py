@@ -77,8 +77,8 @@ class WebhookHandler:
                 req = urllib.request.Request(self.webhook_url, headers={'User-Agent': 'Mozilla/5.0'})
                 try:
                     urllib.request.urlopen(req, data)
-                except urllib.error.URLError:
-                    self.logger.warning('webhook: URLError')
+                except urllib.error.URLError as e:
+                    self.logger.warning(f'webhook: URLError: {e.reason}')
                     # TODO: do proper error logging
                     pass
 
