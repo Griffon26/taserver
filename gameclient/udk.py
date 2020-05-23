@@ -149,7 +149,7 @@ class ParserState():
                         'size': 11},
             '1100100': {'name': 'Rotation',
                         'type': bitarray,
-                        'size': 11},
+                        'size': 24},
             '1001100': {'name': 'InvManager',
                         'type': bitarray,
                         'size': 11},
@@ -182,6 +182,8 @@ class ParserState():
             '0101110': {'name': 'LastTakeHitInfo',
                         'type': bitarray,
                         'size': 139},
+            '0111110': {'name': 'unknown int field',
+                        'type': int},
             '1001001': {'name': 'CurrentWeaponAttachmentClass',
                         'type': int},
             '1100101': {'name': 'r_fPowerPoolRechargeRate',
@@ -258,6 +260,14 @@ class ParserState():
                        'size': 7},
         }
 
+        TrVehicleStationProps = {
+            '10100': {'name': 'r_nCanSpawnVehicle',
+                      'type': bitarray,
+                      'size': 33},
+            '11111': {'name': 'r_MaxHealth',
+                      'type': int},
+        }
+
         # unsure
         TrInventoryStationCollisionProps = {
             # '101100' : { 'name' : 'RelativeLocation2',
@@ -270,10 +280,39 @@ class ParserState():
             #              'type': bitarray,
             #              'size': 30},
         }
+
         TrPowerGeneratorProps = {
-            '111110' : { 'name' : 'r_MaxHealth',
-                         'type' : bitarray,
-                         'size' : 31 }
+            '00000': {'name': 'r_Health',
+                      'type': bitarray,
+                      'size': 33},
+            '10000': {'name': 'r_nDowntimeRemaining',
+                      'type': bitarray,
+                      'size': 33},
+            '11011': {'name': 'r_bInDestroyedState',
+                      'type': bool},
+            '00111': {'name': 'r_bIsPowered',
+                      'type': bool},
+            '00011': {'name': 'r_bReset',
+                      'type': bitarray,
+                      'size': 8},
+
+            # possible values:
+            # 1110 101001011111111110011001001
+            # 1110 101001011111111110101101001
+            # 1110 101001011111111110001011001
+            # 1110 101001011111111110100111001
+            # 1110 101001011111111110011000001
+            # 1110 101001011111111110101100001
+            # 1110 101001011111111110011010001
+            # 1110 011111011111111110111010001
+            # 1110 101001011111111110011110001
+            # 0001 110011001111111111101111000001
+            # 0101 100010011011111111111110111110000001
+            # 0101 001001101011111111111110011100000001
+            '01111': {'name': 'r_vReplicatedHitInfo',
+                      'type': 'fvector'},
+            '11111': {'name': 'r_MaxHealth',
+                      'type': int},
         }
 
         # TODO: It looks like RPC identifiers are only 6 bits when sent along with properties.
@@ -297,6 +336,20 @@ class ParserState():
             '00110000': {'name': 'RPC ClientSetLastDamagerInfo',
                          'type': bitarray,
                          'size': 35},
+            '10110000': {'name': 'RPC ClientShowOverheadNumber',
+                         'type': [
+                             {'name': 'unknown',
+                              'type': bitarray,
+                              'size': 120}
+                         ]},
+            '01001000': {'name': 'RPC ClientQueueAccolade',
+                         'type': [
+                             {'name': 'Accolade',
+                              'type': bitarray,
+                              'size': 33},
+                             {'name': 'CreditsAwarded',
+                              'type': int}
+                         ]},
             # '10001000': {'name': 'RPC ClientPlayerResettingAndRespawning',
             #            'type': bitarray,
             #            'size': 1},
@@ -526,13 +579,21 @@ class ParserState():
                        'size': 31}
         }
 
-        TrProj_BaseTurretProps = {
+        TrCTFBaseProps = {
+            '111011': {'name': 'myFlag',
+                       'type': bitarray,
+                       'size': 10}
+        }
+
+        TrProjProps = {
             '00000': {'name': 'Velocity',
                       'type': bitarray,
                       'size': 43 },
             '10000': {'name': 'bCollideActors',
                       'type': bool },
             '11100': {'name': 'bTearOff',
+                      'type': bool},
+            '10100': {'name': 'bNetOwner',
                       'type': bool},
             '10110': {'name': 'Base',
                       'type': bitarray,
@@ -543,21 +604,9 @@ class ParserState():
             '10011': {'name': 'r_vSpawnLocation',
                       'type': bitarray,
                       'size': 52},
-        }
-
-        TrProj_SpinfusorProps = {
-            '10000': {'name': 'bCollideActors',
-                      'type': bool},
-            #'10000': {'name': 'bNetOwner',
-            #          'type': bool},
-            '11100': {'name': 'bTearOff',
-                      'type': bool},
-            '10110': {'name': 'Base',
+            '11111': {'name': 'Owner',
                       'type': bitarray,
-                      'size': 31},
-            '10011': {'name': 'r_vSpawnLocation',
-                      'type': bitarray,
-                      'size': 52}
+                      'size': 10}
         }
 
         TrDroppedPickupProps = {
@@ -575,44 +624,47 @@ class ParserState():
         }
 
         TrGameReplicationInfoProps = {
-            '000000' : { 'name' : 'netflags',
-                         'type' : bitarray,
-                         'size' : 5 },
-            '011000' : { 'name' : 'm_Flags',
-                         'type' : bitarray,
-                         'size' : 20 },
-            '101000' : { 'name' : 'r_ServerConfig',
-                         'type' : bitarray,
-                         'size' : 12 },
-            '111000' : { 'name' : 'FlagReturnTime',
-                         'type' : bitarray,
-                         'size' : 41 },
-            '011010' : { 'name' : 'ServerName', 'type' : str },
-            '111010' : { 'name' : 'TimeLimit', 'type' : int },
-            '000110' : { 'name' : 'GoalScore', 'type' : int },
-            '100110' : { 'name' : 'RemainingMinute', 'type' : int },
-            '010110' : { 'name' : 'ElapsedTime', 'type' : int },
-            '110110' : { 'name' : 'RemainingTime', 'type' : int },
-            '101110' : { 'name' : 'bMatchIsOver', 'type' : bool },
-            '111110' : { 'name' : 'bStopCountDown', 'type' : bool },
-            '000001' : { 'name' : 'GameClass', 'type' : int },
-            '100001' : { 'name' : 'MessageOfTheDay', 'type' : str },
-            '010001' : { 'name' : 'RulesString', 'type': str },
-            '001001' : { 'name' : 'FlagState',
-                         'type' : bitarray,
-                         'size' : 10,
-                         'values' : { '0000000000' : 'Enemy flag on stand',
-                                      '0000000001' : 'Enemy flag taken',
-                                      '0000000011' : 'Enemy flag dropped',
-                                      '1000000000' : 'Own flag on stand',
-                                      '1000000001' : 'Own flag taken',
-                                      '1000000011' : 'Own flag dropped' } },
-            '111001' : { 'name' : 'bAllowKeyboardAndMouse', 'type' : bool },
-            '010101' : { 'name' : 'bWarmupRound', 'type' : bool },
-            '001101' : { 'name' : 'MinNetPlayers', 'type' : int },
-            '101111' : { 'name' : 'r_nBlip',
-                         'type' : bitarray,
-                         'size' : 8 },
+            '000000': {'name': 'netflags',
+                       'type': bitarray,
+                       'size': 5},
+            '001000': {'name': 'GeneratorPower',
+                       'type': bitarray,
+                       'size': 41},
+            '011000': {'name': 'm_Flags',
+                       'type': bitarray,
+                       'size': 20},
+            '101000': {'name': 'r_ServerConfig',
+                       'type': bitarray,
+                       'size': 12},
+            '111000': {'name': 'FlagReturnTime',
+                       'type': bitarray,
+                       'size': 41},
+            '011010': {'name': 'ServerName', 'type': str},
+            '111010': {'name': 'TimeLimit', 'type': int},
+            '000110': {'name': 'GoalScore', 'type': int},
+            '100110': {'name': 'RemainingMinute', 'type': int},
+            '010110': {'name': 'ElapsedTime', 'type': int},
+            '110110': {'name': 'RemainingTime', 'type': int},
+            '101110': {'name': 'bMatchIsOver', 'type': bool},
+            '111110': {'name': 'bStopCountDown', 'type': bool},
+            '000001': {'name': 'GameClass', 'type': int},
+            '100001': {'name': 'MessageOfTheDay', 'type': str},
+            '010001': {'name': 'RulesString', 'type': str},
+            '001001': {'name': 'FlagState',
+                       'type': bitarray,
+                       'size': 10,
+                       'values': {'0000000000': 'Enemy flag on stand',
+                                  '0000000001': 'Enemy flag taken',
+                                  '0000000011': 'Enemy flag dropped',
+                                  '1000000000': 'Own flag on stand',
+                                  '1000000001': 'Own flag taken',
+                                  '1000000011': 'Own flag dropped'}},
+            '111001': {'name': 'bAllowKeyboardAndMouse', 'type': bool},
+            '010101': {'name': 'bWarmupRound', 'type': bool},
+            '001101': {'name': 'MinNetPlayers', 'type': int},
+            '101111': {'name': 'r_nBlip',
+                       'type': bitarray,
+                       'size': 8},
         }
 
         TrFlagCTFProps = {
@@ -700,6 +752,19 @@ class ParserState():
 #            ''
         }
 
+        TrStationCollisionProps = {
+            '01110': {'name': 'Base',
+                      'type': bitarray,
+                      'size': 31},
+            # possible values:
+            # 00101111110101101111101111001011110000000000000
+            '01101': {'name': 'RelativeLocation',
+                      'type': 'fvector'},
+            '00000': {'name': 'RelativeRotation',
+                      'type': bitarray,
+                      'size': 25}
+        }
+
         FirstClientObjectProps = {
             '000100' : { 'name' : 'prop8',
                          'type' : bitarray,
@@ -761,11 +826,11 @@ class ParserState():
                       'type': int}
         }
 
-        WorldInfo2Props = {
+        WorldInfoProps = {
             '00011': {'name': 'TimeDilation',
-                      'type': int},
+                      'type': float},
             '01101': {'name': 'WorldGravityZ',
-                      'type': int}
+                      'type': float}
         }
 
         self.class_dict = {
@@ -773,18 +838,26 @@ class ParserState():
             '00001000100000000111111011011000': {'name': 'FirstClientObject', 'props': FirstClientObjectProps},
             '10001000000000000000000000000000': {'name': 'FirstServerObject', 'props': FirstServerObjectProps},
             '00101100100100010000000000000000': {'name': 'MatineeActor', 'props': MatineeActorProps},
+            '00100111010010011000000000000000': {'name': 'UTTeamInfo', 'props': UTTeamInfoFlags},
             '00011100001100100100000000000000': {'name': 'TrBaseTurret_BloodEagle', 'props': TrBaseTurretProps},
             '00111100001100100100000000000000': {'name': 'TrBaseTurret_DiamondSword', 'props': TrBaseTurretProps},
-            '01010111000101011110000000000000': {'name': 'TrCTFBase_BloodEagle', 'props': {}},
-            '00110111000101011110000000000000': {'name': 'TrCTFBase_DiamondSword', 'props': {}},
+            '01111110111001011110000000000000': {'name': 'TrCTFBase_BloodEagle', 'props': TrCTFBaseProps},
+            '00111110111001011110000000000000': {'name': 'TrCTFBase_DiamondSword', 'props': TrCTFBaseProps},
+            '01010111000101011110000000000000': {'name': 'TrCTFBase_BloodEagle', 'props': TrCTFBaseProps},
+            '00110111000101011110000000000000': {'name': 'TrCTFBase_DiamondSword', 'props': TrCTFBaseProps},
             '01111000100110010100000000000000': {'name': 'TrDevice_Blink', 'props': TrDeviceProps},
             '01000011100110010100000000000000': {'name': 'TrDevice_ConcussionGrenade', 'props': TrDeviceProps},
+            '00110000010110010100000000000000': {'name': 'TrDevice_ElfFlak', 'props': TrDeviceProps},
+            '01101001110110010100000000000000': {'name': 'TrDevice_Grenade', 'props': TrDeviceProps},
             '01100101110110010100000000000000': {'name': 'TrDevice_GrenadeLauncher_Light', 'props': TrDeviceProps},
+            '00100100001110010100000000000000': {'name': 'TrDevice_HeavyBoltLauncher', 'props': TrDeviceProps},
+            '00110100001110010100000000000000': {'name': 'TrDevice_HeavyShieldPack', 'props': TrDeviceProps},
             '00111001001110010100000000000000': {'name': 'TrDevice_Twinfusor', 'props': TrDeviceProps},
             '01001000101110010100000000000000': {'name': 'TrDevice_LaserTargeter', 'props': TrDeviceProps},
             '01101100101110010100000000000000': {'name': 'TrDevice_LightAssaultRifle', 'props': TrDeviceProps},
             '01111100101110010100000000000000': {'name': 'TrDevice_LightSpinfusor', 'props': TrDeviceProps},
             '00100111101110010100000000000000': {'name': 'TrDevice_Melee_DS', 'props': TrDeviceProps},
+            '01101001000001010100000000000000': {'name': 'TrDevice_SpikeLauncher', 'props': TrDeviceProps},
             '01011001000001010100000000000000': {'name': 'TrDevice_Spinfusor_100X', 'props': TrDeviceProps},
             '01011000100001010100000000000000': {'name': 'TrDevice_UtilityPack_Soldier', 'props': TrDeviceProps},
             '01110101110110010100000000000000': {'name': 'TrDevice_GrenadeXL', 'props': TrDeviceProps},
@@ -804,25 +877,33 @@ class ParserState():
             '00110001010000010100000000000000': {'name': 'TrPlayerController', 'props': TrPlayerControllerProps},
             '00111010100001100100000000000000': {'name': 'TrPlayerPawn', 'props': TrPlayerPawnProps},
             '00000110101111001100000000000000': {'name': 'TrPlayerReplicationInfo', 'props': TrPlayerReplicationInfoProps},
-            '00111100100101011110000000000000': {'name': 'TrPowerGenerator_BloodEagle', 'props': TrPowerGeneratorProps},
-            '01111100100101011110000000000000': {'name': 'TrPowerGenerator_DiamondSword', 'props': TrPowerGeneratorProps},
-            '01111010010000101100000000000000': {'name': 'TrProj_BaseTurret', 'props': TrProj_BaseTurretProps},
-            '00101010111000101100000000000000': {'name': 'TrProj_Spinfusor_100X', 'props': TrProj_SpinfusorProps},
+            '01111010010000101100000000000000': {'name': 'TrProj_BaseTurret', 'props': TrProjProps},
+            '00000001110000101100000000000000': {'name': 'TrProj_ElfFlak', 'props': TrProjProps},
+            '01011111110000101100000000000000': {'name': 'TrProj_HeavyBoltLauncher', 'props': TrProjProps},
+            '01100010111000101100000000000000': {'name': 'TrProj_SpikeLauncher', 'props': TrProjProps},
+            '01010010111000101100000000000000': {'name': 'TrProj_SpikeLauncherSecondary', 'props': TrProjProps},
+            '01110010111000101100000000000000': {'name': 'TrProj_SpikeLauncherThird', 'props': TrProjProps},
+            '00101010111000101100000000000000': {'name': 'TrProj_Spinfusor_100X', 'props': TrProjProps},
             '01110010100010101100000000000000': {'name': 'TrRadarStation_BloodEagle', 'props': TrRadarStationProps},
             '01001010100010101100000000000000': {'name': 'TrRadarStation_DiamondSword', 'props': TrRadarStationProps},
             '00000000110010101100000000000000': {'name': 'TrRepairStationCollision', 'props': TrRepairStationProps},
             '00010011100001101100000000000000': {'name': 'TrServerSettingsInfo', 'props': TrServerSettingsInfoProps},
-            '00000011110100001100000000000000': {'name': 'TrStationCollision', 'props': {}},
+            '00000011110100001100000000000000': {'name': 'TrStationCollision', 'props': TrStationCollisionProps},
             '00100010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0010?', 'props': TrRepairStationProps},
             '01010010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0101?', 'props': TrRepairStationProps},
             '00110010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0011?', 'props': TrRepairStationProps},
             '01100010100101011110000000000000': {'name': 'TrRepairStation_BloodEagle0110?', 'props': TrRepairStationProps},
             '01011010100101011110000000000000': {'name': 'TrRepairStation_DiamondSword', 'props': TrRepairStationProps},
-            '00100110100101011110000000000000': {'name': 'TrVehicleStation_BloodEagle', 'props': {}},
-            '01100110100101011110000000000000': {'name': 'TrVehicleStation_DiamondSword', 'props': {}},
-            '00100111010010011000000000000000': {'name': 'UTTeamInfo', 'props': UTTeamInfoFlags},
-            '00000101100101011110000000000000': {'name': 'WorldInfo1', 'props': {}},
-            '01010101111001011110000000000000': {'name': 'WorldInfo2', 'props': WorldInfo2Props}
+            '00000011111001011110000000000000': {'name': 'TrVehicleStation_DiamondSword', 'props': TrVehicleStationProps},
+            '00100110100101011110000000000000': {'name': 'TrVehicleStation_BloodEagle', 'props': TrVehicleStationProps},
+            '01111101111001011110000000000000': {'name': 'TrVehicleStation_BloodEagle', 'props': TrVehicleStationProps},
+            '01100110100101011110000000000000': {'name': 'TrVehicleStation_DiamondSword', 'props': TrVehicleStationProps},
+            '01010101111001011110000000000000': {'name': 'TrPowerGenerator_BloodEagle', 'props': TrPowerGeneratorProps},
+            '00111100100101011110000000000000': {'name': 'TrPowerGenerator_BloodEagle', 'props': TrPowerGeneratorProps},
+            '01111100100101011110000000000000': {'name': 'TrPowerGenerator_DiamondSword', 'props': TrPowerGeneratorProps},
+            '00110101111001011110000000000000': {'name': 'TrPowerGenerator_DiamondSword', 'props': TrPowerGeneratorProps},
+            '00101000000101011110000000000000': {'name': 'WorldInfo', 'props': WorldInfoProps},
+            '00000101100101011110000000000000': {'name': 'WorldInfo', 'props': WorldInfoProps},
         }
 
         self.instance_count = {}
@@ -1110,6 +1191,34 @@ class PropertyValueBitarray():
         else:
             text = '%sempty\n' % indent_prefix
         return text
+
+class PropertyValueFVector():
+    def __init__(self):
+        self.vectorbits = None
+
+    @debugbits
+    def frombitarray(self, bits, debug = False):
+        assert len(bits) > 4
+        lengthbits, bits = getnbits(4, bits)
+        length = toint(lengthbits) * 3 + 6
+        self.vectorbits, bits = getnbits(length, bits)
+        return bits
+
+    def tobitarray(self):
+        length = int((len(self.vectorbits) - 6) / 3)
+        lengthbits = int2bitarray(length, 4)
+        return lengthbits + self.vectorbits
+
+    def tostring(self, indent = 0):
+        indent_prefix = ' ' * indent
+        if self.vectorbits is not None:
+            length = int((len(self.vectorbits) - 6) / 3)
+            lengthbits = int2bitarray(length, 4)
+            text = '%s%s %s (FVector)\n' % (indent_prefix, lengthbits.to01(), self.vectorbits.to01())
+        else:
+            text = '%sempty\n' % indent_prefix
+        return text
+
 
 class PropertyValueMystery1():
     def __init__(self):
@@ -1399,6 +1508,9 @@ def parse_basic_property(propertyname, propertytype, bits, size=None, debug=Fals
         #if size is None:
         #    raise RuntimeError("Coding error: size can't be None for bitarray")
         bits = value.frombitarray(bits, size, debug=debug)
+    elif propertytype == 'fvector':
+        value = PropertyValueFVector()
+        bits = value.frombitarray(bits, debug=debug)
     elif propertytype == PropertyValueMystery1:
         value = PropertyValueMystery1()
         bits = value.frombitarray(bits, debug=debug)
