@@ -395,6 +395,16 @@ class AuthBot:
         if message_type == MESSAGE_PRIVATE and sender_name != self.display_name:
             self.handle_chat_helper(SOURCE_HIREZ, sender_name, False, message_text)
 
+    @handles(packet=a011b)
+    def handle_edit_friend_list(self, request):
+        # Ignore any friend activity to minimize logging of unhandled messages
+        pass
+
+    @handles(packet=a0145)
+    def handle_player_server_update(self, request):
+        # Ignore any update from friends about which server/map they are playing
+        pass
+
 
 def handle_authbot(config, incoming_queue):
     authbot = AuthBot(config, incoming_queue)
