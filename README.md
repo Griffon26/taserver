@@ -13,3 +13,6 @@ Select any of the topics below if you want to know more about it:
 
 If you encounter bugs or features that don't work yet, feel free
 to [submit issues on this project](https://github.com/Griffon26/taserver/issues)  
+
+#### Used services
+* [IP Location Finder by KeyCDN](https://tools.keycdn.com/geo)
