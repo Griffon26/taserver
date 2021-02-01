@@ -85,8 +85,13 @@ class GameServer(Peer):
         self.map_votes = {}
         self.next_map_idx = None
 
-        if self.detected_ip.is_global:
-            response = urllib.request.urlopen('http://tools.keycdn.com/geo.json?host=%s' % self.detected_ip)
+        if self.detected_ip.is_global or True:
+            req = urllib.request.Request('http://tools.keycdn.com/geo.json?host=%s' % self.detected_ip,
+                                         data=None,
+                                         headers={
+                                             'User-Agent': 'keycdn-tools:https://github.com/Griffon26/taserver/blob/master/README.md'
+                                         })
+            response = urllib.request.urlopen(req)
             result = response.read()
             json_result = json.loads(result)
 
