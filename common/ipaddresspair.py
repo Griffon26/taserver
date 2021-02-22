@@ -65,8 +65,10 @@ class IPAddressPair:
     @staticmethod
     def detect():
         detection_error = None
+
+        req = urlreq.Request('http://ipv4.icanhazip.com/', headers={'User-Agent': 'Mozilla/5.0'})
         try:
-            external_ip = IPv4Address(urlreq.urlopen('http://ipv4.icanhazip.com/').read().decode('utf8').strip())
+            external_ip = IPv4Address(urlreq.urlopen(req).read().decode('utf8').strip())
         except Exception as e:
             external_ip = None
             detection_error = str(e)
