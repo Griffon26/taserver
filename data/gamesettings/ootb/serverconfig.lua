@@ -38,6 +38,7 @@ ServerSettings.MutuallyExclusiveItems.add("Light", "SAP20", "Light", "Light Util
 -- You can override the default map rotation by uncommenting any of the maps below.
 
 -- ServerSettings.MapRotation.VotingEnabled = true
+-- ServerSettings.EndMatchWaitTime = 5
 -- ServerSettings.MapRotation.add(Maps.CTF.ArxNovena)
 -- ServerSettings.MapRotation.add(Maps.CTF.BellaOmega)
 -- ServerSettings.MapRotation.add(Maps.CTF.Blueshift)

@@ -320,6 +320,17 @@ class Launcher:
 
         self.game_controller = msg.peer
 
+        if self.min_next_switch_time:
+            time_left = (self.min_next_switch_time - datetime.datetime.utcnow()).total_seconds()
+        else:
+            time_left = 0
+
+        if time_left > 0:
+            self.pending_callbacks.add(self, time_left, self.ask_for_map_vote_result)
+        else:
+            self.ask_for_map_vote_result()
+
+    def ask_for_map_vote_result(self):
         msg = Launcher2LoginWaitingForMap()
         if self.login_server:
             self.login_server.send(msg)
@@ -397,15 +408,7 @@ class Launcher:
             self.last_match_time_message = msg
 
         if self.pending_server.running and not self.pending_server.ready:
-            if self.min_next_switch_time:
-                time_left = (self.min_next_switch_time - datetime.datetime.utcnow()).total_seconds()
-            else:
-                time_left = 0
-
-            if time_left > 0:
-                self.pending_callbacks.add(self, time_left, self.set_server_ready)
-            else:
-                self.set_server_ready()
+            self.set_server_ready()
 
     def handle_match_end_message(self, msg):
         self.logger.info('launcher: received match end from game controller (controller context = %s)' % msg.controller_context)
