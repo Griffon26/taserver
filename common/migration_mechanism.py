@@ -96,6 +96,13 @@ def _save_datastores(data_root: str, player_name: str, player_data: Dict[str, Di
             json.dump(ds_data, f, indent=4, sort_keys=True)
 
 
+def _ensure_account_database_exists(data_root: str):
+    path_to_account_database = os.path.join(data_root, 'accountdatabase.json')
+    if not os.path.exists(path_to_account_database):
+        with open(path_to_account_database, 'w') as f:
+            json.dump([], f, indent=4)
+
+
 # Migrates all files of all schemas
 def run_migrations(data_root_path: str) -> None:
     """
@@ -106,6 +113,7 @@ def run_migrations(data_root_path: str) -> None:
     :param data_root_path: the root path of data files to migrate
     :return: None
     """
+    _ensure_account_database_exists(data_root_path)
     existing_version = _load_schema_version(data_root_path)
 
     # Determine the highest available migration
