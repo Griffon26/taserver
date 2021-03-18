@@ -113,9 +113,7 @@ def run_migrations(data_root_path: str) -> None:
     :param data_root_path: the root path of data files to migrate
     :return: None
     """
-    _ensure_account_database_exists(data_root_path)
     existing_version = _load_schema_version(data_root_path)
-
     # Determine the highest available migration
     upgraded_version = existing_version
     while upgraded_version + 1 in _registered_migrations:
@@ -127,6 +125,8 @@ def run_migrations(data_root_path: str) -> None:
 
     # Back up all datastores
     _perform_backups(data_root_path)
+    
+    _ensure_account_database_exists(data_root_path)
 
     # Perform each migration in turn
     for i in range(existing_version + 1, upgraded_version + 1):
