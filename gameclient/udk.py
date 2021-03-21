@@ -112,6 +112,25 @@ known_int_values = {
     204017: 'CONST_STAT_AWD_DEATHS',
 }
 
+known_fields = {
+    0x0033: 'assists',
+    0x00d2: 'score',
+    0x0184: 'deaths',
+    0x028e: 'kills',
+    0x02b2: 'map id',
+    0x02c2: 'map duration',
+    0x02c4: 'match id',
+    0x0348: 'player unique id',
+    0x04c0: 'bonus xp',
+    0x04cb: 'starting xp',
+    0x0505: 'total xp',
+    0x0596: 'blood eagle score',
+    0x0597: 'diamond sword score',
+    0x0605: 'base xp',
+    0x0606: 'vip xp',
+}
+
+
 class ParseError(Exception):
     def __init__(self, message, bitsleft):
         super().__init__(message)
@@ -1434,7 +1453,8 @@ class PropertyValueField:
     def tostring(self, indent=0):
         indent_prefix = ' ' * indent
         if self.ident is not None:
-            text = '%s%s (field ident = %04X)\n' % (indent_prefix, int2bitarray(self.ident, 16).to01(), self.ident)
+            fielddesc = (', %s' % known_fields[self.ident]) if self.ident in known_fields else ''
+            text = '%s%s (field ident = %04X%s)\n' % (indent_prefix, int2bitarray(self.ident, 16).to01(), self.ident, fielddesc)
             if isinstance(self.data, bitarray):
                 text += '%s%s (field value)\n' % (' ' * (indent + 16), self.data.to01())
             else:
@@ -1453,8 +1473,10 @@ class PropertyValueInteresting:
 
     @debugbits
     def frombitarray(self, bits, debug=False):
-        self.prefixbits, bits = getnbits(44, bits)
+        self.prefixbits, bits = getnbits(28, bits)
 
+        idbits, bits = getnbits(16, bits)
+        self._id = toint(idbits)
         lengthbits, bits = getnbits(16, bits)
         self.length = toint(lengthbits)
 
@@ -1468,6 +1490,7 @@ class PropertyValueInteresting:
 
     def tobitarray(self):
         bits = self.prefixbits[:]
+        bits.extend(int2bitarray(self._id, 16))
         bits.extend(int2bitarray(self.length, 16))
         for field in self.fields:
             bits.extend(field.tobitarray())
@@ -1476,7 +1499,8 @@ class PropertyValueInteresting:
     def tostring(self, indent=0):
         indent_prefix = ' ' * indent
         if self.prefixbits is not None:
-            text = '%s%s (prefix)\n' % (indent_prefix, self.prefixbits.to01())
+            text = '%s%s (prefix for size %d)\n' % (indent_prefix, self.prefixbits.to01(), toint(self.prefixbits[:9]))
+            text += '%s%s (id = %04X)\n' % (indent_prefix, int2bitarray(self._id, 16).to01(), self._id)
             text += '%s%s (number of fields = %d)\n' % (indent_prefix, int2bitarray(self.length, 16).to01(), self.length)
 
             for field in self.fields:
@@ -1740,14 +1764,17 @@ class PayloadData():
         self.instance = None
         self.bitsleftreason = None
         self.bitsleft = None
+        self.originalpayloadsizebits = None
 
     @debugbits
     def frombitarray(self, bits, channel, state, debug = False):
         payloadsizebits, bits = getnbits(14, bits)
 
+        self.originalpayloadsizebits = payloadsizebits
         if toint(payloadsizebits) >= toint(bitarray('00000000001101', endian='little')):
             payloadsizebits = payloadsizebits[:-1]
             bits.insert(0, True)
+            self.shortened = True
 
         self.nr_of_payload_bits = len(payloadsizebits)
         self.size = toint(payloadsizebits)
@@ -1813,9 +1840,14 @@ class PayloadData():
         text = ''
 
         if self.size is not None:      
-            text += ('%s%s (payloadsize = %d)\n' % (indent_prefix,
-                                                    int2bitarray(self.size, self.nr_of_payload_bits).to01(),
-                                                    self.size))
+            if self.nr_of_payload_bits != len(self.originalpayloadsizebits):
+                shortened_text = ', shortened from %s' % self.originalpayloadsizebits.to01()
+            else:
+                shortened_text = ''
+            text += ('%s%s (payloadsize = %d%s)\n' % (indent_prefix,
+                                                      int2bitarray(self.size, self.nr_of_payload_bits).to01(),
+                                                      self.size,
+                                                      shortened_text))
             indent += self.nr_of_payload_bits
             
         if self.object_class is not None:

@@ -21,9 +21,6 @@
 import argparse
 from bitarray import bitarray
 import string
-import sys
-import time
-import traceback
 import udk
 
 def findshiftedstrings(bindata, bitoffset):
