@@ -1,13 +1,16 @@
 -- TAMods-Server configuration can be placed in this file
 -- You can read about the configuration language at: https://www.tamods.org/docs/doc_srv_api_overview.html
 
+
+-------------- SERVER INFO --------------
+
 ServerSettings.Description = "My Custom OOTB Server"
 ServerSettings.Motd = "This is my OOTB server"
 -- ServerSettings.Password = "some-password"
 ServerSettings.GameSettingMode = ServerSettings.GameSettingModes.OOTB
 
--- Basic Access Control, see https://www.tamods.org/docs/doc_srv_api_admin.html for more
--- Admin.Roles.add("admin", "somepasswordyouchoose", true)
+
+-------------- STANDARD OOTB SETTINGS --------------
 
 ServerSettings.MutuallyExclusiveItems.add("Light", "BXT1", "Light", "Thrust Pack")
 ServerSettings.MutuallyExclusiveItems.add("Light", "BXT1A", "Light", "Thrust Pack")
@@ -24,6 +27,34 @@ ServerSettings.MutuallyExclusiveItems.add("Light", "BXT1A", "Light", "Light Util
 ServerSettings.MutuallyExclusiveItems.add("Light", "Phase Rifle", "Light", "Light Utility Pack")
 ServerSettings.MutuallyExclusiveItems.add("Light", "SAP20", "Light", "Light Utility Pack")
 
+
+-------------- ADMINISTRATION --------------
+
+-- Basic Access Control, see https://www.tamods.org/docs/doc_srv_api_admin.html for more
+
+require("admin")
+
+local roles = {
+--    {
+--        name     = "admin",
+--        password = "gotytest", -- <<< Set the password!
+--        commands = {"NextMap", "StartMap", "EndMap"},
+--        canLua   = true, -- Admin can execute arbitrary Lua!
+--    },
+--    {
+--        name     = "mod",
+--        password = "moderator", -- <<< Set the password!
+--        commands = {"NextMap", "StartMap", "EndMap"},
+--        canLua   = false,
+--    },
+}
+
+-- To set up admin / moderator roles, uncomment above
+doSetupRoles(roles)
+
+
+-------------- OTHER SETTINGS --------------
+
 -- Some other settings you might need, just uncomment those lines
 -- If you need more settings, check the documentation at : https://www.tamods.org/docs/doc_srv_api_serverconfig.html
 
@@ -33,6 +64,7 @@ ServerSettings.MutuallyExclusiveItems.add("Light", "SAP20", "Light", "Light Util
 -- ServerSettings.BannedItems.add("Light", "BXT1")
 
 
+-------------- MAP ROTATION --------------
 
 -- The default map rotation is: Katabatic, ArxNovena, DangerousCrossing, Crossfire, Drydock, Terminus, Sunstar
 -- You can override the default map rotation by uncommenting any of the maps below.
