@@ -33,7 +33,7 @@ from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from common.migration_mechanism import run_migrations
 from common.ports import Ports
-from common.utils import SHARED_INI_PATH
+from common.utils import get_shared_ini_path
 from .accounts import Accounts
 from .authcodehandler import handle_authcodes
 from .gameserverlauncherhandler import handle_game_server_launcher
@@ -42,8 +42,6 @@ from .httphandler import handle_http
 from .trafficdumper import TrafficDumper, dumpfilename
 from .loginserver import LoginServer
 from .webhookhandler import handle_webhook
-
-INI_PATH = os.path.join('data', 'loginserver.ini')
 
 
 def handle_dump(dumpqueue):
@@ -60,18 +58,22 @@ def handle_server(server_queue, client_queues, server_stats_queue, ports, accoun
 
 
 def main():
-    set_up_logging('login_server.log')
     logger = logging.getLogger(__name__)
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dump', action='store_true',
                         help='Dump all traffic to %s in a format suitable '
                              'for parsing with the parse.py utility.' %
                              dumpfilename)
+    parser.add_argument('--data-root', action='store', default='data',
+                        help='Location of the data dir containing all config files and logs.')
     args = parser.parse_args()
+    data_root = args.data_root
+    
+    set_up_logging(data_root, 'login_server.log')
 
     # Perform data migrations on startup
     try:
-        run_migrations('data')
+        run_migrations(data_root)
     except ValueError as e:
         # If a migration failed, it will raise a ValueError
         logger.fatal('Failed to run data migrations with format error: %s' % str(e))
@@ -86,11 +88,11 @@ def main():
     server_stats_queue = gevent.queue.Queue()
     dump_queue = gevent.queue.Queue() if args.dump else None
 
-    accounts = Accounts('data/accountdatabase.json')
+    accounts = Accounts(os.path.join(data_root, 'accountdatabase.json'))
     config = configparser.ConfigParser()
-    with open(INI_PATH) as f:
+    with open(os.path.join(data_root, 'loginserver.ini')) as f:
         config.read_file(f)
-    with open(SHARED_INI_PATH) as f:
+    with open(get_shared_ini_path(data_root)) as f:
         config.read_file(f)
 
     ports = Ports(int(config['shared']['port_offset']))
@@ -116,7 +118,7 @@ def main():
                      ports),
         gevent_spawn("login server's handle_game_client",
                      handle_game_client,
-                     server_queue, dump_queue),
+                     server_queue, dump_queue, data_root),
         gevent_spawn("login server's handle_game_server_launcher",
                      handle_game_server_launcher,
                      server_queue,

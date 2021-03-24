@@ -20,6 +20,7 @@
 
 from typing import List, Dict
 import json
+import os
 
 from common.game_items import game_classes, get_game_setting_modes
 from common.datatypes import *
@@ -112,7 +113,7 @@ class Loadouts:
         self.loadout_dict = self.defaults()
 
     def defaults(self):
-        default_loadouts_file = 'data/defaults/default_loadouts_%s.json' % self.game_setting_mode
+        default_loadouts_file = os.path.join('defaults', 'default_loadouts_%s.json' % self.game_setting_mode)
         return self._load_loadout_data(default_loadouts_file)
 
     def is_loadout_menu_item(self, value):
