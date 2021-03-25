@@ -352,7 +352,7 @@ class GameServer(Peer):
 
         if self.votable_maps:
             self.logger.info(f'{self}: initiating map vote')
-            self._send_public_message_from_server('Please vote for the next map by typing its number in public chat.')
+            self._send_public_message_from_server('Please vote for the next map by typing its number in public chat. Only votes from verified players will count.')
             for idx, map in enumerate(votable_maps):
                 suffix = '<-- next in rotation' if idx == next_map_idx else ''
                 self._send_public_message_from_server(f'{idx}. {map}   {suffix}')
