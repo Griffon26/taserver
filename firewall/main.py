@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
-
+import argparse
 import configparser
 import gevent
 import gevent.queue
@@ -32,10 +32,9 @@ from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from common.ports import Ports
 from common.tcpmessage import TcpMessageReader
+from common.utils import get_shared_ini_path
 
 from .utils import FirewallUtils
-
-INI_PATH = os.path.join('data', 'shared.ini')
 
 
 class Rulelist:
@@ -136,8 +135,8 @@ class Whitelist(Rulelist):
 
 
 class Firewall:
-    def __init__(self, ports):
-        set_up_logging('taserver_firewall.log')
+    def __init__(self, ports, data_root):
+        set_up_logging(data_root, 'taserver_firewall.log')
         self.logger = logging.getLogger('firewall')
         self.ports = ports
         self.utils = FirewallUtils(self.logger)
@@ -188,9 +187,14 @@ class Firewall:
 
 def main():
     print('Running on Python %s' % sys.version)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data-root', action='store', default='data',
+                        help='Location of the data dir containing all config files and logs.')
+    args = parser.parse_args()
+    data_root = args.data_root
 
     config = configparser.ConfigParser()
-    with open(INI_PATH) as f:
+    with open(get_shared_ini_path(data_root)) as f:
         config.read_file(f)
 
     ports = Ports(int(config['shared']['port_offset']))
@@ -207,7 +211,7 @@ def main():
         return
 
     server_queue = gevent.queue.Queue()
-    firewall = Firewall(ports)
+    firewall = Firewall(ports, data_root)
     gevent_spawn('firewall.run', firewall.run, server_queue)
 
     def handle_client(socket, address):

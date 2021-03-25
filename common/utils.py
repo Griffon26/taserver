@@ -20,8 +20,6 @@
 
 import os
 
-SHARED_INI_PATH = os.path.join('data', 'shared.ini')
-
 MIN_UNVERIFIED_ID = 1000000
 MAX_UNVERIFIED_ID = 2000000
 
@@ -29,6 +27,9 @@ AUTHBOT_ID = MIN_UNVERIFIED_ID - 1
 
 MIN_VERIFIED_ID = 1
 MAX_VERIFIED_ID = AUTHBOT_ID - 1
+
+def get_shared_ini_path(data_root):
+    return os.path.join(data_root, 'shared.ini')
 
 
 def first_unused_number_above(numbers, minimum, maximum=None):

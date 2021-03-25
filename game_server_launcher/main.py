@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import argparse
 import configparser
 import gevent
 import gevent.queue
@@ -28,23 +29,26 @@ from common.errors import FatalError
 from common.geventwrapper import gevent_spawn
 from common.logging import set_up_logging
 from common.ports import Ports
-from common.utils import SHARED_INI_PATH
+from common.utils import get_shared_ini_path
 from .gamecontrollerhandler import handle_game_controller
 from .gameserverhandler import handle_game_server
 from .launcher import handle_launcher, IncompatibleVersionError
 from .loginserverhandler import handle_login_server
 from .pinghandler import handle_ping
 
-LAUNCHER_INI_PATH = os.path.join('data', 'gameserverlauncher.ini')
-
 
 def main():
-    set_up_logging('game_server_launcher.log')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data-root', action='store', default='data',
+                        help='Location of the data dir containing all config files and logs.')
+    args = parser.parse_args()
+    data_root = args.data_root
+    set_up_logging(data_root, 'game_server_launcher.log')
     logger = logging.getLogger(__name__)
     config = configparser.ConfigParser()
-    with open(LAUNCHER_INI_PATH) as f:
+    with open(os.path.join(data_root, 'gameserverlauncher.ini')) as f:
         config.read_file(f)
-    with open(SHARED_INI_PATH) as f:
+    with open(get_shared_ini_path(data_root)) as f:
         config.read_file(f)
 
     ports = Ports(int(config['shared']['port_offset']))
@@ -66,7 +70,8 @@ def main():
                              config['gameserver'],
                              ports,
                              server_handler_queue,
-                             incoming_queue),
+                             incoming_queue,
+                             data_root),
                 gevent_spawn("game server launcher's handle_login_server",
                              handle_login_server,
                              config['loginserver'],
@@ -80,7 +85,8 @@ def main():
                              config['gameserver'],
                              ports,
                              incoming_queue,
-                             server_handler_queue)
+                             server_handler_queue,
+                             data_root)
             ]
             # Give the greenlets enough time to start up, otherwise killall can block
             gevent.sleep(1)

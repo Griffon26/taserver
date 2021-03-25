@@ -21,9 +21,10 @@
 import gevent
 import io
 import logging.config
+import os
 
 
-def set_up_logging(filename):
+def set_up_logging(data_root, filename):
     gevent.get_hub().exception_stream = io.StringIO()
     logging.config.dictConfig({
         'version': 1,
@@ -39,7 +40,7 @@ def set_up_logging(filename):
             'file': {
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'default',
-                'filename': filename,
+                'filename': os.path.join(data_root, 'logs', filename),
                 'maxBytes': 20 * 1024 * 1024,
                 'backupCount': 5,
             }

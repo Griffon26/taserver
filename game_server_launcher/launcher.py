@@ -21,6 +21,7 @@
 from distutils.version import StrictVersion
 import gevent
 import logging
+import os
 
 from common.errors import FatalError
 from common.firewall import FirewallClient
@@ -35,8 +36,6 @@ from .gameserverhandler import StartGameServerMessage, StopGameServerMessage, \
                                 FreezeGameServerMessage, UnfreezeGameServerMessage, \
                                 GameServerTerminatedMessage
 from .loginserverhandler import LoginServer
-
-map_rotation_state_path = 'data/maprotationstate.json'
 
 
 class GameServerProcess:
@@ -83,7 +82,7 @@ class IncompatibleVersionError(FatalError):
 
 @statetracer('address_pair', 'players')
 class Launcher:
-    def __init__(self, game_server_config, ports, incoming_queue, server_handler_queue):
+    def __init__(self, game_server_config, ports, incoming_queue, server_handler_queue, data_root):
         gevent.getcurrent().name = 'launcher'
 
         self.pending_callbacks = PendingCallbacks(incoming_queue)
@@ -101,8 +100,10 @@ class Launcher:
         self.active_server = GameServerProcess('gameserver1', self.ports, server_handler_queue)
         self.pending_server = GameServerProcess('gameserver2', self.ports, server_handler_queue)
         self.min_next_switch_time = None
+
+        self.map_rotation_state_path = os.path.join(data_root, 'maprotationstate.json')
         try:
-            with open(map_rotation_state_path, 'rt') as f:
+            with open(self.map_rotation_state_path, 'rt') as f:
                 self.controller_context = json.load(f)
         except IOError:
             self.controller_context = {}
@@ -417,7 +418,7 @@ class Launcher:
         self.active_server.set_ready(False)
         self.controller_context = msg.controller_context
 
-        with open(map_rotation_state_path, 'wt') as f:
+        with open(self.map_rotation_state_path, 'wt') as f:
             json.dump(self.controller_context, f)
 
         if 'next_map_index' in self.controller_context:
@@ -486,7 +487,7 @@ class Launcher:
                 self.last_server_ready_message = msg
 
 
-def handle_launcher(game_server_config, ports, incoming_queue, server_handler_queue):
-    launcher = Launcher(game_server_config, ports, incoming_queue, server_handler_queue)
+def handle_launcher(game_server_config, ports, incoming_queue, server_handler_queue, data_root):
+    launcher = Launcher(game_server_config, ports, incoming_queue, server_handler_queue, data_root)
     # launcher.trace_as('launcher')
     launcher.run()

@@ -21,6 +21,7 @@
 import gevent.monkey
 gevent.monkey.patch_all()
 
+import argparse
 import configparser
 import gevent
 import gevent.queue
@@ -35,14 +36,19 @@ from .authbot import handle_authbot
 from .communityloginserverhandler import handle_community_login_server
 from .hirezloginserverhandler import handle_hirez_login_server
 
-INI_PATH = os.path.join('data', 'authbot.ini')
+INI_FILE = 'authbot.ini'
 
 
 def main():
-    set_up_logging('authbot.log')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data-root', action='store', default='data',
+                        help='Location of the data dir containing all config files and logs.')
+    args = parser.parse_args()
+    data_root = args.data_root
+    set_up_logging(data_root, 'authbot.log')
     logger = logging.getLogger(__name__)
     config = configparser.ConfigParser()
-    with open(INI_PATH) as f:
+    with open(os.path.join(data_root, INI_FILE)) as f:
         config.read_file(f)
 
     # We're only gonna use fixed ports, so no need to read port offset from the config

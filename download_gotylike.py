@@ -25,8 +25,7 @@ from urllib.error import HTTPError
 import urllib.request as urlreq
 import zipfile
 
-
-destination_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'gamesettings', 'gotylike')
+default_data_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 download_url = 'https://github.com/Griffon26/tamods-server-gotylike/archive/master.zip'
 
 
@@ -35,6 +34,12 @@ class UserError(Exception):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data-root', action='store', default=default_data_dir,
+                        help='Location of the data dir containing all config files and logs.')
+    args = parser.parse_args()
+    data_root = args.data_root
+    destination_dir = os.path.join(data_root, 'gamesettings', 'gotylike')
 
     if os.path.exists(destination_dir):
         raise UserError('%s already exists. Please remove it before running this script again.' % destination_dir)
