@@ -1,3 +1,39 @@
+### taserver v2.7.0
+
+Features added:
+* the game server now generates the summary screen at the end of the match
+* the next map is now randomly selected from the maps with the most votes 
+* the duration of a map vote is now equal to ServerSettings.EndMatchWaitTime
+* the result of a map vote is announced in chat
+* kicking a player of level 15+ now requires more yes votes (66% iso 50%)
+* a command line option --data-root was added to allow running multiple servers
+  from the same taserver directory.
+* log files have been moved from the taserver root dir and My Documents to the
+  data/logs directory. 
+* the server admin part in ootb/serverconfig.lua was restructured to more easily
+  define roles with limited permissions
+  
+Minor improvements:
+* the map voting prompt now clearly states that only verified players can vote
+* authbot logging now masks email addresses
+* login server logging has been made less verbose to maintain a longer history
+
+Bugs fixed:
+* map voting messages are only given if map voting is on
+* fixed "HTTP 403 Forbidden" errors that prevented players from joining
+  and servers from starting up
+* avoid a crash when starting the login server without an account database
+* download_udpproxy.py now downloads a 32-bit executable to avoid additional run-time dependencies
+
+Compatibility notes:
+* this release is compatible with the previous release, but it logs to the data/logs
+  directory instead of to the taserver directory and the My Documents folder. You can
+  remove the logs in the old locations or you can move them to data/logs before
+  starting the server.
+* for the match summary screen you will need to rerun download_compatible_controller.py
+  on the game server 
+ 
+
 ### taserver v2.6.0
 
 Features added:
