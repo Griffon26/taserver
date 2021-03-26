@@ -1,9 +1,6 @@
 __pycache__/
 \.idea/
 .mypy_cache/
-/*.log
-/taserverdump.carrays_parsed.txt
-/taserverdump.carrays
 /TAMods-Server.dll
 /udpproxy.exe
 /data.*.bkp/
