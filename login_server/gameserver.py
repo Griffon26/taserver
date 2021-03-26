@@ -21,9 +21,11 @@
 import gevent.monkey
 gevent.monkey.patch_all()
 
+from collections import Counter
 import datetime
 import json
 import logging
+import random
 import time
 import urllib.request
 
@@ -85,7 +87,7 @@ class GameServer(Peer):
         self.map_votes = {}
         self.next_map_idx = None
 
-        if self.detected_ip.is_global or True:
+        if self.detected_ip.is_global:
             req = urllib.request.Request('http://tools.keycdn.com/geo.json?host=%s' % self.detected_ip,
                                          data=None,
                                          headers={
@@ -374,11 +376,11 @@ class GameServer(Peer):
         map_with_max_votes = self.next_map_idx
 
         if self.votable_maps:
-            for i in range(len(self.votable_maps)):
-                votes = len([map_id for map_id in self.map_votes.values() if map_id is i])
-                if votes > max_votes:
-                    max_votes = votes
-                    map_with_max_votes = i
+            votes_per_map = Counter(self.map_votes.values()).most_common()
+            max_voted = [map_id for map_id, nr_of_votes in votes_per_map if nr_of_votes == votes_per_map[0][1]]
+
+            if max_voted:
+                map_with_max_votes = random.choice(max_voted)
 
             self.logger.info(f'{self}: map with most votes was {map_with_max_votes}')
             self._send_public_message_from_server(f'Map vote ended. Next map will be {map_with_max_votes}.')
