@@ -129,12 +129,13 @@ class Login2LauncherProtocolVersionMessage(Message):
         self.version = version
 
 
-# Example json: { 'unique_id' : 123, 'ip' : '1.2.3.4', 'eligible_for_first_win': false }
+# Example json: { 'unique_id' : 123, 'display_name': 'some-player', 'ip' : '1.2.3.4', 'eligible_for_first_win': false }
 class Login2LauncherAddPlayer(Message):
     msg_id = _MSGID_LOGIN2LAUNCHER_ADD_PLAYER
 
-    def __init__(self, unique_id: int, ip: str, rank_xp: int, eligible_for_first_win: bool):
+    def __init__(self, unique_id: int, display_name: str, ip: str, rank_xp: int, eligible_for_first_win: bool):
         self.unique_id = unique_id
+        self.display_name = display_name
         self.ip = ip
         self.rank_xp = rank_xp
         self.eligible_for_first_win = eligible_for_first_win
@@ -398,12 +399,14 @@ class Launcher2GamePings(Message):
         self.player_pings = player_pings
 
 
-# Example json: { 'player_unique_id' : 123456, 'rank_xp': 1234567, 'eligible_for_first_win': false }
+# Example json: { 'player_unique_id' : 123456,  'player_display_name': 'some-player',
+#                 'rank_xp': 1234567, 'eligible_for_first_win': false }
 class Launcher2GamePlayerInfo(Message):
     msg_id = _MSGID_LAUNCHER2GAME_PLAYER_INFO
 
-    def __init__(self, player_unique_id: int, rank_xp: int, eligible_for_first_win: bool):
+    def __init__(self, player_unique_id: int, player_display_name: str, rank_xp: int, eligible_for_first_win: bool):
         self.player_unique_id = player_unique_id
+        self.player_display_name = player_display_name
         self.rank_xp = rank_xp
         self.eligible_for_first_win = eligible_for_first_win
 

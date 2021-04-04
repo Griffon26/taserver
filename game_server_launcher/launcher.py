@@ -291,7 +291,7 @@ class Launcher:
         # server another add_player message will come.
         if self.active_server.ready:
             self.game_controller.send(
-                Launcher2GamePlayerInfo(msg.unique_id, msg.rank_xp, msg.eligible_for_first_win))
+                Launcher2GamePlayerInfo(msg.unique_id, msg.display_name, msg.rank_xp, msg.eligible_for_first_win))
 
     def handle_remove_player_message(self, msg):
         if msg.ip:
