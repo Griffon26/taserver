@@ -19,15 +19,16 @@
 #
 
 from distutils.version import StrictVersion
-import json
 import os
 import re
+import xml.etree.ElementTree as XML
 from urllib.error import HTTPError
 import urllib.request as urlreq
 
 from common.versions import launcher2controller_protocol_version
 
 compatibility_csv = 'https://raw.githubusercontent.com/Griffon26/taserver/master/data/tamods_compatibility.csv'
+base_controller_url = 'https://tamods-server-update.s3-ap-southeast-2.amazonaws.com'
 target_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'TAMods-Server.dll')
 
 
@@ -36,17 +37,15 @@ class UserError(Exception):
 
 
 def get_available_tamods_versions():
-    result = urlreq.urlopen('https://api.github.com/repos/mcoot/tamodsupdate/git/refs/heads/release')
-    obj = json.load(result)
-    release_branch_sha = obj['object']['sha']
-
-    result = urlreq.urlopen('https://api.github.com/repos/mcoot/tamodsupdate/git/trees/%s' % release_branch_sha)
-    obj = json.load(result)
-
-    tamods_server_files = [entry['path'] for entry in obj['tree']
-                           if entry['type'] == 'blob'
-                           and entry['path'].startswith('TAMods-Server')
-                           and entry['path'].endswith('.dll')]
+    tamods_server_files = []
+    with urlreq.urlopen(f'{base_controller_url}?list-type=2') as resp:
+        # S3 list responds with XML
+        root = XML.parse(resp).getroot()
+        ns_prefix = '{http://s3.amazonaws.com/doc/2006-03-01/}'
+        for item in root.findall(f'./{ns_prefix}Contents'):
+            key = item.find(f'./{ns_prefix}Key').text
+            if key.startswith('TAMods-Server') and key.endswith('.dll'):
+                tamods_server_files.append(key)
 
     available_tamods_versions = []
     version_to_filename_map = {}
@@ -94,9 +93,9 @@ def is_compatible(version1, version2):
 
 
 def download_tamods_server_version(download_filename):
-    result = urlreq.urlopen('https://github.com/mcoot/tamodsupdate/raw/release/%s' % download_filename)
-    with open(target_filename, 'wb') as outfile:
-        outfile.write(result.read())
+    with urlreq.urlopen(f'{base_controller_url}/{download_filename}') as result:
+        with open(target_filename, 'wb') as outfile:
+            outfile.write(result.read())
 
 
 def main():
