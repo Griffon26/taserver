@@ -326,24 +326,22 @@ class LoginServer:
 
     def handle_http_request_message(self, msg):
         if msg.env['PATH_INFO'] == '/status':
+            self.logger.info('Served status request via HTTP to peer ' + str(msg.peer))
             msg.peer.send_response(json.dumps({
                 'online_players': len(self.players),
                 'online_servers': len(self.game_servers)
             }, sort_keys=True, indent=4))
         elif msg.env['PATH_INFO'] == '/detailed_status':
+            self.logger.info('Served detailed status request via HTTP to peer ' + str(msg.peer))
             online_game_servers_list = [
                 {'locked':      gs.password_hash is not None,
                  'mode':        gs.game_setting_mode,
                  'name':        gs.description,
                  'map_id':      gs.map_id,
-                 'players':     [p.display_name for p in gs.players.values()],
-                 'nplayers':    len(gs.players)} for gs in self.game_servers.values()
+                 'players':     [p.display_name for p in gs.players.values()]} for gs in self.game_servers.values()
             ]
-            
             msg.peer.send_response(json.dumps({
-                'online_players': len(self.players),
                 'online_players_list': [p.display_name for p in self.players.values()],
-                'online_servers': len(self.game_servers),
                 'online_servers_list': online_game_servers_list
             }, sort_keys=True, indent=4))
         else:
