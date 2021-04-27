@@ -339,7 +339,8 @@ class LoginServer:
                 {'locked':      gs.password_hash is not None,
                  'mode':        gs.game_setting_mode,
                  'name':        gs.description,
-                 'map_id':      gs.map_id,
+                 'map':         self.convert_map_id_to_map_name(gs.map_id)[0],
+                 'type':        self.convert_map_id_to_map_name(gs.map_id)[1],
                  'players':     [p.display_name for p in gs.players.values()]} for gs in self.game_servers.values()
             ]
             msg.peer.send_response(json.dumps({
@@ -348,6 +349,186 @@ class LoginServer:
             }, sort_keys=True, indent=4))
         else:
             msg.peer.send_response(None)
+
+    def convert_map_id_to_map_name(self, map_id):
+        if map_id == 1447:
+            map_name = "Katabatic"
+            game_type = "CTF"
+        elif map_id == 1456:
+            map_name = "Arx Novena"
+            game_type = "CTF"
+        elif map_id == 1457:
+            map_name = "Drydock"
+            game_type = "CTF"
+        elif map_id == 1458:
+            map_name = "Outskirts"
+            game_type = "Rabbit"
+        elif map_id == 1461:
+            map_name = "Quicksand"
+            game_type = "Rabbit"
+        elif map_id == 1462:
+            map_name = "Crossfire"
+            game_type = "CTF"
+        elif map_id == 1464:
+            map_name = "Crossfire"
+            game_type = "Rabbit"
+        elif map_id == 1473:
+            map_name = "Bella Omega"
+            game_type = "CTF"
+        elif map_id == 1480:
+            map_name = "Drydock Night"
+            game_type = "TDM"
+        elif map_id == 1482:
+            map_name = "Crossfire"
+            game_type = "TDM"
+        elif map_id == 1484:
+            map_name = "Quicksand"
+            game_type = "TDM"
+        elif map_id == 1485:
+            map_name = "Nightabatic"
+            game_type = "TDM"
+        elif map_id == 1487:
+            map_name = "Inferno"
+            game_type = "TDM"
+        elif map_id == 1488:
+            map_name = "Sulfur Cove"
+            game_type = "TDM"
+        elif map_id == 1490:
+            map_name = "Outskirts"
+            game_type = "TDM"
+        elif map_id == 1491:
+            map_name = "Inferno"
+            game_type = "Rabbit"
+        elif map_id == 1493:
+            map_name = "Temple Ruins"
+            game_type = "CTF"
+        elif map_id == 1494:
+            map_name = "Nightabatic"
+            game_type = "Rabbit"
+        elif map_id == 1495:
+            map_name = "Air Arena"
+            game_type = "Arena"
+        elif map_id == 1496:
+            map_name = "Sulfur Cove"
+            game_type = "Rabbit"
+        elif map_id == 1497:
+            map_name = "Walled In"
+            game_type = "Arena"
+        elif map_id == 1498:
+            map_name = "Lava Arena"
+            game_type = "Arena"
+        elif map_id == 1512:
+            map_name = "Tartarus"
+            game_type = "CTF"
+        elif map_id == 1514:
+            map_name = "Canyon Crusade Revival"
+            game_type = "CTF"
+        elif map_id == 1516:
+            map_name = "Raindance"
+            game_type = "CTF"
+        elif map_id == 1521:
+            map_name = "Katabatic"
+            game_type = "CaH"
+        elif map_id == 1522:
+            map_name = "Stonehenge"
+            game_type = "CTF"
+        elif map_id == 1523:
+            map_name = "Sunstar"
+            game_type = "CTF"
+        elif map_id == 1525:
+            map_name = "Drydock Night"
+            game_type = "CaH"
+        elif map_id == 1526:
+            map_name = "Outskirts 3P"
+            game_type = "CaH"
+        elif map_id == 1528:
+            map_name = "Raindance"
+            game_type = "CaH"
+        elif map_id == 1533:
+            map_name = "Hinterlands"
+            game_type = "Arena"
+        elif map_id == 1534:
+            map_name = "Permafrost"
+            game_type = "CTF"
+        elif map_id == 1535:
+            map_name = "Sulfur Cove"
+            game_type = "CaH"
+        elif map_id == 1536:
+            map_name = "Miasma"
+            game_type = "TDM"
+        elif map_id == 1537:
+            map_name = "Tartarus"
+            game_type = "CaH"
+        elif map_id == 1538:
+            map_name = "Dangerous Crossing"
+            game_type = "CTF"
+        elif map_id == 1539:
+            map_name = "Katabatic"
+            game_type = "Blitz"
+        elif map_id == 1540:
+            map_name = "Arx Novena"
+            game_type = "Blitz"
+        elif map_id == 1541:
+            map_name = "Drydock"
+            game_type = "Blitz"
+        elif map_id == 1542:
+            map_name = "Crossfire"
+            game_type = "Blitz"
+        elif map_id == 1543:
+            map_name = "Blueshift"
+            game_type = "CTF"
+        elif map_id == 1544:
+            map_name = "Whiteout"
+            game_type = "Arena"
+        elif map_id == 1545:
+            map_name = "Fraytown"
+            game_type = "Arena"
+        elif map_id == 1546:
+            map_name = "Undercroft"
+            game_type = "Arena"
+        elif map_id == 1548:
+            map_name = "Canyon Crusade Revival"
+            game_type = "CaH"
+        elif map_id == 1549:
+            map_name = "Canyon Crusade Revival"
+            game_type = "Blitz"
+        elif map_id == 1550:
+            map_name = "Bella Omega"
+            game_type = "Blitz"
+        elif map_id == 1551:
+            map_name = "Bella Omega NS"
+            game_type = "CTF"
+        elif map_id == 1552:
+            map_name = "Blueshift"
+            game_type = "Blitz"
+        elif map_id == 1553:
+            map_name = "Terminus"
+            game_type = "CTF"
+        elif map_id == 1554:
+            map_name = "Icecoaster"
+            game_type = "CTF"
+        elif map_id == 1555:
+            map_name = "Perdition"
+            game_type = "CTF"
+        elif map_id == 1557:
+            map_name = "Perdition"
+            game_type = "TDM"
+        elif map_id == 1558:
+            map_name = "Icecoaster"
+            game_type = "Blitz"
+        elif map_id == 1559:
+            map_name = "Terminus"
+            game_type = "Blitz"
+        elif map_id == 1560:
+            map_name = "Hellfire"
+            game_type = "CTF"
+        elif map_id == 1561:
+            map_name = "Hellfire"
+            game_type = "Blitz"
+        else:
+            map_name = ""
+            game_type = ""
+        return [map_name, game_type]
 
     def handle_launcher_protocol_version_message(self, msg):
         launcher_version = StrictVersion(msg.version)
