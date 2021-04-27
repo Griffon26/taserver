@@ -326,13 +326,15 @@ class LoginServer:
 
     def handle_http_request_message(self, msg):
         if msg.env['PATH_INFO'] == '/status':
-            self.logger.info('Served status request via HTTP to peer ' + str(msg.peer))
+            if "HTTP_ORIGIN" in msg.env:
+                self.logger.info('Served status request via HTTP to peer "' + msg.env["HTTP_ORIGIN"] + '"')
             msg.peer.send_response(json.dumps({
                 'online_players': len(self.players),
                 'online_servers': len(self.game_servers)
             }, sort_keys=True, indent=4))
         elif msg.env['PATH_INFO'] == '/detailed_status':
-            self.logger.info('Served detailed status request via HTTP to peer ' + str(msg.peer))
+            if "HTTP_ORIGIN" in msg.env:
+                self.logger.info('Served detailed status request via HTTP to peer "' + msg.env["HTTP_ORIGIN"] + '"')
             online_game_servers_list = [
                 {'locked':      gs.password_hash is not None,
                  'mode':        gs.game_setting_mode,
