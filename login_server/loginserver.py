@@ -328,6 +328,8 @@ class LoginServer:
         if msg.env['PATH_INFO'] == '/status':
             if "REMOTE_ADDR" in msg.env:
                 self.logger.info('Served status request via HTTP to peer "' + msg.env["REMOTE_ADDR"] + '"')
+            else:
+                self.logger.info('Served status request via HTTP to Unknown peer')
             msg.peer.send_response(json.dumps({
                 'online_players': len(self.players),
                 'online_servers': len(self.game_servers)
@@ -335,6 +337,8 @@ class LoginServer:
         elif msg.env['PATH_INFO'] == '/detailed_status':
             if "REMOTE_ADDR" in msg.env:
                 self.logger.info('Served detailed status request via HTTP to peer "' + msg.env["REMOTE_ADDR"] + '"')
+            else:
+                self.logger.info('Served detailed status request via HTTP to Unknown peer')
             online_game_servers_list = [
                 {'locked':      gs.password_hash is not None,
                  'mode':        gs.game_setting_mode,
