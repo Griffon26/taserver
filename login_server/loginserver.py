@@ -326,12 +326,96 @@ class LoginServer:
 
     def handle_http_request_message(self, msg):
         if msg.env['PATH_INFO'] == '/status':
+            if "REMOTE_ADDR" in msg.env:
+                self.logger.info('Served status request via HTTP to peer "' + msg.env["REMOTE_ADDR"] + '"')
+            else:
+                self.logger.info('Served status request via HTTP to Unknown peer')
             msg.peer.send_response(json.dumps({
                 'online_players': len(self.players),
                 'online_servers': len(self.game_servers)
             }, sort_keys=True, indent=4))
+        elif msg.env['PATH_INFO'] == '/detailed_status':
+            if "REMOTE_ADDR" in msg.env:
+                self.logger.info('Served detailed status request via HTTP to peer "' + msg.env["REMOTE_ADDR"] + '"')
+            else:
+                self.logger.info('Served detailed status request via HTTP to Unknown peer')
+            online_game_servers_list = [
+                {'locked':      gs.password_hash is not None,
+                 'mode':        gs.game_setting_mode,
+                 'name':        gs.description,
+                 'map':         self.convert_map_id_to_map_name_and_game_type(gs.map_id)[0],
+                 'type':        self.convert_map_id_to_map_name_and_game_type(gs.map_id)[1],
+                 'players':     [p.display_name for p in gs.players.values()]} for gs in self.game_servers.values()
+            ]
+            msg.peer.send_response(json.dumps({
+                'online_players_list': [p.display_name for p in self.players.values()],
+                'online_servers_list': online_game_servers_list
+            }, sort_keys=True, indent=4))
         else:
             msg.peer.send_response(None)
+
+    def convert_map_id_to_map_name_and_game_type(self, map_id):
+        map_names_and_types = {
+            "1447": ["Katabatic","CTF"],
+            "1456": ["Arx Novena","CTF"],
+            "1457": ["Drydock","CTF"],
+            "1458": ["Outskirts","Rabbit"],
+            "1461": ["Quicksand","Rabbit"],
+            "1462": ["Crossfire","CTF"],
+            "1464": ["Crossfire","Rabbit"],
+            "1473": ["Bella Omega","CTF"],
+            "1480": ["Drydock Night","TDM"],
+            "1482": ["Crossfire","TDM"],
+            "1484": ["Quicksand","TDM"],
+            "1485": ["Nightabatic","TDM"],
+            "1487": ["Inferno","TDM"],
+            "1488": ["Sulfur Cove","TDM"],
+            "1490": ["Outskirts","TDM"],
+            "1491": ["Inferno","Rabbit"],
+            "1493": ["Temple Ruins","CTF"],
+            "1494": ["Nightabatic","Rabbit"],
+            "1495": ["Air Arena","Arena"],
+            "1496": ["Sulfur Cove","Rabbit"],
+            "1497": ["Walled In","Arena"],
+            "1498": ["Lava Arena","Arena"],
+            "1512": ["Tartarus","CTF"],
+            "1514": ["Canyon Crusade Revival","CTF"],
+            "1516": ["Raindance","CTF"],
+            "1521": ["Katabatic","CaH"],
+            "1522": ["Stonehenge","CTF"],
+            "1523": ["Sunstar","CTF"],
+            "1525": ["Drydock Night","CaH"],
+            "1526": ["Outskirts 3P","CaH"],
+            "1528": ["Raindance","CaH"],
+            "1533": ["Hinterlands","Arena"],
+            "1534": ["Permafrost","CTF"],
+            "1535": ["Sulfur Cove","CaH"],
+            "1536": ["Miasma","TDM"],
+            "1537": ["Tartarus","CaH"],
+            "1538": ["Dangerous Crossing","CTF"],
+            "1539": ["Katabatic","Blitz"],
+            "1540": ["Arx Novena","Blitz"],
+            "1541": ["Drydock","Blitz"],
+            "1542": ["Crossfire","Blitz"],
+            "1543": ["Blueshift","CTF"],
+            "1544": ["Whiteout","Arena"],
+            "1545": ["Fraytown","Arena"],
+            "1546": ["Undercroft","Arena"],
+            "1548": ["Canyon Crusade Revival","CaH"],
+            "1549": ["Canyon Crusade Revival","Blitz"],
+            "1550": ["Bella Omega","Blitz"],
+            "1551": ["Bella Omega NS","CTF"],
+            "1552": ["Blueshift","Blitz"],
+            "1553": ["Terminus","CTF"],
+            "1554": ["Icecoaster","CTF"],
+            "1555": ["Perdition","CTF"],
+            "1557": ["Perdition","TDM"],
+            "1558": ["Icecoaster","Blitz"],
+            "1559": ["Terminus","Blitz"],
+            "1560": ["Hellfire","CTF"],
+            "1561": ["Hellfire","Blitz"]
+        }
+        return map_names_and_types.get(str(map_id), ["Unknown","Unknown"])
 
     def handle_launcher_protocol_version_message(self, msg):
         launcher_version = StrictVersion(msg.version)
