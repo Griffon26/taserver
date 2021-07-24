@@ -14,6 +14,20 @@ local commands = {
         end,
     },
     {
+        name      = "NextMapName",
+        arguments = {
+            {"MapName", Admin.Command.ArgumentType.String},
+        },
+        func      = function (player, role, MapName)
+            if Admin.Game.NextMapByFilename(MapName) then
+                Admin.SendConsoleMessageToPlayer(player, "Set next map to " .. MapName)
+            else
+                Admin.SendConsoleMessageToPlayer(player, "Failed to set next map to " .. MapName)
+            end
+            
+        end,
+    },
+    {
         name      = "StartMap",
         arguments = {},
         func      = function (player, role)
