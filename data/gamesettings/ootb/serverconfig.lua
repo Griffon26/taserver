@@ -38,13 +38,13 @@ local roles = {
 --    {
 --        name     = "admin",
 --        password = "gotytest", -- <<< Set the password!
---        commands = {"NextMap", "StartMap", "EndMap"},
+--        commands = {"NextMap", "NextMapName", "StartMap", "EndMap"},
 --        canLua   = true, -- Admin can execute arbitrary Lua!
 --    },
 --    {
 --        name     = "mod",
 --        password = "moderator", -- <<< Set the password!
---        commands = {"NextMap", "StartMap", "EndMap"},
+--        commands = {"NextMap", "NextMapName", "StartMap", "EndMap"},
 --        canLua   = false,
 --    },
 }
