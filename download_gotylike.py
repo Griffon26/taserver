@@ -19,6 +19,7 @@
 #
 
 import argparse
+import certifi
 import os
 import shutil
 import tempfile
@@ -49,7 +50,7 @@ def main():
         print('Downloading %s...' % download_url)
         target_filename = os.path.join(temp_dir_name, 'gotylike.zip')
         try:
-            result = urlreq.urlopen(download_url)
+            result = urlreq.urlopen(download_url, cafile=certifi.where())
             with open(target_filename, 'wb') as outfile:
                 outfile.write(result.read())
         except HTTPError as e:

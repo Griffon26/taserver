@@ -21,6 +21,7 @@
 import gevent.monkey
 gevent.monkey.patch_all()
 
+import certifi
 from collections import Counter
 import datetime
 import json
@@ -88,12 +89,12 @@ class GameServer(Peer):
         self.next_map_idx = None
 
         if self.detected_ip.is_global:
-            req = urllib.request.Request('http://tools.keycdn.com/geo.json?host=%s' % self.detected_ip,
+            req = urllib.request.Request('https://tools.keycdn.com/geo.json?host=%s' % self.detected_ip,
                                          data=None,
                                          headers={
                                              'User-Agent': 'keycdn-tools:https://github.com/Griffon26/taserver/blob/master/README.md'
                                          })
-            response = urllib.request.urlopen(req)
+            response = urllib.request.urlopen(req, cafile=certifi.where())
             result = response.read()
             json_result = json.loads(result)
 

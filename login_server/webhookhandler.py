@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import certifi
 import gevent
 import gevent.queue
 import logging
@@ -76,7 +77,7 @@ class WebhookHandler:
                 data = data.encode('ascii')
                 req = urllib.request.Request(self.webhook_url, headers={'User-Agent': 'Mozilla/5.0'})
                 try:
-                    urllib.request.urlopen(req, data)
+                    urllib.request.urlopen(req, data, cafile=certifi.where())
                 except urllib.error.URLError as e:
                     self.logger.warning(f'webhook: URLError: {e.reason}')
                     # TODO: do proper error logging

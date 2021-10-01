@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import certifi
 import os
 from urllib.error import HTTPError
 import urllib.request as urlreq
@@ -34,7 +35,7 @@ class UserError(Exception):
 def main():
     print('Downloading %s\nto %s' % (download_url, target_filename))
     try:
-        result = urlreq.urlopen(download_url)
+        result = urlreq.urlopen(download_url, cafile=certifi.where())
         with open(target_filename, 'wb') as outfile:
             outfile.write(result.read())
     except HTTPError as e:

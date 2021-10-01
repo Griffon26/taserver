@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import certifi
 from distutils.version import StrictVersion
 import os
 import re
@@ -38,7 +39,7 @@ class UserError(Exception):
 
 def get_available_tamods_versions():
     tamods_server_files = []
-    with urlreq.urlopen(f'{base_controller_url}?list-type=2') as resp:
+    with urlreq.urlopen(f'{base_controller_url}?list-type=2', cafile=certifi.where()) as resp:
         # S3 list responds with XML
         root = XML.parse(resp).getroot()
         ns_prefix = '{http://s3.amazonaws.com/doc/2006-03-01/}'
@@ -64,7 +65,7 @@ def get_available_tamods_versions():
 
 
 def load_version_map():
-    response = urlreq.urlopen(compatibility_csv)
+    response = urlreq.urlopen(compatibility_csv, cafile=certifi.where())
     encoding = response.info().get_content_charset()
     content = response.read().decode(encoding)
 
@@ -93,7 +94,7 @@ def is_compatible(version1, version2):
 
 
 def download_tamods_server_version(download_filename):
-    with urlreq.urlopen(f'{base_controller_url}/{download_filename}') as result:
+    with urlreq.urlopen(f'{base_controller_url}/{download_filename}', cafile=certifi.where()) as result:
         with open(target_filename, 'wb') as outfile:
             outfile.write(result.read())
 

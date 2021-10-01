@@ -18,6 +18,7 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import certifi
 from gevent import socket
 from ipaddress import IPv4Address
 from typing import Optional
@@ -66,9 +67,9 @@ class IPAddressPair:
     def detect():
         detection_error = None
 
-        req = urlreq.Request('http://ipv4.icanhazip.com/', headers={'User-Agent': 'Mozilla/5.0'})
+        req = urlreq.Request('https://ipv4.icanhazip.com/', headers={'User-Agent': 'Mozilla/5.0'})
         try:
-            external_ip = IPv4Address(urlreq.urlopen(req).read().decode('utf8').strip())
+            external_ip = IPv4Address(urlreq.urlopen(req, cafile=certifi.where()).read().decode('utf8').strip())
         except Exception as e:
             external_ip = None
             detection_error = str(e)
