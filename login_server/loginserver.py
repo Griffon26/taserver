@@ -24,6 +24,7 @@ import hashlib
 import logging
 import random
 import string
+import glob
 
 from common.connectionhandler import PeerConnectedMessage, PeerDisconnectedMessage
 from common.datatypes import *
@@ -351,8 +352,41 @@ class LoginServer:
                 'online_players_list': [p.display_name for p in self.players.values()],
                 'online_servers_list': online_game_servers_list
             }, sort_keys=True, indent=4))
+        elif msg.env['PATH_INFO'] == '/player':
+            if "REMOTE_ADDR" in msg.env:
+                self.logger.info('Served player stats request via HTTP to peer "' + msg.env["REMOTE_ADDR"] + '"')
+            else:
+                self.logger.info('Served player stats request via HTTP to Unknown peer')
+            
+            if "QUERY_STRING" in msg.env:
+                player_data = self.get_player_settings_data(msg.env['QUERY_STRING'])
+                if player_data != False:
+                    filtered_player_data = {
+                        "player_found": True,
+                        "clan_tag": player_data["clan_tag"],
+                        "player_name": msg.env['QUERY_STRING'],
+                        "rank_xp": player_data["progression"]["rank_xp"]
+                    }
+                    msg.peer.send_response(json.dumps(filtered_player_data, sort_keys=True, indent=4))
+                else:
+                    msg.peer.send_response(json.dumps({
+                        'player_found': False
+                    }, sort_keys=True, indent=4))
+            else:
+                msg.peer.send_response(json.dumps({
+                    'player_found': False
+                }, sort_keys=True, indent=4))
         else:
             msg.peer.send_response(None)
+
+    def get_player_settings_data(self, player_name):
+        self.logger.info("Retrieved settings data for player: " + player_name)
+        try:
+            with open(glob.glob('data/players/' + player_name + '_settings.json')[0], "r") as f:
+                file_contents = json.load(f)
+            return file_contents
+        except IndexError:
+            return False
 
     def convert_map_id_to_map_name_and_game_type(self, map_id):
         map_names_and_types = {
