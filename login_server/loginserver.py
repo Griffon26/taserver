@@ -48,7 +48,7 @@ UNUSED_AUTHCODE_CHECK_TIME = 3600
 
 @statetracer('address_pair', 'game_servers', 'players')
 class LoginServer:
-    def __init__(self, server_queue, client_queues, server_stats_queue, ports, accounts):
+    def __init__(self, server_queue, client_queues, server_stats_queue, ports, accounts, shared_config):
         self.logger = logging.getLogger(__name__)
         self.server_queue = server_queue
         self.client_queues = client_queues
@@ -58,7 +58,7 @@ class LoginServer:
 
         self.players = TracingDict()
         self.social_network = SocialNetwork()
-        self.firewall = FirewallClient(ports)
+        self.firewall = FirewallClient(ports, shared_config)
         self.accounts = accounts
         self.message_handlers = {
             Auth2LoginAuthCodeRequestMessage: self.handle_authcode_request_message,

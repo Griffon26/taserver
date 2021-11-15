@@ -51,8 +51,8 @@ def handle_dump(dumpqueue):
         traffic_dumper.run()
 
 
-def handle_server(server_queue, client_queues, server_stats_queue, ports, accounts):
-    server = LoginServer(server_queue, client_queues, server_stats_queue, ports, accounts)
+def handle_server(server_queue, client_queues, server_stats_queue, ports, accounts, shared_config):
+    server = LoginServer(server_queue, client_queues, server_stats_queue, ports, accounts, shared_config)
     # server.trace_as('loginserver')
     server.run()
 
@@ -104,7 +104,8 @@ def main():
                      client_queues,
                      server_stats_queue,
                      ports,
-                     accounts),
+                     accounts,
+                     config['shared']),
         gevent_spawn("login server's handle_authcodes",
                      handle_authcodes,
                      server_queue),
@@ -122,7 +123,8 @@ def main():
         gevent_spawn("login server's handle_game_server_launcher",
                      handle_game_server_launcher,
                      server_queue,
-                     ports)
+                     ports,
+                     config['shared'])
     ]
     # Give the greenlets enough time to start up, otherwise killall can block
     gevent.sleep(1)

@@ -82,14 +82,14 @@ class IncompatibleVersionError(FatalError):
 
 @statetracer('address_pair', 'players')
 class Launcher:
-    def __init__(self, game_server_config, ports, incoming_queue, server_handler_queue, data_root):
+    def __init__(self, game_server_config, shared_config, ports, incoming_queue, server_handler_queue, data_root):
         gevent.getcurrent().name = 'launcher'
 
         self.pending_callbacks = PendingCallbacks(incoming_queue)
 
         self.logger = logging.getLogger(__name__)
         self.ports = ports
-        self.firewall = FirewallClient(ports)
+        self.firewall = FirewallClient(ports, shared_config)
         self.game_server_config = game_server_config
         self.incoming_queue = incoming_queue
         self.server_handler_queue = server_handler_queue
@@ -487,7 +487,7 @@ class Launcher:
                 self.last_server_ready_message = msg
 
 
-def handle_launcher(game_server_config, ports, incoming_queue, server_handler_queue, data_root):
-    launcher = Launcher(game_server_config, ports, incoming_queue, server_handler_queue, data_root)
+def handle_launcher(game_server_config, shared_config, ports, incoming_queue, server_handler_queue, data_root):
+    launcher = Launcher(game_server_config, shared_config, ports, incoming_queue, server_handler_queue, data_root)
     # launcher.trace_as('launcher')
     launcher.run()
