@@ -15,17 +15,17 @@ on a LAN disconnected from the internet. In that case, follow these steps to set
 
 2. Install python 3
 
-3. Install the gevent module for python. From an administrator command prompt you should be able 
+3. Install the gevent and certifi modules for python. From an administrator command prompt you should be able 
    to do it with:
 
     ```
-    pip install gevent
+    pip install gevent certifi
     ```
     
    You may have to specify the full path. Something like:
    
     ```
-    C:\Program Files (x86)\Python36\Scripts\pip install gevent
+    C:\Program Files (x86)\Python36\Scripts\pip install gevent certifi
     ```
 
 4. Open an administrator command prompt and go to the directory containing the taserver files

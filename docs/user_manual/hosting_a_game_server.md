@@ -32,7 +32,7 @@ connect to the replacement login server, follow these steps:
     You may have to specify the full path. Something like:
 
     ```
-    C:\Program Files (x86)\Python36\Scripts\pip install gevent
+    C:\Program Files (x86)\Python36\Scripts\pip install gevent certifi
     ```
 
 6.  Modify `dir` under the `[gameserver]` section in `data/gameserverlauncher.ini` to point to
