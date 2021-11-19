@@ -22,11 +22,11 @@ connect to the replacement login server, follow these steps:
 
 ![python_setup](./images/../../images/python_installer.PNG)
 
-5.  Install the gevent module for python. From an administrator command prompt you should be able
+5.  Install the gevent and certifi modules for python. From an administrator command prompt you should be able
     to do it with:
 
     ```
-    pip install gevent
+    pip install gevent certifi
     ```
 
     You may have to specify the full path. Something like:
