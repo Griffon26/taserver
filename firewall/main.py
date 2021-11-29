@@ -40,6 +40,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-root', action='store', default='data',
                         help='Location of the data dir containing all config files and logs.')
+    parser.add_argument('--port-offset', action='store', default=None,
+                        help='Override port offset in the config')
     args = parser.parse_args()
     data_root = args.data_root
 
@@ -47,7 +49,11 @@ def main():
     with open(get_shared_ini_path(data_root)) as f:
         config.read_file(f)
 
-    ports = Ports(int(config['shared']['port_offset']))
+    if args.port_offset is not None:
+        print(f"Using port offset flag: {int(args.port_offset)}")
+        ports = Ports(int(args.port_offset))
+    else:
+        ports = Ports(int(config['shared']['port_offset']))
     use_iptables = config['shared'].getboolean('use_iptables', False)
     udpproxy_enabled = not use_iptables
 
