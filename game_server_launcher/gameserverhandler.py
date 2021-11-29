@@ -78,7 +78,7 @@ class GameServerHandler:
             self.working_dir = game_server_config['dir']
             self.dll_to_inject = game_server_config['controller_dll']
             self.dll_config_path = os.path.join(data_root, game_server_config['controller_config'])
-            self.use_external_port = game_server_config.getboolean('use_external_port', True)
+            self.use_external_port = game_server_config.getboolean('use_external_port', False)
         except KeyError as e:
             raise ConfigurationError("%s is a required configuration item under [gameserver]" % str(e))
 
