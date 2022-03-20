@@ -359,7 +359,7 @@ class LoginServer:
             
             if "QUERY_STRING" in msg.env:
                 filtered_player_name = ''.join(filter(str.isalnum, msg.env['QUERY_STRING']))
-                player_data = False
+                player_data = None
                 if filtered_player_name in self.accounts:
                     player_data = self.get_player_settings_data(filtered_player_name)
                 
@@ -381,7 +381,6 @@ class LoginServer:
             msg.peer.send_response(None)
 
     def get_player_settings_data(self, player_name):
-        self.logger.info("Retrieved settings data for player: " + player_name)
         try:
             with open('data/players/' + player_name + '_settings.json', "r") as f:
                 file_contents = json.load(f)
