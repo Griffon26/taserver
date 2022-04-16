@@ -54,8 +54,9 @@ def main():
         ports = Ports(int(args.port_offset))
     else:
         ports = Ports(int(config['shared']['port_offset']))
-    use_iptables = config['shared'].getboolean('use_iptables', False)
-    udpproxy_enabled = not use_iptables
+    platform = config['shared'].get('platform', 'windows')
+    use_iptables = (platform == 'linux')
+    udpproxy_enabled = (platform == 'windows')
 
     if udpproxy_enabled:
         try:

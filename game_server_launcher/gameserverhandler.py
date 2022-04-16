@@ -78,7 +78,7 @@ class GameServerHandler:
             self.working_dir = game_server_config['dir']
             self.dll_to_inject = game_server_config['controller_dll']
             self.dll_config_path = os.path.join(data_root, game_server_config['controller_config'])
-            self.use_external_port = game_server_config.getboolean('use_external_port', False)
+            self.platform = game_server_config.get('platform', 'windows')
         except KeyError as e:
             raise ConfigurationError("%s is a required configuration item under [gameserver]" % str(e))
 
@@ -131,7 +131,7 @@ class GameServerHandler:
     def start_server_process(self, server):
         external_port = self.ports[server]
 
-        if self.use_external_port:
+        if self.platform == 'linux':
             # udpproxy is disabled, so listen directly on the port
             internal_port = external_port
         else:
@@ -156,7 +156,7 @@ class GameServerHandler:
             args.extend(['-tamodsconfig', self.dll_config_path])
         # By default, TAMods-server will listen on port-100/tcp. If udpproxy is not running,
         # -noportoffset will allow TAMods server to still listen on the same port as the game server's udp.
-        if self.use_external_port:
+        if self.platform == 'linux':
             args.extend(['-noportoffset'])
         process = sp.Popen(args, cwd=self.working_dir)
         self.servers[server] = process

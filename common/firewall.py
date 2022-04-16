@@ -31,7 +31,8 @@ class FirewallClient:
     def __init__(self, ports, shared_config):
         self.ports = ports
         # don't try to send commands to udpproxy if its not running
-        self.use_udpproxy = not shared_config.getboolean('use_iptables', False)
+        platform = shared_config.get('platform', 'windows')
+        self.use_udpproxy = (platform == 'windows')
 
     def _send_command(self, command):
         server_address = ("127.0.0.1", self.ports['firewall'])
