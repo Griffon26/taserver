@@ -53,11 +53,11 @@ LEVEL_15_XP = 109815
              'players', 'player_being_kicked', 'match_end_time_rel_or_abs', 'match_time_counting',
              'be_score', 'ds_score', 'map_id', )
 class GameServer(Peer):
-    def __init__(self, detected_ip: IPv4Address, ports):
+    def __init__(self, detected_ip: IPv4Address, ports, shared_config):
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
-        self.firewall = FirewallClient(ports)
+        self.firewall = FirewallClient(ports, shared_config)
         self.login_server = None
         self.server_id = None
         self.match_id = None

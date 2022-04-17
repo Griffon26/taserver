@@ -78,6 +78,7 @@ class GameServerHandler:
             self.working_dir = game_server_config['dir']
             self.dll_to_inject = game_server_config['controller_dll']
             self.dll_config_path = os.path.join(data_root, game_server_config['controller_config'])
+            self.platform = game_server_config.get('platform', 'windows')
         except KeyError as e:
             raise ConfigurationError("%s is a required configuration item under [gameserver]" % str(e))
 
@@ -129,7 +130,15 @@ class GameServerHandler:
 
     def start_server_process(self, server):
         external_port = self.ports[server]
-        internal_port = self.ports[f'{server}proxy']
+
+        if self.platform == 'linux':
+            # udpproxy is disabled, so listen directly on the port
+            internal_port = external_port
+        else:
+            # Add 100 to the port, because it's the udpproxy that's actually listening on the port itself
+            # and it forwards traffic to port + 100
+            internal_port = self.ports[f'{server}proxy']
+
         log_filename = os.path.join(self.data_root, 'logs', 'tagameserver%d.log' % external_port)
 
         try:
@@ -139,14 +148,16 @@ class GameServerHandler:
             pass
 
         self.logger.info(f'{server}: starting a new TribesAscend server on port {external_port}...')
-        # Add 100 to the port, because it's the udpproxy that's actually listening on the port itself
-        # and it forwards traffic to port + 100
         args = [self.exe_path, 'server',
                 '-abslog=%s' % os.path.abspath(log_filename),
                 '-port=%d' % internal_port,
                 '-controlport', str(self.ports['game2launcher'])]
         if self.dll_config_path is not None:
             args.extend(['-tamodsconfig', self.dll_config_path])
+        # By default, TAMods-server will listen on port-100/tcp. If udpproxy is not running,
+        # -noportoffset will allow TAMods server to still listen on the same port as the game server's udp.
+        if self.platform == 'linux':
+            args.extend(['-noportoffset'])
         process = sp.Popen(args, cwd=self.working_dir)
         self.servers[server] = process
         self.logger.info(f'{server}: started process with pid {process.pid}')
