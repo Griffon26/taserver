@@ -129,12 +129,13 @@ class Login2LauncherProtocolVersionMessage(Message):
         self.version = version
 
 
-# Example json: { 'unique_id' : 123, 'ip' : '1.2.3.4', 'eligible_for_first_win': false }
+# Example json: { 'unique_id' : 123, 'display_name': 'playername' 'ip' : '1.2.3.4', 'eligible_for_first_win': false }
 class Login2LauncherAddPlayer(Message):
     msg_id = _MSGID_LOGIN2LAUNCHER_ADD_PLAYER
 
-    def __init__(self, unique_id: int, ip: str, rank_xp: int, eligible_for_first_win: bool):
+    def __init__(self, unique_id: int, display_name: str, ip: str, rank_xp: int, eligible_for_first_win: bool):
         self.unique_id = unique_id
+        self.display_name = display_name
         self.ip = ip
         self.rank_xp = rank_xp
         self.eligible_for_first_win = eligible_for_first_win

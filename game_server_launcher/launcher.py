@@ -277,7 +277,7 @@ class Launcher:
 
     def handle_add_player_message(self, msg):
         if msg.ip:
-            self.logger.info('launcher: login server added player %d with ip %s' % (msg.unique_id, msg.ip))
+            self.logger.info('launcher: login server added player %d (%s) with ip %s' % (msg.unique_id, msg.display_name, msg.ip))
             self.firewall.modify_firewall('whitelist', 'add', msg.unique_id, msg.ip)
         else:
             self.logger.info('launcher: login server added local player %d' % msg.unique_id)
