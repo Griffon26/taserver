@@ -295,7 +295,6 @@ class Launcher:
 
     def handle_remove_player_message(self, msg):
         if msg.ip:
-            display_name = msg.display_name
             self.logger.info('launcher: login server removed player %d with ip %s' % (msg.unique_id, msg.ip))
             self.firewall.modify_firewall('whitelist', 'remove', msg.unique_id, msg.ip)
         else:
