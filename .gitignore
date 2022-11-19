@@ -3,4 +3,5 @@ __pycache__/
 .mypy_cache/
 /TAMods-Server.dll
 /udpproxy.exe
+/InjectorStandalone.exe
 /data.*.bkp/

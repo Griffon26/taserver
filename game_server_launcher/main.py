@@ -74,6 +74,7 @@ def main():
                 gevent_spawn("game server launcher's handle_game_server",
                              handle_game_server,
                              config['gameserver'],
+                             config['shared'],
                              ports,
                              server_handler_queue,
                              incoming_queue,
