@@ -1,3 +1,20 @@
+### taserver v2.8.0
+
+Features added:
+* game servers can now be hosted on linux using wine
+* in addition to the `/status` endpoint on port 9080 the login server now also has a
+  `/detailed_status` endpoint providing more detailed information about servers and players and
+  a `/player` endpoint providing data for a specific player name.
+* the `NextMapName` admin command was added similar to the `NextMap` command, but allowing you to specify the map by name instead of ID
+* the game server now records the names of players that join in the log file
+* a port offset for the game server and firewall can now also be specified from the command line
+
+Compatibility notes:
+* this release is not backwards compatible; both login server and
+  game servers must be upgraded to v2.8.0 simultaneously, as a
+  result of the player name being sent to the game server upon
+  connection.
+
 ### taserver v2.7.0
 
 Features added:
