@@ -8,7 +8,7 @@ To talk about this project or request help, join the [discord server](https://di
 
 Select any of the topics below if you want to know more about it:
 * [How to join games](docs/user_manual/joining_games.md)
-* [How to host a game server](docs/user_manual/hosting_a_game_server.md) ([or two](docs/user_manual/hosting_multiple_game_servers.md))
+* [How to host a game server](docs/user_manual/hosting_a_game_server.md) ([or two](docs/user_manual/hosting_multiple_game_servers.md)) ([or on linux](docs/user_manual/hosting_a_game_server_linux.md))
 * [How to host a login server](docs/user_manual/hosting_a_login_server.md)
 
 If you encounter bugs or features that don't work yet, feel free
