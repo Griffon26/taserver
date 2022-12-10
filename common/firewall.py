@@ -18,11 +18,13 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from gevent import socket
-from ipaddress import IPv4Address
 import json
 import logging
+import os
 import struct
+from ipaddress import IPv4Address
+
+from gevent import socket
 
 from .tcpmessage import TcpMessageWriter
 
@@ -31,7 +33,7 @@ class FirewallClient:
     def __init__(self, ports, shared_config):
         self.ports = ports
         # don't try to send commands to udpproxy if its not running
-        platform = shared_config.get('platform', 'windows')
+        platform = 'windows' if os.name == 'nt' else 'linux'
         self.use_udpproxy = (platform == 'windows')
 
     def _send_command(self, command):
