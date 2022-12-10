@@ -19,20 +19,22 @@
 #
 import argparse
 import configparser
+import json
+import os
+import sys
+
 import gevent
 import gevent.queue
-from gevent.server import StreamServer
 import gevent.subprocess as sp
-import json
-import sys
+from gevent.server import StreamServer
 
 from common.geventwrapper import gevent_spawn
 from common.ports import Ports
 from common.tcpmessage import TcpMessageReader
 from common.utils import get_shared_ini_path
 
-from .windows_firewall import Firewall
 from .iptables_firewall import IPTablesFirewall
+from .windows_firewall import Firewall
 
 
 def main():
@@ -54,7 +56,8 @@ def main():
         ports = Ports(int(args.port_offset))
     else:
         ports = Ports(int(config['shared']['port_offset']))
-    platform = config['shared'].get('platform', 'windows')
+    platform = 'windows' if os.name == 'nt' else 'linux'
+    print(f"Detected platform as {platform}")
     use_iptables = (platform == 'linux')
     udpproxy_enabled = (platform == 'windows')
 

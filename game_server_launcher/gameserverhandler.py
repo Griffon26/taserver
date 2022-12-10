@@ -75,7 +75,8 @@ class GameServerHandler:
             self.working_dir = game_server_config['dir']
             self.dll_to_inject = game_server_config['controller_dll']
             self.dll_config_path = os.path.join(data_root, game_server_config['controller_config'])
-            self.platform = shared_config.get('platform', 'windows')
+            self.platform = 'windows' if os.name == 'nt' else 'linux'
+            self.logger.info(f"Detected platform as {self.platform}")
             if self.platform == 'linux':
                 self.injector_exe = game_server_config['injector_exe']
         except KeyError as e:

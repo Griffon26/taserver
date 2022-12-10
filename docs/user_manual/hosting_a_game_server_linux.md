@@ -75,8 +75,7 @@ $ mv $(ls | grep taserver-*) taserver && rm taserver.zip
 
 ### Edit `taserver/data/gameserverlauncher.ini` as follows:
 
-- update `dir = /home/$USER/tribes/Tribes_Ascend_Parting_Gifts/Binaries/Win32` where $USER is your username
-- uncomment the line `injector_exe = InjectorStandalone.exe` under the `[gameserver]` section
+Update `dir = /home/$USER/tribes/Tribes_Ascend_Parting_Gifts/Binaries/Win32` where `$USER` is your username
 
 `gameserverlauncher.ini` should look like this
 ```
@@ -91,16 +90,6 @@ controller_config = gamesettings/ootb/serverconfig.lua
 injector_exe = InjectorStandalone.exe
 ```
 
-### Edit `taserver/data/shared.ini`
-
-Uncomment the line `platform = linux` under the `[shared]` section.
-
-`shared.ini` should look like:
-```
-[shared]
-port_offset = 0
-platform = linux
-```
 
 ## Download TAMods-Server and InjectorStandalone:
 
