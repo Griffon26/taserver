@@ -26,13 +26,13 @@ connect to the replacement login server, follow these steps:
     to do it with:
 
     ```
-    pip install gevent certifi
+    pip install -r requirements.txt
     ```
 
     You may have to specify the full path. Something like:
 
     ```
-    C:\Program Files (x86)\Python36\Scripts\pip install gevent certifi
+    C:\Program Files (x86)\Python36\Scripts\pip install -r requirements.txt
     ```
 
 6.  Modify `dir` under the `[gameserver]` section in `data/gameserverlauncher.ini` to point to

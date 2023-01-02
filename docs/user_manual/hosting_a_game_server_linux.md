@@ -39,7 +39,7 @@ $ sudo dpkg --add-architecture i386
 $ sudo apt-get update
 $ sudo apt-get install -y wine winetricks python3 python3-pip unzip
 $ WINEARCH=win32 winetricks -q vcrun2017 dotnet48
-$ sudo pip install gevent certifi
+$ sudo pip install -r requirements.txt
 ```
 
 ## Headless only: install xvfb

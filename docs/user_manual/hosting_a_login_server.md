@@ -19,13 +19,13 @@ on a LAN disconnected from the internet. In that case, follow these steps to set
    to do it with:
 
     ```
-    pip install gevent certifi
+    pip install -r requirements.txt
     ```
     
    You may have to specify the full path. Something like:
    
     ```
-    C:\Program Files (x86)\Python36\Scripts\pip install gevent certifi
+    C:\Program Files (x86)\Python36\Scripts\pip install -r requirements.txt
     ```
 
 4. Open an administrator command prompt and go to the directory containing the taserver files
