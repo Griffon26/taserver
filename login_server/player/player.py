@@ -46,8 +46,8 @@ class Player(Peer):
 
         self.logger = logging.getLogger(__name__)
         self.unique_id: int = None
-        self.login_name: str = None
-        self.display_name: str = None
+        self.login_name: str = None # login_name is always lowercase and used for account data
+        self.display_name: str = None # display_name is what gets shown in game, based on login_name, it may be prefixed with unvrf and possibly truncated
         self.password_hash: str = None
         self.port = address[1]
         self.verified = False

@@ -61,11 +61,14 @@ class UnauthenticatedState(PlayerState):
             self.player.send(a003a())
 
         else:  # actual login
-            self.player.login_name = request.findbytype(m0494).value
+            # players may login with any upper/lower case variant of their username, and that will
+            # be the one displayed. For account data, the login name is always lowercase
+            original_login_name =  request.findbytype(m0494).value
+            self.player.login_name = original_login_name.lower()
             self.player.password_hash = request.findbytype(m0056).content
             accounts = self.player.login_server.accounts
 
-            validation_failure = self.player.login_server.validate_username(self.player.login_name)
+            validation_failure = self.player.login_server.validate_username(original_login_name)
             if validation_failure:
                 self.player.send([
                     a003d().set([
@@ -80,7 +83,7 @@ class UnauthenticatedState(PlayerState):
                     ])
                 ])
                 self.logger.info("Rejected login attempt with user name %s: %s" %
-                                 (self.player.login_name.encode('latin1'), validation_failure))
+                                 (original_login_name.encode('latin1'), validation_failure))
 
             else:
                 try:
@@ -118,7 +121,7 @@ class UnauthenticatedState(PlayerState):
                 else:
                     names_in_use = [p.display_name for p in self.player.login_server.players.values()
                                     if p.display_name is not None]
-                    self.player.display_name = choose_display_name(self.player.login_name,
+                    self.player.display_name = choose_display_name(original_login_name,
                                                                    self.player.verified,
                                                                    names_in_use,
                                                                    self.player.max_name_length)
