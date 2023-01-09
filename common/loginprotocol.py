@@ -22,6 +22,8 @@ import io
 import struct
 
 from common.connectionhandler import *
+from common.token_bucket import TokenBucket
+
 from .datatypes import construct_top_level_enumfield, m034a
 
 
@@ -109,16 +111,19 @@ class LoginProtocolMessage():
 
 
 class LoginProtocolReader(TcpMessageConnectionReader):
-    def __init__(self, sock, dump_queue):
-        super().__init__(sock, max_message_size = 1450, dump_queue = dump_queue)
+    def __init__(self, sock, dump_queue, token_bucket_data: TokenBucket = None, token_bucket_msgs: TokenBucket = None):
+        super().__init__(sock, max_message_size=1450, dump_queue=dump_queue, token_bucket=token_bucket_data)
         packet_reader = PacketReader(super().receive)
         self.stream_parser = StreamParser(packet_reader)
+        self.token_bucket_msgs = token_bucket_msgs
 
     def receive(self):
         return None
 
     def decode(self, msg_bytes):
         seq, msg = self.stream_parser.parse()
+        if self.token_bucket_msgs and not self.token_bucket_msgs.consume(1):
+            raise RateLimitError(f'exceeded token bucket limit of {str(self.token_bucket_msgs)}')
         return LoginProtocolMessage(seq, msg)
 
 

@@ -18,14 +18,16 @@
 # along with taserver.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import gevent.server
-import gevent.queue
-from gevent import socket
 import logging
 
-from common.errors import PortInUseError
+import gevent.queue
+import gevent.server
+from gevent import socket
+
+from common.errors import PortInUseError, RateLimitError
 from common.geventwrapper import gevent_spawn
 from common.tcpmessage import TcpMessageReader, TcpMessageWriter
+from common.token_bucket import TokenBucket
 
 
 class PeerConnectedMessage:
@@ -61,6 +63,8 @@ class ConnectionReader:
 
         except (ConnectionResetError, ConnectionAbortedError, gevent._socketcommon.cancel_wait_ex):
             self.logger.info('%s(%s): disconnected' % (self.task_name, self.task_id))
+        except RateLimitError as e:
+            self.logger.warn('%s(%s): Rate limit exceeded: %s' % (self.task_name, self.task_id, e))
 
         finally:
             self.incoming_queue.put(PeerDisconnectedMessage(self.peer))
@@ -76,9 +80,9 @@ class ConnectionReader:
 
 
 class TcpMessageConnectionReader(ConnectionReader):
-    def __init__(self, sock, max_message_size = 0xFFFF, dump_queue = None):
+    def __init__(self, sock, max_message_size = 0xFFFF, dump_queue = None, token_bucket: TokenBucket = None):
         super().__init__(sock)
-        self.tcp_reader = TcpMessageReader(sock, max_message_size = max_message_size, dump_queue = dump_queue)
+        self.tcp_reader = TcpMessageReader(sock, max_message_size = max_message_size, dump_queue = dump_queue, token_bucket=token_bucket)
 
     def receive(self):
         return self.tcp_reader.receive()

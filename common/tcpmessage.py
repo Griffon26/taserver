@@ -20,13 +20,16 @@
 
 import io
 import struct
+from common.token_bucket import TokenBucket
+from common.errors import RateLimitError
 
 
 class TcpMessageReader:
-    def __init__(self, socket, max_message_size = 0xFFFF, dump_queue = None):
+    def __init__(self, socket, max_message_size = 0xFFFF, dump_queue = None, token_bucket: TokenBucket = None):
         self.socket = socket
         self.max_message_size = max_message_size
         self.dump_queue = dump_queue
+        self.token_bucket = token_bucket
         if self.max_message_size > 0xFFFF:
             raise ValueError('max_message_size is not allowed to be greater than 0xFFFF')
 
@@ -48,6 +51,9 @@ class TcpMessageReader:
             packet_size = self.max_message_size
         elif packet_size > self.max_message_size:
             raise RuntimeError('Received a packet size that is larger than the TcpMessageReader was created for')
+        
+        if self.token_bucket and not self.token_bucket.consume(packet_size):
+            raise RateLimitError(f'exceeded token bucket limit of {str(self.token_bucket)}')
 
         packet_body_bytes = self._recvall(packet_size)
         if self.dump_queue:

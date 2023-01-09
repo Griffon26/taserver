@@ -27,7 +27,7 @@ from login_server.gameserver import GameServer
 
 class TestGameServer(GameServer):
     def __init__(self):
-        super().__init__(IPv4Address('127.0.0.1'), None)
+        super().__init__(IPv4Address('127.0.0.1'), ports=None, shared_config=None)
 
     def send(self, msg):
         self.msg = msg
