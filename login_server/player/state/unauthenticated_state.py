@@ -83,7 +83,7 @@ class UnauthenticatedState(PlayerState):
                     ])
                 ])
                 self.logger.info("Rejected login attempt with user name %s: %s" %
-                                 (self.player.login_name.encode('latin1'), validation_failure))
+                                 (original_login_name.encode('latin1'), validation_failure))
 
             else:
                 try:
