@@ -181,7 +181,7 @@ class ConnectionHandler:
                             'and the type is the only way to distinguish between messages from '
                             'different ConnectionHandlers.')
 
-        outgoing_queue = gevent.queue.Queue()
+        outgoing_queue = gevent.queue.Queue(maxsize=100)
 
         peer.task_id = task_id
         peer.task_name = self.task_name

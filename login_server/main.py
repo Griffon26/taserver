@@ -84,7 +84,7 @@ def main():
         sys.exit(2)
     
     client_queues = {}
-    server_queue = gevent.queue.Queue()
+    server_queue = gevent.queue.Queue(maxsize=100)
     server_stats_queue = gevent.queue.Queue()
     dump_queue = gevent.queue.Queue() if args.dump else None
 
