@@ -63,7 +63,7 @@ class UnauthenticatedState(PlayerState):
         else:  # actual login
             # players may login with any upper/lower case variant of their username, and that will
             # be the one displayed. For account data, the login name is always lowercase
-            original_login_name =  request.findbytype(m0494).value
+            original_login_name = request.findbytype(m0494).value
             self.player.login_name = original_login_name.lower()
             self.player.password_hash = request.findbytype(m0056).content
             accounts = self.player.login_server.accounts
@@ -87,8 +87,15 @@ class UnauthenticatedState(PlayerState):
 
             else:
                 try:
-                    if (self.player.login_name in accounts and
-                            self.player.password_hash == accounts[self.player.login_name].password_hash):
+                    if self.player.login_server.account_verification_enabled:
+                        authentication_ok = self.player.login_name in accounts and \
+                                            self.player.password_hash == accounts[self.player.login_name].password_hash
+                    else:
+                        if self.player.login_name not in accounts:
+                            accounts.update_account(self.player.login_name, None, None)
+                        authentication_ok = True
+
+                    if authentication_ok:
                         new_unique_id = accounts[self.player.login_name].unique_id
                         self.logger.info('User successfully authenticated with user name %s '
                                          '(ID %d -> %d)' % (self.player.login_name,

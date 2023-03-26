@@ -51,8 +51,8 @@ def handle_dump(dumpqueue):
         traffic_dumper.run()
 
 
-def handle_server(server_queue, client_queues, server_stats_queue, ports, accounts, shared_config):
-    server = LoginServer(server_queue, client_queues, server_stats_queue, ports, accounts, shared_config)
+def handle_server(server_queue, client_queues, server_stats_queue, ports, accounts, shared_config, account_verification_enabled):
+    server = LoginServer(server_queue, client_queues, server_stats_queue, ports, accounts, shared_config, account_verification_enabled)
     # server.trace_as('loginserver')
     server.run()
 
@@ -105,10 +105,8 @@ def main():
                      server_stats_queue,
                      ports,
                      accounts,
-                     config['shared']),
-        gevent_spawn("login server's handle_authcodes",
-                     handle_authcodes,
-                     server_queue),
+                     config['shared'],
+                     config['loginserver']['account_verification'] == 'on'),
         gevent_spawn("login server's handle_webhook",
                      handle_webhook,
                      server_stats_queue,
@@ -126,6 +124,14 @@ def main():
                      ports,
                      config['shared'])
     ]
+
+    if config['loginserver']['account_verification'] == 'on':
+        tasks.append(
+            gevent_spawn("login server's handle_authcodes",
+                 handle_authcodes,
+                 server_queue)
+        )
+
     # Give the greenlets enough time to start up, otherwise killall can block
     gevent.sleep(1)
 

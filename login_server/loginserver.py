@@ -48,11 +48,12 @@ UNUSED_AUTHCODE_CHECK_TIME = 3600
 
 @statetracer('address_pair', 'game_servers', 'players')
 class LoginServer:
-    def __init__(self, server_queue, client_queues, server_stats_queue, ports, accounts, shared_config):
+    def __init__(self, server_queue, client_queues, server_stats_queue, ports, accounts, shared_config, account_verification_enabled):
         self.logger = logging.getLogger(__name__)
         self.server_queue = server_queue
         self.client_queues = client_queues
         self.server_stats_queue = server_stats_queue
+        self.account_verification_enabled = account_verification_enabled
 
         self.game_servers = TracingDict()
 
