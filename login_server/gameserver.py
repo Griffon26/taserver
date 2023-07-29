@@ -49,6 +49,19 @@ PING_UPDATE_TIME = 3
 LEVEL_15_XP = 109815
 
 
+class RateLimiter:
+    def __init__(self):
+        self.latest_request_time = datetime.datetime.utcnow() - datetime.timedelta(seconds=4)
+
+    def seconds_until_next_request(self):
+        self.latest_request_time += datetime.timedelta(seconds=4)
+        seconds_until_next = (self.latest_request_time - datetime.datetime.utcnow()).total_seconds()
+        return max(seconds_until_next, 0)
+
+
+global_rate_limiter = RateLimiter()
+
+
 @statetracer('server_id', 'detected_ip', 'address_pair', 'port', 'game_setting_mode', 'joinable',
              'players', 'player_being_kicked', 'match_end_time_rel_or_abs', 'match_time_counting',
              'be_score', 'ds_score', 'map_id', )
@@ -88,27 +101,38 @@ class GameServer(Peer):
         self.map_votes = {}
         self.next_map_idx = None
 
+        continent_code_to_region = {
+            'NA': REGION_NORTH_AMERICA,
+            'EU': REGION_EUROPE,
+            'OC': REGION_OCEANIA_AUSTRALIA
+        }
+        region_to_continent_code = {value: key for key, value in continent_code_to_region.items()}
+
         if self.detected_ip.is_global:
             req = urllib.request.Request('https://tools.keycdn.com/geo.json?host=%s' % self.detected_ip,
                                          data=None,
                                          headers={
                                              'User-Agent': 'keycdn-tools:https://github.com/Griffon26/taserver/blob/master/README.md'
                                          })
+
+            global global_rate_limiter
+            delay = global_rate_limiter.seconds_until_next_request()
+            if delay > 0:
+                self.logger.info(f'Delaying geo location of IP for {delay} seconds to limit request rate...')
+                gevent.sleep(delay)
+
             response = urllib.request.urlopen(req, cafile=certifi.where())
             result = response.read()
             json_result = json.loads(result)
 
-            continent_code_to_region = {
-                'NA': REGION_NORTH_AMERICA,
-                'EU': REGION_EUROPE,
-                'OC': REGION_OCEANIA_AUSTRALIA
-            }
             try:
                 self.region = continent_code_to_region[json_result['data']['geo']['continent_code']]
             except KeyError:
                 self.region = REGION_EUROPE
         else:
             self.region = REGION_EUROPE
+
+        self.logger.info(f'Geo location set to {region_to_continent_code[self.region]}')
 
     def __repr__(self):
         return 'server %d (%s %s:%s/%s)' % (self.server_id, self.game_setting_mode, self.detected_ip, self.port, self.pingport)
