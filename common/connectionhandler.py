@@ -72,11 +72,11 @@ class ConnectionReader:
 
     def decode(self, msg_bytes):
         """ Decode a message from a series of bytes """
-        raise NotImplementedError('decode must be implemented in a subclass of ConnectionWriter')
+        raise NotImplementedError('decode must be implemented in a subclass of ConnectionReader')
 
     def receive(self):
         """ Receive a message from a socket and return the bytes that make up the message """
-        raise NotImplementedError('receive must be implemented in a subclass of ConnectionWriter')
+        raise NotImplementedError('receive must be implemented in a subclass of ConnectionReader')
 
 
 class TcpMessageConnectionReader(ConnectionReader):

@@ -22,6 +22,7 @@ import certifi
 import gevent
 import gevent.queue
 import logging
+import ssl
 import urllib.error
 import urllib.request
 import urllib.parse
@@ -77,7 +78,8 @@ class WebhookHandler:
                 data = data.encode('ascii')
                 req = urllib.request.Request(self.webhook_url, headers={'User-Agent': 'Mozilla/5.0'})
                 try:
-                    urllib.request.urlopen(req, data, cafile=certifi.where())
+                    ssl_context = ssl.create_default_context(cafile=certifi.where())
+                    urllib.request.urlopen(req, data, context=ssl_context)
                 except urllib.error.URLError as e:
                     self.logger.warning(f'webhook: URLError: {e.reason}')
                     # TODO: do proper error logging

@@ -21,6 +21,7 @@
 import certifi
 from gevent import socket
 from ipaddress import IPv4Address
+import ssl
 from typing import Optional
 import urllib.request as urlreq
 
@@ -69,7 +70,8 @@ class IPAddressPair:
 
         req = urlreq.Request('https://ipv4.icanhazip.com/', headers={'User-Agent': 'Mozilla/5.0'})
         try:
-            external_ip = IPv4Address(urlreq.urlopen(req, cafile=certifi.where()).read().decode('utf8').strip())
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
+            external_ip = IPv4Address(urlreq.urlopen(req, context=ssl_context).read().decode('utf8').strip())
         except Exception as e:
             external_ip = None
             detection_error = str(e)

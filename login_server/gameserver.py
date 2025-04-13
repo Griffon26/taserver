@@ -27,6 +27,7 @@ import datetime
 import json
 import logging
 import random
+import ssl
 import time
 import urllib.request
 
@@ -121,7 +122,8 @@ class GameServer(Peer):
                 self.logger.info(f'Delaying geo location of IP for {delay} seconds to limit request rate...')
                 gevent.sleep(delay)
 
-            response = urllib.request.urlopen(req, cafile=certifi.where())
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
+            response = urllib.request.urlopen(req, context=ssl_context)
             result = response.read()
             json_result = json.loads(result)
 

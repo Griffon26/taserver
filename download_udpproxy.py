@@ -20,6 +20,7 @@
 
 import certifi
 import os
+import ssl
 from urllib.error import HTTPError
 import urllib.request as urlreq
 
@@ -35,7 +36,8 @@ class UserError(Exception):
 def main():
     print('Downloading %s\nto %s' % (download_url, target_filename))
     try:
-        result = urlreq.urlopen(download_url, cafile=certifi.where())
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        result = urlreq.urlopen(download_url, context=ssl_context)
         with open(target_filename, 'wb') as outfile:
             outfile.write(result.read())
     except HTTPError as e:

@@ -23,6 +23,7 @@ from distutils.version import StrictVersion
 import os
 import re
 import xml.etree.ElementTree as XML
+import ssl
 from urllib.error import HTTPError
 import urllib.request as urlreq
 
@@ -39,7 +40,8 @@ class UserError(Exception):
 
 def get_available_tamods_versions():
     tamods_server_files = []
-    with urlreq.urlopen(f'{base_controller_url}?list-type=2', cafile=certifi.where()) as resp:
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
+    with urlreq.urlopen(f'{base_controller_url}?list-type=2', context=ssl_context) as resp:
         # S3 list responds with XML
         root = XML.parse(resp).getroot()
         ns_prefix = '{http://s3.amazonaws.com/doc/2006-03-01/}'
@@ -65,7 +67,8 @@ def get_available_tamods_versions():
 
 
 def load_version_map():
-    response = urlreq.urlopen(compatibility_csv, cafile=certifi.where())
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
+    response = urlreq.urlopen(compatibility_csv, context=ssl_context)
     encoding = response.info().get_content_charset()
     content = response.read().decode(encoding)
 
@@ -94,7 +97,8 @@ def is_compatible(version1, version2):
 
 
 def download_tamods_server_version(download_filename):
-    with urlreq.urlopen(f'{base_controller_url}/{download_filename}', cafile=certifi.where()) as result:
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
+    with urlreq.urlopen(f'{base_controller_url}/{download_filename}', context=ssl_context) as result:
         with open(target_filename, 'wb') as outfile:
             outfile.write(result.read())
 
